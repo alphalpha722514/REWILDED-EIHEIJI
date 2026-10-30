@@ -463,7 +463,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
   <div id="bossBar" hidden><div id="bossName">九頭竜のヌシ</div><div class="bigtrack"><div id="bossFill"></div></div><div class="poisetrack"><div id="bossPoise"></div></div></div>
   <div id="items"></div>
   <div id="help" class="panel">
-    <b>WASD</b> 移動　<b>←→</b> カメラ　<b>C</b> 背後へ<br>
+    <b>WASD</b> 移動　<b>Shift</b> 歩く　<b>←→</b> カメラ　<b>C</b> 背後へ<br>
     <b>左クリック/J</b> 攻撃　<b>右クリック/K</b> 強攻撃<br>
     <b>Space</b> 回避　<b>E</b> 調べる・拾う・設置<br>
     <b>1〜9・0</b> 手持ち選択　<b>Q</b> おにぎり　<b>Tab</b> インベントリ　<b>R</b> 持ち替え　<b>G</b> 地図　<b>Esc</b> 一時停止　<b>ホイール</b> 手持ち切り替え<br>見切りの後の金の輪の間に攻撃＝反撃／攻撃直後にR→攻撃＝切り替え技
@@ -602,7 +602,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
 </div>
 <div class="ov" id="inv" hidden>
   <div class="card">
-    <h2>持ち物・装備 <small style="font-size:12px">v0.47</small></h2><div id="invBody"></div>
+    <h2>持ち物・装備 <small style="font-size:12px">v0.48</small></h2><div id="invBody"></div>
     <p id="invLv" style="font-size:13px;margin:.2em 0 .6em"></p>
     <div class="invgrid" id="invGrid"></div>
     <div class="lbl">装備</div>
@@ -4323,8 +4323,126 @@ SDF.ring=(px,py,pz,c,a,R,th,hw)=>{ const qx=px-c[0],qy=py-c[1],qz=pz-c[2]; const
 SDF.box=(px,py,pz,c,b,rd)=>{ const qx=Math.abs(px-c[0])-b[0]+rd, qy=Math.abs(py-c[1])-b[1]+rd, qz=Math.abs(pz-c[2])-b[2]+rd;
   return Math.hypot(Math.max(qx,0),Math.max(qy,0),Math.max(qz,0))+Math.min(Math.max(qx,qy,qz),0)-rd; };
 const SAKURA=0xf0a8bc, REFL=0xe6cc4a, ARMBAND=0x2a3f6a;
+// v0.48: a continuous, skinned anatomical surface. Clothes share the same rig.
+function makeAthlete48(){
+ const g=new THREE.Group(),root=new THREE.Group();g.add(root);root.scale.setScalar(.94);
+ const B={},abs={},mk=(n,p,x,y,z)=>{const b=new THREE.Bone();b.name=n;abs[n]=[x,y,z];const a=p?abs[p]:[0,0,0];b.position.set(x-a[0],y-a[1],z-a[2]);(p?B[p]:root).add(b);B[n]=b;return b;};
+ mk('body',null,0,.96,0);mk('chest','body',0,1.36,0);mk('head','chest',0,1.78,0);
+ for(const side of [-1,1]){const sd=side<0?'L':'R';mk('arm'+sd,'chest',side*.285,1.575,0);mk('fore'+sd,'arm'+sd,side*.285,1.195,0);mk('hand'+sd,'fore'+sd,side*.285,.835,.005);mk('leg'+sd,'body',side*.125,.96,0);mk('shin'+sd,'leg'+sd,side*.125,.53,0);mk('foot'+sd,'shin'+sd,side*.125,.08,0);B['arm'+sd].userData.fore=B['fore'+sd];B['arm'+sd].userData.hand=B['hand'+sd];B['leg'+sd].userData.shin=B['shin'+sd];B['shin'+sd].userData.foot=B['foot'+sd];}
+ const smooth=t=>{t=clamp(t,0,1);return t*t*(3-2*t);};
+ const ell=(c,r)=>(x,y,z)=>SDF.ell(x,y,z,c,r),cone=(a,b,r0,r1)=>(x,y,z)=>SDF.cone(x,y,z,a,b,r0,r1);
+ const union=(fs,k=.025)=>(x,y,z)=>{let d=fs[0](x,y,z);for(let i=1;i<fs.length;i++)d=SDF.smin(d,fs[i](x,y,z),k);return d;};
+ const profile=rows=>(x,y,z)=>{let i=0;while(i<rows.length-2&&y>rows[i+1][0])i++;const a=rows[i],b=rows[i+1],u=clamp((y-a[0])/(b[0]-a[0]),0,1),rx=lerp(a[1],b[1],u),rz=lerp(a[2],b[2],u),cz=lerp(a[3]||0,b[3]||0,u);return Math.max((Math.hypot(x/rx,(z-cz)/rz)-1)*Math.min(rx,rz),rows[0][0]-y,y-rows[rows.length-1][0]);};
+ const torso=profile([[.82,.16,.135],[.94,.205,.15],[1.03,.19,.14],[1.15,.165,.125],[1.30,.215,.15],[1.47,.235,.16,.015],[1.57,.23,.13],[1.64,.12,.10]]);
+ const neck=cone([0,1.58,0],[0,1.85,0],.083,.073);
+ const headShape=union([ell([0,1.96,-.014],[.142,.186,.15]),ell([0,1.855,.014],[.109,.102,.113])],.045);
+ const ears=[-1,1].map(s=>ell([s*.143,1.94,-.012],[.021,.043,.027]));
+ const all=[{fn:torso,region:'torso'},{fn:neck,region:'neck'},{fn:headShape,region:'head'},...ears.map(fn=>({fn,region:'head'}))];
+ const armFields=[],handFields=[],legFields=[],footFields=[];
+ for(const side of [-1,1]){
+  const sd=side<0?'L':'R',x=side*.285;
+  const upper=union([cone([x,1.59,0],[x,1.195,0],.087,.055),ell([x,1.43,.006],[.081,.13,.079])],.025);
+  const fore=union([cone([x,1.195,0],[x,.835,.005],.063,.043),ell([x,1.085,-.006],[.068,.12,.066])],.022);
+  const hand=union([ell([x,.77,.014],[.050,.082,.033]),ell([x-side*.043,.785,.032],[.021,.046,.022])],.017);
+  const arm=union([upper,fore,hand],.025);armFields.push(arm);handFields.push(hand);all.push({fn:arm,region:'arm'+sd});
+  const lx=side*.125;
+  const leg=union([cone([lx,.95,0],[lx,.53,.014],.104,.064),ell([lx,.78,-.006],[.107,.19,.104]),cone([lx,.53,.014],[lx,.08,0],.065,.043),ell([lx,.355,-.022],[.074,.145,.076])],.026);
+  const foot=union([ell([lx,.055,.062],[.063,.054,.139]),ell([lx,.09,-.045],[.055,.066,.063])],.022);
+  legFields.push(leg);footFields.push(foot);all.push({fn:union([leg,foot],.025),region:'leg'+sd});
+ }
+ const skinField=union(all.map(p=>p.fn),.035);
+ const jacketTorso=profile([[.94,.211,.16],[1.03,.206,.158],[1.15,.185,.146],[1.30,.235,.17],[1.47,.25,.18,.010],[1.58,.25,.15],[1.65,.112,.105]]);
+ const jacket=(x,y,z)=>{
+  let d=jacketTorso(x,y,z);for(let i=0;i<2;i++)d=SDF.smin(d,Math.max(armFields[i](x,y,z)-.019,1.10-y),.027);
+  for(const side of [-1,1])d=Math.min(d,SDF.box(x,y,z,[side*.105,1.445,.177],[.048,.051,.013],.007));
+  d=Math.max(d,-(Math.hypot(x,z)-.083),.935-y);
+  // Rolled cuffs are cloth rings, not round shoulder/knee pieces.
+  return d;
+ };
+ const pants=(x,y,z)=>{let d=Math.max(torso(x,y,z)-.012,y-1.03);for(let i=0;i<2;i++)d=SDF.smin(d,Math.max(legFields[i](x,y,z)-.014,.145-y,y-1.0),.03);for(const side of [-1,1])d=Math.min(d,SDF.box(x,y,z,[side*.207,.785,0],[.025,.068,.062],.012));return d;};
+ const boots=(x,y,z)=>{let d=1e3;for(let i=0;i<2;i++){const side=i?1:-1;let a=SDF.smin(footFields[i](x,y,z)-.015,Math.max(legFields[i](x,y,z)-.016,y-.295),.024);a=Math.min(a,SDF.box(x,y,z,[side*.125,.016,.06],[.075,.017,.151],.012));d=Math.min(d,a);}return Math.max(d,-y);};
+ const shirt=(x,y,z)=>Math.max(jacketTorso(x,y,z)+.009,y-1.615,.965-y);
+ const shorts=(x,y,z)=>Math.max(pants(x,y,z)+.006,.735-y,y-1.01);
+ const gloves=(x,y,z)=>Math.min(...handFields.map(f=>f(x,y,z)-.006));
+ const layers={head:[],chest:[],legs:[],feet:[]},meshes=[];
+ const region=(x,y,z)=>{let best=1e3,r='torso';for(const p of all){const d=p.fn(x,y,z);if(d<best){best=d;r=p.region;}}return r;};
+ const weightsRegion=(r,x,y,z)=>{
+  if(r==='head')return [['head',1]];
+  if(r==='neck'){const u=smooth((y-1.64)/.13);return [['chest',1-u],['head',u]];}
+  if(r.startsWith('arm')){const sd=r.slice(-1);if(y>1.49){const u=smooth((Math.abs(x)-.205)/.095);return [['chest',1-u],['arm'+sd,u]];}if(y<.89){const u=smooth((.89-y)/.09);return [['fore'+sd,1-u],['hand'+sd,u]];}const u=smooth((1.25-y)/.11);return [['arm'+sd,1-u],['fore'+sd,u]];}
+  if(r.startsWith('leg')){const sd=r.slice(-1);if(y>.88){const u=smooth((y-.88)/.12);return [['leg'+sd,1-u],['body',u]];}if(y<.17){const u=smooth((.17-y)/.08);return [['shin'+sd,1-u],['foot'+sd,u]];}const u=smooth((.59-y)/.12);return [['leg'+sd,1-u],['shin'+sd,u]];}
+  const u=smooth((y-1.07)/.27);return [['body',1-u],['chest',u]];
+ };
+ const weights=(x,y,z)=>{
+  const ds=all.map(p=>p.fn(x,y,z)),best=Math.min(...ds),weights={};
+  for(let i=0;i<all.length;i++){
+   const weight=Math.exp(-Math.max(0,ds[i]-best)/.033);if(weight<.012)continue;
+   for(const [bone,w] of weightsRegion(all[i].region,x,y,z))weights[bone]=(weights[bone]||0)+weight*w;
+  }
+  const entries=Object.entries(weights).sort((a,b)=>b[1]-a[1]).slice(0,4),sum=entries.reduce((v,p)=>v+p[1],0)||1;return entries.map(([bone,w])=>[bone,w/sum]);
+ };
+ function geometry(field,min,max,step){
+  const mesh=surfaceNets(field,min,max,step),pos=mesh.pos,n=pos.length/3,norm=[],ids=[],ws=[],e=step*.22;
+  for(let i=0;i<n;i++){
+   let x=pos[i*3],y=pos[i*3+1],z=pos[i*3+2];
+   for(let j=0;j<2;j++){const d=field(x,y,z),gx=field(x+e,y,z)-field(x-e,y,z),gy=field(x,y+e,z)-field(x,y-e,z),gz=field(x,y,z+e)-field(x,y,z-e),l=Math.hypot(gx,gy,gz)||1;x-=d*gx/l;y-=d*gy/l;z-=d*gz/l;}
+   pos[i*3]=x;pos[i*3+1]=y;pos[i*3+2]=z;
+   const gx=field(x+e,y,z)-field(x-e,y,z),gy=field(x,y+e,z)-field(x,y-e,z),gz=field(x,y,z+e)-field(x,y,z-e),l=Math.hypot(gx,gy,gz)||1;norm.push(gx/l,gy/l,gz/l);
+   const ww=weights(x,y,z);for(let k=0;k<4;k++){ids.push(ww[k]?BONE_ID[ww[k][0]]:0);ws.push(ww[k]?ww[k][1]:0);}
+  }
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(norm,3));geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(ids,4));geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(ws,4));geo.setIndex(mesh.idx);geo.computeBoundingSphere();geo.boundingSphere.radius*=1.7;return geo;
+ }
+ const skinGeo=geometry(skinField,[-.42,-.025,-.21],[.42,2.18,.24],.024);
+ const jacketGeo=geometry(jacket,[-.42,.915,-.205],[.42,1.68,.22],.022);
+ const pantsGeo=geometry(pants,[-.25,.12,-.17],[.25,1.055,.18],.024);
+ const bootGeo=geometry(boots,[-.205,-.025,-.12],[.205,.32,.23],.018);
+ const shirtGeo=geometry(shirt,[-.29,.945,-.18],[.29,1.635,.205],.026);
+ const shortGeo=geometry(shorts,[-.24,.71,-.165],[.24,1.035,.18],.023);
+ const gloveGeo=geometry(gloves,[-.365,.665,-.055],[.365,.87,.08],.016);
+ const palette={work:[0x354a5b,0x3b3e3c,0x5b4634],forest:[0x5b6245,0x414735,0x4c4936],tracker:[0x625741,0x44483d,0x403e31],legacy1:[0x484f52,0x3b3e3c,0x5b4634],legacy2:[0x555e62,0x3b3e3c,0x5b4634]};
+ // One physically shaded material per palette; normals stay smooth across the continuous surface.
+ const mats=new Map();const material=c=>{if(!mats.has(c))mats.set(c,new THREE.MeshStandardMaterial({color:c,roughness:.92,metalness:.01,skinning:true}));return mats.get(c);};
+ function dress(base,color,slot,variant,style){
+  const geo=base.clone(),p=geo.attributes.position,colors=[];
+  for(let i=0;i<p.count;i++){
+   const x=p.getX(i),y=p.getY(i),z=p.getZ(i);let c=color;
+   if(style==='jacket'){
+    if(y<1.002)c=0x453d31;
+    else if(z>.14&&Math.abs(x)<.010&&y<1.58)c=0xafa187;
+    else if(z>.17&&Math.abs(Math.abs(x)-.105)<.051&&Math.abs(y-1.48)<.012)c=0x27333a;
+    else if(y<1.15&&Math.abs(x)>.225)c=0x777467;
+   }else if(style==='boots'){
+    if(y<.037)c=0x242721;
+    else if(z>.10&&Math.abs(Math.abs(x)-.125)<.033&&y<.22&&Math.sin(y*175)>.48)c=0x9d9279;
+   }
+   const cc=new THREE.Color(c);colors.push(cc.r,cc.g,cc.b);
+  }
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  const ma=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.94,metalness:.01,skinning:true});const m=new THREE.SkinnedMesh(geo,ma);m.castShadow=true;m.receiveShadow=true;root.add(m);meshes.push(m);if(slot){m.userData.variant=variant;layers[slot].push(m);m.visible=variant==='work';}return m;
+ }
+ const bodyMesh=new THREE.SkinnedMesh(skinGeo,material(0xcfae91));bodyMesh.castShadow=true;root.add(bodyMesh);meshes.push(bodyMesh);
+ const underShirt=new THREE.SkinnedMesh(shirtGeo,material(0xbebeb1));underShirt.castShadow=true;root.add(underShirt);meshes.push(underShirt);
+ const underShort=new THREE.SkinnedMesh(shortGeo,material(0x363a3d));underShort.castShadow=true;root.add(underShort);meshes.push(underShort);
+ for(const v of Object.keys(palette)){
+  const c=palette[v];dress(jacketGeo,c[0],'chest',v,'jacket');dress(gloveGeo,0x584b3a,'chest',v,'gloves');dress(pantsGeo,c[1],'legs',v,'pants');dress(bootGeo,c[2],'feet',v,'boots');
+  const detail=new THREE.Group();detail.userData.variant=v;detail.visible=v==='work';B.body.add(detail);layers.chest.push(detail);detail.add(mesh(rbox(.052,.039,.018,.006),material(0x9e8d66),0,.025,.17));detail.add(mesh(rbox(.075,.12,.075,.014),material(0x5e4d37),.21,-.045,-.015));
+ }
+ root.updateMatrixWorld(true);const skeleton=new THREE.Skeleton(BONE_NAMES.map(n=>B[n]));for(const m of meshes)m.bind(skeleton);
+ // Hair follows the skull, with a varied hairline and restrained swept-back locks.
+ const hair=new THREE.Group();B.head.add(hair);
+ const hairField=(x,y,z)=>Math.max(headShape(x,y,z)-.018,1.925+z*.34+Math.sin(x*28+z*14)*.006-y);
+ const hm=surfaceNets(hairField,[-.18,1.83,-.19],[.18,2.18,.17],.014);const hgeo=new THREE.BufferGeometry();hgeo.setAttribute('position',new THREE.Float32BufferAttribute(hm.pos,3));hgeo.setIndex(hm.idx);hgeo.computeVertexNormals();hgeo.translate(0,-1.78,0);const cap=new THREE.Mesh(hgeo,new THREE.MeshStandardMaterial({color:0x171b20,roughness:.96}));cap.castShadow=true;hair.add(cap);
+ for(let i=0;i<5;i++){const side=(i-2)*.045;const q=mesh(G.sph,material(0x171b20),side,.350+Math.sin(i)*.004,-.035,.035,.022,.065);q.rotation.x=.2;hair.add(q);}
+ for(const v of ['forest','tracker']){const hat=new THREE.Group();B.head.add(hat);hat.userData.variant=v;hat.visible=false;layers.head.push(hat);const c=v==='forest'?0xb4934b:0x62573e;const a=mesh(G.sph,material(c),0,.25,-.01,.16,.10,.17);hat.add(a);hat.add(mesh(G.box,material(c),0,.23,.1,.32,.022,.23));}
+ const m={g,root,body:B.body,chest:B.chest,head:B.head,armL:B.armL,armR:B.armR,legs:[B.legL,B.legR],face:null,R:.145,anatomical:true,anatomy48:true,layers,hair,restHip:.96,soft:{},skin:bodyMesh,underShirt48:underShirt,underShort48:underShort,skeleton,sole48:.08,legLength48:.88,meshes48:meshes};
+ // Store immutable rig lengths for grounded inverse kinematics and regression checks.
+ for(const l of m.legs){l.userData.length48=l.userData.shin.position.length();l.userData.shin.userData.length48=l.userData.shin.userData.foot.position.length();}
+ shadowBlob(g,.37,.38);return m;
+}
+function makeHuman(o={}){return o.player47?makeAthlete48():makeHuman47(o);}
+
 // v0.47: anatomical rigid segments; clothing is detachable per equipment slot.
-function makeHuman(o={}){
+function makeHuman47(o={}){
   const g=new THREE.Group(),root=new THREE.Group(); g.add(root);
   const player=!!o.player47, O=o.outfit||{}, gi=player?1:clamp(o.girth||1,0.85,1.2);
   root.scale.setScalar(player?0.94:(o.scale||1)*0.91);
@@ -4770,6 +4888,7 @@ function f47ApplyVisual(){
  const g=prog.gear||f47Fresh();for(const slot of G47S){const a=G47[g.equip[slot]];for(const layer of pm.layers[slot])layer.visible=!!a&&a.set===layer.userData.variant;}
  // Hair remains below work hats; suppress tall tufts under hard hats.
  pm.hair.visible=g.equip.head!=='forest_head';
+ if(pm.underShirt48)pm.underShirt48.visible=!g.equip.chest;if(pm.underShort48)pm.underShort48.visible=!g.equip.legs;
 }
 function f47Equip(slot,id){
  if(!G47S.includes(slot)||P.dead||P.atk||P.dodge)return;
@@ -4809,6 +4928,7 @@ function freshState(){
   inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,onigiri:1,bento:0,fang:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0};
   prog={gear:f47Fresh(),stage:'talk',unlockTrap:false,unlockBoss:false,clues:[false,false,false],bossDefeated:false,prepT:150,gatherT:0,introSeen:false,lastSaveT:0,g4:g4Fresh(),f4:f4Fresh(),level:1,exp:0,mastery:{nata:0,axe:0,club:0,spear:0},xph:0}; prog.f7=f7FromInv(); f7Sync(); prog.f8=f8Fresh(); prog.f9=f9Fresh(); prog.f10=f10Fresh();
   stats={kills:0,deaths:0,crafts:0,time:0,perfect:0};
+  P.lvx48=0;P.lvz48=0;
   P.maxHp=100; P.hp=100; P.full=100; P.weapon='nata1'; P.dur=120; prog.arms={nata1:120}; prog.f5=f5Fresh(); P.dead=false; P.atk=null; P.dodge=null; P.buffer=null; P.stagger=0; P.buffT=0; resetCombat();
 }
 freshState();
@@ -4830,7 +4950,7 @@ function buildHolsters(){
   pm.g.updateMatrixWorld(true);
   const bp=pm.body.getWorldPosition(new THREE.Vector3()); pm.root.worldToLocal(bp); // 腰の静止位置を root 基準に1回だけ写す
   HOL.hip=new THREE.Group(); HOL.hip.position.set(bp.x+0.26,bp.y-0.05,bp.z+0.02); HOL.hip.rotation.set(-0.5,0,-0.1); pm.body.add(HOL.hip); HOL.hip.position.set(-0.25,-0.08,-0.03); // 左腰、刃を後ろ下
-  HOL.back=new THREE.Group(); HOL.back.position.set(bp.x+0.12,bp.y+0.42,bp.z-0.17); HOL.back.rotation.set(-2.45,0,0.3); pm.chest.add(HOL.back); HOL.back.position.set(0.10,0.10,-0.20); // 背中に頭上へ
+  HOL.back=new THREE.Group(); HOL.back.position.set(bp.x+0.12,bp.y+0.42,bp.z-0.17); HOL.back.rotation.set(-2.45,0,0.3); pm.chest.add(HOL.back); HOL.back.position.set(0.16,-0.10,-0.20); // 背中に頭上へ
   for(const g of [HOL.hip,HOL.back]) g.add(mesh(G.box,mat(0x453626),0.03,-0.3,-0.05,0.09,0.62,0.11)); // 簡素な革と木の鞘
   for(const id of ['nata1','nata2','nata3','axeIron','axeStone']){ const m=makeWeapon(id); m.scale.setScalar(f47WeaponScale(id)); m.visible=false; HOL.mesh[id]=m; }
 }
@@ -6383,11 +6503,15 @@ function updatePlayer(dt){
     if(P.buffer&&!a.chop&&a.t>=a.chainT&&a.t<a.dur){ const b=takeBuffer(); if(b) startAttack(b.k,b.aim); }
     else if(a.t>=a.dur){ endAttack(a); const b=takeBuffer(); if(b) startAttack(b.k,b.aim); }
   } else {
-    spd=6.2*(P.full<=0?0.85:1)*mag*ml*f4SpeedMul()*(1+f47Stats().speed);
-    P.x+=mx*spd*dt; P.z+=mz*spd*dt;
+    spd=(keys.has('shift')?2.3:6.2)*(P.full<=0?0.85:1)*mag*ml*f4SpeedMul()*(1+f47Stats().speed);
+    const drive=1-Math.exp(-dt*(ml?18:24));
+    P.lvx48=lerp(P.lvx48||0,mx*spd,drive);P.lvz48=lerp(P.lvz48||0,mz*spd,drive);
+    if(!ml&&Math.hypot(P.lvx48,P.lvz48)<.04){P.lvx48=0;P.lvz48=0;}
+    P.x+=P.lvx48*dt;P.z+=P.lvz48*dt;spd=Math.hypot(P.lvx48,P.lvz48);
     const aim=ml>0?Math.atan2(mx,mz):(mouse.active&&AIM.mode!=='facing'?(()=>{ const g=mouseGround(); return g&&((g.x-P.x)**2+(g.z-P.z)**2>0.04)?Math.atan2(g.x-P.x,g.z-P.z):P.facing; })():P.facing);
     P.facing+=clamp(angDiff(P.facing,aim),-16*dt,16*dt);
   }
+  if(P.atk||P.dodge||P.stagger>0){P.lvx48=0;P.lvz48=0;}
   resolve(P,false);
   // 満腹・自然回復
   P.full=Math.max(0,P.full-dt/7);
@@ -6401,7 +6525,92 @@ function updatePlayer(dt){
 const easeOutExpo=t=>t>=1?1:1-Math.pow(2,-10*t);
 const easeInCub=t=>t*t*t;
 function poseMix(A,B,k){ const o={}; for(const key in A) o[key]=A[key]+((B[key]!=null?B[key]:A[key])-A[key])*k; return o; }
+// v0.48: contact-driven gait. Stance anchors are immutable in world space.
+// Foot placement follows actual displacement after collision resolution, never input speed.
+function f48Gait(dt){
+ const model=pm,scale=model.root.scale.x,old=model.gait48;
+ const reset=!old||Math.hypot(P.x-old.px,P.z-old.pz)>.9;
+ let w=old;
+ const ideal=(i,forward=0)=>{const side=i?1:-1;return new THREE.Vector3(P.x+Math.cos(P.facing)*side*.125*scale+Math.sin(P.facing)*forward,0,P.z-Math.sin(P.facing)*side*.125*scale+Math.cos(P.facing)*forward);};
+ if(reset){w={px:P.x,pz:P.z,vx:0,vz:0,speed:0,phase:.30,active:false,impulse:0,contacts:0,settleWait:0,feet:[]};for(let i=0;i<2;i++){const a=ideal(i);a.y=groundH(a.x,a.z);w.feet.push({anchor:a.clone(),point:a.clone(),from:a.clone(),target:a.clone(),mode:'stance',u:0,t:0,duration:.25,pitch:0,load:.5});}model.gait48=w;}
+ const safeDt=Math.max(dt,1e-4),dx=P.x-w.px,dz=P.z-w.pz;w.px=P.x;w.pz=P.z;
+ const raw=dt>0?Math.hypot(dx,dz)/safeDt:0,k=1-Math.exp(-dt*18);w.vx=lerp(w.vx,dt>0?dx/safeDt:0,k);w.vz=lerp(w.vz,dt>0?dz/safeDt:0,k);w.speed=lerp(w.speed,Math.min(9,raw),k);
+ const blocked=P.atk||P.dodge||P.stagger>0||P.dead;
+ if(blocked){w.active=false;w.wasBlocked=true;w.impulse*=Math.exp(-dt*16);return {w,enabled:false};}
+ if(w.wasBlocked){w.wasBlocked=false;for(let i=0;i<2;i++){const a=ideal(i);a.y=groundH(a.x,a.z);w.feet[i].anchor.copy(a);w.feet[i].point.copy(a);w.feet[i].mode='stance';}w.phase=.30;}
+ const moving=raw>.12,run=clamp((Math.max(w.speed,raw*.95)-2.4)/3.6,0,1),stride=lerp(.96,2.35,run),duty=lerp(.64,.36,run),freq=raw/stride;
+ if(moving){if(!w.active)w.phase=duty*.5;w.phase=(w.phase+dt*freq)%1;w.active=true;}else{w.active=false;}
+ const dir=new THREE.Vector3(moving?dx:w.vx,0,moving?dz:w.vz);if(dir.lengthSq()<1e-8)dir.set(Math.sin(P.facing),0,Math.cos(P.facing));else dir.normalize();
+ const smooth=t=>t*t*(3-2*t),touch=(f)=>{f.anchor.copy(f.target);f.anchor.y=groundH(f.anchor.x,f.anchor.z);f.mode='stance';f.t=0;w.contacts++;w.impulse=1;if(S.mode==='playing'&&w.speed>.4){noise(.048,.015+run*.014,run>0.5?250:360);noise(.020,.007+run*.005,850);if(run>.7&&w.contacts%3===0)spawnParticles(f.anchor.x,.03,f.anchor.z,2,0x9a886a,1);}};
+ for(let i=0;i<2;i++){
+  const f=w.feet[i],p=(w.phase+(i?.5:0))%1;
+  if(moving){
+   const half=Math.min(.42,stride*duty*.5),remaining=(1-p)/Math.max(.3,freq,raw/stride*.85);
+   if(f.mode==='stance'&&p>=duty){
+    f.mode='swing';f.from.copy(f.anchor);f.liftP=duty;f.settle=false;
+    f.target.copy(ideal(i)).addScaledVector(dir,remaining*Math.max(w.speed,raw)+half);f.target.y=groundH(f.target.x,f.target.z);
+   }
+   if(f.mode==='swing'){
+    if(p<duty){touch(f);f.settle=false;}
+    else{
+     if(f.settle){f.from.copy(f.point);f.liftP=p;f.settle=false;}
+     f.u=clamp((p-f.liftP)/Math.max(.01,1-f.liftP),0,1);
+     const planned=ideal(i).addScaledVector(dir,remaining*Math.max(w.speed,raw)+half);planned.y=groundH(planned.x,planned.z);
+     f.target.lerp(planned,1-Math.exp(-dt*14));const u=smooth(f.u);f.point.lerpVectors(f.from,f.target,u);f.point.y=lerp(f.from.y,f.target.y,u)+Math.pow(Math.sin(f.u*Math.PI),.85)*lerp(.105,.19,run);f.pitch=lerp(.20,-.13,f.u);f.load=0;
+    }
+   }
+   if(f.mode==='stance'){f.point.copy(f.anchor);const u=clamp(p/duty,0,1);f.pitch=u<.22?lerp(-.13,0,u/.22):u>.68?lerp(0,.32,(u-.68)/.32):0;f.load=Math.pow(Math.sin(Math.PI*u),.6);}
+  }else{
+   // Complete a short settling step after stopping instead of freezing an extended leg.
+   if(f.mode==='swing'){
+    if(!f.settle){f.settle=true;f.from.copy(f.point);f.target.copy(ideal(i));f.target.y=groundH(f.target.x,f.target.z);f.t=0;f.duration=.18;}
+    f.t+=dt;f.u=clamp(f.t/f.duration,0,1);const u=smooth(f.u);f.point.lerpVectors(f.from,f.target,u);f.point.y=lerp(f.from.y,f.target.y,u)+Math.sin(f.u*Math.PI)*.065;f.pitch=0;if(f.u>=1){touch(f);f.settle=false;}
+   }else{f.point.copy(f.anchor);f.pitch=0;f.load=.5;}
+  }
+ }
+ if(!moving){w.settleWait=Math.max(0,w.settleWait-dt);if(w.feet.every(f=>f.mode==='stance')&&w.settleWait<=0){let best=-1,err=.075;for(let i=0;i<2;i++){const d=ideal(i).distanceTo(new THREE.Vector3(w.feet[i].anchor.x,0,w.feet[i].anchor.z));if(d>err){err=d;best=i;}}if(best>=0){const f=w.feet[best];f.mode='swing';f.settle=true;f.from.copy(f.anchor);f.target.copy(ideal(best));f.target.y=groundH(f.target.x,f.target.z);f.t=0;f.duration=.20;w.settleWait=.27;}}}
+ w.impulse*=Math.exp(-dt*18);
+ const phase=w.phase*TAU,blend=clamp(w.speed/.8,0,1),step=(w.phase*2)%1;
+ const rootY=blend*(-lerp(.075,.155,run)+.018*Math.sin(step*Math.PI)-lerp(.012,.026,run)*Math.exp(-step*14));
+ const loadTotal=w.feet[0].load+w.feet[1].load,side=loadTotal>.05?(w.feet[1].load-w.feet[0].load)/loadTotal:0;
+ const forward=w.vx*Math.sin(P.facing)+w.vz*Math.cos(P.facing),lateral=w.vx*Math.cos(P.facing)-w.vz*Math.sin(P.facing);
+ return {w,enabled:true,run,blend,phase,rootY,shift:side*.024*blend,lean:clamp(forward*.015,-.06,.12),sideLean:clamp(-lateral*.012,-.07,.07),armSwing:Math.sin(phase)*lerp(.30,.56,run)*blend};
+}
+function f48SoleHeight(m,pitch){return (m.sole48*Math.cos(pitch)+Math.max(0,Math.sin(pitch))*.21+Math.max(0,-Math.sin(pitch))*.10)*m.root.scale.x;}
+const IK48={target:new THREE.Vector3(),hip:new THREE.Vector3(),d:new THREE.Vector3(),pole:new THREE.Vector3(),knee:new THREE.Vector3(),a:new THREE.Vector3(),b:new THREE.Vector3(),q:new THREE.Quaternion(),qf:new THREE.Quaternion(),down:new THREE.Vector3(0,-1,0)};
+function f48Plant(m,gait){
+ if(!gait.enabled||!m.anatomy48)return;
+ const w=gait.w,V=IK48,scale=m.root.scale.x,gy=groundH(P.x,P.z);
+ m.root.position.x=gait.shift;
+ // Lower the pelvis only as far as the planted legs require on uneven ground.
+ m.g.updateMatrixWorld(true);
+ let lower=0;
+ for(let i=0;i<2;i++){
+  const f=w.feet[i];if(f.mode!=='stance')continue;
+  const l=m.legs[i];l.getWorldPosition(V.hip);const max=(l.userData.length48+l.userData.shin.userData.length48)*scale-.004;
+  const h=Math.hypot(f.point.x-V.hip.x,f.point.z-V.hip.z),height=V.hip.y-(f.point.y+m.sole48*scale),allowed=Math.sqrt(Math.max(.03,max*max-h*h));lower=Math.max(lower,height-allowed);
+ }
+ if(lower>0)m.root.position.y-=Math.min(.15,lower);
+ m.g.updateMatrixWorld(true);
+ for(let i=0;i<2;i++){
+  const f=w.feet[i],leg=m.legs[i],shin=leg.userData.shin,foot=shin.userData.foot,L1=leg.userData.length48,L2=shin.userData.length48;
+  V.target.set(f.point.x,f.point.y+f48SoleHeight(m,f.pitch),f.point.z);
+  // Solve in the pelvis coordinate system; the knee always bends toward the forward pole.
+  leg.parent.worldToLocal(V.target);V.d.copy(V.target).sub(leg.position);const r=clamp(V.d.length(),.05,L1+L2-.0005);V.d.normalize();
+  V.pole.set(Math.sin(P.facing),0,Math.cos(P.facing));leg.parent.getWorldQuaternion(V.q);V.pole.applyQuaternion(V.q.invert());V.pole.addScaledVector(V.d,-V.pole.dot(V.d));if(V.pole.lengthSq()<.001)V.pole.set(0,0,1);V.pole.normalize();
+  const along=(r*r+L1*L1-L2*L2)/(2*r),height=Math.sqrt(Math.max(0,L1*L1-along*along));V.knee.copy(V.d).multiplyScalar(along).addScaledVector(V.pole,height);
+  V.a.copy(V.knee).normalize();leg.quaternion.setFromUnitVectors(V.down,V.a);
+  V.b.copy(V.d).multiplyScalar(r).sub(V.knee).normalize();V.q.copy(leg.quaternion).invert();V.b.applyQuaternion(V.q);shin.quaternion.setFromUnitVectors(V.down,V.b);
+  m.g.updateMatrixWorld(true);
+  // The sole is aligned to the local slope, heel-strikes first, then rolls onto the toe.
+  const sy=(groundH(f.point.x+Math.sin(P.facing)*.12,f.point.z+Math.cos(P.facing)*.12)-groundH(f.point.x-Math.sin(P.facing)*.12,f.point.z-Math.cos(P.facing)*.12))/.24;
+  V.qf.setFromEuler(new THREE.Euler(f.pitch-Math.atan(clamp(sy,-.5,.5)),P.facing,0,'YXZ'));shin.getWorldQuaternion(V.q);foot.quaternion.copy(V.q.invert().multiply(V.qf));
+  m.g.updateMatrixWorld(true);foot.getWorldPosition(V.a);f.ankleError48=V.a.distanceTo(new THREE.Vector3(f.point.x,f.point.y+f48SoleHeight(m,f.pitch),f.point.z));
+ }
+}
+
 function animatePlayer(dt,spd){
+  const gait48=f48Gait(dt);
   const gy=groundH(P.x,P.z);
   pm.g.position.set(P.x,gy,P.z); pm.g.rotation.y=P.facing;
   const W=pm.motion47||(pm.motion47={ck:0,lf:0,ls:0});
@@ -6444,7 +6653,7 @@ function animatePlayer(dt,spd){
     if(rk>0.01&&!P.dodge&&!P.atk&&P.stagger<=0){ Q.rootY-=0.06*rk; Q.chX+=0.13*rk; Q.sq=1-0.02*rk; Q.knee+=0.15*rk; Q.kL+=0.05*rk; Q.kR+=0.05*rk; Q.aLZ-=0.15*rk; }
     // No idle neck sway or rubber-body motion. // 休憩中は首がながなが周囲を見回す
     if(nbig&&nd<11&&!P.dead){ if(P.heartT==null) P.heartT=0.2; P.heartT-=dt; if(P.heartT<=0){ P.heartT=0.95; tone(52,0.11,'sine',0.055); tone(48,0.09,'sine',0.045,0,0.15); } } // クマ・ヌシ接近の鼓動
-    if(amp>0.35&&!P.dodge){ const sw2=Math.sin(w)*amp; if(P.lastSw!=null&&Math.sign(sw2)!==Math.sign(P.lastSw)) noise(0.045,0.02+0.014*amp,820+Math.random()*260); P.lastSw=sw2; } else P.lastSw=null; // 足音
+    // Footfall sounds now fire only when a foot actually touches the ground.
   }
   if(P.dodge){ // v0.45：踏み込み→飛び込み→受け身→起き上がりを1本の連続曲線で。移動・無敵時間・クールダウンは既存値のまま
     const d=P.dodge, k=clamp(d.t/0.38,0,1);
@@ -6518,6 +6727,18 @@ function animatePlayer(dt,spd){
         aLX:-1.2,aLY:0,aLZ:0.3,legL:-0.85-0.2*ext,legR:0.6,legLZ:-0.15,legRZ:0.15,knee:0.5,kL:0.35,kR:0.15,elbow:0.08});
     }
   }
+  if(gait48.enabled){
+    const a=gait48,ps=a.phase;
+    Q.rootY=a.rootY;Q.yoff=0;Q.fwd=0;Q.hipX=a.lean*.25;Q.hipY=Math.sin(ps)*.035*a.blend;Q.hipZ=a.sideLean*.25;
+    Q.chX=.025+a.lean+Math.sin(T*1.9)*.003;Q.chY=-Math.sin(ps)*.05*a.blend;Q.chZ=a.sideLean;
+    Q.hdX=-Q.chX*.6;Q.hdY=-Q.chY*.55;Q.hdZ=-Q.chZ*.6;
+    const armed=!!P.weapon;
+    Q.aLX=a.armSwing-.07;Q.aLZ=.055;Q.aLY=0;
+    Q.aRX=-a.armSwing*(armed?.22:1)-.06;Q.aRZ=-.055;Q.aRY=0;
+    Q.elbow=lerp(.22,.65,a.run)*a.blend+.10*(1-a.blend);
+    Q.legL=0;Q.legR=0;Q.legLZ=0;Q.legRZ=0;
+    cam.footPulse48=a.w.impulse*a.blend;
+  }else{pm.root.position.x=0;cam.footPulse48=0;}
   weaponPivot.rotation.x=P.atk||P.dodge?-0.85:lerp(0.55,-1.0,ck); // ふだんは鉈の先がだらんと下がり、構えると一気に上がる
   pm.root.position.y=Q.rootY;
   pm.body.rotation.set(Q.hipX,Q.hipY,Q.hipZ); pm.body.position.set(0,pm.restHip+Q.yoff,Q.fwd); pm.body.scale.set(1,1,1);
@@ -6526,6 +6747,7 @@ function animatePlayer(dt,spd){
   pm.armL.rotation.set(Q.aLX,Q.aLY,Q.aLZ); pm.armR.rotation.order='YXZ'; pm.armR.rotation.set(Q.aRX,Q.aRY,Q.aRZ);
   pm.legs[0].rotation.set(Q.legL,0,Q.legLZ); pm.legs[1].rotation.set(Q.legR,0,Q.legRZ);
   softPose(pm,dt,{elbow:P.atk?0.04:Q.elbow,flop:P.atk||P.dodge?0.15:fl,knee:Q.knee,kneeAdd:[Q.kL,Q.kR]});
+  f48Plant(pm,gait48);
   // F6：攻撃中は武器を技の曲線どおりに置き、腕をその握りへ向ける（当たりも同じ曲線）
   if(P.atk&&!P.dead){ const a=P.atk; a.rootY=Q.rootY; a.fwdOff=Q.fwd; pm.g.updateWorldMatrix(true,true); placeRig(a); const sp=swingPts(a,a.t);
     aimArm(pm.armR,weaponRig.position); const fam=famOf(P.weapon); if(fam!=='nata'||a.kind==='heavy'){ _sp2.copy(weaponRig.position).addScaledVector(sp[3],0.28); aimArm(pm.armL,_sp2); } } // 腕は（なじませ中も）武器の握りへ向ける
@@ -6803,7 +7025,7 @@ function updateCamera(dt){
   if(cam.pos.distanceTo(_cv)>25){ cam.pos.copy(_cv); cam.look.copy(_lv); }
   cam.pos.lerp(_cv,1-Math.exp(-dt*11)); cam.look.lerp(_lv,1-Math.exp(-dt*12));
   const sh=Math.min(0.8,S.shake)*0.32; S.shake=Math.max(0,S.shake-dt*2.6);
-  camera.position.set(cam.pos.x+(Math.random()-0.5)*sh,cam.pos.y+(Math.random()-0.5)*sh*0.7,cam.pos.z+(Math.random()-0.5)*sh);
+  camera.position.set(cam.pos.x+(Math.random()-0.5)*sh,cam.pos.y+(Math.random()-0.5)*sh*0.7-(cam.footPulse48||0)*.012,cam.pos.z+(Math.random()-0.5)*sh);
   camera.lookAt(cam.look);
   // 大きな獣の突進が迫ると、わずかに画角が広がる
   let fovAdd=0; if(foe&&(foe.state==='charge'||foe.state==='chargeWind')&&foe.type!=='monkey') fovAdd=foe.type==='boss'?6:3;
