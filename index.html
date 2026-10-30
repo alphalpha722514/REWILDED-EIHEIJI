@@ -498,6 +498,7 @@ body.touchmode #tbAct.quiet{opacity:.72;filter:saturate(.45);}
     <div class="btns">
       <button class="pri" id="btnResume">再開</button>
       <button id="btnPauseHow">操作方法</button>
+      <button id="btnAttackAim">攻撃方向：カーソル</button>
       <button id="btnSave">セーブ</button>
       <button id="btnShadow">高画質の影：オフ</button>
       <button id="btnPerf">計測表示：オフ</button>
@@ -5229,11 +5230,24 @@ function autoAim(){
   return best;
 }
 
+let attackAimMode='cursor';
+try{ attackAimMode=localStorage.getItem('rei_attack_aim_mode')==='body'?'body':'cursor'; }catch(e){}
+function updateAttackAimButton(){
+  const b=$('btnAttackAim');
+  if(b) b.textContent='攻撃方向：'+(attackAimMode==='cursor'?'カーソル':'キャラクターの向き');
+}
+function toggleAttackAimMode(){
+  attackAimMode=attackAimMode==='cursor'?'body':'cursor';
+  try{ localStorage.setItem('rei_attack_aim_mode',attackAimMode); }catch(e){}
+  updateAttackAimButton();
+  toast(attackAimMode==='cursor'?'攻撃方向をカーソルに設定':'攻撃方向をキャラクターの向きに設定');
+}
 function mouseGround(){
   ndc.set(mouse.x/window.innerWidth*2-1,-(mouse.y/window.innerHeight)*2+1);
   ray.setFromCamera(ndc,camera); return ray.ray.intersectPlane(groundPlane,mp)?mp:null;
 }
 function aimAngle(){
+  if(attackAimMode==='body') return P.facing;
   if(!mouse.active){ const a=autoAim(); return a==null?P.facing:a; }
   if(mouse.active){ const g=mouseGround(); if(g){ const dx=g.x-P.x, dz=g.z-P.z; if(dx*dx+dz*dz>0.04) return Math.atan2(dx,dz); } }
   return P.facing;
@@ -6027,7 +6041,7 @@ function renderCraft(){
 
 // ================= オーバーレイ管理 =================
 function hideAllOv(){ for(const id of ['title','howto','pause','craft','inv','dead','result','quests','mapOv','store','npcOv']) $(id).hidden=true; }
-function openPause(){ if(S.mode!=='playing') return; S.mode='paused'; keys.clear(); $('pause').hidden=false; f11Pause(); f31Pause();
+function openPause(){ if(S.mode!=='playing') return; S.mode='paused'; keys.clear(); $('pause').hidden=false; f11Pause(); f31Pause(); updateAttackAimButton();
   $('pauseInfo').textContent=`経過 ${fmtTime(stats.time)}　撃退 ${stats.kills}　見切り ${stats.perfect}`; }
 function openCraft(){ S.mode='menu'; keys.clear(); renderCraft(); $('craft').hidden=false; }
 function openInv(){ f31Inv(); f34Body();
@@ -6255,7 +6269,7 @@ function updatePlayer(dt){
   } else {
     spd=6.2*(P.full<=0?0.85:1)*mag*ml*f4SpeedMul();
     P.x+=mx*spd*dt; P.z+=mz*spd*dt;
-    const aim=ml>0?Math.atan2(mx,mz):(mouse.active?(()=>{ const g=mouseGround(); return g&&((g.x-P.x)**2+(g.z-P.z)**2>0.04)?Math.atan2(g.x-P.x,g.z-P.z):P.facing; })():P.facing);
+    const aim=ml>0?Math.atan2(mx,mz):(attackAimMode==='cursor'&&mouse.active?(()=>{ const g=mouseGround(); return g&&((g.x-P.x)**2+(g.z-P.z)**2>0.04)?Math.atan2(g.x-P.x,g.z-P.z):P.facing; })():P.facing);
     P.facing+=clamp(angDiff(P.facing,aim),-16*dt,16*dt);
   }
   resolve(P,false);
@@ -6878,6 +6892,8 @@ $('btnHow').onclick=()=>{ howFrom='title'; $('title').hidden=true; $('howto').hi
 $('btnPauseHow').onclick=()=>{ howFrom='pause'; $('pause').hidden=true; $('howto').hidden=false; };
 $('btnHowBack').onclick=()=>{ $('howto').hidden=true; if(howFrom==='title') $('title').hidden=false; else $('pause').hidden=false; };
 $('btnResume').onclick=closeOverlay;
+$('btnAttackAim').onclick=toggleAttackAimMode;
+updateAttackAimButton();
 function applyShadow(on){ shadowPref=on; renderer.shadowMap.enabled=on; sun.castShadow=on; scene.traverse(o=>{ if(o.material){ (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.needsUpdate=true); } }); for(const m of fadeMap.values()) m.needsUpdate=true; try{ localStorage.setItem('eiheiji_shadow',on?'1':'0'); }catch(e){} $('btnShadow').textContent='高画質の影：'+(on?'オン':'オフ'); }
 $('btnPerf').onclick=()=>f11Toggle(); $('btnPerfRec').onclick=()=>{ f11RecStart(); f11Pause(); };
 $('btnShadow').onclick=()=>{ applyShadow(!shadowPref); toast(shadowPref?'影をオンにした（描画が重くなります）':'影をオフにした'); };
