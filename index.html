@@ -997,7 +997,8 @@ class GB{
     const ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2], vx=d[0]-a[0],vy=d[1]-a[1],vz=d[2]-a[2];
     let nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx; const l=Math.hypot(nx,ny,nz)||1; nx/=l; ny/=l; nz/=l;
     const i0=this.vert(...a,nx,ny,nz,col), i1=this.vert(...b,nx,ny,nz,col), i2=this.vert(...c,nx,ny,nz,col), i3=this.vert(...d,nx,ny,nz,col);
-    this.i.push(i0,i1,i2,i0,i2,i3); }  tri(a,b,c,col){ if(this.tess>0){ const e=Math.max(Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2]),Math.hypot(c[0]-b[0],c[1]-b[1],c[2]-b[2]),Math.hypot(a[0]-c[0],a[1]-c[1],a[2]-c[2]));
+    this.i.push(i0,i1,i2,i0,i2,i3); }
+  tri(a,b,c,col){ if(this.tess>0){ const e=Math.max(Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2]),Math.hypot(c[0]-b[0],c[1]-b[1],c[2]-b[2]),Math.hypot(a[0]-c[0],a[1]-c[1],a[2]-c[2]));
       if(e>this.tess*1.4){ const m=(p,q)=>[(p[0]+q[0])/2,(p[1]+q[1])/2,(p[2]+q[2])/2]; const ab=m(a,b), bc=m(b,c), ca=m(c,a); this.tri(a,ab,ca,col); this.tri(ab,b,bc,col); this.tri(ca,bc,c,col); this.tri(ab,bc,ca,col); return; } }
     const ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2], vx=c[0]-a[0],vy=c[1]-a[1],vz=c[2]-a[2];
     let nx=vy*uz-vz*uy, ny=vz*ux-vx*uz, nz=vx*uy-vy*ux; const l=Math.hypot(nx,ny,nz)||1; nx/=l; ny/=l; nz/=l; nx=-nx; ny=-ny; nz=-nz;
@@ -1996,7 +1997,8 @@ function buildTraces(){
   // 荒らされた田畑：掘り返し・なぎ倒された稲
   for(const [x,z,r] of [[-6,-110,15],[4,-190,19],[0,-250,17],[190,-90,13],[-30,-330,12],[-230,-120,14],[-180,-60,10]]){ RAVAGED.push([x,z,r]); for(let i=0;i<Math.round(r*2.2);i++){ const a=hash2(i,x)*TAU, rr=Math.sqrt(hash2(z,i))*r; groundDecal('dirt',x+Math.cos(a)*rr,z+Math.sin(a)*rr,hash2(i,z)*6,1.6+hash2(x,i)*2.2,1.4+hash2(i,x)*1.6); } }
   // ぬた場（河原の泥浴び場）
-  for(let i=0;i<22;i++){ const a=i/22*TAU; groundDecal('dirt',-58+Math.cos(a)*3.5*hash2(i,1),-392+Math.sin(a)*2.8*hash2(i,2),a,2.6+hash2(i,3)*1.8,2.2); }  const mudPool=mesh(G.circ,new THREE.MeshBasicMaterial({color:0x4a3a2a,transparent:true,opacity:0.85,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4}),-58,groundH(-58,-392)+0.06,-392,4.2,1,3.0); mudPool.renderOrder=2; world.add(mudPool);
+  for(let i=0;i<22;i++){ const a=i/22*TAU; groundDecal('dirt',-58+Math.cos(a)*3.5*hash2(i,1),-392+Math.sin(a)*2.8*hash2(i,2),a,2.6+hash2(i,3)*1.8,2.2); }
+  const mudPool=mesh(G.circ,new THREE.MeshBasicMaterial({color:0x4a3a2a,transparent:true,opacity:0.85,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4}),-58,groundH(-58,-392)+0.06,-392,4.2,1,3.0); mudPool.renderOrder=2; world.add(mudPool);
   // 食べかけの大根（サル）、壊れた電気柵（イノシシ）
   for(let i=0;i<10;i++){ const x=-18+(hash2(i,5)-0.5)*7, z=-128+(hash2(i,7)-0.5)*6; place('traces',pDaikonBitten(),x,z,hash2(i,9)*6); }
   for(const [x,z,len,rot,br] of [[-14,-118,14,0.2,true],[10,-196,18,1.4,true],[184,-96,12,0.6,true],[-226,-112,12,0.9,true]]) place('traces',pElecFence(len,br),x,z,rot);
@@ -2995,7 +2997,8 @@ function f7Cap(k){ return F7.spoil?Infinity:FOODS[k].life*(1-F7.warn)-1; }
 function f7Usable(k,b){ return !F7.spoil||b[1]<FOODS[k].life; }
 // 使える数（where: 'hand'|'store'）
 function f7Count(k,where='hand'){ let n=0; for(const b of prog.f7[where][k]) if(f7Usable(k,b)) n+=b[0]; return n; }
-// 束を古い順（経過時間の大きい順）に並べ、60秒以内の差はまとめる。まとめるときは古い方の経過時間にそろえるfunction f7Norm(arr){
+// 束を古い順（経過時間の大きい順）に並べ、60秒以内の差はまとめる。まとめるときは古い方の経過時間にそろえる
+function f7Norm(arr){
   const a=arr.filter(b=>b[0]>0).sort((x,y)=>y[1]-x[1]); const out=[];
   for(const b of a){ const l=out[out.length-1]; if(l&&l[1]-b[1]<=F7.merge) l[0]+=b[0]; else out.push([b[0],b[1]]); }
   while(out.length>F7.maxB){ let bi=0,bd=Infinity; for(let i=0;i<out.length-1;i++){ const d=out[i][1]-out[i+1][1]; if(d<bd){bd=d;bi=i;} } out[bi][0]+=out[bi+1][0]; out.splice(bi+1,1); }
@@ -3994,7 +3997,8 @@ function shrineHall(g,x,z,rot,w,d,old){ const s=new THREE.Group(); const wood=ol
   for(let i=0;i<6;i++) s.add(mesh(G.box,mat(0x4a3424),-w*0.2+i*w*0.08,1.4,d/2+0.1,0.04,1.6,0.04));
   const r1=mesh(roofGeo(d+2.0,w+1.6,1.4,0.25),mat(roof),0,3.35,0); r1.rotation.y=Math.PI/2; s.add(J(r1,0.06));
   if(!old){ const r2=mesh(roofGeo(d+0.6,w+0.4,1.3,0.22),mat(roof),0,4.55,0); r2.rotation.y=Math.PI/2; s.add(J(r2,0.06)); for(let i=0;i<14;i++) s.add(mesh(G.box,mat(0xf2ead8),-w/2-0.6+i*(w+1.2)/13,3.25,d/2+0.9,0.12,0.1,0.14)); }
-  for(const sx of [-1,1]) s.add(J(mesh(lathe([[0.16,0],[0.15,2.6],[0,2.62]],8),mat(old?0x3a3430:0x9a8a74),sx*w*0.3,0.6,d/2+1.2),0.1));  const rope=old?0xb8a468:0xe2b03a; const rp=mesh(G.cyl8,mat(rope),0,2.7,d/2+1.25,0.08,w*0.6,0.08); rp.rotation.z=Math.PI/2; s.add(rp); for(const k of [-1,0,1]) s.add(mesh(G.cone6,mat(rope),k*w*0.18,2.45,d/2+1.25,0.12,0.35,0.12));
+  for(const sx of [-1,1]) s.add(J(mesh(lathe([[0.16,0],[0.15,2.6],[0,2.62]],8),mat(old?0x3a3430:0x9a8a74),sx*w*0.3,0.6,d/2+1.2),0.1));
+  const rope=old?0xb8a468:0xe2b03a; const rp=mesh(G.cyl8,mat(rope),0,2.7,d/2+1.25,0.08,w*0.6,0.08); rp.rotation.z=Math.PI/2; s.add(rp); for(const k of [-1,0,1]) s.add(mesh(G.cone6,mat(rope),k*w*0.18,2.45,d/2+1.25,0.12,0.35,0.12));
   s.position.set(x,groundH(x,z),z); s.rotation.y=rot; g.add(s); addOBox(x,z,w+1.4,d+1.4,-rot+Math.PI/2,'house',{h:groundH(x,z)+5}); }
 function buildLandmarks(){
   const g=new THREE.Group();
@@ -4993,7 +4997,8 @@ function setFence(gp,type,hp){
   const f=gp.fence;
   if(!type){ f.type=null; f.hp=0; f.max=0; f.broken=false; }
   else { f.type=type; f.max=type==='stake'?260:120; f.hp=clamp(hp==null?f.max:hp,0,f.max); f.broken=f.hp<=0; }
-  gp.col.active=!!f.type&&!f.broken;  fenceVisual(gp);
+  gp.col.active=!!f.type&&!f.broken;
+  fenceVisual(gp);
 }
 function damageFence(gp,dmg){
   const f=gp.fence; if(!f.type||f.broken) return;
@@ -5992,7 +5997,8 @@ function interactables(){
                  else L.push({d,label:`${g.name}の柵台：木柵キットが必要（作業台で作成）`,act:()=>{sfx('deny');}}); }
     else if(f.broken) L.push({d,label:`${g.name}の柵を再建（木材2）`,act:()=>repairFence(g,2,true)});
     else if(f.hp<f.max) L.push({d,label:`${g.name}の柵を修理（木材1で+60）　${Math.ceil(f.hp)}/${f.max}`,act:()=>repairFence(g,1,false)});
-    else if(f.type==='wood'&&inv.stakeKit>0) L.push({d,label:`${g.name}の柵を杭柵に作り替え（杭柵キット1）`,act:()=>placeFence(g,'stake')});    else L.push({d:d+0.5,label:`${g.name}の柵　耐久 ${f.max}/${f.max}`,act:()=>{}});
+    else if(f.type==='wood'&&inv.stakeKit>0) L.push({d,label:`${g.name}の柵を杭柵に作り替え（杭柵キット1）`,act:()=>placeFence(g,'stake')});
+    else L.push({d:d+0.5,label:`${g.name}の柵　耐久 ${f.max}/${f.max}`,act:()=>{}});
   }
   for(const t of traps){ const d=dist(P.x,P.z,t.x,t.z); if(d>1.8) continue;
     if(t.state==='empty') L.push({d,label:inv.trapKit>0?'くくり罠を仕掛ける（罠キット1）':'罠台：くくり罠キットが必要',act:()=>placeTrap(t)});
