@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
-/* v0.41 mobile launch support: show a useful message when the host disables JavaScript */
+/* v0.45 mobile launch support: show a useful message when the host disables JavaScript */
 #noScriptHelp{position:fixed;z-index:100000;inset:0;display:flex;align-items:center;justify-content:center;padding:22px;box-sizing:border-box;background:rgba(18,20,22,.96);color:#ece2c8;font:16px/1.65 -apple-system,BlinkMacSystemFont,sans-serif;text-align:left;}
 #noScriptHelp .nsCard{max-width:520px;border:1px solid #d8b04a;border-radius:14px;padding:22px;background:#241c17;box-shadow:0 12px 40px #0008;}
 #noScriptHelp h2{margin:0 0 12px;font-size:21px;color:#d8b04a;}
@@ -308,7 +308,7 @@ body.ctrOn #tbAtk,body.ctrOn #tbHeavy{border-color:var(--gold);box-shadow:0 0 14
 #tbMap{right:calc(152px + env(safe-area-inset-right,0px));}
 #tbPause{right:calc(14px + env(safe-area-inset-right,0px));}
 body.touchmode #help{display:none;}
-body.touchmode #items{pointer-events:auto;} /* v0.41：スマホでも手持ちバーは中央下部のまま */
+body.touchmode #items{pointer-events:auto;} /* v0.45：スマホでも手持ちバーは中央下部のまま */
 body.touchmode .slot{min-width:0;font-size:12px;padding:7px 9px;text-align:left;}
 body.touchmode .slot .k{display:none;}
 body.touchmode #prompt{bottom:calc(258px + env(safe-area-inset-bottom,0px));white-space:normal;max-width:calc(100vw - 32px);}
@@ -336,7 +336,7 @@ body.touchmode #mini{display:none;}
   #tbSwap{width:44px;height:44px;right:calc(160px + env(safe-area-inset-right,0px));bottom:calc(70px + env(safe-area-inset-bottom,0px));font-size:11px;}
   #tbDodge{width:54px;height:54px;right:calc(30px + env(safe-area-inset-right,0px));bottom:calc(100px + env(safe-area-inset-bottom,0px));}
   #tbAct{width:54px;height:54px;right:calc(98px + env(safe-area-inset-right,0px));bottom:calc(76px + env(safe-area-inset-bottom,0px));}
-   /* v0.41：横画面スマホも同様に中央下部 */
+   /* v0.45：横画面スマホも同様に中央下部 */
   body.touchmode .slot{font-size:11px;padding:5px 7px;}
   body.touchmode #prompt{bottom:calc(160px + env(safe-area-inset-bottom,0px));}
   body.touchmode #toasts{top:auto;bottom:calc(56px + env(safe-area-inset-bottom,0px));right:calc(190px + env(safe-area-inset-right,0px));}
@@ -369,7 +369,7 @@ body.touchmode #mini{display:none;}
 #objective{overflow:hidden;}
 /* スマホ：帯が出ている間、調べるボタンの光を弱める（二重発光の防止） */
 body.touchmode #tbAct.quiet{opacity:.72;filter:saturate(.45);}
-/* ===== v0.41：手持ちバー（固定10スロット・画面中央下部） ===== */
+/* ===== v0.45：手持ちバー（固定10スロット・画面中央下部） ===== */
 #items{left:50%;right:auto;top:auto;bottom:calc(8px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;gap:min(6px,1.2vw);align-items:flex-end;max-width:calc(100vw - 24px);overflow:visible;}
 .hslot{position:relative;width:min(54px,calc((100vw - 70px)/10));aspect-ratio:1/1;border-radius:8px;border:2px solid rgba(240,226,200,.25);background:rgba(33,26,21,.72);display:flex;align-items:center;justify-content:center;pointer-events:auto;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;box-sizing:border-box;flex:none;}
 .hslot .ki{position:absolute;top:1px;right:4px;font-size:9px;color:var(--washi-dim);}
@@ -455,12 +455,13 @@ body.touchmode #tbAct.quiet{opacity:.72;filter:saturate(.45);}
         <button class="pri" id="btnContinue" hidden>つづきから</button>
         <button class="pri" id="btnNew">ゲーム開始</button>
         <button id="btnHow">操作方法</button>
+        <button id="btnAimTitle">攻撃方向：カーソル</button>
       </div>
       <p id="saveNote"></p>
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.41 デモ版　光明寺マップ</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.45.1 デモ版　光明寺マップ</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -498,8 +499,8 @@ body.touchmode #tbAct.quiet{opacity:.72;filter:saturate(.45);}
     <div class="btns">
       <button class="pri" id="btnResume">再開</button>
       <button id="btnPauseHow">操作方法</button>
-      <button id="btnAttackAim">攻撃方向：カーソル</button>
       <button id="btnSave">セーブ</button>
+      <button id="btnAim">攻撃方向：カーソル</button>
       <button id="btnShadow">高画質の影：オフ</button>
       <button id="btnPerf">計測表示：オフ</button>
       <button id="btnPerfRec" hidden>計測を記録（30秒）</button>
@@ -613,7 +614,7 @@ body.touchmode #tbAct.quiet{opacity:.72;filter:saturate(.45);}
 </div>
 
 <script>
-/* v0.41 mobile launch diagnostics: show script failures instead of leaving a silent title screen. */
+/* v0.45 mobile launch diagnostics: show script failures instead of leaving a silent title screen. */
 (function(){
   function showLaunchError(message){
     try {
@@ -685,8 +686,8 @@ renderer.shadowMap.enabled=shadowPref&&!LOWQ;
 renderer.shadowMap.type=THREE.PCFShadowMap;
 const scene=new THREE.Scene();
 const SKYC={
-  day:{top:new THREE.Color(0x6fa6d6),hor:new THREE.Color(0xf2e2b4),fog:new THREE.Color(0xdfe2cf)}, // v0.41：昼の地平線をほんのり暖色に
-  dusk:{top:new THREE.Color(0x4a5a9c),hor:new THREE.Color(0xf08a52),fog:new THREE.Color(0xd69068)}, // v0.41：夕焼けのオレンジを一段濃く
+  day:{top:new THREE.Color(0x6fa6d6),hor:new THREE.Color(0xf2e2b4),fog:new THREE.Color(0xdfe2cf)}, // v0.45：昼の地平線をほんのり暖色に
+  dusk:{top:new THREE.Color(0x4a5a9c),hor:new THREE.Color(0xf08a52),fog:new THREE.Color(0xd69068)}, // v0.45：夕焼けのオレンジを一段濃く
   night:{top:new THREE.Color(0x0b1430),hor:new THREE.Color(0x2c3656),fog:new THREE.Color(0x1d2840)},
 };
 scene.background=SKYC.day.fog.clone();
@@ -996,8 +997,7 @@ class GB{
     const ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2], vx=d[0]-a[0],vy=d[1]-a[1],vz=d[2]-a[2];
     let nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx; const l=Math.hypot(nx,ny,nz)||1; nx/=l; ny/=l; nz/=l;
     const i0=this.vert(...a,nx,ny,nz,col), i1=this.vert(...b,nx,ny,nz,col), i2=this.vert(...c,nx,ny,nz,col), i3=this.vert(...d,nx,ny,nz,col);
-    this.i.push(i0,i1,i2,i0,i2,i3); }
-  tri(a,b,c,col){ if(this.tess>0){ const e=Math.max(Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2]),Math.hypot(c[0]-b[0],c[1]-b[1],c[2]-b[2]),Math.hypot(a[0]-c[0],a[1]-c[1],a[2]-c[2]));
+    this.i.push(i0,i1,i2,i0,i2,i3); }  tri(a,b,c,col){ if(this.tess>0){ const e=Math.max(Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2]),Math.hypot(c[0]-b[0],c[1]-b[1],c[2]-b[2]),Math.hypot(a[0]-c[0],a[1]-c[1],a[2]-c[2]));
       if(e>this.tess*1.4){ const m=(p,q)=>[(p[0]+q[0])/2,(p[1]+q[1])/2,(p[2]+q[2])/2]; const ab=m(a,b), bc=m(b,c), ca=m(c,a); this.tri(a,ab,ca,col); this.tri(ab,b,bc,col); this.tri(ca,bc,c,col); this.tri(ab,bc,ca,col); return; } }
     const ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2], vx=c[0]-a[0],vy=c[1]-a[1],vz=c[2]-a[2];
     let nx=vy*uz-vz*uy, ny=vz*ux-vx*uz, nz=vx*uy-vy*ux; const l=Math.hypot(nx,ny,nz)||1; nx/=l; ny/=l; nz/=l; nx=-nx; ny=-ny; nz=-nz;
@@ -1996,8 +1996,7 @@ function buildTraces(){
   // 荒らされた田畑：掘り返し・なぎ倒された稲
   for(const [x,z,r] of [[-6,-110,15],[4,-190,19],[0,-250,17],[190,-90,13],[-30,-330,12],[-230,-120,14],[-180,-60,10]]){ RAVAGED.push([x,z,r]); for(let i=0;i<Math.round(r*2.2);i++){ const a=hash2(i,x)*TAU, rr=Math.sqrt(hash2(z,i))*r; groundDecal('dirt',x+Math.cos(a)*rr,z+Math.sin(a)*rr,hash2(i,z)*6,1.6+hash2(x,i)*2.2,1.4+hash2(i,x)*1.6); } }
   // ぬた場（河原の泥浴び場）
-  for(let i=0;i<22;i++){ const a=i/22*TAU; groundDecal('dirt',-58+Math.cos(a)*3.5*hash2(i,1),-392+Math.sin(a)*2.8*hash2(i,2),a,2.6+hash2(i,3)*1.8,2.2); }
-  const mudPool=mesh(G.circ,new THREE.MeshBasicMaterial({color:0x4a3a2a,transparent:true,opacity:0.85,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4}),-58,groundH(-58,-392)+0.06,-392,4.2,1,3.0); mudPool.renderOrder=2; world.add(mudPool);
+  for(let i=0;i<22;i++){ const a=i/22*TAU; groundDecal('dirt',-58+Math.cos(a)*3.5*hash2(i,1),-392+Math.sin(a)*2.8*hash2(i,2),a,2.6+hash2(i,3)*1.8,2.2); }  const mudPool=mesh(G.circ,new THREE.MeshBasicMaterial({color:0x4a3a2a,transparent:true,opacity:0.85,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4}),-58,groundH(-58,-392)+0.06,-392,4.2,1,3.0); mudPool.renderOrder=2; world.add(mudPool);
   // 食べかけの大根（サル）、壊れた電気柵（イノシシ）
   for(let i=0;i<10;i++){ const x=-18+(hash2(i,5)-0.5)*7, z=-128+(hash2(i,7)-0.5)*6; place('traces',pDaikonBitten(),x,z,hash2(i,9)*6); }
   for(const [x,z,len,rot,br] of [[-14,-118,14,0.2,true],[10,-196,18,1.4,true],[184,-96,12,0.6,true],[-226,-112,12,0.9,true]]) place('traces',pElecFence(len,br),x,z,rot);
@@ -2463,9 +2462,9 @@ function armList(){ return Object.keys(prog.arms).filter(k=>WEAPONS[k]); }
 function armDur(id){ return id===P.weapon?P.dur:(prog.arms[id]||0); }
 function setArmDur(id,v){ if(id===P.weapon) P.dur=v; else prog.arms[id]=v; }
 function equipArm(id){ if(!WEAPONS[id]||!(id in prog.arms)||id===P.weapon) return; if(P.weapon) prog.arms[P.weapon]=P.dur; P.weapon=id; P.dur=prog.arms[id]; refreshWeaponMesh(); toast(`${WEAPONS[id].name}に持ち替えた`); }
-function equipUnarmed(){ if(P.weapon==null) return; if(!swapAllowed()){ sfx('deny'); return; } prog.arms[P.weapon]=P.dur; P.weapon=null; P.dur=0; refreshWeaponMesh(); toast('素手に持ち替えた'); } // v0.41：空枠＝素手
+function equipUnarmed(){ if(P.weapon==null) return; if(!swapAllowed()){ sfx('deny'); return; } prog.arms[P.weapon]=P.dur; P.weapon=null; P.dur=0; refreshWeaponMesh(); toast('素手に持ち替えた'); } // v0.45：空枠＝素手
 function cycleArm(){ const L=armList(); if(L.length<2) return; if(!swapAllowed()){ sfx('deny'); return; } const i=L.indexOf(P.weapon); const was=P.weapon; equipArm(L[(i+1)%L.length]); if(P.weapon!==was) onSwap(); }
-function armGain(id,equip=true){ prog.arms[id]=WEAPONS[id].maxDur; if(equip){ if(P.weapon) prog.arms[P.weapon]=P.dur; /* v0.41 */ P.weapon=id; P.dur=WEAPONS[id].maxDur; refreshWeaponMesh(); } }
+function armGain(id,equip=true){ prog.arms[id]=WEAPONS[id].maxDur; if(equip){ if(P.weapon) prog.arms[P.weapon]=P.dur; /* v0.45 */ P.weapon=id; P.dur=WEAPONS[id].maxDur; refreshWeaponMesh(); } }
 function armUpgrade(from,to){ delete prog.arms[from]; prog.arms[to]=WEAPONS[to].maxDur; if(P.weapon===from){ P.weapon=to; P.dur=WEAPONS[to].maxDur; refreshWeaponMesh(); } }
 // 木を切るのに使う道具（いちばん切れる物。刃こぼれした物は半分の力）
 function f5BestTool(){ let best=null,bp=0; for(const id of armList()){ const c=(WEAPONS[id].chop||0)*(armDur(id)>0?1:0.5); if(c>bp){ bp=c; best=id; } } return best; }
@@ -2477,8 +2476,11 @@ function f5QuarryPower(){ const t=f5QuarryTool(); return t?TOOLS[t].quarry*(prog
 function toolGain(id){ prog.f5.tools[id]=TOOLS[id].maxDur; }
 // 手に持つ物の見た目（作ったら使い回す）
 const WMESH={};
-function showWeapon(id){ if(!id){ if(weaponMesh) weaponMesh.visible=false; F4.toolShown=false; return; } // v0.41：素手は手に表示しない
-  if(!WMESH[id]){ const m=makeWeapon(id); m.scale.setScalar(1.4); WMESH[id]=m; } if(weaponMesh!==WMESH[id]){ const par=(weaponMesh&&weaponMesh.parent)||weaponPivot; if(weaponMesh) par.remove(weaponMesh); weaponMesh=WMESH[id]; par.add(weaponMesh); weaponMesh.position.set(0,0,0); weaponMesh.rotation.set(0,0,0); weaponMesh.visible=true; } F4.toolShown=id!==P.weapon; } // v0.41：再装備で必ず表示を戻す
+function showWeapon(id){ if(!id||!WEAPONS[id]){ if(weaponMesh) weaponMesh.visible=false; F4.toolShown=false; return; } // 素手・不正IDは手に表示しない
+  if(!WMESH[id]){ const m=makeWeapon(id); m.scale.setScalar(1.4); WMESH[id]=m; }
+  if(weaponMesh!==WMESH[id]){ const par=(weaponMesh&&weaponMesh.parent)||weaponPivot; if(weaponMesh) par.remove(weaponMesh); weaponMesh=WMESH[id]; par.add(weaponMesh); weaponMesh.position.set(0,0,0); weaponMesh.rotation.set(0,0,0); }
+  // 表示復帰はモデルの付け替え有無と独立させる。同じキャッシュモデルを再装備しても透明のままにならない。
+  weaponMesh.visible=true; F4.toolShown=id!==P.weapon; }
 // ---- 新しい武器・道具の形（手で握る位置が原点、刃先は下へ） ----
 function makeArm(id){ const w=new THREE.Group();
   if(id==='axeStone'){ // 鍬の柄に、打ち欠いた石を縄で縛りつけた簡素な斧
@@ -2742,8 +2744,8 @@ const WPOISE={nata1:1,nata2:1.1,nata3:1.2,axeStone:1.6,axeIron:1.9,club:1.5,bamb
 const MV=o=>Object.assign({kind:'light',mul:1,poise:6,stam:0,lunge:0.35,shape:'slash',arc:2.0,cancel:0,chain:null,next:null,heavy:null,anim:'sweepR',name:''},o);
 const MOVES={
   // 鉈：扱いやすい3段。早い段からの派生は速く小さく、遅い段からは広く重い
-  N1:MV({name:'横薙ぎ',dur:.36,a0:.11,a1:.20,chain:.16,poise:6,anim:'sweepR',next:'N2',heavy:'NH1'}), // v0.41：予備0.11秒（溜めが視認できる）
-  N2:MV({name:'返し',dur:.36,a0:.11,a1:.20,chain:.16,poise:6,anim:'sweepL',next:'N3',heavy:'NH2'}), // v0.41：同上
+  N1:MV({name:'横薙ぎ',dur:.36,a0:.11,a1:.20,chain:.16,poise:6,anim:'sweepR',next:'N2',heavy:'NH1'}), // v0.45：予備0.11秒（溜めが視認できる）
+  N2:MV({name:'返し',dur:.36,a0:.11,a1:.20,chain:.16,poise:6,anim:'sweepL',next:'N3',heavy:'NH2'}), // v0.45：同上
   N3:MV({name:'袈裟斬り',dur:.46,a0:.12,a1:.22,chain:.3,mul:1.5,poise:10,lunge:.6,anim:'spinUp'}),
   NH0:MV({name:'振り下ろし',kind:'heavy',dur:.78,a0:.36,a1:.48,chain:.62,cancel:.48,poise:26,stam:20,arc:2.5,lunge:.6,anim:'slam'}),
   NH1:MV({name:'踏み込み斬り',kind:'heavy',dur:.5,a0:.16,a1:.26,chain:.4,cancel:.26,mul:.8,poise:16,stam:20,lunge:1.2,arc:2.0,anim:'lunge'}),
@@ -2793,7 +2795,7 @@ function wantsChop(){ if(P.chopReq) return true; if(enemies.some(e=>e.state!=='d
 function makeAtk(id,sp){ const mv=MOVES[id]; return {id,mv,kind:mv.kind,unw:mv.unw,t:0,sp,hit:new Set(),landed:false,combo:animCombo(mv),dur:mv.dur/sp,a0:mv.a0/sp,a1:mv.a1/sp,
   chainT:(mv.chain!=null?mv.chain:mv.a1)/sp,cancelT:mv.cancel/sp,arc:mv.arc,mul:mv.mul,lungeV:mv.lunge/Math.max(0.05,mv.a1/sp)}; }
 // ---- 予約と回避の取り扱い（毎フレーム） ----
-function takeBuffer(){ const b=P.buffer; P.buffer=null; return b&&S.time-b.t<=BUF_T?b.k:null; }
+function takeBuffer(){ const b=P.buffer; P.buffer=null; return b&&S.time-b.t<=BUF_T?b:null; }
 function endAttack(a){ if(!a.chop){ P.lastMv=a.id; P.lastMvEnd=S.time; } P.atk=null; heavyRing.visible=false; }
 // ---- スタミナの輪（主人公の左下。満タンのときは消す） ----
 function updateStRing(){ const sr=$('stRing'); if(!sr) return; const deny=S.time-F6.denyT<0.8; const show=S.mode==='playing'&&!P.dead&&(P.st<STAM.max-0.5||deny);
@@ -2802,7 +2804,7 @@ function updateStRing(){ const sr=$('stRing'); if(!sr) return; const deny=S.time
   const arc=sr.querySelector('.f'); arc.style.strokeDashoffset=String(94.25*(1-P.st/STAM.max));
   sr.className=deny&&Math.floor(S.time*10)%2===0?'deny':P.exh?'exh':''; }
 // ---- 武器の根元と先端（武器の形の中での位置。先端は刃先・穂先） ----
-const WTIP={nata1:[[0,-.35,0],[0,-1.2,.08]],nata2:[[0,-.35,0],[0,-1.28,.08]],nata3:[[0,-.35,0],[0,-1.34,.08]],axeStone:[[0,-.3,0],[0,-.9,.3]],axeIron:[[0,-.35,0],[0,-1.05,.31]],club:[[0,-.4,0],[0,-1.3,0]],bamboo:[[0,-.9,0],[0,-2.12,0]],spear:[[0,-.8,0],[0,-1.95,0]],hammerStone:[[0,-.8,0],[0,-1.1,0]],pickIron:[[0,-.85,0],[0,-1.2,.3]],fist:[[0,-.08,0],[0,-.16,.05]],foot:[[0,-.05,0],[0,-.55,0]]}; // v0.41：素手の当たりは拳／足先の短い区間
+const WTIP={nata1:[[0,-.35,0],[0,-1.2,.08]],nata2:[[0,-.35,0],[0,-1.28,.08]],nata3:[[0,-.35,0],[0,-1.34,.08]],axeStone:[[0,-.3,0],[0,-.9,.3]],axeIron:[[0,-.35,0],[0,-1.05,.31]],club:[[0,-.4,0],[0,-1.3,0]],bamboo:[[0,-.9,0],[0,-2.12,0]],spear:[[0,-.8,0],[0,-1.95,0]],hammerStone:[[0,-.8,0],[0,-1.1,0]],pickIron:[[0,-.85,0],[0,-1.2,.3]],fist:[[0,-.08,0],[0,-.16,.05]],foot:[[0,-.05,0],[0,-.55,0]]}; // v0.45：素手の当たりは拳／足先の短い区間
 const _wb=new THREE.Vector3(), _wt=new THREE.Vector3();
 function weaponWorld(){ const w=WTIP[(a.chop&&a.toolId)||P.weapon]||WTIP.nata1; weaponMesh.updateWorldMatrix(true,false); _wb.set(...w[0]); _wt.set(...w[1]); weaponMesh.localToWorld(_wb); weaponMesh.localToWorld(_wt); return [_wb,_wt]; }
 // 主人公から見た位置（前・右・地面からの高さ）
@@ -2810,31 +2812,31 @@ function relP(v){ const dx=v.x-P.x, dz=v.z-P.z, s=Math.sin(P.facing), c=Math.cos
 // ================= F6-B：系統ごとの振りと、武器の軌跡での命中判定 =================
 // 武器の向きを技ごとの曲線で決め、見た目の武器もその位置に置く。当たりは同じ曲線から求めるので、見た目と必ず一致する。
 // 向き：phi＝水平の角度（0＝正面、＋＝左、−＝右）、th＝上下の角度（＋＝上）。ext＝握りを前へ押し出す量(m)。
-Object.assign(MOVES,{ // v0.41：素手。軽=パンチ（素早い2段）・強=キック（重い一発）。ダメージは UNARMED_* 定数
+Object.assign(MOVES,{ // v0.45：素手。軽=パンチ（素早い2段）・強=キック（重い一発）。ダメージは UNARMED_* 定数
   UP1:MV({name:'突きパンチ',dur:.3,a0:.09,a1:.17,chain:.16,poise:3,lunge:.25,arc:1.6,anim:'punch',unw:'fist'}),
   UP2:MV({name:'返しパンチ',dur:.32,a0:.08,a1:.16,chain:.16,poise:4,lunge:.25,arc:1.6,anim:'punch2',unw:'fist'}),
   UK1:MV({name:'前蹴り',kind:'heavy',dur:.5,a0:.16,a1:.26,chain:.3,poise:6,lunge:.35,arc:1.4,anim:'kick',unw:'foot'}),
 });
 const D2R=Math.PI/180, eoQ=k=>1-(1-k)*(1-k), eiQ=k=>k*k, LA=(a,b,k)=>a+(b-a)*k;
-const whp=k=>{const v=k*k*(1.6-0.6*k); return v>1?1:v;}; // v0.41：鞭の加速（速度がインパクト直前〜直後で最大）
-const ovs=k=>1-Math.exp(-5*k)*Math.cos(7*k); // v0.41：減衰付きオーバーシュート（振り抜きの余韻）
+const whp=k=>{const v=k*k*(1.6-0.6*k); return v>1?1:v;}; // v0.45：鞭の加速（速度がインパクト直前〜直後で最大）
+const ovs=k=>1-Math.exp(-5*k)*Math.cos(7*k); // v0.45：減衰付きオーバーシュート（振り抜きの余韻）
 const SWING={
-  sweepR:(p,k)=>p===0?[LA(-40,-118,eoQ(k)),14,0]:p===1?[LA(-118,107,whp(k)),-16,0]:[LA(107,72,ovs(k)),LA(-16,-42,k),0], // v0.41：溜め→鞭→振り抜きの余韻
-  sweepL:(p,k)=>p===0?[LA(40,118,eoQ(k)),14,0]:p===1?[LA(118,-107,whp(k)),-16,0]:[LA(-107,-72,ovs(k)),LA(-16,-42,k),0], // v0.41：同上（左薙ぎ）
+  sweepR:(p,k)=>p===0?[LA(-40,-118,eoQ(k)),14,0]:p===1?[LA(-118,107,whp(k)),-16,0]:[LA(107,72,ovs(k)),LA(-16,-42,k),0], // v0.45：溜め→鞭→振り抜きの余韻
+  sweepL:(p,k)=>p===0?[LA(40,118,eoQ(k)),14,0]:p===1?[LA(118,-107,whp(k)),-16,0]:[LA(-107,-72,ovs(k)),LA(-16,-42,k),0], // v0.45：同上（左薙ぎ）
   spinUp:(p,k)=>p===0?[LA(-60,-140,k),-30,0]:p===1?[LA(-140,80,eoQ(k)),LA(-35,55,k),0]:[LA(80,40,k),LA(55,10,k),0],
   lunge:(p,k)=>p===0?[LA(-50,-80,k),5,0]:p===1?[LA(-80,40,eoQ(k)),-10,LA(0,.35,k)]:[LA(40,20,k),-25,LA(.35,0,k)],
-  slam:(p,k)=>p===0?[0,LA(20,132,eiQ(k)),0]:p===1?[0,LA(132,-38,whp(k)),0]:[0,LA(-38,-30,ovs(k)),0], // v0.41：斧の重量感（深く溜めて鞭で落とす）
-  chop:(p,k)=>p===0?[LA(-20,-48,eiQ(k)),LA(30,115,eiQ(k)),0]:p===1?[LA(-48,30,k),LA(115,-35,whp(k)),0]:[30,LA(-35,-45,ovs(k)),0], // v0.41：同上
+  slam:(p,k)=>p===0?[0,LA(20,132,eiQ(k)),0]:p===1?[0,LA(132,-38,whp(k)),0]:[0,LA(-38,-30,ovs(k)),0], // v0.45：斧の重量感（深く溜めて鞭で落とす）
+  chop:(p,k)=>p===0?[LA(-20,-48,eiQ(k)),LA(30,115,eiQ(k)),0]:p===1?[LA(-48,30,k),LA(115,-35,whp(k)),0]:[30,LA(-35,-45,ovs(k)),0], // v0.45：同上
   overhead:(p,k)=>p===0?[0,LA(30,115,eoQ(k)),0]:p===1?[0,LA(115,-40,eiQ(k)),0]:[0,-40,0],
   bigSweep:(p,k)=>p===0?[LA(-60,-155,eoQ(k)),LA(10,30,k),0]:p===1?[LA(-155,120,eoQ(k)),-10,0]:[LA(120,80,k),LA(-10,-35,k),0],
   upper:(p,k)=>p===0?[LA(-10,-25,k),LA(-20,-55,eoQ(k)),0]:p===1?[LA(-25,5,k),LA(-55,80,eoQ(k)),0]:[5,LA(80,50,k),0],
   spin:(p,k)=>p===0?[LA(-60,-100,k),5,0]:p===1?[LA(-100,260,k),-12,0]:[LA(260,230,k),LA(-12,-35,k),0],
-  thrust:(p,k)=>p===0?[0,-6,LA(0,-.4,eoQ(k))]:p===1?[0,-8,LA(-.4,.12,whp(k))]:[0,-8,LA(.12,0,k)], // v0.41：突きは伸びきりで最速
-  thrust2:(p,k)=>p===0?[6,-4,LA(0,-.4,eoQ(k))]:p===1?[4,-8,LA(-.4,.12,whp(k))]:[4,-8,LA(.12,0,k)], // v0.41：同上
-  bigThrust:(p,k)=>p===0?[0,-4,LA(0,-.6,eiQ(k))]:p===1?[0,-8,LA(-.6,.4,whp(k))]:[0,-8,LA(.4,0,k)], // v0.41：踏み込み突き（深く溜めて鋭く）
+  thrust:(p,k)=>p===0?[0,-6,LA(0,-.4,eoQ(k))]:p===1?[0,-8,LA(-.4,.12,whp(k))]:[0,-8,LA(.12,0,k)], // v0.45：突きは伸びきりで最速
+  thrust2:(p,k)=>p===0?[6,-4,LA(0,-.4,eoQ(k))]:p===1?[4,-8,LA(-.4,.12,whp(k))]:[4,-8,LA(.12,0,k)], // v0.45：同上
+  bigThrust:(p,k)=>p===0?[0,-4,LA(0,-.6,eiQ(k))]:p===1?[0,-8,LA(-.6,.4,whp(k))]:[0,-8,LA(.4,0,k)], // v0.45：踏み込み突き（深く溜めて鋭く）
   multiThrust:(p,k)=>p===0?[0,-6,LA(0,-.3,k)]:p===1?[(Math.floor(k*3)%2?5:-5),-8,-.4+.55*Math.abs(Math.sin(k*3*Math.PI))]:[0,-8,LA(.3,0,k)],
   lowSweep:(p,k)=>p===0?[LA(-40,-100,k),-30,0]:p===1?[LA(-100,100,eoQ(k)),-38,0]:[100,LA(-38,-45,k),0],
-  // v0.41：素手。拳は胸の高さ（th≈-12°）で短く、キックは腰の高さを真っ直ぐ突き出す
+  // v0.45：素手。拳は胸の高さ（th≈-12°）で短く、キックは腰の高さを真っ直ぐ突き出す
   punch:(p,k)=>p===0?[LA(-15,-32,eoQ(k)),LA(10,-10,k),LA(0,.15,k)]:p===1?[LA(-32,20,whp(k)),-12,LA(.15,.3,whp(k))]:[LA(20,8,ovs(k)),LA(-12,-4,k),LA(.3,0,k)],
   punch2:(p,k)=>p===0?[LA(15,32,eoQ(k)),LA(10,-10,k),LA(0,.15,k)]:p===1?[LA(32,-20,whp(k)),-12,LA(.15,.3,whp(k))]:[LA(-20,-8,ovs(k)),LA(-12,-4,k),LA(.3,0,k)],
   kick:(p,k)=>p===0?[0,LA(6,-8,eoQ(k)),LA(0,-.15,eoQ(k))]:p===1?[0,-14,LA(-.15,.45,whp(k))]:[0,LA(-14,-4,ovs(k)),LA(.45,0,k)],
@@ -2853,7 +2855,7 @@ function swingAt(a,phD,thD,ext,out,lift){
   const [dx,dz]=toW(lx,lz); out[3].set(dx,ly,dz);
   const gy=groundH(P.x,P.z)+lift; const [sx,sz]=toW(-SH.r,SH.f+(a.fwdOff||0));
   const hx=P.x+sx+dx*(ARM+ext), hy=gy+SH.y+(a.rootY||0)+ly*(ARM+ext), hz=P.z+sz+dz*(ARM+ext); out[0].set(hx,hy,hz);
-  const w=WTIP[a.unw]||WTIP[P.weapon]||WTIP.nata1; const b=-w[0][1]*WSC, tp=-w[1][1]*WSC; // v0.41：素手は技ごとの長さ
+  const w=WTIP[a.unw]||WTIP[P.weapon]||WTIP.nata1; const b=-w[0][1]*WSC, tp=-w[1][1]*WSC; // v0.45：素手は技ごとの長さ
   out[1].set(hx+dx*b,hy+ly*b,hz+dz*b); out[2].set(hx+dx*tp,hy+ly*tp,hz+dz*tp);
   // 斜面：振りの面を地面の傾きに合わせて傾ける（下り坂の小さい獣にも届く）
   // v0.25.1：急な下りでは2m先の傾きだけでは足りないので、1m より先の点はその点の真下の地面の傾きも見る（下りは −1.0 まで）
@@ -2993,8 +2995,7 @@ function f7Cap(k){ return F7.spoil?Infinity:FOODS[k].life*(1-F7.warn)-1; }
 function f7Usable(k,b){ return !F7.spoil||b[1]<FOODS[k].life; }
 // 使える数（where: 'hand'|'store'）
 function f7Count(k,where='hand'){ let n=0; for(const b of prog.f7[where][k]) if(f7Usable(k,b)) n+=b[0]; return n; }
-// 束を古い順（経過時間の大きい順）に並べ、60秒以内の差はまとめる。まとめるときは古い方の経過時間にそろえる
-function f7Norm(arr){
+// 束を古い順（経過時間の大きい順）に並べ、60秒以内の差はまとめる。まとめるときは古い方の経過時間にそろえるfunction f7Norm(arr){
   const a=arr.filter(b=>b[0]>0).sort((x,y)=>y[1]-x[1]); const out=[];
   for(const b of a){ const l=out[out.length-1]; if(l&&l[1]-b[1]<=F7.merge) l[0]+=b[0]; else out.push([b[0],b[1]]); }
   while(out.length>F7.maxB){ let bi=0,bd=Infinity; for(let i=0;i<out.length-1;i++){ const d=out[i][1]-out[i+1][1]; if(d<bd){bd=d;bi=i;} } out[bi][0]+=out[bi+1][0]; out.splice(bi+1,1); }
@@ -3553,7 +3554,7 @@ function f10PreE(e,dt){ if(e.state!=='flee') return false;
   if(d<1.2||e.st>9){ if(d>4&&e.st>9){ e.x=e.home.x; e.z=e.home.z; } setState(e,'idle'); e.f10i={m:'pause',t:4}; e.f10pose='eat'; e.f10t=null; return true; } // 着いたら食べる仕草。たどり着けなければ出現地点へ戻す
   steer(e,t.x,t.z,ET.monkey.speed*0.9,dt); return true; }
 function f10Stole(e){ if(!f10Has('E')||!f10Wild(e)) return false; setState(e,'flee'); e.f10t=f10FleeTarget(e); return true; }
-// ---- v0.41：町に残る獣の痕跡（蹄跡・荒らされた畑）。プレイヤーの索敵と対策の判断材料。軽量メッシュ＋寿命で消す ----
+// ---- v0.45：町に残る獣の痕跡（蹄跡・荒らされた畑）。プレイヤーの索敵と対策の判断材料。軽量メッシュ＋寿命で消す ----
 const TRK36=[];
 function trkDisc(r,color,op){ const m=new THREE.Mesh(new THREE.CircleGeometry(r,10).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color,transparent:true,opacity:op,depthWrite:false})); return m; }
 function spawnBoarTracks(e){
@@ -3661,7 +3662,7 @@ function f11Browser(){ const u=navigator.userAgent; return /Edg\//.test(u)?'Edge
 function f11RecStart(){ F11.rec={t:0,n:0,minFps:1e9,tri:0,calls:0,x:P.x,z:P.z}; toast('計測を始める（遊んでいる30秒）'); }
 function f11RecEnd(){ const r=F11.rec; F11.rec=null; const avg=r.n/Math.max(r.t,0.001);
   const sz=safeZoneAt(r.x,r.z,0); const place=sz?sz.name:(zoneNow==='danger'?'危険区域':'警戒区域');
-  F11.last=`v0.41 | ${f11Browser()} | ${innerWidth}x${innerHeight} ${renderer.getPixelRatio()}x 精度${LOWQ?'低':'標準'} | ${place}(${Math.round(r.x)},${Math.round(r.z)}) | ${r.t.toFixed(0)}秒 | 平均 ${avg.toFixed(0)} 最低 ${Math.round(r.minFps)} | 三角形 ${Math.round(r.tri/r.n/1000)}k 描画 ${Math.round(r.calls/r.n)} | 影 ${renderer.shadowMap.enabled?'オン':'オフ'}`;
+  F11.last=`v0.45.1 | ${f11Browser()} | ${innerWidth}x${innerHeight} ${renderer.getPixelRatio()}x 精度${LOWQ?'低':'標準'} | ${place}(${Math.round(r.x)},${Math.round(r.z)}) | ${r.t.toFixed(0)}秒 | 平均 ${avg.toFixed(0)} 最低 ${Math.round(r.minFps)} | 三角形 ${Math.round(r.tri/r.n/1000)}k 描画 ${Math.round(r.calls/r.n)} | 影 ${renderer.shadowMap.enabled?'オン':'オフ'}`;
   toast('計測を記録した（一時停止の画面で見られる）'); }
 // 一時停止の画面：計測表示の切り替え・記録
 function f11Pause(){ const b=$('btnPerf'), r=$('btnPerfRec'), out=$('perfOut'); if(!b) return;
@@ -3993,8 +3994,7 @@ function shrineHall(g,x,z,rot,w,d,old){ const s=new THREE.Group(); const wood=ol
   for(let i=0;i<6;i++) s.add(mesh(G.box,mat(0x4a3424),-w*0.2+i*w*0.08,1.4,d/2+0.1,0.04,1.6,0.04));
   const r1=mesh(roofGeo(d+2.0,w+1.6,1.4,0.25),mat(roof),0,3.35,0); r1.rotation.y=Math.PI/2; s.add(J(r1,0.06));
   if(!old){ const r2=mesh(roofGeo(d+0.6,w+0.4,1.3,0.22),mat(roof),0,4.55,0); r2.rotation.y=Math.PI/2; s.add(J(r2,0.06)); for(let i=0;i<14;i++) s.add(mesh(G.box,mat(0xf2ead8),-w/2-0.6+i*(w+1.2)/13,3.25,d/2+0.9,0.12,0.1,0.14)); }
-  for(const sx of [-1,1]) s.add(J(mesh(lathe([[0.16,0],[0.15,2.6],[0,2.62]],8),mat(old?0x3a3430:0x9a8a74),sx*w*0.3,0.6,d/2+1.2),0.1));
-  const rope=old?0xb8a468:0xe2b03a; const rp=mesh(G.cyl8,mat(rope),0,2.7,d/2+1.25,0.08,w*0.6,0.08); rp.rotation.z=Math.PI/2; s.add(rp); for(const k of [-1,0,1]) s.add(mesh(G.cone6,mat(rope),k*w*0.18,2.45,d/2+1.25,0.12,0.35,0.12));
+  for(const sx of [-1,1]) s.add(J(mesh(lathe([[0.16,0],[0.15,2.6],[0,2.62]],8),mat(old?0x3a3430:0x9a8a74),sx*w*0.3,0.6,d/2+1.2),0.1));  const rope=old?0xb8a468:0xe2b03a; const rp=mesh(G.cyl8,mat(rope),0,2.7,d/2+1.25,0.08,w*0.6,0.08); rp.rotation.z=Math.PI/2; s.add(rp); for(const k of [-1,0,1]) s.add(mesh(G.cone6,mat(rope),k*w*0.18,2.45,d/2+1.25,0.12,0.35,0.12));
   s.position.set(x,groundH(x,z),z); s.rotation.y=rot; g.add(s); addOBox(x,z,w+1.4,d+1.4,-rot+Math.PI/2,'house',{h:groundH(x,z)+5}); }
 function buildLandmarks(){
   const g=new THREE.Group();
@@ -4551,7 +4551,12 @@ function softPose(m,dt,opt={}){
   m.legs.forEach((l,i)=>{ const sh=l.userData.shin; sh.rotation.x=(opt.knee||0.08)+Math.max(0,l.rotation.x)*0.9+Math.max(0,-l.rotation.x)*0.25+(opt.kneeAdd?opt.kneeAdd[i]:0); });
 }
 function makeWeapon(id){
-  if(id==='axeStone'||id==='axeIron'||id==='club'||id==='bamboo'||id==='hammerStone'||id==='pickIron') return makeArm(id);
+  if(id==='axeStone'||id==='axeIron'||id==='club'||id==='bamboo'||id==='hammerStone'||id==='pickIron'){ const g=makeArm(id);
+    if(id==='axeStone'||id==='axeIron'){ // v0.45：斧の刃先を明るく切り出し、柄との締め輪を追加（鉈と明確に別物の見た目へ）
+      const iron=id==='axeIron';
+      const edge=mesh(G.box,mat(0xeef2f4),0,iron?-1.0:-0.88,iron?0.3:0.28,iron?0.06:0.1,iron?0.24:0.12,0.035); edge.rotation.x=0.06; g.add(outline(edge,0.03));
+      g.add(mesh(G.cyl8,mat(0x4a443c),0,iron?-0.66:-0.6,0.09,0.075,0.12,0.075)); }
+    return g; }
   const w=new THREE.Group();
   if(id==='spear'){
     w.add(mesh(G.cyl8,mat(0x7a5638),0,-0.6,0,0.04,2.4,0.04));
@@ -4564,6 +4569,7 @@ function makeWeapon(id){
     for(let i=0;i<4;i++) ad(w,mesh(G.torus,mat(lv>1?0xb0482e:0xd8c8a0),0,-0.02-i*0.07,0,0.055,0.055,0.06)).rotation.x=Math.PI/2;
     w.add(mesh(G.cyl8,mat(0xd8b04a),0,-0.33,0,0.07,0.04,0.07));
     const bl=mesh(rbox(0.05,0.8+lv*0.08,0.3+lv*0.03,0.02),mat(lv===3?0xd0d6da:lv===2?0xb8bec2:0xa0a6a8),0,-0.78-lv*0.04,0.06); w.add(outline(bl,0.05));
+    const kk=mesh(G.cyl8,mat(lv===3?0xb0a890:0x9a9484),0,-0.44-lv*0.04,0.055,0.075,0.14,0.075); kk.rotation.x=Math.PI/2; w.add(kk); // v0.45：刃元の口金
     w.add(mesh(G.box,mat(0xf4f6f8),0.0,-0.78-lv*0.04,0.22+lv*0.015,0.055,0.78+lv*0.08,0.04));
     if(lv<3) for(const [yy,zz] of [[-0.62,0.235],[-0.95,0.235]]) w.add(mesh(G.box,mat(0x6a6e70),0.0,yy-lv*0.04,zz+lv*0.015,0.06,0.05,0.035)); // 刃こぼれ
     for(let i=0;i<5;i++) w.add(mesh(G.box,mat(0x8a8e90),0.03,-0.5-i*0.12-lv*0.04,0.0,0.004,0.03,0.18)); // 鍛え目
@@ -4763,6 +4769,8 @@ const WEAPONS={
  club:{name:'木の棍棒',light:11,heavy:32,range:2.6,maxDur:140,chop:0},
  bamboo:{name:'竹槍',light:13,heavy:30,range:3.4,maxDur:80,chop:0},
 };
+// 装備武器の参照を一元化。null／不正なIDは素手として扱い、未定義参照を防ぐ。
+function equippedWeapon(){ return P.weapon&&WEAPONS[P.weapon]?WEAPONS[P.weapon]:null; }
 let inv, prog, stats;
 function freshState(){
   inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,onigiri:1,bento:0,fang:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0};
@@ -4779,13 +4787,22 @@ const pm=makeHuman({scale:0.9,tall:1.22,legLen:1.8,armLen:1.55,girth:0.8,waist:0
     bottom:{col:0x4a4e44,col2:0x3e4238,top:0.47,kneePad:0x2c2e30,cargo:true,t:0.028},shoes:{kind:'boots',col:0x5a3e2c,col2:0x7a5a40},
     belt:{col:0x2a2420,pouch:0x5a5a48,buckle:true,y:0.405},hair:{style:'short',col:0x2a1e16},band:{col:0xf4f1e8,pat:0x2f5f9a}}});
 scene.add(pm.g);
+{ // v0.45：肩の丸み（革色の球で上腕の付け根を包む）と腰ベルト・小物。武器の手（userData.hand）が追従する実績のある親へ付けるので可動に追従する
+  const leather=mat(0x6e5640), brass=mat(0xb8a05a);
+  for(const arm of [pm.armR,pm.armL]){ if(!arm) continue;
+    const sh=mesh(G.sph,leather,0,0.01,0,0.15,0.12,0.14); arm.add(sh); arm.add(outline(sh,0.03)); } // 肩
+  const belt=new THREE.Group(); pm.body.add(belt);
+  belt.add(mesh(G.cyl8,leather,0,0.02,0,0.31,0.08,0.27)); // 腰回りの革
+  belt.add(mesh(G.box,brass,0.09,0.02,0.26,0.08,0.07,0.05)); // 真鍮のバックル
+  belt.add(mesh(G.box,leather,0.2,-0.08,0.18,0.09,0.15,0.045)); // 腰の小物入れ
+}
 const weaponPivot=new THREE.Group(); weaponPivot.rotation.x=-0.85; pm.armR.userData.hand.add(weaponPivot);
 let weaponMesh=null;
-// ---- v0.41：鉈は腰・斧は背中。装備していない所持武器だけを表示（装備中は手・斬撃中は武器リグ） ----
+// ---- v0.45：鉈は腰・斧は背中。装備していない所持武器だけを表示（装備中は手・斬撃中は武器リグ） ----
 const HOL={hip:null,back:null,mesh:{}};
 function buildHolsters(){
   if(HOL.hip) return;
-  // v0.41：pm.body は腰の回転（hipX/Y/Z）・つぶし（sq）・回避の前転（hipX=2π）を毎フレーム受ける。
+  // v0.45：pm.body は腰の回転（hipX/Y/Z）・つぶし（sq）・回避の前転（hipX=2π）を毎フレーム受ける。
   // そこに親だと攻撃・回避中に鞘が体から離れて見えるため、root 側に一度だけ付け替える（毎フレーム補正なし）。
   pm.g.updateMatrixWorld(true);
   const bp=pm.body.getWorldPosition(new THREE.Vector3()); pm.root.worldToLocal(bp); // 腰の静止位置を root 基準に1回だけ写す
@@ -4794,7 +4811,7 @@ function buildHolsters(){
   for(const g of [HOL.hip,HOL.back]) g.add(mesh(G.box,mat(0x453626),0.03,-0.3,-0.05,0.09,0.62,0.11)); // 簡素な革と木の鞘
   for(const id of ['nata1','nata2','nata3','axeIron','axeStone']){ const m=makeWeapon(id); m.scale.setScalar(1.15); m.visible=false; HOL.mesh[id]=m; }
 }
-function updHolster(){ if(typeof prog==='undefined'||!prog) return; // v0.41：初期化前に呼ばれても無害化
+function updHolster(){ if(typeof prog==='undefined'||!prog) return; // v0.45：初期化前に呼ばれても無害化
   buildHolsters();
   const fam=l=>l.find(id=>prog.arms[id]!=null);
   const nata=fam(['nata3','nata2','nata1']), axe=fam(['axeIron','axeStone']); // 各系統で一番良い物だけ
@@ -4802,8 +4819,8 @@ function updHolster(){ if(typeof prog==='undefined'||!prog) return; // v0.41：�
   const put=(g,id)=>{ if(!id||id===P.weapon) return; const m=HOL.mesh[id]; if(m.parent!==g) g.add(m); m.position.set(0,0.06,0.06); m.visible=true; };
   put(HOL.hip,nata); put(HOL.back,axe);
 }
-function refreshWeaponMesh(){ showWeapon(P.weapon); updHolster(); } // v0.41：流線は刃先の実位置から毎フレーム作るので、武器別の下準備は不要
-// ---- v0.41：斬撃の流線。地面のリング板をやめ、刃の根元〜先端の軌跡をCatmull-Rom補間した滑らかな帯にする。
+function refreshWeaponMesh(){ showWeapon(P.weapon); updHolster(); } // v0.45：流線は刃先の実位置から毎フレーム作るので、武器別の下準備は不要
+// ---- v0.45：斬撃の流線。地面のリング板をやめ、刃の根元〜先端の軌跡をCatmull-Rom補間した滑らかな帯にする。
 // 頂点は全て事前確保（毎フレームの新規確保なし）、加算合成＋両端で細く消える明るさグラデーション。----
 const SLASH={n:24,head:0,cnt:0,pts:[],geo:null,mesh:null,mat:null,out:null};
 const _mB=new THREE.Vector3(),_mT=new THREE.Vector3();
@@ -4824,7 +4841,7 @@ function crMid(o,p0,p1,p2,p3){ return o.set(0,0,0).addScaledVector(p1,9).addScal
 function slashTick(atk,dt){
   slashInit();
   let did=false;
-  if(atk&&!atk.chop&&P.weapon){ const [ph]=phaseAt(atk,atk.t); if(ph===1){ // v0.41：素手は流線を出さない
+  if(atk&&!atk.chop&&P.weapon){ const [ph]=phaseAt(atk,atk.t); if(ph===1){ // v0.45：素手は流線を出さない
     const s=SLASH.pts[SLASH.head];
     swingPts(atk,atk.t,SLASH.out); s.b.copy(SLASH.out[1]); s.t.copy(SLASH.out[2]);
     s.c=atk.kind==='heavy'?[1,0.8,0.42]:[1,0.95,0.8];
@@ -4976,8 +4993,7 @@ function setFence(gp,type,hp){
   const f=gp.fence;
   if(!type){ f.type=null; f.hp=0; f.max=0; f.broken=false; }
   else { f.type=type; f.max=type==='stake'?260:120; f.hp=clamp(hp==null?f.max:hp,0,f.max); f.broken=f.hp<=0; }
-  gp.col.active=!!f.type&&!f.broken;
-  fenceVisual(gp);
+  gp.col.active=!!f.type&&!f.broken;  fenceVisual(gp);
 }
 function damageFence(gp,dmg){
   const f=gp.fence; if(!f.type||f.broken) return;
@@ -5170,11 +5186,11 @@ window.addEventListener('keydown',e=>{
   keys.add(k);
   if(k==='e') interact();
   else if(k===' ') tryDodge();
-  else if(k==='j') tryAttack('light');
-  else if(k==='k') tryAttack('heavy');
+  else if(k==='j'){ mouse.active=false; tryAttack('light'); }
+  else if(k==='k'){ mouse.active=false; tryAttack('heavy'); }
   else if(k==='q') eat('onigiri');
-  else if(k>='1'&&k<='9') hotbarPick(+k-1); // v0.41：手持ちバーの選択（武器は装備、食べ物は食べる）
-  else if(k==='0') hotbarPick(9); // v0.41：10番目（インベントリ）
+  else if(k>='1'&&k<='9') hotbarPick(+k-1); // v0.45：手持ちバーの選択（武器は装備、食べ物は食べる）
+  else if(k==='0') hotbarPick(9); // v0.45：10番目（インベントリ）
   else if(k==='c'){ cam.yaw=P.facing; cam.manualT=0.8; }
 });
 window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
@@ -5185,14 +5201,19 @@ cv.addEventListener('pointermove',e=>{ if(e.pointerType!=='mouse') return; if(e.
 cv.addEventListener('pointerdown',e=>{ if(e.pointerType!=='mouse') return; e.preventDefault(); audioInit(); cv.focus();
   if(S.mode==='dialog'){ advanceDialog(); return; }
   if(S.mode!=='playing') return; mouse.x=e.clientX; mouse.y=e.clientY; mouse.active=true;
-  if(e.button===0) tryAttack('light'); else if(e.button===2) tryAttack('heavy'); else if(e.button===1) e.preventDefault(); });
+  if(e.button===0) tryAttack('light',aimAngle()); else if(e.button===2) tryAttack('heavy',aimAngle()); else if(e.button===1) e.preventDefault(); });
 window.addEventListener('contextmenu',e=>e.preventDefault());
-cv.addEventListener('wheel',e=>{ e.preventDefault(); if(S.mode==='playing') hotbarWheel(e.deltaY>0?1:-1); },{passive:false}); // v0.41：ホイールで手持ちの武器を切り替え
+cv.addEventListener('wheel',e=>{ e.preventDefault(); if(S.mode==='playing') hotbarWheel(e.deltaY>0?1:-1); },{passive:false}); // v0.45：ホイールで手持ちの武器を切り替え
 $('dialog').addEventListener('pointerdown',e=>{ e.preventDefault(); audioInit(); advanceDialog(); });
 
 // ================= タッチ操作 =================
+// v0.45：攻撃方向の設定。cursor＝カーソル地点へ攻撃／facing＝体の向いている方向へ攻撃。保存して次回起動も維持。
+const AIM={mode:(function(){ try{ const m=localStorage.getItem('eiheiji_aimMode'); if(m==='facing'||m==='cursor') return m; }catch(e){} return 'cursor'; })()};
+function saveAimMode(){ try{ localStorage.setItem('eiheiji_aimMode',AIM.mode); }catch(e){} }
+function updateAimBtns(){ for(const id of ['btnAim','btnAimTitle']){ const b=$(id); if(b) b.textContent='攻撃方向：'+(AIM.mode==='facing'?'プレイヤーの向き':'カーソル'); } }
+function applyAimMode(m){ if(AIM.mode===m) return; AIM.mode=m; saveAimMode(); updateAimBtns(); toast(m==='facing'?'攻撃方向：プレイヤーの向き（体の向いた方向に攻撃）':'攻撃方向：カーソル（カーソルの地点に攻撃）'); }
 let touchMode=false; const joy={id:null,ox:0,oy:0,x:0,y:0}; const held={atk:false};
-function enableTouch(){ if(touchMode) return; touchMode=true; document.body.classList.add('touchmode'); mouse.active=false; }
+function enableTouch(){ if(touchMode) return; touchMode=true; document.body.classList.add('touchmode'); mouse.active=false; try{ if(!localStorage.getItem('eiheiji_aimMode')) AIM.mode='facing'; }catch(e){} } // v0.45：スマホはカーソルがないため、保存がなければプレイヤーの向きを既定にする
 window.addEventListener('touchstart',enableTouch,{passive:true,capture:true});
 try{ if(matchMedia('(pointer:coarse)').matches&&!matchMedia('(pointer:fine)').matches) enableTouch(); }catch(e){}
 const joyZone=$('joyZone'), joyBase=$('joyBase'), joyKnob=$('joyKnob');
@@ -5213,57 +5234,50 @@ tbtn('tbAtk',()=>{ held.atk=true; tryAttack('light'); },()=>{ held.atk=false; })
 tbtn('tbHeavy',()=>tryAttack('heavy')); tbtn('tbSwap',()=>cycleArm());
 tbtn('tbDodge',()=>tryDodge());
 tbtn('tbAct',()=>interact());
-tbtn('tbMap',()=>openMap()); // v0.41：持ち物ボタンは廃止（手持ちバー端の🎒とTabで開く）
+tbtn('tbMap',()=>openMap()); // v0.45：持ち物ボタンは廃止（手持ちバー端の🎒とTabで開く）
 tbtn('tbPause',()=>openPause());
 // 画面右側をなぞるとカメラが回る
 const camZone=$('camZone'); const cz={id:null,x:0};
 camZone.addEventListener('pointerdown',e=>{ e.preventDefault(); enableTouch(); if(cz.id!==null) return; cz.id=e.pointerId; cz.x=e.clientX; try{ camZone.setPointerCapture(e.pointerId);}catch(_){} });
 camZone.addEventListener('pointermove',e=>{ if(e.pointerId!==cz.id) return; e.preventDefault(); cam.dragDX+=(e.clientX-cz.x)*1.3; cz.x=e.clientX; });
 const czEnd=e=>{ if(e.pointerId===cz.id) cz.id=null; }; camZone.addEventListener('pointerup',czEnd); camZone.addEventListener('pointercancel',czEnd);
-/* v0.41：食べ物のタップは手持ちバーのスロットへ移設 */
+/* v0.45：食べ物のタップは手持ちバーのスロットへ移設 */
 function joyVec(){ const m=Math.hypot(joy.x,joy.y); return m>0.18?{x:joy.x,z:joy.y,m:Math.min(1,(m-0.18)/0.7+0.3)}:null; }
 // 近くの獣へ自動で向く（タッチ・キーボード操作時）
 function autoAim(){
-  let best=null,bs=1e9; const R=WEAPONS[P.weapon].range+2.6;
+  let best=null,bs=1e9; const w=equippedWeapon(); const R=(w?w.range:1.45)+2.6;
   for(const e of enemies){ if(e.state==='dead') continue; const d=dist(P.x,P.z,e.x,e.z)-e.r; if(d>R) continue;
     const a=Math.atan2(e.x-P.x,e.z-P.z); if(famOf(P.weapon)==='spear'&&Math.abs(angDiff(P.facing,a))>0.6) continue; const sc=d+Math.abs(angDiff(P.facing,a))*1.6; if(sc<bs){bs=sc;best=a;} }
   return best;
 }
 
-let attackAimMode='cursor';
-try{ attackAimMode=localStorage.getItem('rei_attack_aim_mode')==='body'?'body':'cursor'; }catch(e){}
-function updateAttackAimButton(){
-  const b=$('btnAttackAim');
-  if(b) b.textContent='攻撃方向：'+(attackAimMode==='cursor'?'カーソル':'キャラクターの向き');
-}
-function toggleAttackAimMode(){
-  attackAimMode=attackAimMode==='cursor'?'body':'cursor';
-  try{ localStorage.setItem('rei_attack_aim_mode',attackAimMode); }catch(e){}
-  updateAttackAimButton();
-  toast(attackAimMode==='cursor'?'攻撃方向をカーソルに設定':'攻撃方向をキャラクターの向きに設定');
-}
 function mouseGround(){
   ndc.set(mouse.x/window.innerWidth*2-1,-(mouse.y/window.innerHeight)*2+1);
   ray.setFromCamera(ndc,camera); return ray.ray.intersectPlane(groundPlane,mp)?mp:null;
 }
 function aimAngle(){
-  if(attackAimMode==='body') return P.facing;
-  if(!mouse.active){ const a=autoAim(); return a==null?P.facing:a; }
-  if(mouse.active){ const g=mouseGround(); if(g){ const dx=g.x-P.x, dz=g.z-P.z; if(dx*dx+dz*dz>0.04) return Math.atan2(dx,dz); } }
-  return P.facing;
+  if(AIM.mode==='facing') return P.facing; // v0.45：向きモード。カーソルも古いマウス座標も使わず、体の向き＝攻撃方向
+  if(mouse.active){
+    const g=mouseGround();
+    if(g){ const dx=g.x-P.x, dz=g.z-P.z, d2=dx*dx+dz*dz;
+      // 地面との交点が極端に遠い場合（地平線付近など）は誤った方向へ振らない
+      if(d2>0.04&&d2<6400) return Math.atan2(dx,dz);
+    }
+  }
+  const a=autoAim(); return a==null?P.facing:a;
 }
 
 // ================= プレイヤーの行動 =================
-function tryAttack(kind){
+function tryAttack(kind,aimSnapshot=null){
   if(P.dead||P.stagger>0) return;
   if(f4Busy()){ if(S.time-F4.hintT>2.5){ F4.hintT=S.time; toast(prog.f4.carry?'丸太を担いでいる間は攻撃できない（調べるで下ろす）':'一輪車を押している間は攻撃できない（調べるで置く）',true); } return; }
-  if(P.dodge||P.atk){ P.buffer={k:kind,t:S.time}; return; } // 予約：最後に押した1つだけ。古いものは捨てる
-  startAttack(kind);
+  if(P.dodge||P.atk){ P.buffer={k:kind,t:S.time,aim:aimSnapshot}; return; } // 予約時点の攻撃方向も保持
+  startAttack(kind,aimSnapshot);
 }
-function startAttack(kind){
-  const chop=!!P.weapon&&wantsChop(); // v0.41：素手は採集動作をしない
+function startAttack(kind,aimSnapshot=null){
+  const chop=!!P.weapon&&wantsChop(); // v0.45：素手は採集動作をしない
   let id; const fam=famOf(P.weapon);
-  if(!P.weapon){ id=kind==='heavy'?'UK1':(P.lastMv==='UP1'&&S.time-(P.lastMvEnd||-9)<0.5?'UP2':'UP1'); } // v0.41：素手（軽=パンチ2段・強=キック）
+  if(!P.weapon){ id=kind==='heavy'?'UK1':(P.lastMv==='UP1'&&S.time-(P.lastMvEnd||-9)<0.5?'UP2':'UP1'); } // v0.45：素手（軽=パンチ2段・強=キック）
   else if(chop){ const ctg=P.chopReq||f4FindTarget(1.3); id=ctg&&(ctg.type==='log'||ctg.type==='rock')?'SPLIT':kind==='heavy'?'CHOPH':'CHOP'; }
   else if(P.ctrT>0) id=FAMC[fam]; // 見切りの後の反撃（押したのが通常でも強でも）
   else if(swapOpen()) id=FAMS[fam]; // 持ち替え直後の切り替え技
@@ -5273,9 +5287,11 @@ function startAttack(kind){
   if(P.atk) endAttack(P.atk);
   if(!chop&&mv.stam) spendSt(f31Stam(mv)); // v0.31 熟練度「慣れ」でスタミナ-2
   P.atk=makeAtk(id,chop?1:(WSPD[P.weapon]||1));
-  if(mv.counter){ P.ctrT=0; const f=nearestFoe(5); if(f) P.facing=Math.atan2(f.x-P.x,f.z-P.z); const reach=Math.max(1,WEAPONS[P.weapon].range-0.6); P.atk.lungeD=f?clamp(dist(P.x,P.z,f.x,f.z)-f.r-reach,0,1.5):0; } // 届かなければ空振り（瞬間移動はしない）
+  let counterFacing=null;
+  if(mv.counter){ P.ctrT=0; const f=nearestFoe(5); if(f) counterFacing=Math.atan2(f.x-P.x,f.z-P.z); const w=equippedWeapon(); const reach=Math.max(0.9,(w?w.range:1.45)-0.6); P.atk.lungeD=f?clamp(dist(P.x,P.z,f.x,f.z)-f.r-reach,0,1.5):0; P.atk.counterFacing=counterFacing; } // 素手にも安全な短い間合いを設定。反撃対象の向きは攻撃中も保持
   if(mv.swap){ P.swT=0; P.swCD=S.time+SWAP.cd; }
-  P.facing=aimAngle(); P.buffer=null; if(P.weapon) f4AttachChop(P.atk); // v0.41：素手は伐採・採石に向かわせない
+  // 見切り反撃は対象へ向けた角度を優先し、直後の通常エイムで上書きしない。
+  P.facing=counterFacing==null?(aimSnapshot==null?aimAngle():aimSnapshot):counterFacing; P.atk.aimAngle=P.facing; P.buffer=null; if(P.weapon) f4AttachChop(P.atk); // 攻撃方向を開始時に固定。素手は伐採・採石に向かわせない
   if(mv.kind==='heavy'){ heavyRing.visible=true; } else sfx('swing');
   return true;
 }
@@ -5321,10 +5337,11 @@ function perfectDodge(src){
   P.lastPerfect=S.time; P.ctrT=CTR.win; S.slowmo=0.4; stats.perfect++;
   floatText(P.x,2.6,P.z,'見切り！','#f0c34a',true); sfx('perfect');
 }
-const UNARMED_PUNCH_DMG=4, UNARMED_KICK_DMG=8; // v0.41：素手の攻撃力（最弱の竹槍・通常13より明確に低い）。調整はこの2定数のみ
+const UNARMED_PUNCH_DMG=4, UNARMED_KICK_DMG=8; // v0.45：素手の攻撃力（最弱の竹槍・通常13より明確に低い）。調整はこの2定数のみ
 function weaponDmg(kind){
-  if(!P.weapon) return kind==='heavy'?UNARMED_KICK_DMG:UNARMED_PUNCH_DMG; // v0.41：軽=パンチ・強=キック
-  const w=WEAPONS[P.weapon]; let d=kind==='heavy'?w.heavy:w.light;
+  const w=equippedWeapon();
+  if(!w) return kind==='heavy'?UNARMED_KICK_DMG:UNARMED_PUNCH_DMG; // 素手：軽=パンチ・強=キック
+  let d=kind==='heavy'?w.heavy:w.light;
   if(P.dur<=0) d*=0.4;
   if(P.buffT>0) d*=1.3;
   return d;
@@ -5336,9 +5353,17 @@ function damageEnemy(e,dmg,kind,fromAng,info=null){
   let mult=1; if(e.state==='broken') mult=1.3; // 体勢が崩れている間は受けるダメージ×1.3
   if(e.type==='boss'&&e.state==='stun') mult=1.6;
   if(e.state==='stun'&&e.type!=='boss') mult=1.25;
-  if(e.state==='recover'&&e.type!=='boss') mult=1.2; // v0.41：隙への反撃は1.2倍
+  if(e.state==='recover'&&e.type!=='boss') mult=1.2; // v0.45：隙への反撃は1.2倍
   const d=Math.round(dmg*mult);
   e.hp-=d; e.flash=0.12; e.lastHit=S.time;
+  { // v0.45：被弾のよろけ（表示のみ）。強攻撃ほど大きく、大型ほど据わる。上限と自然減衰があり怯みっぱなしにならない
+    if(!e.h36) e.h36={x:0,z:0,vx:0,vz:0};
+    const big=e.type==='bear'||e.type==='boss';
+    const pw=(kind==='heavy'?1:0.5)*(big?0.3:1)*(e.type==='boss'?0.7:1);
+    const f=(kind==='heavy'?34:19)*pw;
+    e.h36.vx+=Math.sin(fromAng)*f; e.h36.vz+=Math.cos(fromAng)*f; // 攻撃が来た方向へ体が流される（ノックバックの実位移動は既存どおり別処理）
+    e.stagK=Math.min(2.5,(e.stagK||0)+(kind==='heavy'?0.9:0.5)); // 連撃で少しずつ崩れる（上限あり）
+  }
   const crit=mult>1||!!(info&&info.mv&&info.mv.counter);
   floatText(e.x,1.4+e.r*1.2,e.z,String(d),crit?'#f0c34a':'#ffffff',kind==='heavy'||crit);
   spawnParticles(e.x,1,e.z,kind==='heavy'?10:6,e.type==='monkey'?0xd0b090:0xc9503c,kind==='heavy'?6:4);
@@ -5417,7 +5442,7 @@ function canSee(e){
   if(e.mode==='field'&&inSafe(P.x,P.z,1)) return false; // 安全地帯（拠点・境内）にいる相手は見失う
   return d<ET[e.type].detect;
 }
-function setState(e,s){ e.state=s; e.st=0; e.sn=(e.sn||0)+1; if(s==='wind') e.windRoared=false; if(s==='wind') e.lockDir=null; } // sn：攻撃ごとの番号（見切りは同じ攻撃から1回だけ）。v0.41：予備動作の入りで初期化
+function setState(e,s){ e.state=s; e.st=0; e.sn=(e.sn||0)+1; if(s==='wind') e.windRoared=false; if(s==='wind') e.lockDir=null; } // sn：攻撃ごとの番号（見切りは同じ攻撃から1回だけ）。v0.45：予備動作の入りで初期化
 function wanderUpdate(e,dt,spd){
   if(!e.wander||e.st>e.wanderT){ const a=Math.random()*TAU, r=Math.random()*5; e.wander={x:e.home.x+Math.cos(a)*r,z:e.home.z+Math.sin(a)*r}; e.wanderT=2+Math.random()*3; e.st=0; }
   if(dist(e.x,e.z,e.wander.x,e.wander.z)>0.6) steer(e,e.wander.x,e.wander.z,spd,dt,4); else e.spd=0;
@@ -5455,13 +5480,13 @@ function updateBoar(e,dt){
       break; }
     case 'wind': {
       e.spd=0;
-      if(!e.windRoared){ e.windRoared=true; noise(0.22,0.07,320); } // v0.41：突進予備の鳴き声（背を向けていても気づける）
+      if(!e.windRoared){ e.windRoared=true; noise(0.22,0.07,320); } // v0.45：突進予備の鳴き声（背を向けていても気づける）
       if(e.st<e.windT*0.6) faceTo(e,Math.atan2(t.x-e.x,t.z-e.z),9,dt); // 向き合わせは予備動作の前半60%まで
-      if(e.st>=e.windT*0.6&&e.lockDir==null) e.lockDir=e.rot; // v0.41：後半は進路確定（障害物や回避に弱くなる）
+      if(e.st>=e.windT*0.6&&e.lockDir==null) e.lockDir=e.rot; // v0.45：後半は進路確定（障害物や回避に弱くなる）
       e.ind.visible=true; e.ind.position.set(e.x,groundH(e.x,e.z)+0.12,e.z); e.ind.rotation.y=e.rot; e.ind.scale.set(1.3,1,Math.min(14,9+e.st*6));
       e.ind.material=bmat(0xff3b1f,Math.round((0.35+0.4*Math.min(1,e.st/e.windT))*20)/20);
       if(Math.random()<dt*10) spawnParticles(e.x-Math.sin(e.rot)*0.6,0.1,e.z-Math.cos(e.rot)*0.6,1,0xb59c70,2);
-      if(e.st>=e.windT){ e.ind.visible=false; setState(e,'charge'); if(e.lockDir==null) e.lockDir=e.rot; e.chargeDir=e.lockDir; e.lockDir=null; e.hitPlayer=false; e.skid=null; spawnBoarTracks(e); noise(0.2,0.06,400); } // v0.41：確定した進路で突進・蹄跡を残す
+      if(e.st>=e.windT){ e.ind.visible=false; setState(e,'charge'); if(e.lockDir==null) e.lockDir=e.rot; e.chargeDir=e.lockDir; e.lockDir=null; e.hitPlayer=false; e.skid=null; spawnBoarTracks(e); noise(0.2,0.06,400); } // v0.45：確定した進路で突進・蹄跡を残す
       break; }
     case 'charge': {
       if(e.skid!=null){ e.skid-=dt; const v=15*Math.max(0,e.skid/F6X.skid); e.spd=v; moveDir(e,e.chargeDir,v,dt); if(Math.random()<dt*30) spawnParticles(e.x,0.1,e.z,1,0xb59c70,2); if(e.skid<=0){ e.skid=null; setState(e,'recover'); } break; }
@@ -5470,9 +5495,9 @@ function updateBoar(e,dt){
       if(!e.hitPlayer&&dist(e.x,e.z,P.x,P.z)<e.r+P.r+0.25){ e.hitPlayer=true; if(hurtPlayer(24,e.x,e.z,9,e)) { setState(e,'recover'); break; } }
       if(Math.random()<dt*20) spawnParticles(e.x,0.1,e.z,1,0xb59c70,1);
       if(chargeHit(e,hit,24,20,18,1.9)) break;
-      if(e.st>0.95){ e.missed=true; setState(e,'recover'); } // v0.41：何も当てられなかった突進は長い隙
+      if(e.st>0.95){ e.missed=true; setState(e,'recover'); } // v0.45：何も当てられなかった突進は長い隙
       break; }
-    case 'recover': e.spd=0; if(e.st>(e.missed?1.7:1.0)){ e.missed=false; e.cd=0.6; setState(e,'chase'); } break; // v0.41：空振り後は反撃の好機
+    case 'recover': e.spd=0; if(e.st>(e.missed?1.7:1.0)){ e.cd=e.missed?1.1:0.6; e.missed=false; setState(e,'chase'); } break; // v0.45.1：空振り直後の突進連発を防ぐ（通常時は従来どおり）
     case 'tusk': { // 牙のかち上げ：予備動作0.45秒・前方1.6m・14
       e.spd=0; if(e.st<0.27) faceTo(e,Math.atan2(P.x-e.x,P.z-e.z),12,dt); showSector(e,1.6,1.4,e.st/0.45);
       if(e.st>=0.45){ hideSector(e); moveDir(e,e.rot,6,0.06); const pd=dist(e.x,e.z,P.x,P.z)-e.r-P.r, pa=Math.abs(angDiff(e.rot,Math.atan2(P.x-e.x,P.z-e.z)));
@@ -5520,17 +5545,20 @@ function updateMonkey(e,dt){
       showSector(e,1.9,1.8,e.st/0.4);
       if(e.st>0.4){ hideSector(e);
         const d=pd-e.r-P.r; const a=Math.abs(angDiff(e.rot,Math.atan2(P.x-e.x,P.z-e.z)));
-        if(d<1.3&&a<1.0) hurtPlayer(11,e.x,e.z,4,e); else floatText(e.x,1.9,e.z,'空振り','#c8c4b8'); // v0.41：避けたことを明示
+        if(d<1.3&&a<1.0) hurtPlayer(11,e.x,e.z,4,e); else floatText(e.x,1.9,e.z,'空振り','#c8c4b8'); // v0.45：避けたことを明示
         setState(e,'retreat'); }
       break; }
     case 'retreat': {
-      const away=Math.atan2(e.x-P.x,e.z-P.z); faceTo(e,away,12,dt); moveDir(e,e.rot,8.5,dt); e.spd=8.5;
+      const away=Math.atan2(e.x-P.x,e.z-P.z);
+      if(e.detourT>0){ e.detourT-=dt; e.rot+=e.detourDir*dt*5; } else faceTo(e,away,12,dt); // v0.45.1：塞がれたら逃走方向を変えて迂回
+      const bx0=e.x,bz0=e.z; moveDir(e,e.rot,8.5,dt); e.spd=8.5;
+      if(!(e.detourT>0)&&dist(bx0,bz0,e.x,e.z)<8.5*dt*0.35){ e.detourDir=(Math.random()<0.5?-1:1); e.detourT=0.55; }
       if(e.st>0.8){ setState(e,e.mode==='raid'&&!e.aggro?'raid':'kite'); e.atkT=2+Math.random()*2; }
       break; }
     case 'steal': {
       const n=e.stealNode; if(!n||!n.avail){ setState(e,'idle'); break; }
       steer(e,n.x,n.z,ET.monkey.speed*0.8,dt);
-      if(dist(e.x,e.z,n.x,n.z)<1.2){ setNode(n,false); if(Math.random()<0.7) spawnTornField(n.x,n.z); e.carry={k:'food',n:2}; e.m.carry.visible=true; floatText(e.x,1.8,e.z,'キキッ！','#f0dca0'); if(!f10Stole(e)) setState(e,'flee2'); } // v0.41：荒らし跡を残し、盗んだら巣へ逃げる
+      if(dist(e.x,e.z,n.x,n.z)<1.2){ setNode(n,false); if(Math.random()<0.7) spawnTornField(n.x,n.z); e.carry={k:'food',n:2}; e.m.carry.visible=true; floatText(e.x,1.8,e.z,'キキッ！','#f0dca0'); if(!f10Stole(e)) setState(e,'flee2'); } // v0.45：荒らし跡を残し、盗んだら巣へ逃げる
       if(canSee(e)&&pd<6){ setState(e,'kite'); e.atkT=1.5; }
       break; }
     case 'raid': {
@@ -5544,9 +5572,11 @@ function updateMonkey(e,dt){
         sfx('alert');
       }
       break; }
-    case 'flee2': { // v0.41：盗品を持って巣へ逃走。追いつけば取り返せる
+    case 'flee2': { // v0.45：盗品を持って巣へ逃走。追いつけば取り返せる
       if(canSee(e)&&pd<4.5){ setState(e,'kite'); e.atkT=1.2; break; }
-      steer(e,e.home.x,e.home.z,ET.monkey.speed*1.15,dt); e.spd=ET.monkey.speed*1.15;
+      if(e.detourT>0){ e.detourT-=dt; e.rot+=e.detourDir*dt*5; moveDir(e,e.rot,ET.monkey.speed*1.15,dt); } // v0.45.1：追い詰められたら迂回
+      else { const bx0=e.x,bz0=e.z; steer(e,e.home.x,e.home.z,ET.monkey.speed*1.15,dt); if(dist(bx0,bz0,e.x,e.z)<ET.monkey.speed*1.15*dt*0.35){ e.detourDir=(Math.random()<0.5?-1:1); e.detourT=0.55; } }
+      e.spd=ET.monkey.speed*1.15;
       if(dist(e.x,e.z,e.home.x,e.home.z)<3){ e.fled=true; removeEnemy(e); return; }
       break; }
     case 'return': steer(e,e.home.x,e.home.z,4,dt); e.hp=Math.min(e.maxHp,e.hp+dt*6); if(dist(e.x,e.z,e.home.x,e.home.z)<1.5) setState(e,'idle'); break;
@@ -5586,12 +5616,12 @@ function updateBear(e,dt){
       steer(e,t.x,t.z,d<4?ET.bear.speed*1.25:ET.bear.speed,dt,4);
       break; }
     case 'wind': {
-      e.spd=0; if(!e.windRoared){ e.windRoared=true; noise(0.28,0.07,260); } if(e.st<0.5) faceTo(e,Math.atan2(t.x-e.x,t.z-e.z),3,dt); // v0.41：構えの唸り声
+      e.spd=0; if(!e.windRoared){ e.windRoared=true; noise(0.28,0.07,260); } if(e.st<0.5) faceTo(e,Math.atan2(t.x-e.x,t.z-e.z),3,dt); // v0.45：構えの唸り声
       showSector(e,3.0,2.1,e.st/1.0);
       if(e.st>=1.0){ hideSector(e); setState(e,'strike'); strikeArea(e,3.0,2.1,38,30,25,t,10); sfx('heavyHit'); spawnParticles(e.x+Math.sin(e.rot)*2,0.2,e.z+Math.cos(e.rot)*2,10,0x8a7a5a,5); }
       break; }
     case 'strike': e.spd=0; if(e.st>0.2) setState(e,'recover'); break;
-    case 'recover': e.spd=0; if(e.st>1.5){ e.cd=0.5; setState(e,'chase'); } break; // v0.41：強打後の隙を延長（反撃窗口）
+    case 'recover': e.spd=0; if(e.st>1.5){ e.cd=0.5; setState(e,'chase'); } break; // v0.45：強打後の隙を延長（反撃窗口）
     case 'stun': e.spd=0; e.stunT-=dt; if(e.stunT<=0){ setState(e,'chase'); } break;
   }
 }
@@ -5737,11 +5767,24 @@ function updateEnemyAnim(e,dt){
   const stunned=st==='stun'||st==='trapped';
   e.stars.visible=stunned&&e.type!=='boss'; if(stunned){ e.stars.position.set(e.x,gy+(e.type==='boss'?4.6:e.type==='bear'?2.8:1.9),e.z); e.stars.rotation.y+=dt*5; }
 }
+// v0.45.1：たとえ遠距離でも必ず毎フレーム進める状態（予備動作・攻撃・突進。見た目と判定の一致を優先）
+const AILOD_SKIP=['wind','chargeWind','goreWind','stompWind','charge','dash','strike','tusk','gore','stomp','trapped'];
 function updateEnemies(dt){
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i]; if(e.removed) continue;
     e.st+=dt; e.flash=Math.max(0,e.flash-dt);
     if(e.state==='dead'){ updateEnemyAnim(e,dt); if(e.st>2.6) removeEnemy(e); continue; }
+    // v0.45.1：AIのLOD。90m先の野性獣は思考を0.25秒間隔に間引く（新規オブジェクトは作らない。raid・ボス・攻撃中は対象外）
+    if(e.mode==='field'&&e.type!=='boss'&&!AILOD_SKIP.includes(e.state)&&dist(e.x,e.z,P.x,P.z)>90){
+      e.lodT=(e.lodT||0)+dt;
+      if(e.lodT>=0.25){ const ldt=e.lodT; e.lodT=0;
+        if(!updatePoise(e,ldt)){ const prev=e.state;
+          if(f10Pre(e,ldt)){}
+          else if(e.type==='boar') updateBoar(e,ldt);
+          else if(e.type==='monkey') updateMonkey(e,ldt);
+          else if(e.type==='bear') updateBear(e,ldt);
+          f10Post(e,prev); } }
+      continue; }
     if(!updatePoise(e,dt)){ const prev=e.state;
     if(f10Pre(e,dt)){}
     else if(e.type==='boar') updateBoar(e,dt);
@@ -5759,7 +5802,16 @@ function updateEnemies(dt){
     // プレイヤーとの重なり
     const d=dist(e.x,e.z,P.x,P.z), rs=e.r+P.r;
     if(d<rs&&d>0.001&&!P.dodge){ const push=(rs-d); if(e.type==='boss'){ P.x+=(P.x-e.x)/d*push; P.z+=(P.z-e.z)/d*push; resolve(P,false); } else { e.x+=(e.x-P.x)/d*push; e.z+=(e.z-P.z)/d*push; resolve(e,true,e.type==='monkey'); } }
-    updateEnemyAnim(e,dt); poiseLean(e); tryTrack(e,dt); // v0.41：移動中の獣が蹄跡を残す
+    updateEnemyAnim(e,dt); poiseLean(e); tryTrack(e,dt); // v0.45：移動中の獣が蹄跡を残す
+    if(e.h36){ // v0.45：よろけバネ（頭→胴の順に遅れて戻る）。次フレームで anim が絶対値を再設定するため蓄積しない
+      const H=e.h36; H.vx+=(-H.x*52-H.vx*7)*dt; H.vz+=(-H.z*52-H.vz*7)*dt; H.x+=H.vx*dt; H.z+=H.vz*dt;
+      e.stagK=Math.max(0,(e.stagK||0)-dt*0.8);
+      const mag=Math.min(1,Math.hypot(H.x,H.z)*0.33), m=e.m;
+      if(m&&m.head&&mag>0.01){ const rel=angDiff(e.rot,Math.atan2(H.vx,H.vz)), side=Math.sin(rel), fw2=Math.cos(rel);
+        m.head.rotation.z=clamp(-side*0.42*mag,-0.5,0.5); m.head.rotation.x+=fw2*0.26*mag; // 頭が先に流れる（x は anim が毎フレーム絶対設定するので加算で安全）
+        if(m.body) m.body.rotation.x+=fw2*0.1*mag; // 胴は半遅れ
+        if((e.stagK||0)>1.3&&m.armL&&m.armR){ const w1=Math.sin(S.time*24)*0.3*mag; m.armL.rotation.x=w1; m.armR.rotation.x=-w1; } // 連撃で腕がたじたじ（絶対代入なので蓄積しない）
+      } }
   }
   // 敵同士の押し合い
   for(let i=0;i<enemies.length;i++) for(let j=i+1;j<enemies.length;j++){
@@ -5940,8 +5992,7 @@ function interactables(){
                  else L.push({d,label:`${g.name}の柵台：木柵キットが必要（作業台で作成）`,act:()=>{sfx('deny');}}); }
     else if(f.broken) L.push({d,label:`${g.name}の柵を再建（木材2）`,act:()=>repairFence(g,2,true)});
     else if(f.hp<f.max) L.push({d,label:`${g.name}の柵を修理（木材1で+60）　${Math.ceil(f.hp)}/${f.max}`,act:()=>repairFence(g,1,false)});
-    else if(f.type==='wood'&&inv.stakeKit>0) L.push({d,label:`${g.name}の柵を杭柵に作り替え（杭柵キット1）`,act:()=>placeFence(g,'stake')});
-    else L.push({d:d+0.5,label:`${g.name}の柵　耐久 ${f.max}/${f.max}`,act:()=>{}});
+    else if(f.type==='wood'&&inv.stakeKit>0) L.push({d,label:`${g.name}の柵を杭柵に作り替え（杭柵キット1）`,act:()=>placeFence(g,'stake')});    else L.push({d:d+0.5,label:`${g.name}の柵　耐久 ${f.max}/${f.max}`,act:()=>{}});
   }
   for(const t of traps){ const d=dist(P.x,P.z,t.x,t.z); if(d>1.8) continue;
     if(t.state==='empty') L.push({d,label:inv.trapKit>0?'くくり罠を仕掛ける（罠キット1）':'罠台：くくり罠キットが必要',act:()=>placeTrap(t)});
@@ -6004,25 +6055,26 @@ const RECIPES=[
  {id:'armor2',name:'鉄の籠手',cost:{hide:6,iron:3,rope:2},desc:'屑鉄を打ち直した板で覆った籠手。受ける傷 -25%（籠手と入れ替わる）',show:()=>(inv.armor|0)===1,give:()=>{ inv.armor=2; f31ArmorVis(); }},
  {id:'fenceFix',name:'柵の修理（全か所）',cost:{wood:3},desc:'傷んだ・壊れた木柵を全て完全修理する。襲撃の準備では武器の手入れと木材を取り合う──守りを厚くするか、足元を整えるか',show:()=>GAPS.some(g=>g.fence.type&&(g.fence.broken||g.fence.hp<g.fence.max)),give:()=>{ let n=0; for(const g2 of GAPS){ const f=g2.fence; if(f.type&&(f.broken||f.hp<f.max)){ if(f.broken){ f.broken=false; f.hp=f.max; g2.col.active=true; } else f.hp=f.max; fenceVisual(g2); n++; } } if(n) toast(`柵を${n}か所修理した`); }},
  {id:'toolRepair',name:'採集道具の手入れ',cost:{wood:1},desc:'石の槌・鉄のつるはしの耐久を全回復する',show:()=>Object.keys(prog.f5.tools).some(k=>TOOLS[k]&&prog.f5.tools[k]<TOOLS[k].maxDur),give:()=>{ for(const k in prog.f5.tools) if(TOOLS[k]) prog.f5.tools[k]=TOOLS[k].maxDur; }},
- {id:'repair',name:'武器の手入れ',cost:{wood:1},desc:'武器の耐久を全回復する',show:()=>!!P.weapon,give:()=>{ if(P.weapon) P.dur=WEAPONS[P.weapon].maxDur; }}, // v0.41：素手では非表示
+ {id:'repair',name:'武器の手入れ',cost:{wood:1},desc:'武器の耐久を全回復する',show:()=>!!equippedWeapon(),give:()=>{ const w=equippedWeapon(); if(w) P.dur=w.maxDur; }}, // v0.45：素手では非表示
 ];
 function canAfford(c){ for(const k in c) if((FOODS[k]?f7Have(k):(inv[k]||0))<c[k]) return false; return true; } // 食べ物は作業台で食料庫の分も使える
 function craft(id){
   const r=RECIPES.find(x=>x.id===id); if(!r) return;
   if(r.lock&&r.lock()) return; if(r.show&&!r.show()) return;
-  if(r.id==='repair'&&(!P.weapon||P.dur>=WEAPONS[P.weapon].maxDur)){ toast(P.weapon?'武器は傷んでいない':'手入れする武器がない'); return; } // v0.41
+  if(r.id==='repair'&&(!equippedWeapon()||P.dur>=equippedWeapon().maxDur)){ toast(equippedWeapon()?'武器は傷んでいない':'手入れする武器がない'); return; } // v0.45
   if(!canAfford(r.cost)){ sfx('deny'); toast('素材が足りない',true); return; }
   f7Flush(); if(!canAfford(r.cost)){ sfx('deny'); toast('素材が足りない',true); renderCraft(); return; }
   let fromStore=[]; for(const k in r.cost){ if(FOODS[k]){ const u=f7CraftTake(k,r.cost[k]); if(u.store>0) fromStore.push(`${FOODS[k].name}${u.store}`); } else inv[k]-=r.cost[k]; }
   r.give(); stats.crafts++; g4CheckQuests(); sfx('craft'); toast(`${r.name}を作った`+(fromStore.length?`（食料庫から${fromStore.join('・')}を使った）`:''));
-  if(r.id==='nata2'||r.id==='nata3'||r.id==='spear'||r.id==='axeStone'||r.id==='axeIron'||r.id==='club'||r.id==='bamboo') banner(WEAPONS[r.id]?WEAPONS[r.id].name:WEAPONS[P.weapon].name,r.id==='axeStone'||r.id==='axeIron'?'木を切る力 ×'+WEAPONS[r.id].chop+'　持ち替えは R ／ 持ち物':'新しい武器を手に入れた　持ち替えは R ／ 持ち物',2.2);
+  if(r.id==='nata2'||r.id==='nata3'||r.id==='spear'||r.id==='axeStone'||r.id==='axeIron'||r.id==='club'||r.id==='bamboo') banner(WEAPONS[r.id]?WEAPONS[r.id].name:(equippedWeapon()?.name||'素手'),r.id==='axeStone'||r.id==='axeIron'?'木を切る力 ×'+WEAPONS[r.id].chop+'　持ち替えは R ／ 持ち物':'新しい武器を手に入れた　持ち替えは R ／ 持ち物',2.2);
   saveGame(); renderCraft();
 }
 // 縄をまとめて作る：作れる分だけ（最大5本）。材料の効率は1本と同じ。消費と加算は1回の処理で行う
 function craftRope(max){ const n=Math.min(max,Math.floor((inv.straw||0)/3)); if(n<1){ sfx('deny'); toast('素材が足りない',true); return; } inv.straw-=n*3; inv.rope+=n; stats.crafts+=n; g4CheckQuests(); sfx('craft'); toast(`縄を${n}本まとめて作った（藁 −${n*3}）`); saveGame(); renderCraft(); }
 function renderCraft(){
   const list=$('craftList'); list.innerHTML='';
-  f7Flush(); $('craftHave').textContent=`所持：木材 ${inv.wood}／食料 ${inv.food}${F7.store&&f7Count('food','store')?`（食料庫 ${f7Count('food','store')}）`:''}／獣素材 ${inv.hide}／藁 ${inv.straw}／縄 ${inv.rope}／石 ${inv.stone}／竹 ${inv.bamboo}／屑鉄 ${inv.iron}${inv.fang?`／ヌシの牙 ${inv.fang}`:''}　｜　武器：${WEAPONS[P.weapon].name}（耐久 ${Math.ceil(P.dur)}/${WEAPONS[P.weapon].maxDur}）`;
+  const equipped=equippedWeapon();
+  f7Flush(); $('craftHave').textContent=`所持：木材 ${inv.wood}／食料 ${inv.food}${F7.store&&f7Count('food','store')?`（食料庫 ${f7Count('food','store')}）`:''}／獣素材 ${inv.hide}／藁 ${inv.straw}／縄 ${inv.rope}／石 ${inv.stone}／竹 ${inv.bamboo}／屑鉄 ${inv.iron}${inv.fang?`／ヌシの牙 ${inv.fang}`:''}　｜　武器：${equipped?`${equipped.name}（耐久 ${Math.ceil(P.dur)}/${equipped.maxDur}）`:'素手'} `;
   for(const r of RECIPES){
     if(r.show&&!r.show()) continue;
     const locked=r.lock&&r.lock();
@@ -6032,7 +6084,7 @@ function renderCraft(){
     const cs=document.createElement('div'); cs.className='cs';
     cs.innerHTML='必要：'+Object.entries(r.cost).map(([k,v])=>{ if(FOODS[k]){ const h=f7Count(k,'hand'), s=F7.store?f7Count(k,'store'):0, ok=h+s>=v; return `<span class="${ok?'':'lack'}">${RNAME[k]} ${v}（${h+s}${s?`：手持ち ${h}＋食料庫 ${s}`:''}）</span>`; } const ok=(inv[k]||0)>=v; return `<span class="${ok?'':'lack'}">${RNAME[k]} ${v}（${inv[k]||0}）</span>`; }).join('　');
     d.appendChild(cs);
-    const b=document.createElement('button'); b.textContent=locked?'未解放':'作る'; b.disabled=locked||!canAfford(r.cost)||(r.id==='repair'&&P.dur>=WEAPONS[P.weapon].maxDur); b.id='craft_'+r.id;
+    const b=document.createElement('button'); b.textContent=locked?'未解放':'作る'; const equipped=equippedWeapon(); b.disabled=locked||!canAfford(r.cost)||(r.id==='repair'&&(!equipped||P.dur>=equipped.maxDur)); b.id='craft_'+r.id;
     b.addEventListener('click',()=>craft(r.id)); d.appendChild(b);
     if(r.id==='rope'&&!locked){ const n=Math.min(5,Math.floor((inv.straw||0)/3)); const b5=document.createElement('button'); b5.id='craft_rope5'; b5.textContent=n>=2?`まとめて ${n}本（藁${n*3}）`:'まとめて（最大5本）'; b5.disabled=n<2; b5.addEventListener('click',()=>craftRope(5)); d.appendChild(b5); }
     list.appendChild(d);
@@ -6041,7 +6093,7 @@ function renderCraft(){
 
 // ================= オーバーレイ管理 =================
 function hideAllOv(){ for(const id of ['title','howto','pause','craft','inv','dead','result','quests','mapOv','store','npcOv']) $(id).hidden=true; }
-function openPause(){ if(S.mode!=='playing') return; S.mode='paused'; keys.clear(); $('pause').hidden=false; f11Pause(); f31Pause(); updateAttackAimButton();
+function openPause(){ if(S.mode!=='playing') return; S.mode='paused'; keys.clear(); $('pause').hidden=false; f11Pause(); f31Pause();
   $('pauseInfo').textContent=`経過 ${fmtTime(stats.time)}　撃退 ${stats.kills}　見切り ${stats.perfect}`; }
 function openCraft(){ S.mode='menu'; keys.clear(); renderCraft(); $('craft').hidden=false; }
 function openInv(){ f31Inv(); f34Body();
@@ -6053,8 +6105,8 @@ function openInv(){ f31Inv(); f34Body();
     if(k&&v>0&&F7.store){ const w=f7Warn(k,'hand'); sub=`<small class="f7s">${w?`うち傷みかけ ${w}・`:''}最短の残り${f7Min(f7Left(k,'hand'))}</small>`; }
     d.innerHTML=`<span>${n}${sub}</span><b>${v}</b>`; g.appendChild(d); }
   if(typeof f7InvExtra==='function') f7InvExtra(g);
-  const w=WEAPONS[P.weapon]||{name:'素手'};
-  $('invWeapon').textContent=P.weapon?`${w.name}　通常 ${w.light}／強 ${w.heavy}／耐久 ${Math.ceil(P.dur)}/${w.maxDur}${P.dur<=0?'（刃こぼれ：威力40%）':''}`:`素手　パンチ ${UNARMED_PUNCH_DMG}／キック ${UNARMED_KICK_DMG}`; // v0.41
+  const w=equippedWeapon();
+  $('invWeapon').textContent=w?`${w.name}　通常 ${w.light}／強 ${w.heavy}／耐久 ${Math.ceil(P.dur)}/${w.maxDur}${P.dur<=0?'（刃こぼれ：威力40%）':''}`:`素手　パンチ ${UNARMED_PUNCH_DMG}／キック ${UNARMED_KICK_DMG}`; // v0.45
   const c=$('invClues'); c.innerHTML='';
   const got=CLUES.filter(x=>prog.clues[x.id]);
   if(!got.length) c.innerHTML='<p style="font-size:13px;color:var(--washi-dim)">まだ手掛かりはない。</p>';
@@ -6125,9 +6177,9 @@ function updateLighting(dt){
   if(farHills) farHills.material.color.setRGB(d+du*0.95+n*0.2,d+du*0.78+n*0.24,d+du*0.7+n*0.36);
   hemi.intensity=0.6*d+0.52*du+0.36*n;
   hemi.color.setRGB(1.0*d+1.0*du+0.5*n,0.95*d+0.78*du+0.58*n,0.86*d+0.62*du+0.95*n);
-  hemi.groundColor.setRGB(0.40*d+0.45*du+0.12*n,0.375*d+0.3*du+0.12*n,0.225*d+0.2*du+0.2*n); // v0.41：地面反跳を昼夜とも緑がかりへ（草原の照り返し）
+  hemi.groundColor.setRGB(0.40*d+0.45*du+0.12*n,0.375*d+0.3*du+0.12*n,0.225*d+0.2*du+0.2*n); // v0.45：地面反跳を昼夜とも緑がかりへ（草原の照り返し）
   sun.intensity=(0.72*d+0.6*du+0.22*n)*(1-ff*0.25);
-  sun.color.setRGB(1.0*d+1.0*du+0.55*n,0.94*d+0.72*du+0.62*n,0.82*d+0.45*du+0.95*n); // v0.41：時間帯の色温度（夕はオレンジ・夜は月青）
+  sun.color.setRGB(1.0*d+1.0*du+0.55*n,0.94*d+0.72*du+0.62*n,0.82*d+0.45*du+0.95*n); // v0.45：時間帯の色温度（夕はオレンジ・夜は月青）
   sun.color.setRGB(1.0*d+1.0*du+0.6*n,0.95*d+0.66*du+0.68*n,0.84*d+0.42*du+0.95*n);
   sun.position.set(P.x-18,40,P.z+14); sun.target.position.set(P.x,0,P.z); sun.target.updateMatrixWorld();
   const fl=0.9+Math.sin(S.time*13)*0.06+Math.sin(S.time*7.3)*0.04;
@@ -6143,7 +6195,7 @@ function checkpointStage(){ const s=prog.stage; return s==='raid'?'buildFence':s
 function saveGame(){
   if(!storageOK) return;
   try{
-    if(P.weapon) prog.arms[P.weapon]=P.dur; // v0.41：素手のときは武器耐久を書き戻さない
+    if(P.weapon) prog.arms[P.weapon]=P.dur; // v0.45：素手のときは武器耐久を書き戻さない
     const data={v:1,inv,weapon:P.weapon,dur:P.dur,full:P.full,arms:prog.arms,f5:f5Save(),
       prog:Object.assign({stage:checkpointStage(),unlockTrap:prog.unlockTrap,unlockBoss:prog.unlockBoss,clues:prog.clues,bossDefeated:prog.bossDefeated},f31SaveProg()),
       fences:GAPS.map(g=>g.fence.type?{type:g.fence.type,hp:g.fence.broken?0:g.fence.hp}:null),
@@ -6161,9 +6213,9 @@ function applySave(d){
   freshState();
   try{
     for(const k of Object.keys(inv)) inv[k]=num(d.inv[k],inv[k]);
-    if(WEAPONS[d.weapon]) P.weapon=d.weapon;
-    P.dur=num(d.dur,WEAPONS[P.weapon].maxDur,0,WEAPONS[P.weapon].maxDur); P.full=num(d.full,100,0,100);
-    prog.arms={}; if(d.arms&&typeof d.arms==='object') for(const k in d.arms) if(WEAPONS[k]) prog.arms[k]=num(d.arms[k],WEAPONS[k].maxDur,0,WEAPONS[k].maxDur); prog.arms[P.weapon]=P.dur; prog.f5=f5Load(d.f5); updHolster(); // v0.41：読み込み直後も携帯状態を合わせる
+    if(d.weapon===null) P.weapon=null; else if(WEAPONS[d.weapon]) P.weapon=d.weapon;
+    const loadedWeapon=equippedWeapon(); P.dur=num(d.dur,loadedWeapon?loadedWeapon.maxDur:0,0,loadedWeapon?loadedWeapon.maxDur:0); P.full=num(d.full,100,0,100);
+    prog.arms={}; if(d.arms&&typeof d.arms==='object') for(const k in d.arms) if(WEAPONS[k]) prog.arms[k]=num(d.arms[k],WEAPONS[k].maxDur,0,WEAPONS[k].maxDur); if(P.weapon) prog.arms[P.weapon]=P.dur; prog.f5=f5Load(d.f5); updHolster(); // 素手状態も保存データから正しく復元
     const p=d.prog||{};
     prog.stage=STAGES.includes(p.stage)?p.stage:'talk';
     prog.unlockTrap=!!p.unlockTrap; prog.unlockBoss=!!p.unlockBoss; prog.bossDefeated=!!p.bossDefeated; f31LoadProg(p); // v0.31 任意項目（無ければ Lv1・熟練0・防具なし）
@@ -6232,7 +6284,7 @@ function inputWorld(){
 const easeOut=t=>1-(1-t)*(1-t);
 function updatePlayer(dt){
   if(P.dead) return;
-  const w=WEAPONS[P.weapon];
+  const w=equippedWeapon(); // null は素手。以降の移動・攻撃処理では武器情報を直接参照しない。
   P.dodgeCD=Math.max(0,P.dodgeCD-dt); P.perfectT=Math.max(0,P.perfectT-dt); P.buffT=Math.max(0,P.buffT-dt);
   updateStamina(dt); updateF6C(dt); if(P.dbuf){ if(S.time-P.dbuf>0.25) P.dbuf=0; else if(!P.dodge&&P.stagger<=0) tryDodge(true); }
   const inp=inputWorld(); const mx=inp.x, mz=inp.z, ml=inp.mag>0?1:0, mag=inp.mag||1;
@@ -6246,13 +6298,13 @@ function updatePlayer(dt){
     const d=P.dodge; d.t+=dt; const k=d.t/0.38; const v=lerp(14,4,k);
     P.x+=Math.sin(d.ang)*v*dt; P.z+=Math.cos(d.ang)*v*dt; P.iframe=d.t>0.02&&d.t<0.32;
     P.facing=d.ang; spd=v;
-    if(d.t>=0.38){ P.dodge=null; const b=takeBuffer(); if(b) startAttack(b); }
+    if(d.t>=0.38){ P.dodge=null; const b=takeBuffer(); if(b) startAttack(b.k,b.aim); }
   } else if(P.atk){
     const a=P.atk; a.t+=dt;
-    if(a.kind==='light'&&!a.chop){ if(a.t<a.a1){ P.x+=Math.sin(P.facing)*a.lungeV*dt; P.z+=Math.cos(P.facing)*a.lungeV*dt; spd=Math.max(spd,a.lungeV); } } // v0.41：踏み込み中も足が歩く
-    else if(a.t<a.a0){ P.facing+=clamp(angDiff(P.facing,aimAngle()),-3*dt,3*dt); heavyRing.position.set(P.x,groundH(P.x,P.z)+0.06,P.z); const s=0.6+a.t/a.a0*1.2; heavyRing.scale.set(s,1,s); }
+    if(a.kind==='light'&&!a.chop){ if(a.t<a.a1){ P.x+=Math.sin(P.facing)*a.lungeV*dt; P.z+=Math.cos(P.facing)*a.lungeV*dt; spd=Math.max(spd,a.lungeV); } } // v0.45：踏み込み中も足が歩く
+    else if(a.t<a.a0){ const attackAim=a.aimAngle==null?P.facing:a.aimAngle; P.facing+=clamp(angDiff(P.facing,attackAim),-3*dt,3*dt); heavyRing.position.set(P.x,groundH(P.x,P.z)+0.06,P.z); const s=0.6+a.t/a.a0*1.2; heavyRing.scale.set(s,1,s); }
     if(a.kind==='heavy'&&a.t>=a.a0&&!a.swung){ a.swung=true; heavyRing.visible=false; sfx('heavySwing'); }
-    if(a.kind==='heavy'&&!a.chop&&a.t>=a.a0&&a.t<a.a1){ const v=(a.lungeD??a.mv.lunge)/Math.max(0.05,a.a1-a.a0); P.x+=Math.sin(P.facing)*v*dt; P.z+=Math.cos(P.facing)*v*dt; spd=Math.max(spd,v); } // v0.41：同上（強攻撃）
+    if(a.kind==='heavy'&&!a.chop&&a.t>=a.a0&&a.t<a.a1){ const v=(a.lungeD??a.mv.lunge)/Math.max(0.05,a.a1-a.a0); P.x+=Math.sin(P.facing)*v*dt; P.z+=Math.cos(P.facing)*v*dt; spd=Math.max(spd,v); } // v0.45：同上（強攻撃）
     let act=false; if(a.mv.multi){ let wi=-1; a.mv.multi.forEach((w,i)=>{ if(a.t>=w[0]/a.sp&&a.t<=w[1]/a.sp+0.02) wi=i; }); if(wi>=0){ act=true; if(wi!==a.wi){ a.wi=wi; a.hit.clear(); } } } else act=a.t>=a.a0&&a.t<=a.a1+0.02;
     const tPrev=a.pt==null?0:a.pt; a.pt=a.t; // 前のフレームから今までに重なった当たりの窓を、すべて調べる（低いフレームレートでも抜けない）
     if(!a.chop) (a.mv.multi?a.mv.multi.map(w=>[w[0]/a.sp,w[1]/a.sp]):[[a.a0,a.a1]]).forEach((w,wi)=>{ const lo=Math.max(tPrev,w[0]), hi=Math.min(a.t,w[1]+0.02); if(lo>hi) return;
@@ -6263,13 +6315,13 @@ function updatePlayer(dt){
         S.hitstop=Math.max(S.hitstop,a.kind==='heavy'?0.09:0.05); S.shake=Math.max(S.shake,a.kind==='heavy'?0.3:0.12);
         sfx(a.kind==='heavy'?'heavyHit':'hit'); }); });
     if(a.chop&&!a.chopDone&&a.t>=a.a0){ a.chopDone=true; f4Hit(a.chop,a.kind); }
-    if(a.landed&&!a.durDone&&P.weapon){ a.durDone=true; /* v0.41：素手は耐久を消費しない */ const before=P.dur; P.dur=Math.max(0,P.dur-1); if(before>0&&P.dur===0){ toast('武器が刃こぼれした！ 作業台で手入れを（木材1）',true); } }
-    if(P.buffer&&!a.chop&&a.t>=a.chainT&&a.t<a.dur){ const b=takeBuffer(); if(b) startAttack(b); }
-    else if(a.t>=a.dur){ endAttack(a); const b=takeBuffer(); if(b) startAttack(b); }
+    if(a.landed&&!a.durDone&&P.weapon){ a.durDone=true; /* v0.45：素手は耐久を消費しない */ const before=P.dur; P.dur=Math.max(0,P.dur-1); if(before>0&&P.dur===0){ toast('武器が刃こぼれした！ 作業台で手入れを（木材1）',true); } }
+    if(P.buffer&&!a.chop&&a.t>=a.chainT&&a.t<a.dur){ const b=takeBuffer(); if(b) startAttack(b.k,b.aim); }
+    else if(a.t>=a.dur){ endAttack(a); const b=takeBuffer(); if(b) startAttack(b.k,b.aim); }
   } else {
     spd=6.2*(P.full<=0?0.85:1)*mag*ml*f4SpeedMul();
     P.x+=mx*spd*dt; P.z+=mz*spd*dt;
-    const aim=ml>0?Math.atan2(mx,mz):(attackAimMode==='cursor'&&mouse.active?(()=>{ const g=mouseGround(); return g&&((g.x-P.x)**2+(g.z-P.z)**2>0.04)?Math.atan2(g.x-P.x,g.z-P.z):P.facing; })():P.facing);
+    const aim=ml>0?Math.atan2(mx,mz):(mouse.active&&AIM.mode!=='facing'?(()=>{ const g=mouseGround(); return g&&((g.x-P.x)**2+(g.z-P.z)**2>0.04)?Math.atan2(g.x-P.x,g.z-P.z):P.facing; })():P.facing);
     P.facing+=clamp(angDiff(P.facing,aim),-16*dt,16*dt);
   }
   resolve(P,false);
@@ -6303,7 +6355,7 @@ function animatePlayer(dt,spd){
   const spring=(k,tgt)=>{ W[k+'v']+=((tgt-W[k])*K-W[k+'v']*D)*Math.min(dt,0.05); W[k]+=W[k+'v']*Math.min(dt,0.05); };
   spring('lf',clamp(-aF*0.014*fl,-0.45,0.45)); spring('ls',clamp((aS*0.012+turn*0.05)*fl,-0.5,0.5));
   P.walk+=dt*spd*1.9; const amp=Math.min(1,spd/5.5), idle=1-amp, w=P.walk, sw=Math.sin(w)*amp;
-  slashTick(P.atk,dt); // v0.41：流線の記録と減衰（旧リング残像の後釜）
+  slashTick(P.atk,dt); // v0.45：流線の記録と減衰（旧リング残像の後釜）
   // ---- ふだん：腰・胸・首が少しずつ遅れて逆へ揺れる。腕はぶらぶら、ひざはゆるい ----
   const i1=Math.sin(T*1.15)+Math.sin(T*0.43)*0.5, i2=Math.sin(T*1.15-0.9)+Math.sin(T*0.43-0.6)*0.5, i3=Math.sin(T*1.15-1.8)+Math.sin(T*0.43-1.2)*0.5;
   const F={
@@ -6328,8 +6380,8 @@ function animatePlayer(dt,spd){
     knee:0.42, kL:0.08+Math.max(0,Math.sin(w+0.5))*0.3*amp, kR:0.12+Math.max(0,-Math.sin(w+0.5))*0.3*amp, elbow:0.2
   };
   let Q=poseMix(F,Rd,ck);
-  if(!P.blob&&pm&&pm.g) P.blob=shadowBlob(pm.g,0.5,0.55); // v0.41：影マップ無効時でも接地感（獣と同様の円影）
-  { // v0.41：普段はだらしなくきょろきょろ、敵が近いと低く鋭く構える。表示だけのオフセットで、判定・速度・硬直は既存値のまま
+  if(!P.blob&&pm&&pm.g) P.blob=shadowBlob(pm.g,0.5,0.55); // v0.45：影マップ無効時でも接地感（獣と同様の円影）
+  { // v0.45：普段はだらしなくきょろきょろ、敵が近いと低く鋭く構える。表示だけのオフセットで、判定・速度・硬直は既存値のまま
     let nd=1e9,nbig=false; for(const en of enemies){ if(en.state==='dead'||en.removed) continue; const dd=dist(en.x,en.z,P.x,P.z); if(dd<nd){ nd=dd; nbig=en.type==='bear'||en.type==='boss'; } }
     const rdy=(P.atk||P.dodge||P.stagger>0||nd<8.5)?1:0;
     P.readyK=P.readyK==null?rdy:P.readyK+(rdy-P.readyK)*Math.min(1,dt*6);
@@ -6339,7 +6391,7 @@ function animatePlayer(dt,spd){
     if(nbig&&nd<11&&!P.dead){ if(P.heartT==null) P.heartT=0.2; P.heartT-=dt; if(P.heartT<=0){ P.heartT=0.95; tone(52,0.11,'sine',0.055); tone(48,0.09,'sine',0.045,0,0.15); } } // クマ・ヌシ接近の鼓動
     if(amp>0.35&&!P.dodge){ const sw2=Math.sin(w)*amp; if(P.lastSw!=null&&Math.sign(sw2)!==Math.sign(P.lastSw)) noise(0.045,0.02+0.014*amp,820+Math.random()*260); P.lastSw=sw2; } else P.lastSw=null; // 足音
   }
-  if(P.dodge){ // v0.41：踏み込み→飛び込み→受け身→起き上がりを1本の連続曲線で。移動・無敵時間・クールダウンは既存値のまま
+  if(P.dodge){ // v0.45：踏み込み→飛び込み→受け身→起き上がりを1本の連続曲線で。移動・無敵時間・クールダウンは既存値のまま
     const d=P.dodge, k=clamp(d.t/0.38,0,1);
     const ei=k<0.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2; // easeInOutCubic：加速→等速→減速
     const th=ei*TAU, c=Math.sin(Math.min(1,k*1.25)*Math.PI)*0.5;
@@ -6357,7 +6409,7 @@ function animatePlayer(dt,spd){
     // F6：技ごとの体の動き。腕は武器の握りへ向けるので、ここでは腰・胸・脚を決める
     const a=P.atk; const [ph,k]=phaseAt(a,a.t); const an=a.mv.anim;
     const wk=ph===0?k:1, sk=ph===1?k:(ph===2?1:0), rk=ph===2?k:0;
-    if(an==='punch'||an==='punch2'){ // v0.41：パンチ。腰の回しと胸のひねりで打つ（腕だけの機械的な動きにしない）
+    if(an==='punch'||an==='punch2'){ // v0.45：パンチ。腰の回しと胸のひねりで打つ（腕だけの機械的な動きにしない）
       const L=an==='punch2', dir=L?-1:1, cw=wk*(1-sk);
       Object.assign(Q,{rootY:-0.07-0.05*sk, fwd:0.15*sk*(1-rk*0.5), sq:1,
         hipX:0.12, hipY:dir*(0.4*cw-0.5*sk), hipZ:-dir*0.05*sk,
@@ -6366,7 +6418,7 @@ function animatePlayer(dt,spd){
         aLX:L?LA(-0.4,-1.7,sk):LA(-0.5,0.3,sk), aLZ:L?0.1:0.35, aLY:0,
         aRX:L?LA(-0.5,0.3,sk):LA(-0.4,-1.7,sk), aRZ:L?-0.1:-0.35, aRY:0,
         legL:-0.3-0.3*sk, legR:0.3, legLZ:-0.15, legRZ:0.15, knee:0.35, kL:0.3*sk, kR:0.15, elbow:L?0.05:0.35});
-    } else if(an==='kick'){ // v0.41：キック。軸足を沈め、蹴り足を腰から前方へ。腕は逆に開いてバランスを取る
+    } else if(an==='kick'){ // v0.45：キック。軸足を沈め、蹴り足を腰から前方へ。腕は逆に開いてバランスを取る
       const cw=wk*(1-sk);
       Object.assign(Q,{rootY:-0.04, fwd:0.1*sk*(1-rk*0.5), sq:1,
         hipX:-0.55*sk, hipY:0.25*cw-0.3*sk, hipZ:0.08*sk,
@@ -6381,7 +6433,7 @@ function animatePlayer(dt,spd){
         chX:0.22+0.1*sk+0.3*low+(an==='lunge'?0.2:0), chY:dir*((0.8+0.3*big)*coil-1.05*sk+0.12*Math.sin(rk*Math.PI)), chZ:dir*0.08*coil,
         hdX:-0.12, hdY:-dir*(0.5*coil-0.6*sk)*0.6, hdZ:W.ls*0.4, aLX:-0.5-0.5*coil, aLZ:0.3+0.6*sk, aLY:0,
         legL:-0.75*Math.max(sk,0.4)-(an==='lunge'?0.35:0), legR:0.55, legLZ:-0.2, legRZ:0.2, knee:0.4+0.4*low, kL:0.35*sk+0.4*low, kR:0.3*low, elbow:0.12});
-      { // v0.41：右腕を武器の握り経路に追従（振り中は手が柄から遅れない）
+      { // v0.45：右腕を武器の握り経路に追従（振り中は手が柄から遅れない）
         const e=ph===0?eiQ(k):ph===1?whp(k):ovs(k);
         Q.aRX=ph===0?LA(-0.2,-1.35,eiQ(k)):ph===1?LA(-1.35,0.5,whp(k)):LA(0.5,0.05,ovs(k));
         Q.aRZ=ph===0?LA(-0.12,-0.5,eiQ(k)):ph===1?LA(-0.5,0.12,whp(k)):LA(0.12,-0.06,ovs(k));
@@ -6423,7 +6475,7 @@ function animatePlayer(dt,spd){
   if(P.atk&&!P.dead){ const a=P.atk; a.rootY=Q.rootY; a.fwdOff=Q.fwd; pm.g.updateWorldMatrix(true,true); placeRig(a); const sp=swingPts(a,a.t);
     aimArm(pm.armR,weaponRig.position); const fam=famOf(P.weapon); if(fam!=='nata'||a.kind==='heavy'){ _sp2.copy(weaponRig.position).addScaledVector(sp[3],0.28); aimArm(pm.armL,_sp2); } } // 腕は（なじませ中も）武器の握りへ向ける
   else unRig();
-  trail2.visible=false; updateDebug(dt,P.atk); // v0.41：旧リボン残像は流線（SLASH）に統合・描画停止
+  trail2.visible=false; updateDebug(dt,P.atk); // v0.45：旧リボン残像は流線（SLASH）に統合・描画停止
   softPose(pm,dt,{elbow:P.atk?0.04:Q.elbow,flop:P.atk||P.dodge?0.15:fl,knee:Q.knee,kneeAdd:[Q.kL,Q.kR]});
   const flashing=P.stagger>0&&Math.floor(S.time*20)%2===0;
   pm.g.visible=!flashing;
@@ -6519,10 +6571,10 @@ const mini=$('mini').getContext('2d');
 let miniT=0;
 const hudPrev={t:0,full:100,dur:60}; const resPrev={}; // v0.33：HUD自動格納用
 function updateHUD(dt){
-  const w=WEAPONS[P.weapon];
+  const w=equippedWeapon();
   setW('hpFill',P.hp/P.maxHp); setTxt('hpV',`${Math.ceil(P.hp)}/${P.maxHp}`);
   setW('fdFill',P.full/100); setTxt('fdV',`${Math.ceil(P.full)}`);
-  if(P.full!==hudPrev.full){ hudPrev.t=4; hudPrev.full=P.full; } // v0.41：満腹の変化でだけ展開（耐久は手持ちバーの下へ移した）
+  if(P.full!==hudPrev.full){ hudPrev.t=4; hudPrev.full=P.full; } // v0.45：満腹の変化でだけ展開（耐久は手持ちバーの下へ移した）
   hudPrev.t=Math.max(0,hudPrev.t-dt); $('stats').classList.toggle('compact',hudPrev.t<=0);
   hbRefresh();
   setTxt('buffTxt',(P.buffT>0?`精進の力 攻撃+30%（${Math.ceil(P.buffT)}秒）　`:'')+(P.full<=0?'空腹：自然回復しない':P.full<60||touchMode?'':'満腹：体力が少しずつ回復')); // スマホでは平常時の説明を省く
@@ -6538,7 +6590,7 @@ function updateHUD(dt){
     $('res').hidden=!(anyTop||inv.fenceKit>0||inv.trapKit>0||(prog.unlockBoss&&inv.stakeKit>0)||inv.fang>0||prog.bossDefeated);
   }
   $('rStakeRow').hidden=!prog.unlockBoss; $('rFangRow').hidden=!(inv.fang>0||prog.bossDefeated);
-  hbRefresh(); // v0.41：手持ちバー（数・傷みかけ印・耐久・選択・番号）はここで一括更新
+  hbRefresh(); // v0.45：手持ちバー（数・傷みかけ印・耐久・選択・番号）はここで一括更新
   const [ot]=objective(); const ql=questLine(); const qt=ql?ql[0]:'';
   if(ot!==objOpen.last||qt!==objOpen.lastQ){ if(objOpen.last!==null) objOpen.t=6; objOpen.last=ot; objOpen.lastQ=qt; }
   objOpen.t=Math.max(0,objOpen.t-dt); const op=objOpen.t>0||objOpen.pin; const ob=$('objective'); if(ob.classList.contains('open')!==op) ob.classList.toggle('open',op);
@@ -6677,7 +6729,7 @@ function updateCamera(dt){
   // 距離と高さ：大きい獣が相手なら少し引いて見上げる
   let D=CAM.dist, Hh=CAM.h, lookH=CAM.look, ahead=CAM.ahead;
   if(foe){ const big=foe.type==='boss'?1:foe.type==='bear'?0.45:0.15; D+=big*2.4; Hh+=big*0.3; lookH+=big*1.7; ahead*=0.5; }
-  { const ak=(P.atk&&P.atk.kind==='heavy')?1:(P.atk?0.5:0); cam.atkK=cam.atkK==null?ak:cam.atkK+(ak-cam.atkK)*Math.min(1,dt*5); D+=cam.atkK*0.7; Hh-=cam.atkK*0.25; } // v0.41：攻撃の重量感（軽い寄り）
+  { const ak=(P.atk&&P.atk.kind==='heavy')?1:(P.atk?0.5:0); cam.atkK=cam.atkK==null?ak:cam.atkK+(ak-cam.atkK)*Math.min(1,dt*5); D+=cam.atkK*0.7; Hh-=cam.atkK*0.25; } // v0.45：攻撃の重量感（軽い寄り）
   if(intro){ D=8.5; Hh=1.5; lookH=3.2; }
   const fx=Math.sin(cam.yaw), fz=Math.cos(cam.yaw);
   const gy=groundH(P.x,P.z);
@@ -6721,7 +6773,7 @@ function frame(now){
   f11Frame(Math.max(0,(now-last)/1000)); const raw=clamp((now-last)/1000,0,F11D.rawMax); let rdt=Math.min(raw,0.05); last=now; // 時刻が戻っても負にしない。長いコマは0.25秒で止める（F11）
   if(S.mode==='playing'){
     if(!F11.hold) f11Sim(raw); // 0.05秒ごとに小分けして進める（低FPSでもゲーム内の時間は実時間どおり）。hold はテスト用（実際のコマで進めない）
-    updateHUD(raw); updateNotice(); updTrk(raw); // v0.41：痕跡・荒らし跡の寿命更新
+    updateHUD(raw); updateNotice(); updTrk(raw); // v0.45：痕跡・荒らし跡の寿命更新
   }
   const tv=!(touchMode&&S.mode==='playing'); if($('touch').hidden!==tv){ $('touch').hidden=tv; if(tv){ joy.id=null; joy.x=0; joy.y=0; joyBase.classList.remove('on'); held.atk=false; } }
   if(S.mode!=='title'){ updateLabels(S.mode==='playing'?raw:0); }
@@ -6736,7 +6788,7 @@ try{
   buildWorld(); f31Build(); buildPillars(); buildBarrier(); buildNodes(); buildClues(); buildFenceSlots(); buildTraps();
   spawnFieldEnemies(); setupBoss();
 }catch(e){ console.error(e); fatal('ゲーム世界の構築中にエラーが発生しました：'+e.message); return; }
-try{ warmIcons(); }catch(e){} // v0.41：アイコンを一度だけ生成
+try{ warmIcons(); }catch(e){} // v0.45：アイコンを一度だけ生成
 
 
 // タイトル
@@ -6747,7 +6799,7 @@ $('saveNote').textContent=storageOK?(hasSave?'セーブデータがあります�
 $('btnNew').onclick=()=>{ audioInit(); startNew(); };
 $('btnContinue').onclick=()=>{ audioInit(); continueGame(); };
 
-// ================= v0.41 手持ちバー（固定10スロット）とインベントリ =================
+// ================= v0.45 手持ちバー（固定10スロット）とインベントリ =================
 const HOTNM={nata1:'鉈',nata2:'鍛鉈',nata3:'業鉈',axeStone:'石斧',axeIron:'鉄斧',club:'棍棒',bamboo:'竹槍',spear:'牙槍',fenceKit:'木柵キット',trapKit:'罠キット',stakeKit:'杭柵キット',onigiri:'おにぎり',bento:'精進弁当',food:'食料'};
 const ARMS_ORDER=['nata1','nata2','nata3','axeStone','axeIron','club','bamboo','spear'];
 const HB={defs:[],els:[]};
@@ -6815,7 +6867,7 @@ function hbBuild(){ const hb=$('items'); if(!hb) return; hb.innerHTML=''; HB.els
     const d=document.createElement('div'); d.className='hslot';
     d.innerHTML=`<span class="ki">${i===9?'0':i+1}</span>`;
     d.addEventListener('pointerdown',e=>{ e.preventDefault(); if(S.mode!=='playing') return;
-      if(def.kind==='empty'){ equipUnarmed(); return; } // v0.41：空枠クリックも素手へ
+      if(def.kind==='empty'){ equipUnarmed(); return; } // v0.45：空枠クリックも素手へ
       if(def.kind==='bp'){ hideTip(); openInv(); return; }
       if(def.kind==='arm'){ if(!swapAllowed()){ sfx('deny'); return; } equipArm(def.id); }
       else if(def.kind==='food'){ eat(def.id); }
@@ -6850,7 +6902,7 @@ function hbRefresh(){ const hb=$('items'); if(!hb) return;
     else{ if(d._h!==ki){ d.innerHTML=ki; d._h=ki; }
       d.classList.remove('sel','f7w','dead'); d.classList.add('empty'); delete d.dataset.name; } } }
 function hotbarPick(i){ const def=HB.defs[i]; if(!def) return;
-  if(def.kind==='empty'){ equipUnarmed(); return; } // v0.41：空枠＝素手
+  if(def.kind==='empty'){ equipUnarmed(); return; } // v0.45：空枠＝素手
   if(def.kind==='bp'){ openInv(); return; }
   if(def.kind==='arm'){ if(!swapAllowed()){ sfx('deny'); return; } equipArm(def.id); }
   else if(def.kind==='food'){ eat(def.id); }
@@ -6865,7 +6917,7 @@ function invDefs(){ const d=[];
   for(const k of ['fenceKit','trapKit','stakeKit']) if((inv[k]||0)>0) d.push({kind:'kit',id:k});
   while(d.length<10) d.push({kind:'empty'});
   return d; }
-function f34Body(){ const b=$('invBody'); if(!b) return; const w=WEAPONS[P.weapon], a=ARMOR[inv.armor|0];
+function f34Body(){ const b=$('invBody'); if(!b) return; const w=equippedWeapon(), a=ARMOR[inv.armor|0];
   let g='<div id="invGrid">';
   for(const def of invDefs()){
     if(def.kind==='arm'){ const ic=iconOf(def.id), nm=HOTNM[def.id]||WEAPONS[def.id].name;
@@ -6892,8 +6944,9 @@ $('btnHow').onclick=()=>{ howFrom='title'; $('title').hidden=true; $('howto').hi
 $('btnPauseHow').onclick=()=>{ howFrom='pause'; $('pause').hidden=true; $('howto').hidden=false; };
 $('btnHowBack').onclick=()=>{ $('howto').hidden=true; if(howFrom==='title') $('title').hidden=false; else $('pause').hidden=false; };
 $('btnResume').onclick=closeOverlay;
-$('btnAttackAim').onclick=toggleAttackAimMode;
-updateAttackAimButton();
+$('btnAim').onclick=()=>{ applyAimMode(AIM.mode==='facing'?'cursor':'facing'); }; // v0.45：押すたびにカーソル⇔プレイヤーの向き
+$('btnAimTitle').onclick=()=>{ applyAimMode(AIM.mode==='facing'?'cursor':'facing'); };
+updateAimBtns(); // v0.45：保存しておいたモードを起動時に表示
 function applyShadow(on){ shadowPref=on; renderer.shadowMap.enabled=on; sun.castShadow=on; scene.traverse(o=>{ if(o.material){ (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.needsUpdate=true); } }); for(const m of fadeMap.values()) m.needsUpdate=true; try{ localStorage.setItem('eiheiji_shadow',on?'1':'0'); }catch(e){} $('btnShadow').textContent='高画質の影：'+(on?'オン':'オフ'); }
 $('btnPerf').onclick=()=>f11Toggle(); $('btnPerfRec').onclick=()=>{ f11RecStart(); f11Pause(); };
 $('btnShadow').onclick=()=>{ applyShadow(!shadowPref); toast(shadowPref?'影をオンにした（描画が重くなります）':'影をオフにした'); };
@@ -6915,8 +6968,9 @@ requestAnimationFrame(frame);
 
 </script>
 
-<script>/* v0.41 撮影用フック（?snap=1／?snap=2 のときだけ動く。通常プレイには影響しない） */
+<script>/* v0.45 撮影用フック（?snap=1／?snap=2 のときだけ動く。通常プレイには影響しない） */
 (function(){ var m={1:[158.4,66.9,Math.PI*0.9],2:[147.5,77.8,-1.0]}; var q=/[?&]snap=(\d)/.exec(location.search); if(!q) return; window.addEventListener('load',function(){ setTimeout(function(){ try{ var p=m[+q[1]]||m[1]; try{ audioInit(); }catch(_ae){} startNew(); P.x=p[0]; P.z=p[1]; P.facing=p[2]; S.mode='playing'; }catch(e){ try{ document.title='SNAPFAIL: '+e.message; }catch(_e){} } },2500); }); })();
 </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","spa":2}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","spa":2}' crossorigin="anonymous"></script>
 </body></html>
