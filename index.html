@@ -5259,6 +5259,39 @@ function applyAimMode(m){ if(AIM.mode===m) return; AIM.mode=m; saveAimMode(); up
 let touchMode=false; const joy={id:null,ox:0,oy:0,x:0,y:0}; const held={atk:false};
 function enableTouch(){ if(touchMode) return; touchMode=true; document.body.classList.add('touchmode'); mouse.active=false; try{ if(!localStorage.getItem('eiheiji_aimMode')) AIM.mode='facing'; }catch(e){} } // v0.45：スマホはカーソルがないため、保存がなければプレイヤーの向きを既定にする
 window.addEventListener('touchstart',enableTouch,{passive:true,capture:true});
+
+// v0.45.3: On iOS Safari, touch-action:manipulation alone can still allow a
+// double-tap zoom on gameplay controls. Cancel only the SECOND single-finger
+// tap's default action, after pointerdown has handled the in-game action.
+// Do not intercept ordinary overlays, multi-touch pinches, or accessibility zoom.
+(function preventGameplayDoubleTapZoom(){
+  let lastTime=0, lastX=0, lastY=0, lastTarget=null;
+  function gameplayTarget(node){
+    const el=node && node.nodeType===1 ? node : node?.parentElement;
+    if(!el || !el.closest) return null;
+    if(el.closest('.ov:not([hidden])')) return null; // menus/dialogs retain native tapping
+    return el.closest('#touch, #cv, #items, #objective');
+  }
+  document.addEventListener('touchend',function(e){
+    if(e.touches.length!==0 || e.changedTouches.length!==1){lastTime=0;return;}
+    const target=gameplayTarget(e.target);
+    if(!target){lastTime=0;return;}
+    const t=e.changedTouches[0], now=Date.now();
+    const rapid=now-lastTime>0 && now-lastTime<375;
+    const nearby=Math.hypot(t.clientX-lastX,t.clientY-lastY)<48;
+    if(rapid && nearby && target===lastTarget){
+      if(e.cancelable) e.preventDefault();
+      lastTime=0;
+    }else{
+      lastTime=now; lastX=t.clientX; lastY=t.clientY; lastTarget=target;
+    }
+  },{passive:false,capture:true});
+  document.addEventListener('touchcancel',()=>{lastTime=0;},{passive:true});
+  document.addEventListener('dblclick',function(e){
+    if(gameplayTarget(e.target) && e.cancelable) e.preventDefault();
+  },{capture:true});
+})();
+
 try{ if(matchMedia('(pointer:coarse)').matches&&!matchMedia('(pointer:fine)').matches) enableTouch(); }catch(e){}
 const joyZone=$('joyZone'), joyBase=$('joyBase'), joyKnob=$('joyKnob');
 const JOY_R=52;
