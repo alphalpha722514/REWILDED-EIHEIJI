@@ -21,7 +21,9 @@
     </div>
   </div>
 </noscript>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>REWILDED　EIHEIJI</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"%3E%3Crect width="64" height="64" rx="12" fill="%23121416"/%3E%3Cdefs%3E%3Cmask id="m"%3E%3Crect width="64" height="64" fill="%23fff"/%3E%3Cpath d="M22 14 L40 48 L43 47 L25 13Z" fill="%23000"/%3E%3C/mask%3E%3C/defs%3E%3Cg mask="url%28%23m%29"%3E%3Cpath transform="translate%2819.2,9%29 scale%280.02614%29" d="M78 1760V0H618Q753 0 822.0 61.5Q891 123 914.5 233.5Q938 344 938 493Q938 637 901.5 723.0Q865 809 764 842Q847 859 880.5 924.5Q914 990 914 1094V1760H567V1071Q567 994 535.5 975.5Q504 957 434 957V1760ZM436 652H521Q594 652 594 493Q594 390 578.0 358.0Q562 326 518 326H436Z" fill="%23ECE2C8"/%3E%3C/g%3E%3Cpath d="M25 13 L43 47" stroke="%23A0492E" stroke-width="1.6"/%3E%3Cpath d="M14 56 Q17 49 16 45 Q19 50 18 56Z M20 56 Q22 50 24 47 Q23 52 23 56Z M44 56 Q45 50 49 46 Q47 52 47 56Z M50 56 Q51 51 50 47 Q53 51 53 56Z" fill="%234E8A4B"/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -388,6 +390,43 @@ body.touchmode #tbAct.quiet{opacity:.72;filter:saturate(.45);}
 #invGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px;}
 #invGrid .hslot{width:100%;}
 @media (max-width:560px){ .hslot .gl{font-size:15px;} .hslot .num{font-size:10px;bottom:7px;} #items{gap:3px;} }
+
+/* v0.45.2: mobile UI collision / Safari double-tap zoom prevention.
+   Keep pinch accessibility on browser pages; disable double-tap zoom on game controls. */
+html,body{touch-action:manipulation;}
+button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+/* Game input surfaces must retain their existing pointer gestures. */
+#joyZone,#camZone,#cv,#mapCv,.tb{touch-action:none;}
+/* Portrait: move the 10-slot belt above combat buttons, not over them. */
+@media (max-width:760px) and (orientation:portrait){
+  body.touchmode #items{top:calc(172px + env(safe-area-inset-top,0px));bottom:auto;left:50%;right:auto;transform:translateX(-50%);}
+  body.touchmode #toasts{top:calc(220px + env(safe-area-inset-top,0px));}
+  body.touchmode #bossBar{top:calc(252px + env(safe-area-inset-top,0px));}
+}
+/* Landscape mobile: upper compact quickbar, lower right fighting buttons. */
+@media (orientation:landscape) and (max-height:600px){
+  body.touchmode #items{
+    left:50%;right:auto;top:calc(48px + env(safe-area-inset-top,0px));bottom:auto;
+    transform:translateX(-50%);max-width:calc(100vw - 220px);gap:3px;
+    z-index:5;
+  }
+  body.touchmode #items .hslot{width:min(38px,calc((100vw - 240px)/10));border-width:1px;border-radius:5px;}
+  body.touchmode #items .hslot .gl{font-size:14px;}
+  body.touchmode #items .hslot .ki{font-size:8px;right:2px;}
+  body.touchmode #items .hslot .num{font-size:10px;right:2px;bottom:5px;}
+  body.touchmode #tbPause{top:calc(65px + env(safe-area-inset-top,0px));bottom:auto;right:calc(10px + env(safe-area-inset-right,0px));}
+  body.touchmode #tbMap{top:calc(104px + env(safe-area-inset-top,0px));bottom:auto;left:max(12px,env(safe-area-inset-left,0px));right:auto;}
+  body.touchmode #tbDodge{bottom:calc(106px + env(safe-area-inset-bottom,0px));}
+  body.touchmode #toasts{top:calc(97px + env(safe-area-inset-top,0px));bottom:auto;right:calc(145px + env(safe-area-inset-right,0px));}
+  body.touchmode #bossBar{top:calc(104px + env(safe-area-inset-top,0px));bottom:auto;}
+}
+/* Short landscape height: keep quickbar/buttons inside the usable viewport. */
+@media (orientation:landscape) and (max-height:330px){
+  body.touchmode #items{top:calc(40px + env(safe-area-inset-top,0px));}
+  body.touchmode #items .hslot{width:min(33px,calc((100vw - 240px)/10));}
+  body.touchmode #tbPause{top:calc(60px + env(safe-area-inset-top,0px));}
+  body.touchmode #tbDodge{bottom:calc(88px + env(safe-area-inset-bottom,0px));}
+}
 </style>
 
 <canvas id="cv" tabindex="0"></canvas>
