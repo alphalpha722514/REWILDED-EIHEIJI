@@ -4593,8 +4593,29 @@ function softPose(m,dt,opt={}){
     f.rotation.x=-(opt.elbow!=null?opt.elbow:0.28)*(1-raised*0.8)+s.lag[i]; f.rotation.z=0; });
   m.legs.forEach((l,i)=>{ const sh=l.userData.shin; sh.rotation.x=(opt.knee||0.08)+Math.max(0,l.rotation.x)*0.9+Math.max(0,-l.rotation.x)*0.25+(opt.kneeAdd?opt.kneeAdd[i]:0); });
 }
+// v0.46：武器ディテールは軽い共通ジオメトリと最小限の装飾メッシュで表現する。
+function weaponFineDetail(w,id){
+  const metal=mat(0xb9bec0), metalShadow=mat(0x535b60), rope=mat(0x9c8462), bright=mat(0xe1d4b4);
+  if(id==='axeIron'||id==='axeStone'){
+    const iron=id==='axeIron', yy=iron?-1.02:-0.86;
+    // 刃の斜面と後部の厚み：金属と石ではエッジの質感を変える。
+    const wedge=mesh(G.box,iron?metal:mat(0xb8b6a8),0,yy,iron?0.325:0.30,iron?0.047:0.07,iron?0.255:0.19,0.028);
+    wedge.rotation.x=iron?-0.13:0.10; w.add(wedge);
+    w.add(mesh(G.box,metalShadow,0,yy,iron?-0.095:-0.065,0.09,0.105,0.075));
+    for(let i=0;i<3;i++){const b=mesh(G.cyl8,iron?metalShadow:rope,0,yy+0.12-i*0.075,0,0.061,0.02,0.061); w.add(b);}
+    if(iron){ w.add(mesh(G.box,bright,0,yy+0.095,0.255,0.085,0.016,0.015));
+      w.add(mesh(G.box,metalShadow,0,-0.50,0.04,0.078,0.045,0.08)); }
+  } else if(id==='club'){
+    // 枝の樹皮と手巻き、木の節を強調。滑らかな有機形状は元モデルを利用。
+    for(let i=0;i<3;i++) w.add(mesh(G.cyl8,rope,0,-0.035-i*0.055,0,0.055,0.012,0.055));
+    for(let i=0;i<3;i++){ const mark=mesh(G.box,mat(0x61452f),0,-0.70-i*0.19,0.105,0.013,0.055,0.012); mark.rotation.x=0.18; w.add(mark); }
+  } else if(id==='bamboo'){
+    // 節の色差と先端付近の縄の巻き（竹槍の長さ・当たり判定は不変）。
+    for(let i=0;i<3;i++){const b=mesh(G.cyl8,rope,0,-1.63-i*0.045,0,0.044,0.014,0.044); w.add(b);}
+  }
+}
 function makeWeapon(id){
-  if(id==='axeStone'||id==='axeIron'||id==='club'||id==='bamboo'||id==='hammerStone'||id==='pickIron'){ const g=makeArm(id);
+  if(id==='axeStone'||id==='axeIron'||id==='club'||id==='bamboo'||id==='hammerStone'||id==='pickIron'){ const g=makeArm(id); weaponFineDetail(g,id);
     if(id==='axeStone'||id==='axeIron'){ // v0.45：斧の刃先を明るく切り出し、柄との締め輪を追加（鉈と明確に別物の見た目へ）
       const iron=id==='axeIron';
       const edge=mesh(G.box,mat(0xeef2f4),0,iron?-1.0:-0.88,iron?0.3:0.28,iron?0.06:0.1,iron?0.24:0.12,0.035); edge.rotation.x=0.06; g.add(outline(edge,0.03));
@@ -4605,6 +4626,9 @@ function makeWeapon(id){
     w.add(mesh(G.cyl8,mat(0x7a5638),0,-0.6,0,0.04,2.4,0.04));
     const tip=mesh(hornGeo(0.55,0.09,0.5),mat(0xf3ead2),0,-1.75,0); tip.rotation.z=Math.PI; w.add(outline(tip,0.06));
     w.add(mesh(G.sphM,mat(0xd2402e),0,-1.68,0,0.09,0.12,0.09));
+    // 穂先の金具と、柄を補強する縄。牙を削った先端の質感は維持。
+    w.add(mesh(G.cyl8,mat(0x74706a),0,-1.53,0,0.061,0.14,0.061));
+    for(let i=0;i<3;i++) w.add(mesh(G.cyl8,mat(0xa58b68),0,-1.36-i*0.049,0,0.061,0.014,0.061));
     for(let i=0;i<5;i++) w.add(mesh(G.cyl8,mat(0xd2402e),Math.cos(i*1.3)*0.05,-1.55,Math.sin(i*1.3)*0.05,0.015,0.3,0.015));
   } else {
     const lv=id==='nata3'?3:id==='nata2'?2:1;
@@ -4616,6 +4640,13 @@ function makeWeapon(id){
     w.add(mesh(G.box,mat(0xf4f6f8),0.0,-0.78-lv*0.04,0.22+lv*0.015,0.055,0.78+lv*0.08,0.04));
     if(lv<3) for(const [yy,zz] of [[-0.62,0.235],[-0.95,0.235]]) w.add(mesh(G.box,mat(0x6a6e70),0.0,yy-lv*0.04,zz+lv*0.015,0.06,0.05,0.035)); // 刃こぼれ
     for(let i=0;i<5;i++) w.add(mesh(G.box,mat(0x8a8e90),0.03,-0.5-i*0.12-lv*0.04,0.0,0.004,0.03,0.18)); // 鍛え目
+    // v0.46：鉈の輪郭を読みやすく。峰の厚み・刃の切れ目・柄の目釘と口金の重なり。
+    const spine=mesh(G.box,mat(0x535a60),-0.024,-0.79-lv*0.04,-0.081,0.031,0.74+lv*0.07,0.025); w.add(spine);
+    const bevel=mesh(G.box,mat(lv===3?0xf1f1ed:0xd8dce0),0.012,-0.83-lv*0.04,0.224+lv*0.015,0.035,0.67+lv*0.09,0.019); w.add(bevel);
+    const tip=mesh(G.box,mat(lv===3?0xd0d6da:0x9aafb9),0,-1.205-lv*0.075,0.065,0.062,0.07,0.22+lv*0.03); tip.rotation.x=-0.21; w.add(tip);
+    for(const y of [-0.07,-0.22]){const rivet=mesh(G.sphLo,mat(0xb8a890),0.049,y,0,0.014,0.014,0.014);w.add(rivet);}
+    for(let i=0;i<3;i++){const wrap=mesh(G.cyl8,mat(lv>1?0x87694a:0x8e7b65),0,-0.115-i*0.075,0,0.053,0.013,0.053);w.add(wrap);}
+
   }
   castAll(w); optimizeModel(w,charVC,0.02);
   return w;
@@ -4830,15 +4861,37 @@ const pm=makeHuman({scale:0.9,tall:1.22,legLen:1.8,armLen:1.55,girth:0.8,waist:0
     bottom:{col:0x4a4e44,col2:0x3e4238,top:0.47,kneePad:0x2c2e30,cargo:true,t:0.028},shoes:{kind:'boots',col:0x5a3e2c,col2:0x7a5a40},
     belt:{col:0x2a2420,pouch:0x5a5a48,buckle:true,y:0.405},hair:{style:'short',col:0x2a1e16},band:{col:0xf4f1e8,pat:0x2f5f9a}}});
 scene.add(pm.g);
-{ // v0.45：肩の丸み（革色の球で上腕の付け根を包む）と腰ベルト・小物。武器の手（userData.hand）が追従する実績のある親へ付けるので可動に追従する
-  const leather=mat(0x6e5640), brass=mat(0xb8a05a);
+{ // v0.46：軽量な外装レイヤー。骨に接続して既存の軟体スキニング・戦闘動作をそのまま使用
+  const leather=mat(0x6e5640), darkLeather=mat(0x342a27), brass=mat(0xb8a05a), seam=mat(0xa79b7c), cloth=mat(0x243c67), cuff=mat(0x776b53);
+  // 肩革は上腕のボーンへ追従。肩の芯と縁取りを別素材にしてシルエットを柔らかくする。
   for(const arm of [pm.armR,pm.armL]){ if(!arm) continue;
-    const sh=mesh(G.sph,leather,0,0.01,0,0.15,0.12,0.14); arm.add(sh); arm.add(outline(sh,0.03)); } // 肩
+    const sh=mesh(G.sph,leather,0,0.015,0,0.155,0.12,0.145); arm.add(sh); arm.add(outline(sh,0.018));
+    const patch=mesh(G.sph,cloth,0,0.035,0.017,0.11,0.075,0.126); arm.add(patch);
+    const stitch=mesh(G.torus,seam,0,0.032,0.105,0.092,0.008,0.092); stitch.rotation.x=0.22; arm.add(stitch);
+    // 前腕の作業用の革巻き（腕の動きに追従）
+    const fore=arm.userData.fore;
+    if(fore){ fore.add(mesh(G.cyl8,cuff,0,-0.13,0,0.088,0.085,0.088));
+      for(const y of [-0.17,-0.10]) fore.add(mesh(G.cyl8,darkLeather,0,y,0,0.091,0.015,0.091)); }
+  }
+  // 胴の重装甲化はせず、斜めの荷紐・腰道具・真鍮の金具で生活感を出す。
   const belt=new THREE.Group(); pm.body.add(belt);
-  belt.add(mesh(G.cyl8,leather,0,0.02,0,0.31,0.08,0.27)); // 腰回りの革
-  belt.add(mesh(G.box,brass,0.09,0.02,0.26,0.08,0.07,0.05)); // 真鍮のバックル
-  belt.add(mesh(G.box,leather,0.2,-0.08,0.18,0.09,0.15,0.045)); // 腰の小物入れ
+  belt.add(mesh(G.cyl8,darkLeather,0,0.02,0,0.31,0.07,0.27));
+  belt.add(mesh(G.box,brass,0.09,0.02,0.265,0.085,0.07,0.035));
+  belt.add(mesh(G.box,darkLeather,0.09,0.02,0.29,0.045,0.031,0.012));
+  const pouch=mesh(rbox(0.12,0.17,0.07,0.025),leather,0.24,-0.07,0.17); belt.add(outline(pouch,0.018));
+  belt.add(mesh(G.box,darkLeather,0.24,-0.005,0.216,0.10,0.025,0.018));
+  belt.add(mesh(G.box,brass,0.24,-0.002,0.229,0.022,0.026,0.012));
+  // 左腰の巻きロープ。ホルスターの根元を隠さないよう側面のみに付ける。
+  for(let i=0;i<3;i++){ const loop=mesh(G.torus,mat(0x9a8060),-0.285,-0.04-i*0.034,0.0,0.057,0.009,0.057); loop.rotation.y=Math.PI/2; belt.add(loop); }
+  const chestTrim=new THREE.Group(); pm.chest.add(chestTrim);
+  const sling=mesh(G.box,leather,0.015,-0.06,0.228,0.052,0.37,0.028); sling.rotation.z=-0.47; chestTrim.add(sling);
+  chestTrim.add(mesh(G.box,brass,-0.068,-0.11,0.247,0.067,0.055,0.028));
+  // 胸の小さな識別布。大きな板パーツに見せず、色のポイントだけ追加。
+  chestTrim.add(mesh(rbox(0.095,0.075,0.012,0.008),mat(0xc0aa78),0.125,0.055,0.236));
+  chestTrim.add(mesh(G.box,cloth,0.124,0.052,0.248,0.059,0.03,0.007));
+  // 髪・鉢巻きは既存のスキンに組込済み。頭部には独立した固い飾りを足さない。
 }
+
 const weaponPivot=new THREE.Group(); weaponPivot.rotation.x=-0.85; pm.armR.userData.hand.add(weaponPivot);
 let weaponMesh=null;
 // ---- v0.45：鉈は腰・斧は背中。装備していない所持武器だけを表示（装備中は手・斬撃中は武器リグ） ----
