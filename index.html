@@ -602,7 +602,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
 </div>
 <div class="ov" id="inv" hidden>
   <div class="card">
-    <h2>持ち物・装備 <small style="font-size:12px">v0.49</small></h2><div id="invBody"></div>
+    <h2>持ち物・装備 <small style="font-size:12px">v0.50</small></h2><div id="invBody"></div>
     <p id="invLv" style="font-size:13px;margin:.2em 0 .6em"></p>
     <div class="invgrid" id="invGrid"></div>
     <div class="lbl">装備</div>
@@ -6530,7 +6530,7 @@ function updatePlayer(dt){
 const easeOutExpo=t=>t>=1?1:1-Math.pow(2,-10*t);
 const easeInCub=t=>t*t*t;
 function poseMix(A,B,k){ const o={}; for(const key in A) o[key]=A[key]+((B[key]!=null?B[key]:A[key])-A[key])*k; return o; }
-// v0.49 locomotion references (visual animation, not a musculoskeletal simulation):
+// v0.50 locomotion references (visual animation, not a musculoskeletal simulation):
 // Pontzer et al. 2006, contralateral arm swing: https://dash.harvard.edu/handle/1/2797432
 // Cappellini et al. 2006, separate walk/run mechanics: https://doi.org/10.1152/jn.00081.2006
 // Kozanek et al. 2009, stance knee flexion/extension: https://pmc.ncbi.nlm.nih.gov/articles/PMC2725209/
@@ -6547,14 +6547,14 @@ function f48Gait(dt){
  const blocked=P.atk||P.dodge||P.stagger>0||P.dead;
  if(blocked){w.active=false;w.wasBlocked=true;w.impulse*=Math.exp(-dt*16);return {w,enabled:false};}
  if(w.wasBlocked){w.wasBlocked=false;for(let i=0;i<2;i++){const a=ideal(i);a.y=groundH(a.x,a.z);w.feet[i].anchor.copy(a);w.feet[i].point.copy(a);w.feet[i].mode='stance';}w.phase=.30;}
- const moving=raw>.12,speed49=Math.max(w.speed,raw*.95),runTarget=speed49>2.65?1:0;w.run49=w.run49==null?runTarget:lerp(w.run49,runTarget,1-Math.exp(-dt*12));const run=w.run49,stride=lerp(clamp(.90+speed49*.28,1.0,1.55),speed49/clamp(1.25+speed49*.06,1.38,1.65),run),duty=lerp(.61,lerp(.38,.22,clamp((speed49-2.7)/3.5,0,1)),run),freq=raw/stride;
+ const moving=raw>.12,speed49=Math.max(w.speed,raw*.95),runTarget=speed49>2.65?1:0;w.run49=w.run49==null?runTarget:lerp(w.run49,runTarget,1-Math.exp(-dt*12));const run=w.run49,stride=lerp(clamp(.78+speed49*.23,.98,1.32),speed49/clamp(1.72+speed49*.085,1.98,2.25),run),duty=lerp(.58,lerp(.40,.32,clamp((speed49-2.7)/3.5,0,1)),run),freq=raw/stride;
  if(moving){if(!w.active)w.phase=duty*.5;w.phase=(w.phase+dt*freq)%1;w.active=true;}else{w.active=false;}
  const dir=new THREE.Vector3(moving?dx:w.vx,0,moving?dz:w.vz);if(dir.lengthSq()<1e-8)dir.set(Math.sin(P.facing),0,Math.cos(P.facing));else dir.normalize();
- const smooth=t=>t*t*(3-2*t),touch=(f)=>{f.anchor.copy(f.target);f.anchor.y=groundH(f.anchor.x,f.anchor.z);f.mode='stance';f.t=0;w.contacts++;w.impulse=1;if(S.mode==='playing'&&w.speed>.4){noise(.048,.015+run*.014,run>0.5?250:360);noise(.020,.007+run*.005,850);if(run>.7&&w.contacts%3===0)spawnParticles(f.anchor.x,.03,f.anchor.z,2,0x9a886a,1);}};
+ const smooth=t=>t*t*t*(t*(t*6-15)+10),touch=(f)=>{f.anchor.copy(f.target);f.anchor.y=groundH(f.anchor.x,f.anchor.z);f.mode='stance';f.t=0;w.contacts++;w.impulse=1;if(S.mode==='playing'&&w.speed>.4){noise(.048,.012+run*.009,run>0.5?250:360);noise(.020,.007+run*.005,850);if(run>.7&&w.contacts%3===0)spawnParticles(f.anchor.x,.03,f.anchor.z,2,0x9a886a,1);}};
  for(let i=0;i<2;i++){
   const f=w.feet[i],p=(w.phase+(i?.5:0))%1;
   if(moving){
-   const half=lerp(stride*duty*.5,stride*duty*.36,run),remaining=(1-p)/Math.max(.3,freq,raw/stride*.85);
+   const half=lerp(stride*duty*.5,stride*duty*.42,run),remaining=(1-p)/Math.max(.3,freq,raw/stride*.85);
    if(f.mode==='stance'&&p>=duty){
     f.mode='swing';f.from.copy(f.anchor);f.liftP=duty;f.settle=false;
     f.target.copy(ideal(i)).addScaledVector(dir,remaining*Math.max(w.speed,raw)+half);f.target.y=groundH(f.target.x,f.target.z);
@@ -6565,10 +6565,10 @@ function f48Gait(dt){
      if(f.settle){f.from.copy(f.point);f.liftP=p;f.settle=false;}
      f.u=clamp((p-f.liftP)/Math.max(.01,1-f.liftP),0,1);
      const planned=ideal(i).addScaledVector(dir,remaining*Math.max(w.speed,raw)+half);planned.y=groundH(planned.x,planned.z);
-     f.target.lerp(planned,1-Math.exp(-dt*14));const u=smooth(f.u);f.point.lerpVectors(f.from,f.target,u);f.point.y=lerp(f.from.y,f.target.y,u)+Math.pow(Math.sin(f.u*Math.PI),1.1)*lerp(.09,lerp(.28,.36,clamp((w.speed-2.7)/3.5,0,1)),run)*(1+run*.16*Math.cos(f.u*Math.PI));f.pitch=lerp(lerp(.20,-.12,f.u),f.u<.5?lerp(.68,.10,f.u*2):lerp(.10,-.08,(f.u-.5)*2),run);f.load=0;
+     f.target.lerp(planned,1-Math.exp(-dt*14));const u=smooth(f.u);f.point.lerpVectors(f.from,f.target,u);f.point.y=lerp(f.from.y,f.target.y,u)+Math.pow(Math.sin(f.u*Math.PI),1.1)*lerp(.09,lerp(.22,.28,clamp((w.speed-2.7)/3.5,0,1)),run)*(1+run*.16*Math.cos(f.u*Math.PI));f.pitch=lerp(lerp(.20,-.12,f.u),f.u<.5?lerp(.68,.10,f.u*2):lerp(.10,-.08,(f.u-.5)*2),run);f.load=0;
     }
    }
-   if(f.mode==='stance'){f.point.copy(f.anchor);const u=clamp(p/duty,0,1);const walkPitch=u<.18?lerp(-.14,0,u/.18):u>.60?lerp(0,.54,(u-.60)/.40):0;const runPitch=u<.15?lerp(.03,-.04,u/.15):u>.50?lerp(0,.68,(u-.50)/.50):-.04*(1-(u-.15)/.35);f.pitch=lerp(walkPitch,runPitch,run);f.load=Math.pow(Math.sin(Math.PI*u),.6);}
+   if(f.mode==='stance'){f.point.copy(f.anchor);const u=clamp(p/duty,0,1);const walkPitch=u<.18?lerp(-.14,0,u/.18):u>.60?lerp(0,.36,smooth((u-.60)/.40)):0;const runPitch=u<.15?lerp(.03,-.04,u/.15):u>.35?lerp(0,.85,smooth((u-.35)/.65)):-.04*(1-(u-.15)/.20);f.pitch=lerp(walkPitch,runPitch,run);f.load=Math.pow(Math.sin(Math.PI*u),.6);}
   }else{
    // Complete a short settling step after stopping instead of freezing an extended leg.
    if(f.mode==='swing'){
@@ -6586,8 +6586,11 @@ function f48Gait(dt){
  const fwd=new THREE.Vector3(Math.sin(P.facing),0,Math.cos(P.facing));
  const left=w.feet[0].point.clone().sub(new THREE.Vector3(P.x,0,P.z)).dot(fwd),right=w.feet[1].point.clone().sub(new THREE.Vector3(P.x,0,P.z)).dot(fwd);
  // Drive arm phase from measured legs rather than an unrelated sine wave.
- const opposition=clamp((right-left)/Math.max(.30,stride*.53),-1,1);
- return {w,enabled:true,dt,run,blend,phase,rootY,stride,duty,shift:side*.012*blend,lean:clamp(forward*lerp(.007,.014,run),-.035,.10),sideLean:clamp(-lateral*.006,-.035,.035),opposition,armSwing:opposition*lerp(.26,.52,run)*blend};
+ const oppositionGoal=clamp((right-left)/Math.max(.30,stride*.53),-1,1);
+ w.opposition50=lerp(w.opposition50??oppositionGoal,oppositionGoal,1-Math.exp(-dt*36));const opposition=w.opposition50;
+ const leanGoal=clamp(forward*lerp(.040,.036,run),-.06,.24)*blend;
+ w.lean50=lerp(w.lean50||0,leanGoal,1-Math.exp(-dt*7));
+ return {w,enabled:true,dt,run,blend,phase,rootY,stride,duty,shift:side*.012*blend,lean:w.lean50,sideLean:clamp(-lateral*.006,-.035,.035),opposition,armSwing:opposition*lerp(.26,.52,run)*blend};
 }
 function f48SoleHeight(m,pitch){return (m.sole48*Math.cos(pitch)+Math.max(0,Math.sin(pitch))*.21+Math.max(0,-Math.sin(pitch))*.10)*m.root.scale.x;}
 const IK48={target:new THREE.Vector3(),hip:new THREE.Vector3(),d:new THREE.Vector3(),pole:new THREE.Vector3(),knee:new THREE.Vector3(),a:new THREE.Vector3(),b:new THREE.Vector3(),q:new THREE.Quaternion(),qf:new THREE.Quaternion(),down:new THREE.Vector3(0,-1,0)};
@@ -6602,23 +6605,33 @@ function f48Plant(m,gait){
  for(let i=0;i<2;i++){
   const f=w.feet[i];if(f.mode!=='stance')continue;
   const leg=m.legs[i],L1=leg.userData.length48*scale,L2=leg.userData.shin.userData.length48*scale,p=(w.phase+(i?.5:0))%1,u=clamp(p/gait.duty,0,1);
-  const walkK=sample([[0,5],[.16,13],[.43,4],[.67,3],[.84,10],[1,32]],u);
-  const runK=sample([[0,16],[.30,40],[.58,43],[.82,22],[1,10]],u);
+  const walkK=sample([[0,5],[.16,10],[.43,3],[.67,3],[.84,7],[1,18]],u);
+  const runK=sample([[0,12],[.30,29],[.58,31],[.82,18],[1,7]],u);
   const knee=lerp(walkK,runK,gait.run)*Math.PI/180,reach=Math.sqrt(L1*L1+L2*L2+2*L1*L2*Math.cos(knee));
   leg.getWorldPosition(V.hip);const h=Math.hypot(f.point.x-V.hip.x,f.point.z-V.hip.z);
   const elevation=Math.sqrt(Math.max(.035,reach*reach-h*h));
   const y=f.point.y+f48SoleHeight(m,f.pitch)+elevation;
   top=Math.max(top,y-V.hip.y);supports++;
  }
+ // Prepare pelvis height before the next heel strike. Without anticipation, the
+ // newly planted front leg forces a one-frame downward correction.
+ let incoming=Infinity,incomingBlend=0;
+ for(let i=0;i<2;i++){const f=w.feet[i];if(f.mode!=='swing'||f.settle||f.u<.45)continue;
+  const leg=m.legs[i];leg.getWorldPosition(V.hip);const p=(w.phase+(i?.5:0))%1,remain=(1-p)*gait.stride/Math.max(.2,w.speed),reach=(leg.userData.length48+leg.userData.shin.userData.length48)*scale-.004;
+  const h=Math.hypot(f.target.x-(V.hip.x+w.vx*remain),f.target.z-(V.hip.z+w.vz*remain));
+  const bound=f.target.y+f48SoleHeight(m,lerp(-.14,.03,gait.run))+Math.sqrt(Math.max(.035,reach*reach-h*h))-V.hip.y;
+  incoming=Math.min(incoming,bound);incomingBlend=Math.max(incomingBlend,smooth((f.u-.45)/.35));
+ }
  if(supports){
   // Two-support transfer is limited by the most extended leg; both feet stay planted.
   let upper=Infinity;
   for(let i=0;i<2;i++){const f=w.feet[i];if(f.mode!=='stance')continue;const leg=m.legs[i];leg.getWorldPosition(V.hip);const reach=(leg.userData.length48+leg.userData.shin.userData.length48)*scale-.001;const h=Math.hypot(f.point.x-V.hip.x,f.point.z-V.hip.z);upper=Math.min(upper,f.point.y+f48SoleHeight(m,f.pitch)+Math.sqrt(Math.max(.035,reach*reach-h*h))-V.hip.y);}
-  const terrain=Math.max(0,gy-Math.min(...w.feet.filter(f=>f.mode==='stance').map(f=>f.point.y))),goal=clamp(Math.min(top,upper),-.13-Math.min(.32,terrain),.06);
-  w.pelvis49=Math.min(upper,lerp(w.pelvis49??goal,goal,1-Math.exp(-(gait.dt||.016)*30)));
+  const terrain=Math.max(0,gy-Math.min(...w.feet.filter(f=>f.mode==='stance').map(f=>f.point.y))),goal=clamp(Math.min(top,upper,incomingBlend>0?lerp(top,incoming,incomingBlend):Infinity),-.13-Math.min(.32,terrain),.06);
+  // Continuous filtering prevents a support change from snapping the pelvis.
+  w.pelvis49=Math.min(upper,lerp(w.pelvis49??goal,goal,1-Math.exp(-(gait.dt||.016)*14)));
  }else if(w.active&&gait.run>.5){
-  // Rise through flight, with no artificial support-foot compression.
-  const p=(w.phase*2)%1,begin=gait.duty*2,flight=clamp((p-begin)/Math.max(.04,1-begin),0,1);w.pelvis49=lerp(w.pelvis49||0,lerp(-.005,.048,Math.sin(flight*Math.PI)),1-Math.exp(-(gait.dt||.016)*24));
+  // Short, low flight continues push-off rather than jumping to a high absolute peak.
+  const p=(w.phase*2)%1,begin=gait.duty*2,flight=clamp((p-begin)/Math.max(.04,1-begin),0,1);w.pelvis49=lerp(w.pelvis49||0,Math.min(-.025+.012*Math.sin(flight*Math.PI),incomingBlend>0?lerp(-.025,incoming,incomingBlend):Infinity),1-Math.exp(-(gait.dt||.016)*14));
  }else w.pelvis49=lerp(w.pelvis49||0,0,.35);
  m.root.position.y+=w.pelvis49*gait.blend;
  m.g.updateMatrixWorld(true);
@@ -6765,15 +6778,15 @@ function animatePlayer(dt,spd){
   }
   if(gait48.enabled){
     const a=gait48,ps=a.phase;
-    Q.rootY=a.rootY;Q.yoff=0;Q.fwd=0;Q.hipX=a.lean*.25;Q.hipY=a.opposition*.025*a.blend;Q.hipZ=a.sideLean*.25;
-    Q.chX=.012+a.lean+Math.sin(T*1.9)*.003;Q.chY=-a.opposition*.030*a.blend;Q.chZ=a.sideLean;
+    Q.rootY=a.rootY;Q.yoff=0;Q.fwd=0;Q.hipX=a.lean*.55;Q.hipY=a.opposition*.025*a.blend;Q.hipZ=a.sideLean*.25;
+    Q.chX=.008+a.lean*.65+Math.sin(T*1.9)*.002;Q.chY=-a.opposition*.030*a.blend;Q.chZ=a.sideLean;
     Q.hdX=-Q.chX*.6;Q.hdY=-Q.chY*.55;Q.hdZ=-Q.chZ*.6;
     const armed=!!P.weapon;
     Q.aLX=-a.armSwing-.025;Q.aLZ=.055;Q.aLY=0;
     Q.aRX=a.armSwing*(armed?.55:1)-.025;Q.aRZ=-.055;Q.aRY=0;
     Q.elbow=lerp(.16,1.40,a.run)*a.blend+.10*(1-a.blend);
     Q.legL=0;Q.legR=0;Q.legLZ=0;Q.legRZ=0;
-    cam.footPulse48=a.w.impulse*a.blend;
+    cam.footPulse48=a.w.impulse*a.blend*.35;
   }else{pm.root.position.x=0;cam.footPulse48=0;}
   weaponPivot.rotation.x=P.atk||P.dodge?-0.85:lerp(0.55,-1.0,ck); // ふだんは鉈の先がだらんと下がり、構えると一気に上がる
   pm.root.position.y=Q.rootY;
