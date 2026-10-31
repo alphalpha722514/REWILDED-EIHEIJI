@@ -4727,8 +4727,9 @@ function studyGeometry51(species){
  if(!studyPacked51)studyPacked51=JSON.parse(document.getElementById('beast-study51').textContent);
  const out={};for(const [name,p] of Object.entries(studyPacked51[species])){
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(Float32Array.from(bytes51(p.p,Int16Array),v=>v/10000),3));g.setAttribute('normal',new THREE.BufferAttribute(bytes51(p.n,Int8Array),3,true));
- const colors=bytes51(p.c,Uint8Array),linear=new Float32Array(colors.length);for(let i=0;i<colors.length;i++){const c=colors[i]/255;linear[i]=c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4);}
- g.setAttribute('color',new THREE.BufferAttribute(linear,3));g.setAttribute('skinIndex',new THREE.BufferAttribute(Uint16Array.from(bytes51(p.b,Uint8Array)),4));g.setAttribute('skinWeight',new THREE.BufferAttribute(bytes51(p.w,Uint8Array),4,true));g.setIndex(new THREE.BufferAttribute(bytes51(p.ix,Uint32Array),1));g.userData.shared51=true;g.computeBoundingSphere();out[name]=g;}
+ // v0.51.1: match the game's legacy LinearEncoding palette; decoding sRGB here alone crushed dark fur.
+ const colors=bytes51(p.c,Uint8Array);
+ g.setAttribute('color',new THREE.BufferAttribute(colors,3,true));g.setAttribute('skinIndex',new THREE.BufferAttribute(Uint16Array.from(bytes51(p.b,Uint8Array)),4));g.setAttribute('skinWeight',new THREE.BufferAttribute(bytes51(p.w,Uint8Array),4,true));g.setIndex(new THREE.BufferAttribute(bytes51(p.ix,Uint32Array),1));g.userData.shared51=true;g.computeBoundingSphere();out[name]=g;}
  return studyCache51[species]=out;
 }
 function makeStudyBeast51(species){
@@ -4737,6 +4738,8 @@ function makeStudyBeast51(species){
  const skeleton=new THREE.Skeleton([body,head,...legs]);g.updateMatrixWorld(true);skeleton.calculateInverses();
  const flashM=[];let eyeM=null;for(const [name,geo] of Object.entries(studyGeometry51(species))){
  const mat=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,skinning:true,roughness:name==='ivory'?.56:name==='eye'?.3:.89,metalness:0,side:THREE.DoubleSide});
+ // A small unlit floor preserves facial/body detail in shade without extra lights or draw calls.
+ if(name==='body'){mat.emissive.setHex(boss?0x111913:0x1b140e);mat.emissiveIntensity=.45;}
  if(name==='glow'){mat.emissive.setHex(0x287e68);mat.emissiveIntensity=.65;}if(name==='eye'){eyeM=mat;mat.emissive.setHex(boss?0x66431a:0x241806);mat.emissiveIntensity=.25;}else flashM.push(mat);
  mat.userData.baseEmissive=mat.emissive.clone();const mesh=new THREE.SkinnedMesh(geo,mat);mesh.name='study51_'+name;mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;g.add(mesh);mesh.bind(skeleton,new THREE.Matrix4());}
  const aura=new THREE.Group();g.add(aura);if(boss){const texture=mistTexture51();for(let i=0;i<10;i++){const mat=new THREE.SpriteMaterial({map:texture,color:0x58d9b8,transparent:true,opacity:.17,depthWrite:false});const sprite=new THREE.Sprite(mat);sprite.userData.phase=i*2.39996;sprite.scale.set(.55,.85,1);aura.add(sprite);}}
