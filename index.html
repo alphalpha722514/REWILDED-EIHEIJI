@@ -7,6 +7,10 @@
 #noScriptHelp ol{padding-left:1.4em;}
 
 .gear47{margin:16px 0;padding:12px;border:1px solid #8e825f;border-radius:8px;background:#272b25;color:#eee5d2}.gear47 h3{margin:0 0 8px}.gear47 p{font-size:12px;line-height:1.6;margin:6px 0}.gear47row{display:grid;grid-template-columns:32px minmax(0,1fr);gap:5px 8px;margin:12px 0}.gear47row select{width:100%;min-height:44px;background:#393e33;color:#fff5df;border:1px solid #81775c;border-radius:5px;font:inherit;font-size:14px}.gear47row small{grid-column:2;font-size:12px;line-height:1.5}.gear47total{color:#dfc480}
+</style><style>
+body.cinema52 #touch,body.cinema52 #bossBar{visibility:hidden!important}
+#cinemaMatte52{position:fixed;inset:0;pointer-events:none;z-index:90;border-top:8vh solid #050707;border-bottom:8vh solid #050707;box-sizing:border-box;display:none}
+body.cinema52 #cinemaMatte52{display:block}
 </style></head><body>
 <noscript>
   <div id="noScriptHelp">
@@ -3742,7 +3746,7 @@ function f11Lod(px,pz){ if(!f11Has('B')) return;
 function f11Sim(raw){ raw=Math.min(raw,F11D.rawMax); const n=Math.max(1,Math.ceil(raw/F11D.subDt-1e-9)); const step=raw/n; F11.sub=n; if(n>F11.subMax) F11.subMax=n;
   for(let k=0;k<n&&S.mode==='playing';k++){ let dt=step;
     if(S.hitstop>0){ S.hitstop-=step; dt=0; } else if(S.slowmo>0){ S.slowmo-=step; dt*=0.35; }
-    if(dt>0){ S.time+=dt; updatePlayer(dt); updateEnemies(dt); updateNPCs(dt); updateWorld(dt); updateEvent(dt); updateProgress(dt); } } }
+    if(dt>0){ S.time+=dt; if(bossCinema52()){ tickCinema52(dt); continue; } updatePlayer(dt); updateEnemies(dt); updateNPCs(dt); updateWorld(dt); updateEvent(dt); updateProgress(dt); } } }
 // 獣を消したときの片付け：その獣だけが使っていた形・材質・画像を GPU から外す（ほかで使っている物は残す）
 function f11Dispose(objs){ const geo=new Set(), mats=new Set(), tex=new Set(), skel=new Set(); // 骨の動きを入れる画像（スキニング）も外す
   const addM=m=>{ if(!m) return; mats.add(m); for(const k of ['map','alphaMap','emissiveMap','normalMap']) if(m[k]) tex.add(m[k]); };
@@ -4752,6 +4756,7 @@ function animateStudyBeast51(e,dt){
  const m=e.m,k=m.k,boss=e.type==='boss',t=S.time,st=e.state,gy=groundH(e.x,e.z),sp=e.spd||0;
  m.g.visible=boss||dist(e.x,e.z,camera.position.x,camera.position.z)<100;m.g.position.set(e.x,gy,e.z);m.g.rotation.set(0,e.rot,0);
  const running=st==='charge',rate=running?2.5:Math.min(1.8,sp*.24),amp=Math.min(1,sp/2.6);e.studyWalk51=(e.studyWalk51||0)+dt*rate;
+ if(boss&&sp>.7&&st!=='intro'&&st!=='dead'){const beat=Math.floor(e.studyWalk51*2);if(e.stepBeat52!=null&&beat!==e.stepBeat52) beastImpact52(e,running?1:.55);e.stepBeat52=beat;}else e.stepBeat52=null;
  m.body.position.set(0,0,0);m.body.rotation.set(0,0,0);m.body.scale.set(1+Math.sin(t*2.1+e.id)*.004,1,1);m.head.rotation.set(.012*Math.sin(t*1.8+e.id),0,0);
  for(let i=0;i<4;i++){
  const front=i<2,phase=(e.studyWalk51+(running?[0,.08,.5,.58][i]:[0,.5,.75,.25][i]))%1,stance=running?.46:.68;
@@ -4764,7 +4769,7 @@ function animateStudyBeast51(e,dt){
  if(running){m.head.rotation.x=.15;m.body.rotation.x=.025;m.body.position.y=Math.sin(e.studyWalk51*Math.PI*2)*.018*k;}
  if(gore){m.head.rotation.x=.25*Math.min(1,e.st/.4);m.body.position.y=-.035*k;}
  if(st==='tuskRec'||st==='goreRec'){m.head.rotation.x=-.26*Math.max(0,1-e.st/.45);}
- if(st==='intro'){m.head.rotation.x=-.16*Math.sin(Math.min(1,e.st/1.8)*Math.PI);}
+ if(st==='intro'){const q=clamp((e.st-2.5)/.7,0,1); m.head.rotation.x=-.25*q; m.body.position.y+=Math.sin(e.st*2.8)*.018*k; if(e.st<2.4){const q=e.st%1.05; m.legs[0].position.y+=Math.sin(Math.min(1,q/.6)*Math.PI)*.12*k; m.legs[3].position.y+=Math.sin(Math.min(1,q/.6)*Math.PI)*.08*k;}}
  if(st==='stompWind'){const a=Math.sin(Math.min(1,e.st)*Math.PI);m.body.position.y=.28*k*a;m.body.rotation.x=-.15*a;}
  if(st==='stun'||st==='trapped'||st==='broken'){m.head.rotation.z=Math.sin(t*4)*.055;m.head.rotation.x=.08;}
  if(st==='dead'){m.body.rotation.z=Math.min(Math.PI/2,e.st*3);m.g.position.y-=Math.max(0,e.st-1.6)*.4;}
@@ -4859,6 +4864,7 @@ function synthVoice(species,call,sampleRate){
 const activeBeastVoices51=new Set();let voiceBus51=null,lastVoice51=-99;
 function stopBeastVoices51(){for(const a of activeBeastVoices51){try{a.source.stop();}catch(_){}a.source.disconnect();a.gain.disconnect();}activeBeastVoices51.clear();}
 function beastVoice51(e,call){
+ if(e.type==='boss'&&call==='roar'&&S.mode==='playing') S.air52=Math.max(S.air52||0,3.6);
  if(!AC||S.muted||S.mode!=='playing'||document.hidden)return;
  const d=dist(e.x,e.z,P.x,P.z),boss=e.type==='boss',max=boss?65:26;if(d>max||AC.state!=='running')return;
  const now=AC.currentTime;if(now-(e.lastVoice51??-99)<(call==='roar'?2.2:3.8)||now-lastVoice51<.5)return;
@@ -5609,6 +5615,7 @@ function aimAngle(){
 
 // ================= プレイヤーの行動 =================
 function tryAttack(kind,aimSnapshot=null){
+  if(bossCinema52()) return;
   if(P.dead||P.stagger>0) return;
   if(f4Busy()){ if(S.time-F4.hintT>2.5){ F4.hintT=S.time; toast(prog.f4.carry?'丸太を担いでいる間は攻撃できない（調べるで下ろす）':'一輪車を押している間は攻撃できない（調べるで置く）',true); } return; }
   if(P.dodge||P.atk){ P.buffer={k:kind,t:S.time,aim:aimSnapshot}; return; } // 予約時点の攻撃方向も保持
@@ -5636,6 +5643,7 @@ function startAttack(kind,aimSnapshot=null){
   return true;
 }
 function tryDodge(fromBuf){
+  if(bossCinema52()) return;
   if(P.dead||P.dodge) return;
   if(P.dodgeCD>0||(P.atk&&P.atk.t<P.atk.cancelT)){ if(!fromBuf&&!P.dbuf) P.dbuf=S.time; return; } // まだ回避できない：少しだけ予約
   if(P.st<STAM.dodge*(1-f47Stats().dodge)){ P.dbuf=0; staminaDeny(); return; }
@@ -6254,6 +6262,44 @@ function failEvent(){
   playerDie('core');
 }
 
+// ================= ヌシ演出 v0.52 =================
+function bossCinema52(){return typeof bossE!=='undefined'&&bossE&&!bossE.removed&&bossE.state==='intro'&&S.mode==='playing';}
+function clearCinemaInput52(){keys.clear();held.atk=false;joy.id=null;joy.x=joy.y=0;cam.dragDX=0;P.dbuf=0;}
+function beastImpact52(e,power){
+ const attenuation=Math.max(0,1-dist(e.x,e.z,P.x,P.z)/55);
+ S.ground52=Math.max(S.ground52||0,power*attenuation);
+ if(AC&&AC.state==='running'&&!S.muted){const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.type='sine';o.frequency.setValueAtTime(65,t);o.frequency.exponentialRampToValueAtTime(26,t+.22);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.28*power*attenuation+.0001,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+.42);o.connect(g);g.connect(master);o.onended=()=>{o.disconnect();g.disconnect();};o.start(t);o.stop(t+.45);}
+}
+function tickCinema52(dt){
+ const e=bossE;e.st+=dt;e.spd=0;clearCinemaInput52();
+ const steps=[.7,1.75,2.55];while(e.cinemaSteps52<steps.length&&e.st>=steps[e.cinemaSteps52]){beastImpact52(e,.65+e.cinemaSteps52*.2);e.cinemaSteps52++;spawnParticles(e.x,.2,e.z,8,0x998c75,3);}
+ if(e.st>=2.85&&!e.cinemaRoared52){e.cinemaRoared52=true;beastVoice51(e,'roar');}
+ updateEnemyAnim(e,dt);
+ if(e.st>=7.6){setState(e,'think');e.st=-.7;clearCinemaInput52();document.body.classList.remove('cinema52');cam.pos.copy(camera.position);cam.look.set(e.x,groundH(e.x,e.z)+2,e.z);cam.fov=camera.fov;banner('戦闘開始','突進の赤い帯を見て、横へ回避せよ',2.5);$('bossBar').hidden=false;}
+}
+function vibrate52(dt){
+ const g=S.ground52||0,a=S.air52||0,t=S.time;
+ S.ground52=Math.max(0,g-dt*2.5);S.air52=Math.max(0,a-dt);
+ const tremor=Math.min(1,a)*(.65+.35*Math.sin(t*7.3))*Math.sin(t*83+Math.sin(t*19));
+ camera.position.y+=g*Math.sin(t*32)*.18+tremor*.038;
+ camera.position.x+=g*Math.sin(t*23)*.055+tremor*.025;
+ camera.rotateZ(tremor*.003); // high-frequency air pressure, separate from heavy ground impacts
+}
+function cinemaCamera52(dt){
+ document.body.classList.add('cinema52');
+ const e=bossE,t=e.st,gy=groundH(e.x,e.z),f=e.rot;
+ const q=clamp(t/2.8,0,1),end=clamp((t-6.4)/1.2,0,1),ease=end*end*(3-2*end);
+ const angle=f+.48-.22*q,d=lerp(10.5,8.2,q);
+ const heroY=groundH(P.x,P.z);
+ const x=lerp(e.x+Math.sin(angle)*d,P.x-Math.sin(cam.yaw)*CAM.dist,ease);
+ const z=lerp(e.z+Math.cos(angle)*d,P.z-Math.cos(cam.yaw)*CAM.dist,ease);
+ camera.position.set(x,Math.max(groundH(x,z)+.65,lerp(gy+lerp(.85,1.8,q),heroY+CAM.h,ease)),z);
+ camera.lookAt(lerp(e.x,P.x,ease),lerp(gy+lerp(1.3,2.6,q),heroY+CAM.look,ease),lerp(e.z,P.z,ease));
+ camera.fov=lerp(lerp(57,48,q),CAM.fov,ease);camera.updateProjectionMatrix();vibrate52(dt);
+ fadeForest(camera.position.x,camera.position.z,e.x,e.z);
+}
+for(const type of ['keydown','keyup','pointerdown','pointerup','touchstart','touchmove','touchend','click','wheel']) document.addEventListener(type,e=>{if(bossCinema52()){e.preventDefault();e.stopImmediatePropagation();}},{capture:true,passive:false});
+const matte52=document.createElement('div');matte52.id='cinemaMatte52';document.body.appendChild(matte52);
 // ================= ボス戦 =================
 function setupBoss(){
   if(bossE&&!bossE.removed) removeEnemy(bossE);
@@ -6267,8 +6313,8 @@ function setupBoss(){
 function startBoss(){
   if(bossActive||!bossE||prog.bossDefeated) return;
   bossActive=true; prog.stage='boss'; setBarrier(true);
-  setState(bossE,'intro'); sfx('roar'); S.shake=0.6;
-  banner('九頭竜のヌシ','突進の赤い帯を見て、横へ回避せよ',3);
+  setState(bossE,'intro'); bossE.cinemaSteps52=0; bossE.cinemaRoared52=false; clearCinemaInput52(); P.atk=null; P.dodge=null; P.moveMag=0;
+  banner('九頭竜のヌシ','沢の奥から、地響きが近づく——',6.4);
   $('bossBar').hidden=false;
 }
 function bossDefeated(e){
@@ -6347,7 +6393,7 @@ function interactables(){
   g4Interactables(L);
   L.sort((a,b)=>a.d-b.d); return L[0]||null;
 }
-function interact(){ if(curInter) curInter.act(); }
+function interact(){ if(bossCinema52()) return; if(curInter) curInter.act(); }
 function gatherNode(n){
   if(!n.avail) return;
   const amt=n.k==='wood'?2:(n.chest?2:1+(Math.random()<0.5?1:0));
@@ -7191,6 +7237,7 @@ function fadeForest(cx,cz,px,pz){
     t[4].getMatrixAt(t[5],m.userData.m4); m.geometry=forestTreeGeo(); m.material=forestFadeMat; m.matrix.copy(m.userData.m4); m.visible=true; t[4].setMatrixAt(t[5],_zero); t[4].instanceMatrix.needsUpdate=true; fadedF.set(t,m); }
 }
 function updateCamera(dt){
+ if(bossCinema52()){ cinemaCamera52(dt); return; }
   if(S.mode==='title'&&!cam.override){ titleCam(); return; }
   if(cam.override){ camera.position.copy(cam.override.p); camera.lookAt(cam.override.l); if(camera.fov!==cam.override.fov){ camera.fov=cam.override.fov||CAM.fov; camera.updateProjectionMatrix(); } return; }
   if(S.mode==='title'){ cam.yaw+=dt*0.05; }
@@ -7232,6 +7279,7 @@ function updateCamera(dt){
   const sh=Math.min(0.8,S.shake)*0.32; S.shake=Math.max(0,S.shake-dt*2.6);
   camera.position.set(cam.pos.x+(Math.random()-0.5)*sh,cam.pos.y+(Math.random()-0.5)*sh*0.7-(cam.footPulse48||0)*.012,cam.pos.z+(Math.random()-0.5)*sh);
   camera.lookAt(cam.look);
+ vibrate52(dt);
   // 大きな獣の突進が迫ると、わずかに画角が広がる
   let fovAdd=0; if(foe&&(foe.state==='charge'||foe.state==='chargeWind')&&foe.type!=='monkey') fovAdd=foe.type==='boss'?6:3;
   cam.fov=lerp(cam.fov,CAM.fov+fovAdd,1-Math.exp(-dt*5)); if(Math.abs(camera.fov-cam.fov)>0.05){ camera.fov=cam.fov; camera.updateProjectionMatrix(); }
