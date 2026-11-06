@@ -11,6 +11,17 @@
 body.cinema52 #touch,body.cinema52 #bossBar{visibility:hidden!important}
 #cinemaMatte52{position:fixed;inset:0;pointer-events:none;z-index:90;border-top:8vh solid #050707;border-bottom:8vh solid #050707;box-sizing:border-box;display:none}
 body.cinema52 #cinemaMatte52{display:block}
+
+body.nushiFarewell52 #hud,body.nushiFarewell52 #touch{visibility:hidden!important}
+#nushiIntroText52{position:absolute;left:6%;right:6%;bottom:1vh;text-align:center;color:#eee5d2;font:clamp(13px,2.2vw,19px)/1.55 "Zen Antique",serif;text-shadow:0 2px 8px #000}
+#nushiFarewell52{position:fixed;inset:0;z-index:110;display:flex;align-items:flex-end;justify-content:center;box-sizing:border-box;padding:0 18px max(10vh,env(safe-area-inset-bottom,0px));border-top:7vh solid #07090a;border-bottom:7vh solid #07090a;background:linear-gradient(to bottom,rgba(2,8,10,.1) 20%,rgba(3,9,12,.78) 96%)}
+#nushiFarewell52[hidden]{display:none!important}
+#nushiFarewell52 .nushiPanel52{width:min(680px,100%);padding:20px 22px 18px;border:1px solid rgba(225,216,183,.35);background:rgba(13,20,21,.88);color:#efe8db;box-shadow:0 16px 48px rgba(0,0,0,.45)}
+#nushiFarewell52 .nushiEyebrow52{font:12px/1.4 sans-serif;letter-spacing:.22em;color:#d9bb84;margin:0 0 8px}
+#nushiFarewell52 .nushiSpeaker52{font:clamp(17px,3vw,25px)/1.3 "Zen Antique",serif;color:#f3e1bc;margin:0 0 12px}
+#nushiFarewell52 .nushiLine52{font:clamp(15px,2.5vw,20px)/1.85 "Zen Kaku Gothic New",sans-serif;min-height:4em;white-space:pre-wrap;margin:0 0 12px}
+#nushiFarewell52 .nushiNext52{float:right;min-height:42px;padding:8px 22px;border:1px solid #ae9770;background:#4b4031;color:white;font:14px sans-serif;cursor:pointer}
+@media(max-height:500px){#nushiFarewell52{padding-bottom:6px;border-top-width:3vh;border-bottom-width:3vh}#nushiFarewell52 .nushiPanel52{padding:9px 14px}#nushiFarewell52 .nushiLine52{min-height:2em;margin-bottom:5px;line-height:1.4}#nushiFarewell52 .nushiSpeaker52{margin-bottom:5px}}
 </style></head><body>
 <noscript>
   <div id="noScriptHelp">
@@ -464,7 +475,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
   </div>
   <canvas id="mini" width="150" height="196"></canvas>
   <div id="coreBar" class="panel" hidden><div id="coreLbl"><span>火の見やぐら（防衛対象）の耐久</span><span class="num" id="coreV">300 / 300</span></div><div class="bigtrack"><div id="coreFill"></div></div></div>
-  <div id="bossBar" hidden><div id="bossName">九頭竜のヌシ</div><div class="bigtrack"><div id="bossFill"></div></div><div class="poisetrack"><div id="bossPoise"></div></div></div>
+  <div id="bossBar" hidden><div id="bossName">光明寺のヌシ</div><div class="bigtrack"><div id="bossFill"></div></div><div class="poisetrack"><div id="bossPoise"></div></div></div>
   <div id="items"></div>
   <div id="help" class="panel">
     <b>WASD</b> 移動　<b>Shift</b> 歩く　<b>←→</b> カメラ　<b>C</b> 背後へ<br>
@@ -643,12 +654,12 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
 
 <div class="ov" id="result" hidden>
   <div class="card">
-    <h2>九頭竜のヌシ　討伐</h2>
-    <p>山林に静けさが戻った。ヌシの首には、錆びた金属の輪がはめられていた。</p>
-    <div class="clue">刻印：「EIHEI-BIO　個体番号 007／強化段階 III」</div>
+    <h2>光明寺のヌシ　討伐</h2>
+    <p>沢の奥に静けさが戻った。かつてシシガミ様と呼ばれた長命の猪は、九頭竜の支配から解かれた。</p>
+    <div class="clue">最後の言葉：「…..今さっき牙を向けていたワシすらも助けようとする優しい心の持ち主はお前しかいないじゃろうて」</div>
     <div class="result-stats" id="resultStats"></div>
     <div class="clue" style="border-color:var(--gold)">解放：<b>牙槍</b>（リーチの長い新武器）と <b>杭柵キット</b>（耐久2倍の柵）を作業台で作れるようになった。</div>
-    <p style="font-size:13px;color:var(--washi-dim)">v0.29の物語はここまで。このまま光明寺の町を探索して、新しい装備を試せます。</p>
+    <p style="font-size:13px;color:var(--washi-dim)">この章の物語はここまで。このまま光明寺の町を探索して、新しい装備を試せます。</p>
     <div class="btns">
       <button class="pri" id="btnContinuePlay">探索を続ける</button>
       <button id="btnResultTitle">タイトルへ</button>
@@ -3398,7 +3409,7 @@ function f9EshinPose(m,t){ m.armR.rotation.set(-1.25+Math.sin(t*14)*0.18,0,0.45)
 // どちらも、その時の実際の状態だけから決める。聞いても報酬や進行は変わらない
 const F9TOBJ={gather:'東口の外の畑と、線路の向こうの山すそで、木材と食料を集めてきておくれ',buildFence:'作業台で木柵キットを作って、南門の柵台に据えておくれ',raid:'獣が来とる！ 拠点を守っておくれ',
   explore:'沢沿いの道を山へ登って、手掛かりを探しておくれ',invasionPrep:'備えができたら「侵攻を始める」を押しね。時間が来ても始まるで',invasion:'火の見やぐらを守り抜いておくれ',
-  toBoss:'沢の奥の広場で、九頭竜のヌシを討っておくれ',boss:'ヌシを討っておくれ',cleared:'町は落ち着いた。好きに歩いてみね'};
+  toBoss:'沢の奥の広場で、光明寺のヌシを討っておくれ',boss:'ヌシを討っておくれ',cleared:'町は落ち着いた。好きに歩いてみね'};
 function f9TomeTips(){ const T=[], st=prog.stage;
   if(st==='buildFence'||st==='invasionPrep'){ const gs=st==='buildFence'?GAPS.filter(g=>g.id==='S'):GAPS; // 1 柵のない／壊れた門
     const no=gs.filter(g=>!g.fence.type), br=gs.filter(g=>g.fence.type&&g.fence.broken);
@@ -4996,7 +5007,7 @@ function makeBear(){
   castAll(g); shadowBlob(g,1.15,1.45); optimizeModel(g,vm,0.026);
   return {g,body,head,legs:[B.l0,B.l1,B.l2,B.l3],eyeM,flashM:[sm,vm],brows,mouth,kind:'bear'};
 }
-// ---- 九頭竜のヌシ ----
+// ---- 光明寺のヌシ ----
 function makeNushi(){
   const H=[0,1.95,1.85];
   const LG=[[-0.75,1.2,0.75],[0.75,1.2,0.75],[-0.6,1.1,-1.15],[0.6,1.1,-1.15]];
@@ -5371,7 +5382,7 @@ const ET={
  boar:{hp:75,r:0.60,speed:4.2,detect:13,name:'イノシシ'},
  monkey:{hp:34,r:0.45,speed:6.6,detect:12,name:'サル'},
  bear:{hp:210,r:1.05,speed:3.0,detect:11,name:'ツキノワグマ'},
- boss:{hp:720,r:1.9,speed:3.6,detect:40,name:'九頭竜のヌシ'},
+ boss:{hp:720,r:1.9,speed:3.6,detect:40,name:'光明寺のヌシ'},
 };
 let eid=0;
 function spawnEnemy(type,x,z,mode,extra={}){
@@ -6275,7 +6286,7 @@ function winEvent(){
     setNight(false); setBarrier(false);
     banner('拠点を守り抜いた！','報酬：獣素材6・食料4・木材5・おにぎり2',3.2);
     prog.stage='toBoss';
-    queueDialog([[npcTome,'夜が明けた……。みんな無事や。おまえのおかげやざ。……ほんに、よう無事でおってくれた。'],[npcTome,'群れを追い立てとったのは“九頭竜のヌシ”と呼ばれる大イノシシやろう。沢の奥、高速道路の高架をくぐった先の広場や。道をふさいどった倒木は、町のもんがどけてくれた。'],[npcYone,'ヌシは突っ込んできたら止まらんらしい。大岩にぶつけたったら、さすがに目ぇ回すやろ。……知らんけど。']]);
+    queueDialog([[npcTome,'夜が明けた……。みんな無事や。おまえのおかげやざ。……ほんに、よう無事でおってくれた。'],[npcTome,'群れを追い立てとったのは“光明寺のヌシ”と呼ばれる大イノシシやろう。沢の奥、高速道路の高架をくぐった先の広場や。道をふさいどった倒木は、町のもんがどけてくれた。'],[npcYone,'ヌシは突っ込んできたら止まらんらしい。大岩にぶつけたったら、さすがに目ぇ回すやろ。……知らんけど。']]);
   }
   // 柵の応急処置：慧心が少し直す
   saveGame();
@@ -6291,14 +6302,16 @@ function clearCinemaInput52(){keys.clear();held.atk=false;joy.id=null;joy.x=joy.
 function beastImpact52(e,power){
  const attenuation=Math.max(0,1-dist(e.x,e.z,P.x,P.z)/55);
  S.ground52=Math.max(S.ground52||0,power*attenuation);
+ if(AC&&AC.state==='running'&&!S.muted&&attenuation>0.01)noise(.27,.075*power*attenuation,130);
  if(AC&&AC.state==='running'&&!S.muted){const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.type='sine';o.frequency.setValueAtTime(65,t);o.frequency.exponentialRampToValueAtTime(26,t+.22);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.28*power*attenuation+.0001,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+.42);o.connect(g);g.connect(master);o.onended=()=>{o.disconnect();g.disconnect();};o.start(t);o.stop(t+.45);}
 }
 function tickCinema52(dt){
  const e=bossE;e.st+=dt;e.spd=0;clearCinemaInput52();
- const steps=[.7,1.75,2.55];while(e.cinemaSteps52<steps.length&&e.st>=steps[e.cinemaSteps52]){beastImpact52(e,.65+e.cinemaSteps52*.2);e.cinemaSteps52++;spawnParticles(e.x,.2,e.z,8,0x998c75,3);}
- if(e.st>=2.85&&!e.cinemaRoared52){e.cinemaRoared52=true;beastVoice51(e,'roar');}
+ const steps=[.65,1.58,2.55];while(e.cinemaSteps52<steps.length&&e.st>=steps[e.cinemaSteps52]){beastImpact52(e,.9+e.cinemaSteps52*.28);e.cinemaSteps52++;spawnParticles(e.x,.2,e.z,12,0x998c75,4);}
+ if(e.st>=2.85&&!e.cinemaRoared52){e.cinemaRoared52=true;beastVoice51(e,'roar');introText52.textContent='かつてシシガミ様と呼ばれた、光明寺のヌシ。';}
+ if(e.st>=5.1&&!e.cinemaLastText52){e.cinemaLastText52=true;introText52.textContent='その瞳には、九頭竜の怒りが宿っていた。';}
  updateEnemyAnim(e,dt);
- if(e.st>=7.6){setState(e,'think');e.st=-.7;clearCinemaInput52();document.body.classList.remove('cinema52');cam.pos.copy(camera.position);cam.look.set(e.x,groundH(e.x,e.z)+2,e.z);cam.fov=camera.fov;banner('戦闘開始','突進の赤い帯を見て、横へ回避せよ',2.5);$('bossBar').hidden=false;}
+ if(e.st>=7.6){setState(e,'think');e.st=-.7;clearCinemaInput52();document.body.classList.remove('cinema52');introText52.textContent='';cam.pos.copy(camera.position);cam.look.set(e.x,groundH(e.x,e.z)+2,e.z);cam.fov=camera.fov;banner('戦闘開始','突進の赤い帯を見て、横へ回避せよ',2.5);$('bossBar').hidden=false;}
 }
 function vibrate52(dt){
  const g=S.ground52||0,a=S.air52||0,t=S.time;
@@ -6323,6 +6336,80 @@ function cinemaCamera52(dt){
 }
 for(const type of ['keydown','keyup','pointerdown','pointerup','touchstart','touchmove','touchend','click','wheel']) document.addEventListener(type,e=>{if(bossCinema52()){e.preventDefault();e.stopImmediatePropagation();}},{capture:true,passive:false});
 const matte52=document.createElement('div');matte52.id='cinemaMatte52';document.body.appendChild(matte52);
+const introText52=document.createElement('div');introText52.id='nushiIntroText52';matte52.appendChild(introText52);
+
+/* 光明寺のヌシ：討伐後の物語。セーブと報酬の既存仕様は維持する。 */
+const NUSHI_WILL52='…..今さっき牙を向けていたワシすらも助けようとする優しい心の持ち主はお前しかいないじゃろうて';
+const nushiFarewell52=document.createElement('div');
+nushiFarewell52.id='nushiFarewell52';
+nushiFarewell52.hidden=true;
+nushiFarewell52.innerHTML='<section class="nushiPanel52" aria-live="polite"><p class="nushiEyebrow52">光明寺のヌシ — 最後の対話</p><h2 class="nushiSpeaker52"></h2><p class="nushiLine52"></p><button class="nushiNext52" type="button">次へ</button></section>';
+document.body.appendChild(nushiFarewell52);
+const nushiFarewellLines52=[
+ ['――','沢の奥に静けさが戻った。巨大な猪は、もう牙を向けてこなかった。'],
+ ['光明寺のヌシ','……よう、わしを止めてくれたのう。長い夢から目が覚めたようじゃ。'],
+ ['光明寺のヌシ','昔はシシガミ様などと呼ばれておった。九頭竜とは、あやつが守神だった頃からの知り合いじゃ。'],
+ ['光明寺のヌシ','それが、あやつの怒りに心を奪われ……お前たちにまで牙を向けてしもうた。'],
+ ['主人公','まだ助けられるはずだ。町に戻って、みんなに相談しよう。'],
+ ['光明寺のヌシ',NUSHI_WILL52]
+];
+let farewell52=null,lastFarewellNext52=0;
+function showFarewellLine52(){
+ if(!farewell52)return;
+ const line=nushiFarewellLines52[farewell52.index];
+ nushiFarewell52.querySelector('.nushiSpeaker52').textContent=line[0];
+ nushiFarewell52.querySelector('.nushiLine52').textContent=line[1];
+ nushiFarewell52.querySelector('.nushiNext52').textContent=farewell52.index===nushiFarewellLines52.length-1?'結果を見る':'次へ';
+}
+function beginFarewell52(e){
+ farewell52={e:e,index:0,t:0};
+ e.state='farewell';e.st=0;e.spd=0;
+ S.mode='nushiFarewell52';S.resultT=0;
+ keys.clear();held.atk=false;joy.id=null;joy.x=joy.y=0;cam.dragDX=0;
+ stopBeastVoices51();
+ document.body.classList.remove('cinema52');
+ document.body.classList.add('nushiFarewell52');
+ $('bossBar').hidden=true;
+ nushiFarewell52.hidden=false;
+ showFarewellLine52();
+}
+function finishFarewell52(){
+ if(!farewell52)return;
+ const e=farewell52.e;
+ if(e&&!e.removed){e.state='dead';e.st=0;e.spd=0;}
+ farewell52=null;
+ nushiFarewell52.hidden=true;document.body.classList.remove('nushiFarewell52');
+ saveGame();showResult();
+}
+function nextFarewell52(){
+ if(!farewell52)return;
+ const now=performance.now();if(now-lastFarewellNext52<240)return;
+ lastFarewellNext52=now;
+ if(farewell52.index<nushiFarewellLines52.length-1){farewell52.index++;showFarewellLine52();}
+ else finishFarewell52();
+}
+nushiFarewell52.querySelector('.nushiNext52').addEventListener('click',nextFarewell52);
+document.addEventListener('keydown',function(ev){
+ if(S.mode!=='nushiFarewell52')return;
+ if([' ','Enter','e','E','Escape'].includes(ev.key)){ev.preventDefault();ev.stopImmediatePropagation();if(!ev.repeat)nextFarewell52();}
+},true);
+function updateFarewell52(dt){
+ if(!farewell52)return;
+ farewell52.t+=dt;S.time+=dt;
+ const e=farewell52.e;
+ if(e&&!e.removed)updateEnemyAnim(e,dt);
+}
+function farewellCamera52(dt){
+ if(!farewell52||!farewell52.e)return;
+ const e=farewell52.e,gy=groundH(e.x,e.z),t=farewell52.t;
+ const a=e.rot+.38+Math.sin(t*.23)*.06,d=10.4-Math.min(1,t/10)*1.2;
+ const x=e.x+Math.sin(a)*d,z=e.z+Math.cos(a)*d;
+ camera.position.set(x,Math.max(gy+2.8,groundH(x,z)+1.0),z);
+ camera.lookAt(e.x,gy+2.4,e.z);
+ if(camera.fov!==52){camera.fov=52;camera.updateProjectionMatrix();}
+ fadeForest(x,z,e.x,e.z);
+}
+
 // ================= ボス戦 =================
 function setupBoss(){
   if(bossE&&!bossE.removed) removeEnemy(bossE);
@@ -6336,8 +6423,8 @@ function setupBoss(){
 function startBoss(){
   if(bossActive||!bossE||prog.bossDefeated) return;
   bossActive=true; prog.stage='boss'; setBarrier(true);
-  setState(bossE,'intro'); bossE.cinemaSteps52=0; bossE.cinemaRoared52=false; clearCinemaInput52(); P.atk=null; P.dodge=null; P.moveMag=0;
-  banner('九頭竜のヌシ','沢の奥から、地響きが近づく——',6.4);
+  setState(bossE,'intro'); bossE.cinemaSteps52=0; bossE.cinemaRoared52=false; bossE.cinemaLastText52=false; introText52.textContent='……沢の奥から、何かが近づいてくる。'; clearCinemaInput52(); P.atk=null; P.dodge=null; P.moveMag=0;
+  banner('光明寺のヌシ','沢の奥から、地響きが近づく——',6.4);
   $('bossBar').hidden=false;
 }
 function bossDefeated(e){
@@ -6345,10 +6432,9 @@ function bossDefeated(e){
   e.ind.visible=false; hideSector(e);
   inv.fang+=1; inv.hide+=8; prog.unlockBoss=true; prog.stage='cleared';
   setBarrier(false);
-  S.slowmo=1.2; sfx('win'); S.shake=1;
-  banner('討伐成功','ヌシの牙・獣素材8を手に入れた',3);
+  S.slowmo=0; S.shake=.35; S.resultT=0;
   saveGame();
-  S.resultT=2.6;
+  beginFarewell52(e);
 }
 
 // ================= 会話 =================
@@ -6524,7 +6610,7 @@ function openInv(){ f31Inv(); f34Body();
   const got=CLUES.filter(x=>prog.clues[x.id]);
   if(!got.length) c.innerHTML='<p style="font-size:13px;color:var(--washi-dim)">まだ手掛かりはない。</p>';
   for(const x of got){ const d=document.createElement('div'); d.className='clue'; d.innerHTML=`<b>${x.title}</b><br>`; d.appendChild(document.createTextNode(x.text)); c.appendChild(d); }
-  if(prog.bossDefeated){ const d=document.createElement('div'); d.className='clue'; d.style.borderColor='var(--gold)'; d.textContent='ヌシの首輪：「EIHEI-BIO 個体番号 007／強化段階 III」……個体番号があるということは、他にも？'; c.appendChild(d); }
+  if(prog.bossDefeated){ const d=document.createElement('div'); d.className='clue'; d.style.borderColor='var(--gold)'; d.textContent='光明寺のヌシが残したもの。青緑の鱗には、九頭竜の力の痕跡がかすかに残っている。'; c.appendChild(d); }
   renderArms();
   f9InvLine(); $('inv').hidden=false;
 }
@@ -7108,8 +7194,8 @@ function objective(){
     case 'explore': return [`沢沿いの道を山へ登り、獣の異変の手掛かりを探す（${prog.clues.filter(Boolean).length}/2）`,nearestClue()];
     case 'invasionPrep': return ['拠点に戻り、柵と罠で大規模侵攻に備える（準備ができたら区長の画面の「侵攻を始める」）',{x:BX,z:BZ}];
     case 'invasion': return ['火の見やぐらを守り抜け！ 三方向からの群れを撃退する',{x:BX,z:BZ-2}];
-    case 'toBoss': return ['沢の奥、高速道路の高架の先の広場へ。九頭竜のヌシを討伐する',{x:ARENA.x,z:ARENA.z}];
-    case 'boss': return ['九頭竜のヌシを討伐する',null];
+    case 'toBoss': return ['沢の奥、高速道路の高架の先の広場へ。光明寺のヌシを討伐する',{x:ARENA.x,z:ARENA.z}];
+    case 'boss': return ['光明寺のヌシを討伐する',null];
     case 'cleared': return ['自由探索：光明寺の町や田んぼを歩いてみよう。牙槍や杭柵も作れる',null];
   }
   return ['',null];
@@ -7260,6 +7346,7 @@ function fadeForest(cx,cz,px,pz){
     t[4].getMatrixAt(t[5],m.userData.m4); m.geometry=forestTreeGeo(); m.material=forestFadeMat; m.matrix.copy(m.userData.m4); m.visible=true; t[4].setMatrixAt(t[5],_zero); t[4].instanceMatrix.needsUpdate=true; fadedF.set(t,m); }
 }
 function updateCamera(dt){
+ if(S.mode==='nushiFarewell52'){farewellCamera52(dt);return;}
  if(bossCinema52()){ cinemaCamera52(dt); return; }
   if(S.mode==='title'&&!cam.override){ titleCam(); return; }
   if(cam.override){ camera.position.copy(cam.override.p); camera.lookAt(cam.override.l); if(camera.fov!==cam.override.fov){ camera.fov=cam.override.fov||CAM.fov; camera.updateProjectionMatrix(); } return; }
@@ -7323,6 +7410,7 @@ let last=performance.now();
 function frame(now){
   requestAnimationFrame(frame);
   f11Frame(Math.max(0,(now-last)/1000)); const raw=clamp((now-last)/1000,0,F11D.rawMax); let rdt=Math.min(raw,0.05); last=now; // 時刻が戻っても負にしない。長いコマは0.25秒で止める（F11）
+  if(S.mode==='nushiFarewell52')updateFarewell52(rdt);
   if(S.mode==='playing'){
     if(!F11.hold) f11Sim(raw); // 0.05秒ごとに小分けして進める（低FPSでもゲーム内の時間は実時間どおり）。hold はテスト用（実際のコマで進めない）
     updateHUD(raw); updateNotice(); updTrk(raw); // v0.45：痕跡・荒らし跡の寿命更新
