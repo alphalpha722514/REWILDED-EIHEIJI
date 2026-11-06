@@ -1,0 +1,26 @@
+name: Restore Nushi cinematic and farewell
+on:
+  push:
+    paths:
+      - '.github/workflows/restore-nushi.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Apply Nushi patch
+        run: python3 .github/scripts/apply_nushi_fix.py
+      - name: Commit updated game
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- index.html; then
+            git add index.html
+            git commit -m "Restore Nushi cinematic and final dialogue"
+            git push
+          fi
