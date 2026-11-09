@@ -1,0 +1,68 @@
+name: Apply basic armor without replacing existing game code
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-basic-armor.yml'
+permissions:
+  contents: write
+jobs:
+  armor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Patch and test index.html
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess, tempfile, re, json
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          assert subprocess.check_output(['git','hash-object','index.html'],text=True).strip()=='7915104a667b55635117ea4805749e46f98aee4b', 'main/index.html changed; refused to patch'
+          patches = [["const G47={\n work_chest:","const G47={\n basic_head:{slot:'head',name:'藁の笠',set:'basic',desc:'被ダメージ -3%。',cut:.03,cost:{straw:5}},\n basic_chest:{slot:'chest',name:'厚着の上着',set:'basic',desc:'被ダメージ -5%。',cut:.05,cost:{hide:4,rope:2}},\n basic_legs:{slot:'legs',name:'当て布の脚袋',set:'basic',desc:'被ダメージ -4%。',cut:.04,cost:{hide:3,rope:1}},\n basic_feet:{slot:'feet',name:'丈夫な脚絆',set:'basic',desc:'被ダメージ -3%。',cut:.03,cost:{hide:2,rope:2}},\n work_chest:","base definitions"],["const G47SETS={forest:'山守',tracker:'沢追い'};","const G47SETS={forest:'山守',tracker:'沢追い'};\nconst F47_ARMOR_CAP={slots:.15,total:.40}; // 4部位15%、籠手込み40%（暫定）\nconst F47_BASE_TINT={chest:0xe0d2ba,legs:0xc6bdaa,feet:0xc0a57c};","limits"],["function f47Load(raw){\n const g=f47Fresh();if(!raw||typeof raw!=='object'){if(inv.armor>0){const id='legacy'+inv.armor+'_chest';g.owned.push(id);g.equip.chest=id;}return g;}\n if(Array.isArray(raw.owned))for(const id of raw.owned)if(Object.hasOwn(G47,id)&&!g.owned.includes(id))g.owned.push(id);\n for(const slot of G47S){const id=raw.equip?.[slot];g.equip[slot]=id===null?null:typeof id==='string'&&g.owned.includes(id)&&G47[id]?.slot===slot?id:g.equip[slot];}\n return g;\n}","function f47Load(raw){\n const g=f47Fresh();if(!raw||typeof raw!=='object')return g;\n // v0.47旧セーブは籠手を胸枠に移していたため、籠手を独立して引き継ぐ。\n const legacy=raw.equip?.chest;\n if(legacy==='legacy1_chest'||legacy==='legacy2_chest')inv.armor=Math.max(inv.armor,legacy==='legacy2_chest'?2:1);\n if(Array.isArray(raw.owned))for(const id of raw.owned)if(Object.hasOwn(G47,id)&&!id.startsWith('legacy')&&!g.owned.includes(id))g.owned.push(id);\n for(const slot of G47S){const id=raw.equip?.[slot];g.equip[slot]=id===null?null:typeof id==='string'&&g.owned.includes(id)&&G47[id]?.slot===slot?id:g.equip[slot];}\n return g;\n}","old save migration"],[" out.cut=Math.min(.6,out.cut);return out;"," out.slotCut=Math.min(F47_ARMOR_CAP.slots,out.cut);\n out.gloveCut=ARMOR[inv.armor]?.cut||0;\n out.cut=Math.min(F47_ARMOR_CAP.total,out.slotCut+out.gloveCut);\n return out;","damage reduction"],["function f47ApplyVisual(){\n const g=prog.gear||f47Fresh();for(const slot of G47S){const a=G47[g.equip[slot]];for(const layer of pm.layers[slot])layer.visible=!!a&&a.set===layer.userData.variant;}","function f47ApplyVisual(){\n const g=prog.gear||f47Fresh();\n for(const slot of G47S){\n  const a=G47[g.equip[slot]],variant=a?.set==='basic'?'work':a?.set;\n  for(const layer of pm.layers[slot]){\n   const glove=slot==='chest'&&layer.userData.style==='gloves';\n   layer.visible=glove&&inv.armor>0?layer.userData.variant==='work':!!a&&variant===layer.userData.variant;\n   if(layer.userData.variant==='work'&&layer.material?.color)layer.material.color.setHex(\n    glove&&inv.armor>0?(inv.armor===2?0xaebcc4:0x9d8e77):\n    a?.set==='basic'&&!glove?(F47_BASE_TINT[slot]||0xffffff):0xffffff);\n  }\n }","appearance"],["const ma=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.94,metalness:.01,skinning:true});const m=new THREE.SkinnedMesh(geo,ma);m.castShadow=true;m.receiveShadow=true;root.add(m);meshes.push(m);if(slot){m.userData.variant=variant;layers[slot].push(m);m.visible=variant==='work';}return m;","const ma=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.94,metalness:.01,skinning:true});const m=new THREE.SkinnedMesh(geo,ma);m.castShadow=true;m.receiveShadow=true;root.add(m);meshes.push(m);if(slot){m.userData.variant=variant;m.userData.style=style;layers[slot].push(m);m.visible=variant==='work';}return m;","tag glove layer"],["for(const v of ['forest','tracker']){const hat=new THREE.Group();B.head.add(hat);hat.userData.variant=v;hat.visible=false;layers.head.push(hat);const c=v==='forest'?0xb4934b:0x62573e;const a=mesh(G.sph,material(c),0,.25,-.01,.16,.10,.17);hat.add(a);hat.add(mesh(G.box,material(c),0,.23,.1,.32,.022,.23));}","for(const v of ['forest','tracker','basic']){const hat=new THREE.Group();B.head.add(hat);hat.userData.variant=v;hat.visible=false;layers.head.push(hat);if(v==='basic'){hat.add(mesh(G.cyl8,material(0xcbb580),0,.20,0,.25,.018,.25));hat.add(mesh(G.cone6,material(0xaf925d),0,.29,0,.145,.12,.145));}else{const c=v==='forest'?0xb4934b:0x62573e;const a=mesh(G.sph,material(c),0,.25,-.01,.16,.10,.17);hat.add(a);hat.add(mesh(G.box,material(c),0,.23,.1,.32,.022,.23));}}","straw hat"],["const g=prog.gear,st=f47Stats();let h='<section class=\"gear47\"><h3>防具</h3><p>頭・胸・脚・靴を個別に着脱。同系統4部位で各効果が1.5倍。初期作業着に効果はありません。</p>';","const g=prog.gear,st=f47Stats();let h='<section class=\"gear47\"><h3>防具</h3><p>頭・胸・脚・靴を個別に着脱。山守・沢追いの4部位一式は特殊効果1.5倍。初期作業着に効果はありません。</p>';\n h+=`<p>籠手（独立装備）：${ARMOR[inv.armor]?.name||'なし'}（-${Math.round(st.gloveCut*100)}%）</p>`;","glove status UI"],["h+=`<p class=\"gear47total\">合計：被ダメージ -${Math.round(st.cut*100)}%${st.set?' ／ '+G47SETS[st.set]+'一式：全効果1.5倍':' ／ 一式ボーナス未発動'}</p>`;","h+=`<p class=\"gear47total\">合計：被ダメージ -${Math.round(st.cut*100)}%（4部位 -${Math.round(st.slotCut*100)}%＋籠手 -${Math.round(st.gloveCut*100)}%）${st.set?' ／ '+G47SETS[st.set]+'一式：特殊効果1.5倍':' ／ 一式ボーナス未発動'}</p>`;","total UI"],["desc:a.desc+' '+G47SETS[a.set]+'系統。4部位で各効果が1.5倍。持ち物で着脱。'","desc:a.desc+(a.set==='basic'?' 基礎防具。4部位の合計軽減は最大15%。':' '+G47SETS[a.set]+'系統。4部位一式で特殊効果が1.5倍。')+' 持ち物で着脱。'","recipes"],["    `<div class=\"irow\"><span>耐久</span><b>${P.weapon?`${Math.ceil(armDur(P.weapon))}/${w.maxDur}${P.dur<=0?'（刃こぼれ・威力40%）':''}`:'—'}</b></div>`+\n    f47UI()+","    `<div class=\"irow\"><span>耐久</span><b>${P.weapon?`${Math.ceil(armDur(P.weapon))}/${w.maxDur}${P.dur<=0?'（刃こぼれ・威力40%）':''}`:'—'}</b></div>`+\n    `<div class=\"irow\"><span>装備防具</span><b style=\"white-space:normal;overflow-wrap:anywhere\">${G47S.map(slot=>G47N[slot]+' '+(G47[prog.gear.equip[slot]]?.name||'なし')).join('／')}／籠手 ${ARMOR[inv.armor]?.name||'なし'}</b></div>`+\n    f47UI()+","inventory line"]]
+          for old,new,label in patches:
+              assert s.count(old)==1, f'{label}: expected unique anchor, found {s.count(old)}'
+              s=s.replace(old,new,1)
+          assert "const SAVE_KEY='eiheiji_vs_beasts_v010';" in s
+          assert 'function hurtPlayer(dmg,fx,fz,knock=6,src=null)' in s
+          assert 'function invDefs(){ const d=[];' in s
+          p.write_text(s,encoding='utf-8')
+          js_count=0
+          with tempfile.TemporaryDirectory() as td:
+              for i,m in enumerate(re.finditer(r'<script\\b([^>]*)>([\\s\\S]*?)</script\\s*>', s,flags=re.I)):
+                  attrs,body=m.group(1),m.group(2)
+                  if not body.strip() or 'application/json' in attrs: continue
+                  js=Path(td)/f'script-{i}.js'
+                  js.write_text(body,encoding='utf-8')
+                  subprocess.run(['node','--check',str(js)],check=True)
+                  js_count+=1
+              assert js_count==4, f'unexpected JS script count: {js_count}'
+              a=re.search(r'const ARMOR=\\[[^\\n]+\\];',s).group(0)
+              gear=s[s.index('const G47S='):s.index('// ================= 状態 =================')]
+              tests=r'''let inv={armor:0},prog={};
+          const ok=(cond,name)=>{if(!cond)throw Error(name)};
+          prog.gear=f47Fresh();ok(f47Stats().cut===0,'old save default');
+          prog.gear.owned.push('basic_head','basic_chest','basic_legs','basic_feet');
+          prog.gear.equip={head:'basic_head',chest:'basic_chest',legs:'basic_legs',feet:'basic_feet'};
+          ok(Math.abs(f47Stats().cut-.15)<1e-9,'four slots');
+          inv.armor=2;ok(Math.abs(f47Stats().cut-.40)<1e-9,'glove coexistence');
+          inv.armor=0;
+          prog.gear=f47Load({owned:['legacy2_chest'],equip:{chest:'legacy2_chest'}});
+          ok(inv.armor===2&&prog.gear.equip.chest==='work_chest','old save legacy migration');
+          console.log('Armor logic tests PASS');'''
+              testfile=Path(td)/'armor-test.js'
+              testfile.write_text(a+'\\n'+gear+'\\n'+tests,encoding='utf-8')
+              subprocess.run(['node',str(testfile)],check=True)
+          print(f'PASS: node --check ({js_count} JS blocks), armor unit tests, '+str(len(patches))+' targeted patches')
+          PY
+      - name: Commit only index.html
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git diff --stat -- index.html
+          git add -- index.html
+          git commit -m "feat: four basic armor slots and independent gloves"
+          git push origin HEAD:main
