@@ -1,0 +1,100 @@
+name: Apply TRK36 tracking correction (one-time)
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-trk36-tracking.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Minimal patch and node syntax check of every inline JS block
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess, tempfile
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          assert len(s)>7_000_000 and 'const TRK36_TRACK=' in s, 'Unexpected main/index.html'
+          def rep(old,new,label):
+              global s
+              assert s.count(old)==1, f'{label}: unexpected source'
+              s=s.replace(old,new,1)
+          rep("for(const e of enemies){ if(e.state==='dead'||e.removed||trk36BonusFor(e)) continue;",
+              "for(const e of enemies){ if(e.state==='dead'||e.removed||trk36MapTargetHidden(e)) continue;",'map pin')
+          rep("const mark={x,z,dir:k.dir,kind:k.kind,until:S.time+120},marks=TRK36_TRACK.markers;",
+              "const mark={x,z,dir:k.dir,kind:k.kind,sourceId:k.sourceId,until:S.time+120},marks=TRK36_TRACK.markers;",'marker source')
+          rep("function trk36GenHint(){",
+              """// 地図上の獣マーカーは、追跡で確認した個体だけ隠す。通常の地図表示は維持する。
+          function trk36MapTargetHidden(e){
+            if(trk36BonusFor(e))return true;
+            for(const m of TRK36_TRACK.markers)if(m.sourceId===e.id&&m.until>S.time)return true;
+            return false;
+          }
+          function trk36GenHint(){""",'map target helper')
+          rep("  for(const s of spawnerState){ s.e=null; s.timer=0; s.trk36Hint=null; }\n  trk36Reset();",
+              """  for(const s of spawnerState){ s.e=null; s.timer=0; s.trk36Hint=null; }
+            // 新しいゲーム／ロードでは、前の世界の蹄跡と荒らし跡を残さない。
+            for(const k of TRK36)scene.remove(k.m);
+            TRK36.length=0;
+            trk36Reset();""",'reset cleanup')
+          assert "const CLUES=[" in s and "function f9GenInfo()" in s and "function killEnemy(e,trackingBonus=0)" in s
+          count=0
+          for m in re.finditer(r'<script\b([^>]*)>([\s\S]*?)</script\s*>',s,re.I):
+              attrs=m.group(1).lower()
+              if 'src=' in attrs or 'application/json' in attrs:continue
+              count+=1
+              with tempfile.NamedTemporaryFile(mode='w',suffix='.js',encoding='utf8') as f:
+                  f.write(m.group(2));f.flush()
+                  subprocess.run(['node','--check',f.name],check=True)
+          assert count==4, f'Inline script count was {count}'
+          p.write_text(s,encoding='utf-8')
+          print('PASS node --check all',count,'inline JavaScript blocks')
+          PY
+      - name: Tracking behavior tests
+        shell: bash
+        run: |
+          node <<'JS'
+          const fs=require('fs'),vm=require('vm'),assert=require('assert');
+          const src=fs.readFileSync('index.html','utf8');
+          function part(a,b){const i=src.indexOf(a),j=src.indexOf(b,i);assert(i>=0&&j>i);return src.slice(i,j)}
+          const E={id:123,type:'boar',state:'idle',removed:false};
+          const q={P:{x:0,z:0},S:{time:10},spawnerState:[{e:E,type:'boar'}],ET:{boar:{name:'イノシシ'}},scene:{remove(){}},dist:(a,b,c,d)=>Math.hypot(a-c,b-d),compass:()=>'北',toast:()=>{},sfx:()=>{}};
+          vm.runInNewContext(part('const TRK36=[];','// ---- 段階F：')+';globalThis.test={TRK36,TRK36_TRACK,trk36Inspect,trk36Map,trk36BonusFor,trk36MapTargetHidden,trk36GenHint,trk36Reset};',q);
+          const t=q.test;
+          function footprint(step){return {sourceId:123,step,kind:'boar',dir:0,t:0,ttl:300,m:{position:{x:1,z:0}}}}
+          const p1=footprint(1),p1b=footprint(1),p2=footprint(2),p3=footprint(3);
+          t.TRK36.push(p1,p1b,p2,p3);t.trk36Inspect(p1);
+          assert.equal(t.TRK36_TRACK.chain,1);assert(p1b.checked);assert(t.trk36MapTargetHidden(E));
+          q.S.time=11;t.trk36Inspect(p2);q.S.time=12;t.trk36Inspect(p3);
+          assert.equal(t.TRK36_TRACK.chain,3);assert.equal(t.trk36BonusFor(E),1);
+          assert(q.spawnerState[0].trk36Hint&&q.spawnerState[0].trk36Hint.x===1);
+          const ctx={n:0,save(){this.n++},restore(){},translate(){},rotate(){},beginPath(){},moveTo(){},lineTo(){},closePath(){},fill(){},stroke(){}};
+          let labs=0;t.trk36Map(ctx,x=>x,z=>z,()=>labs++);assert.equal(ctx.n,3);assert.equal(labs,1);
+          assert(t.trk36GenHint().includes('北'));
+          q.S.time=133;ctx.n=0;labs=0;t.trk36Map(ctx,x=>x,z=>z,()=>labs++);
+          assert.equal(ctx.n,0);assert.equal(labs,0);assert.equal(t.trk36GenHint(),'');
+          q.S.time=400;assert(!t.trk36MapTargetHidden(E));t.trk36Reset();assert.equal(t.TRK36_TRACK.markers.length,0);
+          const rewards=[];
+          const k={stats:{kills:0},f31Kill(){},spawnDrop:(kind,n)=>rewards.push([kind,n]),sfx(){},bossDefeated(){},toast(){}};
+          vm.runInNewContext(part('function killEnemy(e,trackingBonus=0){','// ================= 敵AI =================')+';globalThis.killEnemy=killEnemy;',k);
+          const animal=()=>({type:'boar',state:'idle',ind:{visible:true},stars:{visible:true},x:0,z:0});
+          k.killEnemy(animal(),0);k.killEnemy(animal(),1);
+          assert.deepEqual(rewards.filter(x=>x[0]==='hide').map(x=>x[1]),[2,3]);
+          console.log('PASS tracking chain, 120s map expiry, map target hiding, Gen hint, reset and hide +1');
+          JS
+      - name: Commit index.html only
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git diff --check
+          git add -- index.html
+          git commit -m "fix: improve footprint tracking map and reset cleanup"
+          git push origin HEAD:main
