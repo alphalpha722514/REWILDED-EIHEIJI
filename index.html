@@ -4549,7 +4549,7 @@ function makeAthlete48(){
    const cc=new THREE.Color(c);colors.push(cc.r,cc.g,cc.b);
   }
   geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
-  const ma=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.94,metalness:.01,skinning:true});const m=new THREE.SkinnedMesh(geo,ma);m.castShadow=true;m.receiveShadow=true;root.add(m);meshes.push(m);if(slot){m.userData.variant=variant;layers[slot].push(m);m.visible=variant==='work';}return m;
+  const ma=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.94,metalness:.01,skinning:true});const m=new THREE.SkinnedMesh(geo,ma);m.castShadow=true;m.receiveShadow=true;root.add(m);meshes.push(m);if(slot){m.userData.variant=variant;m.userData.style=style;layers[slot].push(m);m.visible=variant==='work';}return m;
  }
  const bodyMesh=new THREE.SkinnedMesh(skinGeo,material(0xcfae91));bodyMesh.castShadow=true;root.add(bodyMesh);meshes.push(bodyMesh);
  const underShirt=new THREE.SkinnedMesh(shirtGeo,material(0xbebeb1));underShirt.castShadow=true;root.add(underShirt);meshes.push(underShirt);
@@ -4564,7 +4564,7 @@ function makeAthlete48(){
  const hairField=(x,y,z)=>Math.max(headShape(x,y,z)-.018,1.925+z*.34+Math.sin(x*28+z*14)*.006-y);
  const hm=surfaceNets(hairField,[-.18,1.83,-.19],[.18,2.18,.17],.014);const hgeo=new THREE.BufferGeometry();hgeo.setAttribute('position',new THREE.Float32BufferAttribute(hm.pos,3));hgeo.setIndex(hm.idx);hgeo.computeVertexNormals();hgeo.translate(0,-1.78,0);const cap=new THREE.Mesh(hgeo,new THREE.MeshStandardMaterial({color:0x171b20,roughness:.96}));cap.castShadow=true;hair.add(cap);
  for(let i=0;i<5;i++){const side=(i-2)*.045;const q=mesh(G.sph,material(0x171b20),side,.350+Math.sin(i)*.004,-.035,.035,.022,.065);q.rotation.x=.2;hair.add(q);}
- for(const v of ['forest','tracker']){const hat=new THREE.Group();B.head.add(hat);hat.userData.variant=v;hat.visible=false;layers.head.push(hat);const c=v==='forest'?0xb4934b:0x62573e;const a=mesh(G.sph,material(c),0,.25,-.01,.16,.10,.17);hat.add(a);hat.add(mesh(G.box,material(c),0,.23,.1,.32,.022,.23));}
+ for(const v of ['forest','tracker','basic']){const hat=new THREE.Group();B.head.add(hat);hat.userData.variant=v;hat.visible=false;layers.head.push(hat);if(v==='basic'){hat.add(mesh(G.cyl8,material(0xcbb580),0,.20,0,.25,.018,.25));hat.add(mesh(G.cone6,material(0xaf925d),0,.29,0,.145,.12,.145));}else{const c=v==='forest'?0xb4934b:0x62573e;const a=mesh(G.sph,material(c),0,.25,-.01,.16,.10,.17);hat.add(a);hat.add(mesh(G.box,material(c),0,.23,.1,.32,.022,.23));}}
  const m={g,root,body:B.body,chest:B.chest,head:B.head,armL:B.armL,armR:B.armR,legs:[B.legL,B.legR],face:null,R:.145,anatomical:true,anatomy48:true,layers,hair,restHip:1.12,soft:{},skin:bodyMesh,underShirt48:underShirt,underShort48:underShort,skeleton,sole48:.08,legLength48:1.04,meshes48:meshes};
  // Store immutable rig lengths for grounded inverse kinematics and regression checks.
  for(const l of m.legs){l.userData.length48=l.userData.shin.position.length();l.userData.shin.userData.length48=l.userData.shin.userData.foot.position.length();}
@@ -5143,6 +5143,10 @@ function makeNushi(){
 // ================= v0.47 four-slot equipment =================
 const G47S=['head','chest','legs','feet'],G47N={head:'頭',chest:'胸',legs:'脚',feet:'靴'};
 const G47={
+ basic_head:{slot:'head',name:'藁の笠',set:'basic',desc:'被ダメージ -3%。',cut:.03,cost:{straw:5}},
+ basic_chest:{slot:'chest',name:'厚着の上着',set:'basic',desc:'被ダメージ -5%。',cut:.05,cost:{hide:4,rope:2}},
+ basic_legs:{slot:'legs',name:'当て布の脚袋',set:'basic',desc:'被ダメージ -4%。',cut:.04,cost:{hide:3,rope:1}},
+ basic_feet:{slot:'feet',name:'丈夫な脚絆',set:'basic',desc:'被ダメージ -3%。',cut:.03,cost:{hide:2,rope:2}},
  work_chest:{slot:'chest',name:'町民の作業上着',set:'work',desc:'手袋・道具帯付き。軽減・特殊効果なし。',cut:0},
  work_legs:{slot:'legs',name:'町民の作業ズボン',set:'work',desc:'初期の作業着。軽減・特殊効果なし。',cut:0},
  work_feet:{slot:'feet',name:'町民の作業靴',set:'work',desc:'初期の作業靴。軽減・特殊効果なし。',cut:0},
@@ -5158,10 +5162,15 @@ const G47={
  legacy2_chest:{slot:'chest',name:'旧式の鉄籠手付き作業着',set:'legacy2',desc:'引き継いだ鉄籠手。被ダメージ -25%。',cut:.25}
 };
 const G47SETS={forest:'山守',tracker:'沢追い'};
+const F47_ARMOR_CAP={slots:.15,total:.40}; // 4部位15%、籠手込み40%（暫定）
+const F47_BASE_TINT={chest:0xe0d2ba,legs:0xc6bdaa,feet:0xc0a57c};
 function f47Fresh(){return {owned:['work_chest','work_legs','work_feet'],equip:{head:null,chest:'work_chest',legs:'work_legs',feet:'work_feet'}};}
 function f47Load(raw){
- const g=f47Fresh();if(!raw||typeof raw!=='object'){if(inv.armor>0){const id='legacy'+inv.armor+'_chest';g.owned.push(id);g.equip.chest=id;}return g;}
- if(Array.isArray(raw.owned))for(const id of raw.owned)if(Object.hasOwn(G47,id)&&!g.owned.includes(id))g.owned.push(id);
+ const g=f47Fresh();if(!raw||typeof raw!=='object')return g;
+ // v0.47旧セーブは籠手を胸枠に移していたため、籠手を独立して引き継ぐ。
+ const legacy=raw.equip?.chest;
+ if(legacy==='legacy1_chest'||legacy==='legacy2_chest')inv.armor=Math.max(inv.armor,legacy==='legacy2_chest'?2:1);
+ if(Array.isArray(raw.owned))for(const id of raw.owned)if(Object.hasOwn(G47,id)&&!id.startsWith('legacy')&&!g.owned.includes(id))g.owned.push(id);
  for(const slot of G47S){const id=raw.equip?.[slot];g.equip[slot]=id===null?null:typeof id==='string'&&g.owned.includes(id)&&G47[id]?.slot===slot?id:g.equip[slot];}
  return g;
 }
@@ -5169,10 +5178,23 @@ function f47Stats(){
  const g=prog.gear||f47Fresh(),counts={};for(const slot of G47S){const a=G47[g.equip[slot]];if(a)counts[a.set]=(counts[a.set]||0)+1;}
  const out={cut:0,stam:0,dodge:0,steady:0,knock:0,regen:0,speed:0,stealth:0,set:null};
  for(const slot of G47S){const a=G47[g.equip[slot]];if(!a)continue;const full=!!G47SETS[a.set]&&counts[a.set]===4,k=full?1.5:1;if(full)out.set=a.set;for(const key in out)if(key!=='set')out[key]+=(a[key]||0)*k;}
- out.cut=Math.min(.6,out.cut);return out;
+ out.slotCut=Math.min(F47_ARMOR_CAP.slots,out.cut);
+ out.gloveCut=ARMOR[inv.armor]?.cut||0;
+ out.cut=Math.min(F47_ARMOR_CAP.total,out.slotCut+out.gloveCut);
+ return out;
 }
 function f47ApplyVisual(){
- const g=prog.gear||f47Fresh();for(const slot of G47S){const a=G47[g.equip[slot]];for(const layer of pm.layers[slot])layer.visible=!!a&&a.set===layer.userData.variant;}
+ const g=prog.gear||f47Fresh();
+ for(const slot of G47S){
+  const a=G47[g.equip[slot]],variant=a?.set==='basic'?'work':a?.set;
+  for(const layer of pm.layers[slot]){
+   const glove=slot==='chest'&&layer.userData.style==='gloves';
+   layer.visible=glove&&inv.armor>0?layer.userData.variant==='work':!!a&&variant===layer.userData.variant;
+   if(layer.userData.variant==='work'&&layer.material?.color)layer.material.color.setHex(
+    glove&&inv.armor>0?(inv.armor===2?0xaebcc4:0x9d8e77):
+    a?.set==='basic'&&!glove?(F47_BASE_TINT[slot]||0xffffff):0xffffff);
+  }
+ }
  // Hair remains below work hats; suppress tall tufts under hard hats.
  // v0.51: the protagonist is intentionally faceless and hairless.
  // Equipment updates must never restore the legacy hair mesh.
@@ -5185,12 +5207,13 @@ function f47Equip(slot,id){
  prog.gear.equip[slot]=id;f47ApplyVisual();saveGame();f34Body();f31Inv();
 }
 function f47UI(){
- const g=prog.gear,st=f47Stats();let h='<section class="gear47"><h3>防具</h3><p>頭・胸・脚・靴を個別に着脱。同系統4部位で各効果が1.5倍。初期作業着に効果はありません。</p>';
+ const g=prog.gear,st=f47Stats();let h='<section class="gear47"><h3>防具</h3><p>頭・胸・脚・靴を個別に着脱。山守・沢追いの4部位一式は特殊効果1.5倍。初期作業着に効果はありません。</p>';
+ h+=`<p>籠手（独立装備）：${ARMOR[inv.armor]?.name||'なし'}（-${Math.round(st.gloveCut*100)}%）</p>`;
  for(const slot of G47S){h+=`<label class="gear47row"><b>${G47N[slot]}</b><select data-gear47="${slot}" aria-label="${G47N[slot]}の防具"><option value="">装備なし</option>`;
  for(const id of g.owned){const a=G47[id];if(a.slot===slot)h+=`<option value="${id}" ${g.equip[slot]===id?'selected':''}>${a.name}</option>`;}
  h+=`</select><small>${G47[g.equip[slot]]?.desc||'効果なし'}</small></label>`;
  }
- h+=`<p class="gear47total">合計：被ダメージ -${Math.round(st.cut*100)}%${st.set?' ／ '+G47SETS[st.set]+'一式：全効果1.5倍':' ／ 一式ボーナス未発動'}</p>`;
+ h+=`<p class="gear47total">合計：被ダメージ -${Math.round(st.cut*100)}%（4部位 -${Math.round(st.slotCut*100)}%＋籠手 -${Math.round(st.gloveCut*100)}%）${st.set?' ／ '+G47SETS[st.set]+'一式：特殊効果1.5倍':' ／ 一式ボーナス未発動'}</p>`;
  const effects=[['stam','攻撃消費','-'],['dodge','回避消費','-'],['steady','のけぞり時間','-'],['knock','吹き飛び','-'],['regen','スタミナ回復','+'],['speed','通常移動','+'],['stealth','視認距離','-']];
  h+='<p>'+effects.filter(([k])=>st[k]>0).map(([k,n,sg])=>n+sg+Math.round(st[k]*100)+'%').join(' ／ ')+'</p><p>未装備の衣服・防具は所持品に残ります。新しい防具は作業台で製作できます。</p></section>';return h;
 }
@@ -6663,7 +6686,7 @@ const RECIPES=[
  {id:'cart',name:'一輪車',cost:{wood:5},desc:'丸太を3本積んで運べる。舗装した道では担ぐより速いが、田畑や山道では遅い。丸太置き場のそばに置く',show:()=>!prog.f4.hasCart,give:()=>{ prog.f4.hasCart=true; prog.f4.cart={x:F4.yard.x-2.5,z:F4.yard.z+1.5,a:0,push:false,logs:[]}; }},
  {id:'hammerStone',name:'石の槌（簡素な採石道具）',cost:{stone:3,wood:2,rope:1},desc:'硬い川石を柄に縛った槌。採石できる岩を割って石を取る（1回で石1、岩1つを8回）。耐久40。武器ではない（持ち替えに入らない）',show:()=>prog.f5.tools.hammerStone==null,give:()=>{toolGain('hammerStone');}},
  {id:'pickIron',name:'鉄のつるはし（良質な採石道具）',cost:{iron:4,wood:2,rope:1},desc:'屑鉄を打ち直したつるはし。1回で石2、岩1つを4回で割り切る。耐久100。武器ではない',show:()=>prog.f5.tools.pickIron==null,give:()=>{toolGain('pickIron');}},
- ...Object.entries(G47).filter(([id,a])=>a.cost).map(([id,a])=>({id:'gear_'+id,name:a.name,cost:a.cost,desc:a.desc+' '+G47SETS[a.set]+'系統。4部位で各効果が1.5倍。持ち物で着脱。',show:()=>!prog.gear.owned.includes(id),give:()=>{prog.gear.owned.push(id);}})),
+ ...Object.entries(G47).filter(([id,a])=>a.cost).map(([id,a])=>({id:'gear_'+id,name:a.name,cost:a.cost,desc:a.desc+(a.set==='basic'?' 基礎防具。4部位の合計軽減は最大15%。':' '+G47SETS[a.set]+'系統。4部位一式で特殊効果が1.5倍。')+' 持ち物で着脱。',show:()=>!prog.gear.owned.includes(id),give:()=>{prog.gear.owned.push(id);}})),
  {id:'fenceFix',name:'柵の修理（全か所）',cost:{wood:3},desc:'傷んだ・壊れた木柵を全て完全修理する。襲撃の準備では武器の手入れと木材を取り合う──守りを厚くするか、足元を整えるか',show:()=>GAPS.some(g=>g.fence.type&&(g.fence.broken||g.fence.hp<g.fence.max)),give:()=>{ let n=0; for(const g2 of GAPS){ const f=g2.fence; if(f.type&&(f.broken||f.hp<f.max)){ if(f.broken){ f.broken=false; f.hp=f.max; g2.col.active=true; } else f.hp=f.max; fenceVisual(g2); n++; } } if(n) toast(`柵を${n}か所修理した`); }},
  {id:'toolRepair',name:'採集道具の手入れ',cost:{wood:1},desc:'石の槌・鉄のつるはしの耐久を全回復する',show:()=>Object.keys(prog.f5.tools).some(k=>TOOLS[k]&&prog.f5.tools[k]<TOOLS[k].maxDur),give:()=>{ for(const k in prog.f5.tools) if(TOOLS[k]) prog.f5.tools[k]=TOOLS[k].maxDur; }},
  {id:'repair',name:'武器の手入れ',cost:{wood:1},desc:'武器の耐久を全回復する',show:()=>!!equippedWeapon(),give:()=>{ const w=equippedWeapon(); if(w) P.dur=w.maxDur; }}, // v0.45：素手では非表示
@@ -7696,6 +7719,7 @@ function f34Body(){ const b=$('invBody'); if(!b) return; const w=equippedWeapon(
     `<div class="irow"><span>満腹</span><b>${Math.ceil(P.full)}/100</b></div>`+
     `<div class="irow"><span>装備武器</span><b>${P.weapon?w.name:'素手'}</b></div>`+
     `<div class="irow"><span>耐久</span><b>${P.weapon?`${Math.ceil(armDur(P.weapon))}/${w.maxDur}${P.dur<=0?'（刃こぼれ・威力40%）':''}`:'—'}</b></div>`+
+    `<div class="irow"><span>装備防具</span><b style="white-space:normal;overflow-wrap:anywhere">${G47S.map(slot=>G47N[slot]+' '+(G47[prog.gear.equip[slot]]?.name||'なし')).join('／')}／籠手 ${ARMOR[inv.armor]?.name||'なし'}</b></div>`+
     f47UI()+
     `<div class="irow"><span>レベル</span><b>${f31LvText()}</b></div>`+
     `<div class="irow"><span>木・食料</span><b>木材 ${inv.wood}／食料 ${inv.food}</b></div>`+
