@@ -39,7 +39,7 @@ jobs:
                   subprocess.run(['node','--check',str(js)],check=True)
                   js_count+=1
               assert js_count==4, f'unexpected JS script count: {js_count}'
-    a=re.search(r'const ARMOR=\[[^\n]+\];',s).group(0)
+              a=re.search(r'const ARMOR=\[[^\n]+\];',s).group(0)
               gear=s[s.index('const G47S='):s.index('// ================= 状態 =================')]
               tests=r'''let inv={armor:0},prog={};
           const ok=(cond,name)=>{if(!cond)throw Error(name)};
