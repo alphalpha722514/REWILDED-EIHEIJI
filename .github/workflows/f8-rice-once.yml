@@ -1,0 +1,29 @@
+name: Apply one-time F8 rice patch
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/f8-rice-once.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply verified patch and JavaScript syntax checks
+        run: python3 tools/patch_f8_rice_once.py
+      - name: Commit only index.html
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --exit-code && exit 0
+          git commit -m "F8: implement rice harvest and backward-compatible crops"
+          git push origin HEAD:main
