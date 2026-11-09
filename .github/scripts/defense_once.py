@@ -234,7 +234,7 @@ for left,right in [
  ("function startEvent(kind){","function queueWave(i){"),
  ("function updateBoss(e,dt){","function updateEnemyAnim(e,dt){"),
  ("const F11B={","function f11InvHp(hp){"),
- ("  {id:'fenceFix'","  {id:'toolRepair'")]:
+ ("{id:'fenceFix'","{id:'toolRepair'")]:
     def region(t):return t[t.index(left):t.index(right,t.index(left))]
     assert region(original)==region(s), "Protected section changed: "+left
 assert len(s)>len(original) and len(original)>7_000_000
