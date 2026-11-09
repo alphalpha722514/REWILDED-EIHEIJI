@@ -2767,8 +2767,10 @@ function drawMap(){ const cv=$('mapCv'); if(!cv||$('mapOv').hidden) return; cons
       c.setLineDash([5,4]); c.strokeStyle='#f0c34a'; c.lineWidth=2; c.beginPath(); c.arc(X(cl.x+ox),Z(cl.z+oz),Math.max(10,22*s),0,TAU); c.stroke(); c.setLineDash([]); lab('？手掛かり',X(cl.x+ox)-26,Z(cl.z+oz)-Math.max(12,22*s)-4,'#f0c34a'); } }
   // 足跡を調べた跡
   if(trackShow){ c.strokeStyle='rgba(240,160,90,.95)'; c.lineWidth=2; c.setLineDash([4,3]); c.beginPath(); trackShow.tr.pts.forEach((p,i)=>{ if(i) c.lineTo(X(p[0]),Z(p[1])); else c.moveTo(X(p[0]),Z(p[1])); }); c.stroke(); c.setLineDash([]); }
+  // 調査位置だけ表示し、追跡中の獣は元の位置表示からも隠す。
+  trk36Map(c,X,Z,lab);
   // 近くの獣
-  for(const e of enemies){ if(e.state==='dead'||e.removed) continue; if(e.mode==='field'&&dist(e.x,e.z,P.x,P.z)>60) continue; c.fillStyle=e.type==='boss'?'#ff6040':'#e0533c'; c.beginPath(); c.arc(X(e.x),Z(e.z),e.type==='boss'?6:3.5,0,TAU); c.fill(); }
+  for(const e of enemies){ if(e.state==='dead'||e.removed||trk36BonusFor(e)) continue; if(e.mode==='field'&&dist(e.x,e.z,P.x,P.z)>60) continue; c.fillStyle=e.type==='boss'?'#ff6040':'#e0533c'; c.beginPath(); c.arc(X(e.x),Z(e.z),e.type==='boss'?6:3.5,0,TAU); c.fill(); }
   // 依頼と目的
   const ql=questLine(); if(ql&&ql[1]){ const x=X(ql[1].x), y=Z(ql[1].z); c.strokeStyle='#7ad0e0'; c.lineWidth=3; c.beginPath(); c.arc(x,y,9,0,TAU); c.stroke(); lab('依頼',x+11,y-8,'#9fe6f0'); }
   const [ot,tg]=objective(); if(tg){ const x=X(tg.x), y=Z(tg.z); c.fillStyle='#f0c34a'; c.strokeStyle='#1b1d1e'; c.lineWidth=2; c.beginPath(); c.moveTo(x,y-10); c.lineTo(x+8,y); c.lineTo(x,y+10); c.lineTo(x-8,y); c.closePath(); c.fill(); c.stroke(); lab('目的',x+11,y+4,'#ffe08a',13); }
@@ -3459,7 +3461,7 @@ function f9GenInfo(){ const L=[], st=prog.stage, si=STAGES.indexOf(st); let gate
     L.push(`${F9KIND[k]}の足跡があった${compass(sx-BX,sz-BZ)}の方は、気いつけや。`); break; }
   if(prog.g4.closure&&!(prog.f4&&prog.f4.closures&&prog.f4.closures.every(Boolean))) L.push('倒木で通れん道があったやろ。回り道しね。');
   if(!L.length) L.push('今のところ、門も見える所も変わりない。');
-  return {text:L.slice(0,2).join(''),gate}; }
+  return {text:L.slice(0,2).join('')+trk36GenHint(),gate}; }
 function f9GenPanel(st,bx){ f9El('div','nl',ev.kind?'獣の数を叫んで知らせている':'見張り台から外を見張っている',st);
   f9Btn(bx,'npc_genLook','外の様子を聞く',f9GenAsk); }
 function f9GenAsk(){ const r=f9GenInfo(); closeOverlay(); F9G.gate=r.gate; F9G.lines=r.text===F9G.last?'さっき言うたとおりや。':r.text; F9G.last=r.text; F9G.t=F9.gLook; F9G.pt=r.gate?2.5:0; }
@@ -3641,14 +3643,21 @@ function f10PreE(e,dt){ if(e.state!=='flee') return false;
 function f10Stole(e){ if(!f10Has('E')||!f10Wild(e)) return false; setState(e,'flee'); e.f10t=f10FleeTarget(e); return true; }
 // ---- v0.45：町に残る獣の痕跡（蹄跡・荒らされた畑）。プレイヤーの索敵と対策の判断材料。軽量メッシュ＋寿命で消す ----
 const TRK36=[];
+// 調査・追跡の状態はセーブに入れず、物語の CLUES と分離する。
+const TRK36_TRACK={chainId:0,lastStep:0,chain:0,chainUntil:0,activeId:0,activeUntil:0,markers:[],last:null};
+function trk36Reset(){
+  TRK36_TRACK.chainId=0;TRK36_TRACK.lastStep=0;TRK36_TRACK.chain=0;TRK36_TRACK.chainUntil=0;
+  TRK36_TRACK.activeId=0;TRK36_TRACK.activeUntil=0;TRK36_TRACK.markers.length=0;TRK36_TRACK.last=null;
+}
 function trkDisc(r,color,op){ const m=new THREE.Mesh(new THREE.CircleGeometry(r,10).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color,transparent:true,opacity:op,depthWrite:false})); return m; }
 function spawnBoarTracks(e){
   if(TRK36.length>22) return;
+  const step=e.trk36Step=(e.trk36Step||0)+1;
   const fx=Math.sin(e.rot), fz=Math.cos(e.rot), px=-fz, pz=fx, gy=groundH(e.x,e.z);
   for(const off of [0,0.55]){
     for(const sd of [-1,1]){
       const m=trkDisc(0.15,0x6a5236,0.8); const wx=e.x-fx*1.4+px*sd*0.16-fz*off, wz=e.z-fz*1.4+pz*sd*0.16+fx*off;
-      m.position.set(wx,groundH(wx,wz)+0.06,wz); m.rotation.y=e.rot; scene.add(m); TRK36.push({m,t:0,ttl:300});
+      m.position.set(wx,groundH(wx,wz)+0.06,wz); m.rotation.y=e.rot; scene.add(m); TRK36.push({m,t:0,ttl:300,sourceId:e.id,step,kind:e.type,dir:e.rot});
     } } }
 function spawnTornField(x,z){
   if(TRK36.some(k=>k.torn&&dist(k.m.position.x,k.m.position.z,x,z)<7)||TRK36.length>22) return;
@@ -3665,6 +3674,62 @@ function tryTrack(e,dt){
   if(e.state==='dead'||e.removed||e.mode!=='field'||e.spd<2||['wind','stun','trapped'].includes(e.state)) return;
   const r=e.type==='boar'?0.02:e.type==='bear'?0.008:0;
   if(r&&Math.random()<dt*r&&TRK36.length<20) spawnBoarTracks(e); }
+
+// 蹄跡の検索は既存 TRK36 だけ。地面のメッシュは増やさない。
+function trk36Nearby(){
+  let fresh=null,used=null,fd=2.3,ud=2.3;
+  for(const k of TRK36){
+    if(k.torn||!k.sourceId||k.t>=k.ttl)continue;
+    const d=dist(P.x,P.z,k.m.position.x,k.m.position.z);
+    if(k.checked){if(d<ud){used=k;ud=d;}}
+    else if(d<fd){fresh=k;fd=d;}
+  }
+  return fresh||used;
+}
+function trk36Inspect(k){
+  if(!TRK36.includes(k)||k.torn||k.t>=k.ttl||dist(P.x,P.z,k.m.position.x,k.m.position.z)>2.5)return;
+  const x=k.m.position.x,z=k.m.position.z,dir=compass(Math.sin(k.dir),Math.cos(k.dir)),first=!k.checked;
+  if(first){
+    // 同じ獣が残した連続する「組」を追う。4枚を繰り返し調べても進まない。
+    for(const t of TRK36)if(t.sourceId===k.sourceId&&t.step===k.step)t.checked=true;
+    const r=TRK36_TRACK;
+    r.chain=(r.chainId===k.sourceId&&k.step===r.lastStep+1&&S.time<=r.chainUntil)?r.chain+1:1;
+    r.chainId=k.sourceId;r.lastStep=k.step;r.chainUntil=S.time+180;
+    if(r.chain>=3){
+      r.activeId=k.sourceId;r.activeUntil=S.time+180;
+      for(const sp of spawnerState)if(sp.e&&sp.e.id===k.sourceId&&sp.type===k.kind){
+        sp.trk36Hint={x,z,until:S.time+300};break;
+      }
+      toast('追跡中：'+(ET[k.kind]?ET[k.kind].name:k.kind)+'の足取りをつかんだ');
+    }
+  }
+  const mark={x,z,dir:k.dir,kind:k.kind,until:S.time+120},marks=TRK36_TRACK.markers;
+  if(marks.length>=8)marks.shift();
+  marks.push(mark);TRK36_TRACK.last=mark;
+  if(!first)toast('確認済みの蹄跡：'+dir+'方向（地図を更新）');
+  else toast((ET[k.kind]?ET[k.kind].name:k.kind)+'の新しい蹄跡：'+dir+'方向（地図に2分表示）');
+  sfx('pickup');
+}
+function trk36BonusFor(e){
+  if(e.type!=='boar'&&e.type!=='bear')return 0;
+  return (TRK36_TRACK.activeId===e.id&&S.time<TRK36_TRACK.activeUntil)||(e.trk36TrackedUntil&&S.time<e.trk36TrackedUntil)?1:0;
+}
+function trk36GenHint(){
+  const m=TRK36_TRACK.last;if(!m||m.until<=S.time)return '';
+  return ' 直近の'+(ET[m.kind]?ET[m.kind].name:m.kind)+'の蹄跡は、'+compass(Math.sin(m.dir),Math.cos(m.dir))+'の方へ続いとるようや。';
+}
+function trk36Map(c,X,Z,lab){
+  // 地図に描くのは調査した地面の向き。生きている獣の座標は使わない。
+  for(const m of TRK36_TRACK.markers){
+    if(m.until<=S.time)continue;
+    const x=X(m.x),y=Z(m.z);
+    c.save();c.translate(x,y);c.rotate(Math.PI-m.dir);
+    c.fillStyle='#a5e7db';c.strokeStyle='#183931';c.lineWidth=1.5;
+    c.beginPath();c.moveTo(0,-10);c.lineTo(6,7);c.lineTo(0,3);c.lineTo(-6,7);c.closePath();c.fill();c.stroke();c.restore();
+  }
+  const last=TRK36_TRACK.last;
+  if(last&&last.until>S.time)lab('痕跡の向き',X(last.x)+10,Z(last.z)-9,'#b5f5e3',11);
+}
 
 // ---- 段階F：遊んでいる時間で回る昼と夜・動的な痕跡・源さんの「今していること」 ----
 // 1日＝遊んでいる時間20分（昼13分・夕暮れ2分・夜4分・明け方1分）。侵攻の準備中は夕暮れ、侵攻中は夜、ヌシ戦は昼のまま（物語の方を優先し、その間は時計を止める）
@@ -5775,16 +5840,16 @@ function damageEnemy(e,dmg,kind,fromAng,info=null){
   // 体勢とひるみ（ひるみはサル0.8秒・イノシシ1.2秒に1回まで。クマとヌシはひるまない）
   const broke=e.hp-0>0&&applyPoise(e,info);
   if(!broke&&canFlinch(e,kind,info)){ e.flinchT=S.time; setState(e,'hurt'); e.ind.visible=false; if(e.sector) e.sector.visible=false; }
-  if(e.hp<=0) killEnemy(e);
+  if(e.hp<=0) killEnemy(e,trk36BonusFor(e));
   else if(e.type==='boss'&&e.phase===1&&e.hp<e.maxHp*0.5){ e.phase=2; banner('ヌシが怒り狂った！','突進が連続し、地響きの踏みつけを使ってくる',2.4); sfx('roar'); S.shake=0.5; }
 }
-function killEnemy(e){
+function killEnemy(e,trackingBonus=0){
   if(e.state==='dead') return;
   e.state='dead'; e.st=0; e.ind.visible=false; e.stars.visible=false; if(e.sector) e.sector.visible=false; if(e.ringM) e.ringM.visible=false;
   stats.kills++; f31Kill(e); // v0.31 経験値
   if(e.type==='boss'){ bossDefeated(e); return; }
   const n={boar:2,monkey:1,bear:4,deer:2,weasel:1}[e.type]||1;
-  spawnDrop('hide',n,e.x,e.z);
+  spawnDrop('hide',n+(trackingBonus?1:0),e.x,e.z);
   if(e.type==='bear'||Math.random()<(e.type==='boar'?0.5:0.35)) spawnDrop('food',e.type==='bear'?2:1,e.x,e.z);
   if(e.carry){ if(e.carry.n>0){ spawnDrop(e.carry.k,e.carry.n,e.x,e.z,e.carry.b||null); toast('サルが盗んだ物を取り返した'); } e.carry=null; }
   sfx('heavyHit');
@@ -6521,6 +6586,7 @@ function interactables(){
   { const d=dist(P.x,P.z,157,66.5); if(d<2.4) L.push({d,label:'作業台（クラフト・修理）',act:openCraft}); }
   if(F7.store){ const d=f7StoreDist(); if(d<1.7) L.push({d,label:f7StoreLabel(),act:openStore}); }
   f8Interactables(L); f10Interactables(L);
+  const k36=trk36Nearby();if(k36)L.push({d:dist(P.x,P.z,k36.m.position.x,k36.m.position.z),label:'蹄跡を調べる',act:()=>trk36Inspect(k36)});
   for(const n of NODES){ if(!n.avail) continue; const d=dist(P.x,P.z,n.x,n.z); if(d<2.2) L.push({d,label:n.k==='wood'?'薪を拾う':n.chest?'栗を拾う':'大根を収穫する',act:()=>gatherNode(n)}); }
   for(const c of CLUES){ if(prog.clues[c.id]) continue; const d=dist(P.x,P.z,c.x,c.z); if(d<2.4) L.push({d,label:`調べる：${c.title}`,act:()=>examineClue(c)}); }
   for(const g of GAPS){
@@ -6782,7 +6848,8 @@ function resetWorld(extra){
   clearRaidEnemies(); ev.kind=null; ev.phase=null; ev.queue=[]; ev.ended=false;
   for(const e of [...enemies]) removeEnemy(e);
   for(const d of drops) scene.remove(d.m); f11Dispose(drops.map(d=>d.m)); drops.length=0;
-  for(const s of spawnerState){ s.e=null; s.timer=0; }
+  for(const s of spawnerState){ s.e=null; s.timer=0; s.trk36Hint=null; }
+  trk36Reset();
   trackSpawns.length=0; trackShow=null; g4Apply(); f4Apply(); f5Apply(); f7Apply(); f8Apply(); f9Reset(); f10Apply();
   spawnFieldEnemies();
   GAPS.forEach((g,i)=>{ const f=extra&&extra.fences[i]; if(f&&(f.type==='wood'||f.type==='stake')) setFence(g,f.type,num(f.hp,0,0,999)); else setFence(g,null); });
@@ -7204,11 +7271,21 @@ function updateWorld(dt){
     const dd=dist(P.x,P.z,d.m.position.x,d.m.position.z);
     if(dd<1.6&&!P.dead){ if(FOODS[d.k]){ if(d.b) foodAddB(d.k,d.b); else foodAdd(d.k,d.n); } else inv[d.k]+=d.n; if(d.n>0){ toast(`${RNAME[d.k]} +${d.n}`); sfx('pickup'); } scene.remove(d.m); f11Dispose([d.m]); drops.splice(i,1); continue; }
     if(d.t>90){ scene.remove(d.m); f11Dispose([d.m]); drops.splice(i,1); } }
-  // 野生の敵の再出現
+  // 野生の敵の再出現：追跡中のみ次の1頭を蹄跡付近へ優先。柵と距離条件は維持。
   for(const s of spawnerState){
     if(s.e&&!s.e.removed&&s.e.state!=='dead') continue;
     if(s.calm) continue; s.timer+=dt;
-    if(s.timer>100&&dist(P.x,P.z,s.x,s.z)>32&&!ev.kind){ s.e=spawnEnemy(s.type,s.x,s.z,'field'); s.timer=0; }
+    const hint=s.trk36Hint,valid=!!(hint&&hint.until>S.time);
+    if(s.timer>(valid?75:100)&&dist(P.x,P.z,s.x,s.z)>32&&!ev.kind){
+      let x=s.x,z=s.z,near=false;
+      if(valid&&Math.random()<0.7){
+        const nx=hint.x+rr(-6,6),nz=hint.z+rr(-6,6);
+        if(dist(P.x,P.z,nx,nz)>32&&!inSafe(nx,nz,6)&&!isWater(nx,nz)){x=nx;z=nz;near=true;}
+      }
+      s.e=spawnEnemy(s.type,x,z,'field');
+      if(near)s.e.trk36TrackedUntil=S.time+180;
+      s.trk36Hint=null;s.timer=0;
+    }
   }
   // パーティクル
   for(const p of parts){ if(p.life<=0) continue; p.life-=dt; p.vy-=18*dt; p.m.position.x+=p.vx*dt; p.m.position.y=Math.max((p.gy||0)+0.05,p.m.position.y+p.vy*dt); p.m.position.z+=p.vz*dt; p.m.rotation.x+=dt*8; if(p.life<=0) p.m.visible=false; }
