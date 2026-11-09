@@ -2770,7 +2770,7 @@ function drawMap(){ const cv=$('mapCv'); if(!cv||$('mapOv').hidden) return; cons
   // 調査位置だけ表示し、追跡中の獣は元の位置表示からも隠す。
   trk36Map(c,X,Z,lab);
   // 近くの獣
-  for(const e of enemies){ if(e.state==='dead'||e.removed||trk36BonusFor(e)) continue; if(e.mode==='field'&&dist(e.x,e.z,P.x,P.z)>60) continue; c.fillStyle=e.type==='boss'?'#ff6040':'#e0533c'; c.beginPath(); c.arc(X(e.x),Z(e.z),e.type==='boss'?6:3.5,0,TAU); c.fill(); }
+  for(const e of enemies){ if(e.state==='dead'||e.removed||trk36MapTargetHidden(e)) continue; if(e.mode==='field'&&dist(e.x,e.z,P.x,P.z)>60) continue; c.fillStyle=e.type==='boss'?'#ff6040':'#e0533c'; c.beginPath(); c.arc(X(e.x),Z(e.z),e.type==='boss'?6:3.5,0,TAU); c.fill(); }
   // 依頼と目的
   const ql=questLine(); if(ql&&ql[1]){ const x=X(ql[1].x), y=Z(ql[1].z); c.strokeStyle='#7ad0e0'; c.lineWidth=3; c.beginPath(); c.arc(x,y,9,0,TAU); c.stroke(); lab('依頼',x+11,y-8,'#9fe6f0'); }
   const [ot,tg]=objective(); if(tg){ const x=X(tg.x), y=Z(tg.z); c.fillStyle='#f0c34a'; c.strokeStyle='#1b1d1e'; c.lineWidth=2; c.beginPath(); c.moveTo(x,y-10); c.lineTo(x+8,y); c.lineTo(x,y+10); c.lineTo(x-8,y); c.closePath(); c.fill(); c.stroke(); lab('目的',x+11,y+4,'#ffe08a',13); }
@@ -3703,7 +3703,7 @@ function trk36Inspect(k){
       toast('追跡中：'+(ET[k.kind]?ET[k.kind].name:k.kind)+'の足取りをつかんだ');
     }
   }
-  const mark={x,z,dir:k.dir,kind:k.kind,until:S.time+120},marks=TRK36_TRACK.markers;
+  const mark={x,z,dir:k.dir,kind:k.kind,sourceId:k.sourceId,until:S.time+120},marks=TRK36_TRACK.markers;
   if(marks.length>=8)marks.shift();
   marks.push(mark);TRK36_TRACK.last=mark;
   if(!first)toast('確認済みの蹄跡：'+dir+'方向（地図を更新）');
@@ -3713,6 +3713,12 @@ function trk36Inspect(k){
 function trk36BonusFor(e){
   if(e.type!=='boar'&&e.type!=='bear')return 0;
   return (TRK36_TRACK.activeId===e.id&&S.time<TRK36_TRACK.activeUntil)||(e.trk36TrackedUntil&&S.time<e.trk36TrackedUntil)?1:0;
+}
+// 地図上の獣マーカーは、追跡で確認した個体だけ隠す。通常の地図表示は維持する。
+function trk36MapTargetHidden(e){
+  if(trk36BonusFor(e))return true;
+  for(const m of TRK36_TRACK.markers)if(m.sourceId===e.id&&m.until>S.time)return true;
+  return false;
 }
 function trk36GenHint(){
   const m=TRK36_TRACK.last;if(!m||m.until<=S.time)return '';
@@ -6849,6 +6855,9 @@ function resetWorld(extra){
   for(const e of [...enemies]) removeEnemy(e);
   for(const d of drops) scene.remove(d.m); f11Dispose(drops.map(d=>d.m)); drops.length=0;
   for(const s of spawnerState){ s.e=null; s.timer=0; s.trk36Hint=null; }
+  // 新しいゲーム／ロードでは、前の世界の蹄跡と荒らし跡を残さない。
+  for(const k of TRK36)scene.remove(k.m);
+  TRK36.length=0;
   trk36Reset();
   trackSpawns.length=0; trackShow=null; g4Apply(); f4Apply(); f5Apply(); f7Apply(); f8Apply(); f9Reset(); f10Apply();
   spawnFieldEnemies();
