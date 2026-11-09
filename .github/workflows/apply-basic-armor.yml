@@ -31,7 +31,7 @@ jobs:
           p.write_text(s,encoding='utf-8')
           js_count=0
           with tempfile.TemporaryDirectory() as td:
-              for i,m in enumerate(re.finditer(r'<script\\b([^>]*)>([\\s\\S]*?)</script\\s*>', s,flags=re.I)):
+              for i,m in enumerate(re.finditer(r'<script\b([^>]*)>([\s\S]*?)</script\s*>', s,flags=re.I)):
                   attrs,body=m.group(1),m.group(2)
                   if not body.strip() or 'application/json' in attrs: continue
                   js=Path(td)/f'script-{i}.js'
@@ -39,7 +39,7 @@ jobs:
                   subprocess.run(['node','--check',str(js)],check=True)
                   js_count+=1
               assert js_count==4, f'unexpected JS script count: {js_count}'
-              a=re.search(r'const ARMOR=\\[[^\\n]+\\];',s).group(0)
+              a=re.search(r'const ARMOR=\\[[^\n]+\\];',s).group(0)
               gear=s[s.index('const G47S='):s.index('// ================= 状態 =================')]
               tests=r'''let inv={armor:0},prog={};
           const ok=(cond,name)=>{if(!cond)throw Error(name)};
@@ -53,7 +53,7 @@ jobs:
           ok(inv.armor===2&&prog.gear.equip.chest==='work_chest','old save legacy migration');
           console.log('Armor logic tests PASS');'''
               testfile=Path(td)/'armor-test.js'
-              testfile.write_text(a+'\\n'+gear+'\\n'+tests,encoding='utf-8')
+              testfile.write_text(a+'\n'+gear+'\n'+tests,encoding='utf-8')
               subprocess.run(['node',str(testfile)],check=True)
           print(f'PASS: node --check ({js_count} JS blocks), armor unit tests, '+str(len(patches))+' targeted patches')
           PY
