@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REWILDED EIHEIJI 防具クラフト実験版</title>
+<style>body{margin:0;background:#151e19;color:#f2eee2;font:16px system-ui}#status{max-width:720px;padding:28px;margin:auto}button{font-size:16px;padding:10px 16px;cursor:pointer}#tester{position:fixed;z-index:999999;top:env(safe-area-inset-top,8px);right:8px;background:#19241fe8;border:2px solid #d5b56d;border-radius:10px;padding:8px;color:white;font:13px system-ui;max-width:230px;box-shadow:0 2px 12px #0009}#tester button{font-size:12px;padding:7px;margin:4px}#tester small{display:block}</style></head>
+<body><main id="status"><h1>防具クラフト実験版</h1><p>現行 main/index.html を読み込み、材料を追加した検証用ゲームを起動しています。</p></main>
+<script>
+(async function(){
+ const st=document.getElementById('status');
+ try{
+   const response=await fetch('./index.html?armor_demo_source=20261109',{cache:'no-store'});
+   if(!response.ok)throw Error('元のゲームの読み込み失敗 ('+response.status+')');
+   let source=await response.text();
+   const saveFrom="const SAVE_KEY='eiheiji_vs_beasts_v010';";
+   if(!source.includes(saveFrom))throw Error('セーブデータの分離位置が見つかりません');
+   source=source.replace(saveFrom,"const SAVE_KEY='eiheiji_armor_craft_demo_v1';");
+   // 全防具分の素材に余裕を持たせ、通常のクラフト処理と消費判定は変更しない。
+   const init=/((?:function freshState\(\)\{\s*)inv=\{[^\n]*\};)/;
+   if(!init.test(source))throw Error('所持品の初期化位置が見つかりません');
+   source=source.replace(init,(m)=>m+"\n  Object.assign(inv,{wood:100,hide:100,straw:100,rope:100,iron:100,stone:50,bamboo:50});");
+   const injection=`<style>#tester{position:fixed;z-index:999999;top:8px;right:8px;background:#17231fed;color:#fff;border:2px solid #d5b56d;border-radius:10px;padding:9px;font:13px system-ui;max-width:230px;box-shadow:0 2px 12px #0009}#tester button{font-size:12px;padding:8px;margin:3px;touch-action:manipulation}</style>
+<div id="tester"><b>🧪 防具クラフト実験版</b><small>本編とは別セーブ。素材消費は通常どおり。</small><button id="testRefill" type="button">素材を補充</button><button id="testBench" type="button">クラフト画面</button><button id="testReset" type="button">実験データ初期化</button><small id="testInfo"></small></div>
+<script>
+(function(){
+ const mat={wood:100,hide:100,straw:100,rope:100,iron:100,stone:50,bamboo:50};
+ function refill(){if(typeof inv==='undefined'||!inv)return;for(const k in mat)inv[k]=Math.max(inv[k]||0,mat[k]);if(typeof saveGame==='function')saveGame();if(typeof renderCraft==='function'&&document.getElementById('craft')&&!document.getElementById('craft').hidden)renderCraft();document.getElementById('testInfo').textContent='材料を補充しました';}
+ document.getElementById('testRefill').onclick=refill;
+ document.getElementById('testBench').onclick=function(){try{if(typeof hideAllOv==='function')hideAllOv();if(typeof openCraft==='function')openCraft();else throw Error('クラフト機能が見つかりません')}catch(e){document.getElementById('testInfo').textContent=e.message}};
+ document.getElementById('testReset').onclick=function(){if(confirm('実験版のデータを初期化しますか？')){localStorage.removeItem('eiheiji_armor_craft_demo_v1');location.reload()}};
+})();
+<\/script>`;
+   if(!source.includes('</body>'))throw Error('HTMLの終了位置が見つかりません');
+   source=source.replace('</body>',injection+'\n</body>');
+   document.open();document.write(source);document.close();
+ }catch(e){st.innerHTML='<h1>実験版を起動できませんでした</h1><p>'+String(e.message).replace(/</g,'&lt;')+'</p><p>このファイルは GitHub Pages 上で利用してください。</p>';}
+})();
+</script></body></html>
