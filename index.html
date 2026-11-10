@@ -566,6 +566,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <button id="btnPauseHow">操作方法</button>
       <button id="btnSave">セーブ</button>
       <button id="btnAim">攻撃方向：カーソル</button>
+      <button id="btnWeather" type="button">天候の演出：標準</button>
       <button id="btnShadow">高画質の影：オフ</button>
       <button id="btnPerf">計測表示：オフ</button>
       <button id="btnPerfRec" hidden>計測を記録（30秒）</button>
@@ -634,6 +635,10 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
     <div id="invArms" style="display:grid;gap:6px"></div>
     <div class="lbl" style="margin-top:12px">手掛かり</div>
     <div id="invClues"></div>
+    <section aria-labelledby="invHuntTitle">
+      <h3 class="lbl" id="invHuntTitle" style="margin-top:12px">狩猟記録</h3>
+      <div id="invHuntRecords"></div>
+    </section>
     <p id="invF9" class="f9inv" hidden></p>
     <div class="btns"><button class="pri" id="btnInvClose">閉じる（Tab）</button></div>
   </div>
@@ -737,7 +742,9 @@ const GAPS=[
 ];
 const TRAP_SLOTS=[
  {x:BX,z:BZ+26},{x:BX+7,z:BZ+30},{x:BX+26.5,z:BZ},{x:BX+27,z:BZ+8},{x:BX-26.5,z:BZ},{x:BX-27,z:BZ-8},
- {x:ARENA.x-5,z:ARENA.z+8,boss:true},{x:ARENA.x+5,z:ARENA.z-8,boss:true}
+ {x:ARENA.x-5,z:ARENA.z+8,boss:true},{x:ARENA.x+5,z:ARENA.z-8,boss:true},
+ // 既存セーブの罠台番号を維持し、東側のイノシシの生息地に狩り用の2枠を追加。
+ {x:202,z:49},{x:208,z:48}
 ];
 
 // 追加見張り台の固定予定地
@@ -2292,7 +2299,87 @@ function renderQuests(){ const g=prog.g4, list=$('questList'); list.innerHTML=''
     const cs=document.createElement('div'); cs.className='cs'; cs.textContent=`報酬：${q.rtxt}`; d.appendChild(cs);
     const b=document.createElement('button'); b.id='quest_'+q.id; b.textContent=done?'達成済み':g.track===i?'追跡中':'追跡する'; b.disabled=done||g.track===i;
     b.addEventListener('click',()=>{ g.track=i; renderQuests(); saveGame(); }); d.appendChild(b); list.appendChild(d); });
+  renderTownRequests(list);
 }
+const TOWN_REQUEST_COOLDOWN=180;
+const TOWN_REQUESTS=[
+  {npc:'yone',title:'畑の作物を届けてくれ',item:'food',count:3,reward:{rope:1,wood:2},
+    accept:'畑の作物を三つ届けてくれんか。わしんとこまで持ってきね。',deliver:'よう持ってきてくれたのう。縄と木材、持っていきね。'},
+  {npc:'eshin',title:'藁を届けてくれ',item:'straw',count:4,reward:{onigiri:1},
+    accept:'藁を四つ持ってきてもらえんやろか。',deliver:'助かったわ。おにぎり、持っていきね。'},
+  {npc:'gen',title:'獣素材を持ってきてくれ',item:'hide',count:2,reward:{wood:3,food:1},
+    accept:'獣素材を二つ、見張りのわしんとこへ持ってきてくれんか。',deliver:'おお、助かるわ。木材と食料、持っていきね。'},
+];
+function loadTownRequests(saved){
+  const active=TOWN_REQUESTS.some(q=>q.npc===saved?.active)?saved.active:null;
+  const cooldown={};
+  for(const q of TOWN_REQUESTS){
+    const left=saved?.cooldown?.[q.npc];
+    cooldown[q.npc]=Number.isFinite(left)?clamp(left,0,TOWN_REQUEST_COOLDOWN):0;
+  }
+  return {active,cooldown};
+}
+function tickTownRequests(dt){
+  const {cooldown}=prog.townRequests;
+  for(const q of TOWN_REQUESTS) if(cooldown[q.npc]>0) cooldown[q.npc]=Math.max(0,cooldown[q.npc]-dt);
+}
+function townRequestItems(items){
+  return Object.entries(items).map(([k,n])=>`${RNAME[k]||FOODS[k].name}${n}`).join('・');
+}
+function acceptTownRequest(q){
+  const state=prog.townRequests;
+  if(ev.kind||state.active||state.cooldown[q.npc]>0)return;
+  const npc=NPCS.find(n=>n.id===q.npc);
+  if(!npc)return;
+  state.active=q.npc;
+  saveGame();
+  closeOverlay();
+  queueDialog([[npc,q.accept]]);
+}
+function deliverTownRequest(n,q){
+  const state=prog.townRequests;
+  if(ev.kind||state.active!==q.npc||n.id!==q.npc)return;
+  f7Flush();
+  if(inv[q.item]<q.count){sfx('deny');toast('納品する素材が足りない',true);return;}
+  if(FOODS[q.item]) foodTake(q.item,q.count);
+  else inv[q.item]-=q.count;
+  for(const [k,v] of Object.entries(q.reward)){
+    if(FOODS[k]) foodAdd(k,v);
+    else inv[k]+=v;
+  }
+  state.active=null;
+  state.cooldown[q.npc]=TOWN_REQUEST_COOLDOWN;
+  saveGame();
+  closeOverlay();
+  queueDialog([[n,q.deliver]]);
+  toast('納品完了　報酬 '+townRequestItems(q.reward),true);
+  sfx('craft');
+}
+function renderTownRequests(list){
+  const state=prog.townRequests;
+  f9El('h3','','町民の頼みごと',list);
+  for(const q of TOWN_REQUESTS){
+    const npc=NPCS.find(n=>n.id===q.npc);
+    if(!npc)continue;
+    const card=f9El('div','rc',null,list);
+    f9El('div','nm',npc.name+'「'+q.title+'」',card);
+    f9El('div','ds','納品　'+townRequestItems({[q.item]:q.count}),card);
+    f9El('div','cs','報酬　'+townRequestItems(q.reward),card);
+    const left=state.cooldown[q.npc];
+    const unavailable=state.active===q.npc?'受注中・本人に納品':ev.kind?'戦いの間は受注できない':
+      state.active?'別の頼みごとを受注中':left>0?'再受注まで '+fmtTime(Math.ceil(left)):'';
+    f9Btn(card,'town_request_'+q.npc,unavailable||'受注する',()=>acceptTownRequest(q),{dis:!!unavailable});
+  }
+}
+function renderTownDelivery(n,buttons){
+  if(ev.kind||prog.townRequests.active!==n.id)return;
+  const q=TOWN_REQUESTS.find(q=>q.npc===n.id);
+  const enough=inv[q.item]>=q.count;
+  const items=townRequestItems({[q.item]:q.count});
+  f9Btn(buttons,'npc_town_delivery',enough?items+'を納品する':items+'の納品（素材不足）',
+    ()=>deliverTownRequest(n,q),{dis:!enough});
+}
+
 // ================= F4：伐採と運搬（切る・倒す・枝を払う・運ぶ） =================
 // 木は3種：細い木（集落のまわり）、杉（山の森）、太い杉（森の大きな木）。
 // 最初に刃を入れた側（受け口）へ倒れる。倒れた木は人にも獣にも当たる。急な斜面の下へ倒すと転がる。
@@ -3061,12 +3148,17 @@ const F6D={raidMul:0.85}; // 襲撃・侵攻で来る獣のHPの倍率
 // 束の並びが正しい値で、inv.food などは「使える数」の写し（束が変わるたびに f7Sync で書き直す）。
 // 経過時間はゲームの時間（dt）で進む。遊んでいる間だけ進み、メニュー・会話・一時停止・タイトル・非表示では止まる。
 // life は手持ちでの保存時間（秒）。食料庫の中は経過の進み方が rate 倍になる（基本1/3・強化後1/5）。
-const FOODS={food:{name:'食料',life:1200},onigiri:{name:'おにぎり',life:1800},bento:{name:'精進弁当',life:2400}}; // 仮の値（承認済み：20／30／40分）
-const F7K=['food','onigiri','bento'];
+const FOODS={
+  food:{name:'食料',life:1200},onigiri:{name:'おにぎり',life:1800},bento:{name:'精進弁当',life:2400},
+  grilledVeg:{name:'焼き野菜',life:1800},herbPorridge:{name:'薬草粥',life:2400},
+};
+const F7K=Object.keys(FOODS);
+const STRAW_MEALS=['grilledVeg','herbPorridge'];
+const MEAL_BUFF_TIME=30, VEG_SPEED_BONUS=0.10, PORRIDGE_HEAL=40;
 const F7={spoil:true,    // 段階A・B：まだ傷まない（経過時間は数える）。段階Cで true
   store:true,            // 段階B：食料庫の画面を使える
   rate:[1/3,1/5], merge:60, maxB:12, warn:0.25, tick:1};
-function f7Empty(){ return {food:[],onigiri:[],bento:[]}; }
+function f7Empty(){ return Object.fromEntries(F7K.map(k=>[k,[]])); }
 function f7Fresh(){ return {v:1,hand:f7Empty(),store:f7Empty(),spoiled:[0,0],up:0,intro:0,acc:0,warned:{}}; }
 // まだ傷まない段階では、経過時間を「傷みかけ」の手前で止めておく（段階Cを入れたときに一度に傷まないように）
 function f7Cap(k){ return F7.spoil?Infinity:FOODS[k].life*(1-F7.warn)-1; }
@@ -3144,7 +3236,7 @@ function f7Move(k,n,from){ f7Flush(); const to=from==='hand'?'store':'hand'; con
   const got=foodTake(k,n,from); foodAddB(k,got,to); sfx('pickup'); saveGame(); renderStore(); return f7Sum(got); }
 function renderStore(){
   const f=prog.f7; const list=$('storeList'); list.innerHTML='';
-  $('storeInfo').textContent=`食料庫の中は傷みにくい（経過がふつうの${f.up?'1/5':'1/3'}）。入れられるのは食料・おにぎり・精進弁当。古いものから動く。`+(F7.spoil?'':'　※この版ではまだ食べ物は傷みません');
+  $('storeInfo').textContent=`食料庫の中は傷みにくい（経過がふつうの${f.up?'1/5':'1/3'}）。食料と料理を預けられる。古いものから動く。`+(F7.spoil?'':'　※この版ではまだ食べ物は傷みません');
   for(const k of F7K){ const h=f7Count(k,'hand'), s=f7Count(k,'store'), wh=f7Warn(k,'hand'), ws=f7Warn(k,'store');
     const d=document.createElement('div'); d.className='rc st';
     const nm=document.createElement('div'); nm.className='nm'; nm.textContent=`${FOODS[k].name}　手持ち ${h}${wh?`（うち傷みかけ ${wh}）`:''}／食料庫 ${s}${ws?`（うち傷みかけ ${ws}）`:''}`; d.appendChild(nm);
@@ -3339,9 +3431,15 @@ function renderNPC(){ const n=f9Cur; if(!n) return; $('npcName').textContent=n.n
   if(n===npcGen&&f9Has('D')) f9GenPanel(st,bx);
   if(n===npcEshin){ if(f9Has('C')) f9EshinPanel(st,bx); else f9El('div','nl',ev.kind?'いまは柵の修理に出ている（戦いの間）':'戦いの間は、傷んだ柵を直しに行く',st); }
   if(n===npcYone&&f9Has('B')) f9YonePanel(st,bx);
+  renderTownDelivery(n,bx);
   if(n===npcGen&&!f9Has('D')) f9El('div','nl',ev.kind?'獣の数を叫んで知らせている':'見張り台から外を見張っている',st);
 }
 function f9Talk(n){ closeOverlay(); const story=n===npcTome&&f9Story(n)||n===npcTome&&prog.stage==='invasionPrep'; talkTo(n);
+  if(n===npcGen&&!ev.kind&&stats.hunt.byType.boar.kills>=HUNT_GOALS.boar&&!stats.hunt.praised){
+    stats.hunt.praised=true;
+    queueDialog([[n,'イノシシを十五頭も仕留めたんか。ようやったのう、頼もしいわ。']]);
+    saveGame();
+  }
   if(story&&F9.st>='D'){ const sc=f9Scene(), L=sc&&F9SCENE.tome[sc]; if(L&&n.f9said!==sc){ n.f9said=sc; queueDialog([[npcTome,L[0]]]); } } } // トミオは物語の会話の後に、その場面の一言を一度だけ足す
 function f9Invade(){ closeOverlay(); queueDialog([[npcTome,'柵と罠の備えはええか？ ……ほな、半鐘を鳴らすで！']],()=>{ if(prog.stage==='invasionPrep'&&!ev.kind) startEvent('invasion'); }); }
 
@@ -3404,7 +3502,7 @@ function f9InvLine(){ const el=$('invF9'); if(!el) return; if(!(F9.st>='B'&&f9YO
 // ---- 慧心の料理（段階C）----
 // 作業台と同じ材料・同じ処理（f7CraftTake で手持ちと食料庫の古い使える物から取り、できた料理は手持ちに新品で入る）。押したときだけ作る
 const F9E={t:0};
-const F9COOK=['onigiri','bento'];
+const F9COOK=['onigiri','bento',...STRAW_MEALS];
 function f9CookHave(k){ return FOODS[k]?f7Have(k):(inv[k]||0); }
 function f9CookN(id,max){ const r=RECIPES.find(x=>x.id===id); if(!r) return 0; f7Flush(); let n=max; for(const k in r.cost) n=Math.min(n,Math.floor(f9CookHave(k)/r.cost[k])); return Math.max(0,n); }
 function f9CookWhy(id){ if(f9YRest()) return '今は柵の修理中（戦いの間は頼めない）'; const r=RECIPES.find(x=>x.id===id); const L=[];
@@ -3422,6 +3520,7 @@ function f9EshinPanel(st,bx){ const rest=f9YRest();
   f9El('div','nl',rest?'料理：今は柵の修理中（戦いの間は頼めない）':'料理：頼める。できた料理は手持ちに入る（新品）',st);
   for(const id of F9COOK){ const r=RECIPES.find(x=>x.id===id); if(!r) continue; const n=f9CookN(id,3);
     const d=f9El('div','rc f9c',null,bx); f9El('div','nm',r.name,d);
+    if(STRAW_MEALS.includes(id)) f9El('div','ds',r.desc,d);
     const fh=f7Count('food','hand'), fs=F7.store?f7Count('food','store'):0;
     f9El('div','cs',`材料：${Object.entries(r.cost).map(([k,v])=>`${RNAME[k]}${v}`).join('・')}　いま使える食料 ${fh+fs}（手持ち ${fh}＋食料庫 ${fs}）${r.cost.hide?`・獣素材 ${inv.hide}`:''}`,d);
     const b=f9El('div','stb',null,d);
@@ -3820,7 +3919,7 @@ function f11Update(dt){ const box=f11Box(); if(!F11.on||S.mode==='title'){ box.s
   const lines=[`FPS ${s.fps}（平均 ${s.avg.toFixed(0)}・最低 ${s.min.toFixed(0)}） 小分け ${F11.subMax}`,
     `三角形 ${(F11.tri/1000).toFixed(0)}k 描画 ${F11.calls} 絵 ${renderer.getPixelRatio()}x`,
     `獣 ${alive}　痕跡 ${tr}　破片 ${pa}/${parts.length}`,
-    `${f11PhaseText()}　精度 ${LOWQ?'低':'標準'}${renderer.shadowMap.enabled?'・影':''}`];
+    `${f11PhaseText()}　天候 ${WEATHER_NAMES[weather.state]}　精度 ${LOWQ?'低':'標準'}${renderer.shadowMap.enabled?'・影':''}`];
   if(F11.rec) lines.push(`記録中 ${Math.min(30,F11.rec.t).toFixed(0)}/30秒`); else if(F11.last) lines.push('記録済み（一時停止の画面で見られる）');
   box.textContent=lines.join('\n'); F11.subMax=1;
   // 置き場所：左上で、体力の帯・目的の帯・横画面の地図ボタン・食べ物の欄などに重ならない一番上
@@ -3982,7 +4081,7 @@ const SND_KEY='REWILDED_EIHEIJI_SETTINGS';
 const SND={se:true,bgm:true,amb:true,bgmVol:0.4,ambVol:0.5};
 (function(){ try{ const q=JSON.parse(localStorage.getItem(SND_KEY)||'null'); if(q&&typeof q==='object') for(const k of ['se','bgm','amb']) if(typeof q[k]==='boolean') SND[k]=q[k]; }catch(e){} })();
 function f31SndSave(){ try{ localStorage.setItem(SND_KEY,JSON.stringify({v:1,se:SND.se,bgm:SND.bgm,amb:SND.amb})); }catch(e){} }
-const AU={ok:false,bgm:null,amb:null,scenes:{},cur:null,timer:null,wind:null,windG:null,windF:null,drone:null,droneG:null,fireG:null,bugT:0,crackT:0};
+const AU={ok:false,bgm:null,amb:null,scenes:{},cur:null,timer:null,wind:null,windG:null,windF:null,rainG:null,drone:null,droneG:null,fireG:null,bugT:0,crackT:0};
 // 場面ごとの曲：五音音階（ヨナ抜き）・1〜2声・ループ20〜40秒
 const PENTA=[0,2,4,7,9];
 const SONGS={
@@ -4005,6 +4104,11 @@ function f31AudioStart(){ if(AU.ok||!AC) return; AU.ok=true;
   if(!noiseBuf){ noiseBuf=AC.createBuffer(1,AC.sampleRate*1,AC.sampleRate); const ch=noiseBuf.getChannelData(0); for(let i=0;i<ch.length;i++) ch[i]=Math.random()*2-1; }
   const w=AC.createBufferSource(); w.buffer=noiseBuf; w.loop=true; const wf=AC.createBiquadFilter(); wf.type='bandpass'; wf.frequency.value=380; wf.Q.value=0.6;
   const wg=AC.createGain(); wg.gain.value=0.05; w.connect(wf); wf.connect(wg); wg.connect(AU.amb); w.start(); AU.wind=w; AU.windG=wg; AU.windF=wf;
+  // 既存の共有ノイズを別帯域で絞り、環境音バスに小さく重ねる。
+  const rain=AC.createBufferSource(); rain.buffer=noiseBuf; rain.loop=true;
+  const rf=AC.createBiquadFilter(); rf.type='bandpass'; rf.frequency.value=1750; rf.Q.value=0.55;
+  AU.rainG=AC.createGain(); AU.rainG.gain.value=0;
+  rain.connect(rf); rf.connect(AU.rainG); AU.rainG.connect(AU.amb); rain.start();
   // 夜の危険区域の低い気配：低い正弦波（音量0から）
   const d=AC.createOscillator(); d.type='sine'; d.frequency.value=49; const dg=AC.createGain(); dg.gain.value=0; d.connect(dg); dg.connect(AU.amb); d.start(); AU.drone=d; AU.droneG=dg;
   AU.fireG=AC.createGain(); AU.fireG.gain.value=0; AU.fireG.connect(AU.amb);
@@ -4036,6 +4140,7 @@ function f31SetScene(k){ if(!AU.ok||AU.cur===k) return; const now=AC.currentTime
 function f31AudioUpdate(){ if(!AU.ok) return; f31SetScene(f31Scene()); const now=AC.currentTime;
   const ph=f10Has('F')?f10Phase():'day'; const night=ph==='night'&&S.mode!=='title';
   const wind=0.035+0.02*Math.sin(S.time*0.13)+0.01*Math.sin(S.time*0.37); AU.windG.gain.setTargetAtTime(wind,now,0.5);
+  AU.rainG.gain.setTargetAtTime(S.mode==='title'?0:0.035*weather.rain*weather.strength,now,0.25);
   const danger=night&&zoneNow==='danger'; AU.droneG.gain.setTargetAtTime(danger?0.05:0,now,0.8);
   AU.fireNear=!!(NW.on&&night&&f31NearFire());
   const paused=S.mode==='paused'||S.mode==='menu'; AU.bgm.gain.setTargetAtTime(SND.bgm?SND.bgmVol*(paused?0.5:1):0,now,0.2); AU.amb.gain.setTargetAtTime(SND.amb?SND.ambVol*(paused?0.5:1):0,now,0.2); }
@@ -5008,7 +5113,7 @@ function beastVoice51(e,call){
  try{if(!voiceBus51){voiceBus51=AC.createDynamicsCompressor();voiceBus51.threshold.value=-12;voiceBus51.ratio.value=6;voiceBus51.connect(master);}
  // Generate at 22.05 kHz: voice bandwidth is low; fresh variants remain inexpensive.
  const rate=22050,samples=synthVoice(boss?'nushi':'boar',call,rate),buffer=AC.createBuffer(1,samples.length,rate);buffer.copyToChannel(samples,0);
- const source=AC.createBufferSource(),gain=AC.createGain();source.buffer=buffer;gain.gain.value=(call==='roar'?.45:.23)*Math.max(0,1-d/max)**1.35;source.connect(gain);gain.connect(voiceBus51);const a={source,gain};activeBeastVoices51.add(a);source.onended=()=>{activeBeastVoices51.delete(a);source.disconnect();gain.disconnect();};source.start();
+ const source=AC.createBufferSource(),gain=AC.createGain();source.buffer=buffer;gain.gain.value=(call==='roar'?.45:.23)*Math.max(0,1-d/max)**1.35*weatherSoundMul(d,max);source.connect(gain);gain.connect(voiceBus51);const a={source,gain};activeBeastVoices51.add(a);source.onended=()=>{activeBeastVoices51.delete(a);source.disconnect();gain.disconnect();};source.start();
  }catch(err){console.warn('Beast voice',err);}
 }
 function voiceState51(e,s){if(s==='notice'||s==='alert'||s==='chargeWind')beastVoice51(e,'grunt');else if(s==='tusk'||s==='goreWind')beastVoice51(e,'roar');}
@@ -5251,12 +5356,46 @@ const WEAPONS={
 // 装備武器の参照を一元化。null／不正なIDは素手として扱い、未定義参照を防ぐ。
 function equippedWeapon(){ return P.weapon&&WEAPONS[P.weapon]?WEAPONS[P.weapon]:null; }
 let inv, prog, stats;
+const HUNT_TYPES=['boar','monkey','bear','deer','weasel','boss'];
+const HUNT_GOALS={boar:15,perfect:20,total:100};
+const FIELD_RESPAWN_AFTER_BOSS=0.8;
+function loadHuntRecords(saved){
+  const byType={};
+  for(const type of HUNT_TYPES){
+    const row=saved?.byType?.[type];
+    const kills=num(row?.kills,0,0,1e7);
+    byType[type]={kills,best:num(row?.best,0,0,kills),perfect:num(row?.perfect,0,0,1e7)};
+  }
+  const last=HUNT_TYPES.includes(saved?.last)?saved.last:null;
+  return {byType,last,streak:last?num(saved.streak,0,0,byType[last].best):0,praised:saved?.praised===true};
+}
+function huntTotal(key){
+  return HUNT_TYPES.reduce((n,type)=>n+stats.hunt.byType[type][key],0);
+}
+function recordHuntKill(type){
+  if(!HUNT_TYPES.includes(type))return;
+  const h=stats.hunt, row=h.byType[type];
+  row.kills++;
+  h.streak=h.last===type?h.streak+1:1;
+  h.last=type;
+  row.best=Math.max(row.best,h.streak);
+}
+function recordHuntPerfect(src){
+  if(!HUNT_TYPES.includes(src?.type))return;
+  stats.hunt.byType[src.type].perfect++;
+  if(huntTotal('perfect')===HUNT_GOALS.perfect){
+    toast(`熟練度のコツ：同じ武器系統で獣に攻撃を当てると上昇。${MAST.t1}回で消費スタミナ−${MAST.stam}、${MAST.t2}回で体勢削り＋${Math.round((MAST.poise-1)*100)}%。`);
+  }
+}
+function fieldRespawnDelay(tracked,bossCleared){
+  return (tracked?75:100)*(bossCleared?FIELD_RESPAWN_AFTER_BOSS:1);
+}
 function freshState(){
-  inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,onigiri:1,bento:0,fang:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0};
-  prog={gear:f47Fresh(),stage:'talk',unlockTrap:false,unlockBoss:false,clues:[false,false,false],bossDefeated:false,scoutTower:false,scoutWarned:false,scoutRaidWarned:false,prepT:150,gatherT:0,introSeen:false,lastSaveT:0,g4:g4Fresh(),f4:f4Fresh(),level:1,exp:0,mastery:{nata:0,axe:0,club:0,spear:0},xph:0}; prog.f7=f7FromInv(); f7Sync(); prog.f8=f8Fresh(); prog.f9=f9Fresh(); prog.f10=f10Fresh();
-  stats={kills:0,deaths:0,crafts:0,time:0,perfect:0};
+  inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,baitKit:0,onigiri:1,bento:0,grilledVeg:0,herbPorridge:0,fang:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0};
+  prog={gear:f47Fresh(),stage:'talk',unlockTrap:false,unlockBoss:false,clues:[false,false,false],bossDefeated:false,scoutTower:false,scoutWarned:false,scoutRaidWarned:false,prepT:150,gatherT:0,introSeen:false,lastSaveT:0,townRequests:loadTownRequests(),g4:g4Fresh(),f4:f4Fresh(),level:1,exp:0,mastery:{nata:0,axe:0,club:0,spear:0},xph:0}; prog.f7=f7FromInv(); f7Sync(); prog.f8=f8Fresh(); prog.f9=f9Fresh(); prog.f10=f10Fresh();
+  stats={kills:0,deaths:0,crafts:0,time:0,perfect:0,hunt:loadHuntRecords()};
   P.lvx48=0;P.lvz48=0;
-  P.maxHp=100; P.hp=100; P.full=100; P.weapon='nata1'; P.dur=120; prog.arms={nata1:120}; prog.f5=f5Fresh(); P.dead=false; P.atk=null; P.dodge=null; P.buffer=null; P.stagger=0; P.buffT=0; resetCombat();
+  P.maxHp=100; P.hp=100; P.full=100; P.weapon='nata1'; P.dur=120; prog.arms={nata1:120}; prog.f5=f5Fresh(); P.dead=false; P.atk=null; P.dodge=null; P.buffer=null; P.stagger=0; P.buffT=0; P.vegT=0; P.porridgeT=0; resetCombat();
 }
 freshState();
 
@@ -5487,6 +5626,7 @@ function spikeFenceContact(gp,e){
   cd[gp.id]=S.time;const dir=Math.atan2(e.x-gp.c.x,e.z-gp.c.z);
   damageEnemy(e,6,'trap',dir,{source:'spike',mv:{poise:12}});
 }
+const BAIT_RADIUS=25, BAIT_DURATION=90;
 const traps=TRAP_SLOTS.map((s,i)=>Object.assign({i,state:'empty',type:'snare'},s));
 function buildTraps(){
   const marks=new THREE.Group();
@@ -5503,6 +5643,13 @@ function trapVisual(t){
   const g=t.g; while(g.children.length){ const c=g.children[0]; g.remove(c); if(c.geometry) c.geometry.dispose(); }
   if(t.state==='empty') return;
   const armed=t.state==='armed'; const v=new THREE.Group();
+  if(t.type==='bait'){
+    v.add(mesh(G.box,mat(0x815c37),0,0.07,0,0.85,0.14,0.65));
+    if(armed) for(let i=-1;i<=1;i++){
+      v.add(mesh(G.sphLo,mat(0xb3894b),i*0.21,0.18,0,0.18,0.14,0.2));
+    }
+    g.add(bake(v));return;
+  }
   if(t.type==='pit'){
     v.add(mesh(G.circ,bmat(armed?0x362b20:0x201b16,0.92),0,0.035,0,1.12,1,1.12));
     for(let i=0;i<10;i++){const a=i*TAU/10,x=Math.sin(a),z=Math.cos(a);
@@ -5517,7 +5664,33 @@ function trapVisual(t){
   else { const loop=mesh(G.torus,mat(0x9a8a6a),1.0,2.6,0.2,0.18,0.18,0.18); v.add(loop); v.add(mesh(G.cyl8,mat(0xd9c38a),1.0,2.85,0.2,0.015,0.5,0.015)); }
   g.add(bake(v));
 }
-function setTrap(t,state,type){if(type==='pit'||type==='snare')t.type=type;t.state=state;trapVisual(t);}
+function setTrap(t,state,type,baitTime=BAIT_DURATION){
+  if(type==='pit'||type==='snare'||type==='bait')t.type=type;
+  t.state=state;
+  t.baitTime=t.type==='bait'&&state==='armed'?baitTime:0;
+  trapVisual(t);
+}
+function nearestBait(e){
+  if(e.mode!=='field'||e.type==='boss'||e.carry)return null;
+  let closest=null, range=BAIT_RADIUS;
+  for(const t of traps){
+    if(t.type!=='bait'||t.state!=='armed')continue;
+    const d=dist(e.x,e.z,t.x,t.z);
+    if(d<=range){closest=t;range=d;}
+  }
+  return closest;
+}
+function spendBait(t){
+  setTrap(t,'sprung');
+  saveGame();
+}
+function activateBait(t){
+  setTrap(t,'armed','bait');
+  puff(t.x,groundH(t.x,t.z)+0.25,t.z,0,0.55,0,0.4,0xe4c18b,1);
+  sfx('trap');
+  toast('おとり餌の香りが立ち始めた');
+  saveGame();
+}
 function buildScoutSite(){
   const {x,z}=SCOUT;
   world.add(mesh(G.circ,bmat(0xc5ad7d,0.45),x,groundH(x,z)+0.03,z,1.55,1,1.55));
@@ -5846,6 +6019,17 @@ function eat(k){
     foodTake('onigiri',1); healPlayer(35); P.full=Math.min(100,P.full+25); toast('おにぎりを食べた　体力+35'); }
   else if(k==='bento'){ if(inv.bento<=0){ toast('精進弁当がない',true); sfx('deny'); return; }
     foodTake('bento',1); healPlayer(60); P.full=Math.min(100,P.full+50); P.buffT=30; toast('精進弁当を食べた　体力+60・30秒間 攻撃力+30%'); }
+  else if(STRAW_MEALS.includes(k)){
+    if(inv[k]<=0){ toast(FOODS[k].name+'がない',true); sfx('deny'); return; }
+    foodTake(k,1);
+    if(k==='grilledVeg'){
+      healPlayer(15); P.full=Math.min(100,P.full+40); P.vegT=MEAL_BUFF_TIME;
+      toast('焼き野菜を食べた　体力+15・満腹+40・30秒間 移動速度+10%');
+    } else {
+      P.porridgeT=MEAL_BUFF_TIME;
+      toast('薬草粥を食べた　30秒かけて体力が最大40回復する');
+    }
+  }
   else { if(inv.food<=0){ toast(prog.f7.spoiled[0]?'食べられる食料がない（傷んだ物は食べられない）':'食料がない',true); sfx('deny'); return; } if(P.full>=99){ toast('おなかいっぱい'); return; }
     foodTake('food',1); P.full=Math.min(100,P.full+15); healPlayer(4); toast('食料をかじった　満腹+15'); }
   sfx('eat');
@@ -5868,6 +6052,7 @@ function perfectDodge(src){
   if(src&&src.type==='boar'&&src.state==='charge'&&F6X.skid>0&&src.skid==null){ src.skid=F6X.skid; src.hitPlayer=true; spawnParticles(src.x,0.2,src.z,8,0xb59c70,3); floatText(src.x,1.6,src.z,'つんのめった','#f0dca0'); }
   if(S.time-(P.lastPerfect||-9)<0.5) return;
   P.lastPerfect=S.time; P.ctrT=CTR.win; S.slowmo=0.4; stats.perfect++;
+  recordHuntPerfect(src);
   floatText(P.x,2.6,P.z,'見切り！','#f0c34a',true); sfx('perfect');
 }
 const UNARMED_PUNCH_DMG=4, UNARMED_KICK_DMG=8; // v0.45：素手の攻撃力（最弱の竹槍・通常13より明確に低い）。調整はこの2定数のみ
@@ -5915,6 +6100,7 @@ function killEnemy(e,trackingBonus=0){
   if(e.state==='dead') return;
   e.state='dead'; e.st=0; e.ind.visible=false; e.stars.visible=false; if(e.sector) e.sector.visible=false; if(e.ringM) e.ringM.visible=false;
   stats.kills++; f31Kill(e); // v0.31 経験値
+  recordHuntKill(e.type);
   if(e.type==='boss'){ bossDefeated(e); return; }
   const n={boar:2,monkey:1,bear:4,deer:2,weasel:1}[e.type]||1;
   spawnDrop('hide',n+(trackingBonus?1:0),e.x,e.z);
@@ -5979,6 +6165,14 @@ function canSee(e){
 }
 function setState(e,s){ const previous=e.state; e.state=s; if(previous!==s&&e.m&&e.m.study51) voiceState51(e,s); e.st=0; e.sn=(e.sn||0)+1; if(s==='wind') e.windRoared=false; if(s==='wind') e.lockDir=null; } // sn：攻撃ごとの番号（見切りは同じ攻撃から1回だけ）。v0.45：予備動作の入りで初期化
 function wanderUpdate(e,dt,spd){
+  const bait=nearestBait(e);
+  if(bait){
+    const reach=0.7+e.r*0.5;
+    if(dist(e.x,e.z,bait.x,bait.z)>reach)steer(e,bait.x,bait.z,spd,dt,4);
+    else e.spd=0;
+    if(dist(e.x,e.z,bait.x,bait.z)<=reach)spendBait(bait);
+    return;
+  }
   if(!e.wander||e.st>e.wanderT){ const a=Math.random()*TAU, r=Math.random()*5; e.wander={x:e.home.x+Math.cos(a)*r,z:e.home.z+Math.sin(a)*r}; e.wanderT=2+Math.random()*3; e.st=0; }
   if(dist(e.x,e.z,e.wander.x,e.wander.z)>0.6) steer(e,e.wander.x,e.wander.z,spd,dt,4); else e.spd=0;
 }
@@ -6021,7 +6215,7 @@ function updateBoar(e,dt){
       e.ind.visible=true; e.ind.position.set(e.x,groundH(e.x,e.z)+0.12,e.z); e.ind.rotation.y=e.rot; e.ind.scale.set(1.3,1,Math.min(14,9+e.st*6));
       e.ind.material=bmat(0xff3b1f,Math.round((0.35+0.4*Math.min(1,e.st/e.windT))*20)/20);
       if(Math.random()<dt*10) spawnParticles(e.x-Math.sin(e.rot)*0.6,0.1,e.z-Math.cos(e.rot)*0.6,1,0xb59c70,2);
-      if(e.st>=e.windT){ e.ind.visible=false; setState(e,'charge'); if(e.lockDir==null) e.lockDir=e.rot; e.chargeDir=e.lockDir; e.lockDir=null; e.hitPlayer=false; e.skid=null; spawnBoarTracks(e); noise(0.2,0.06,400); } // v0.45：確定した進路で突進・蹄跡を残す
+      if(e.st>=e.windT){ e.ind.visible=false; setState(e,'charge'); if(e.lockDir==null) e.lockDir=e.rot; e.chargeDir=e.lockDir; e.lockDir=null; e.hitPlayer=false; e.skid=null; spawnBoarTracks(e); noise(0.2,0.06*weatherSoundMul(dist(e.x,e.z,P.x,P.z),26),400); } // v0.45：確定した進路で突進・蹄跡を残す
       break; }
     case 'charge': {
       if(e.skid!=null){ e.skid-=dt; const v=15*Math.max(0,e.skid/F6X.skid); e.spd=v; moveDir(e,e.chargeDir,v,dt); if(Math.random()<dt*30) spawnParticles(e.x,0.1,e.z,1,0xb59c70,2); if(e.skid<=0){ e.skid=null; setState(e,'recover'); } break; }
@@ -6151,7 +6345,7 @@ function updateBear(e,dt){
       steer(e,t.x,t.z,d<4?ET.bear.speed*1.25:ET.bear.speed,dt,4);
       break; }
     case 'wind': {
-      e.spd=0; if(!e.windRoared){ e.windRoared=true; noise(0.28,0.07,260); } if(e.st<0.5) faceTo(e,Math.atan2(t.x-e.x,t.z-e.z),3,dt); // v0.45：構えの唸り声
+      e.spd=0; if(!e.windRoared){ e.windRoared=true; noise(0.28,0.07*weatherSoundMul(dist(e.x,e.z,P.x,P.z),26),260); } if(e.st<0.5) faceTo(e,Math.atan2(t.x-e.x,t.z-e.z),3,dt); // v0.45：構えの唸り声
       showSector(e,3.0,2.1,e.st/1.0);
       if(e.st>=1.0){ hideSector(e); setState(e,'strike'); strikeArea(e,3.0,2.1,38,30,25,t,10); sfx('heavyHit'); spawnParticles(e.x+Math.sin(e.rot)*2,0.2,e.z+Math.cos(e.rot)*2,10,0x8a7a5a,5); }
       break; }
@@ -6307,6 +6501,11 @@ function updateEnemyAnim(e,dt){
 // v0.45.1：たとえ遠距離でも必ず毎フレーム進める状態（予備動作・攻撃・突進。見た目と判定の一致を優先）
 const AILOD_SKIP=['wind','chargeWind','goreWind','stompWind','charge','dash','strike','tusk','gore','stomp','trapped','stun'];
 function updateEnemies(dt){
+  for(const t of traps){
+    if(t.type!=='bait'||t.state!=='armed')continue;
+    t.baitTime-=dt;
+    if(t.baitTime<=0)spendBait(t);
+  }
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i]; if(e.removed) continue;
     e.st+=dt; e.flash=Math.max(0,e.flash-dt);
@@ -6336,7 +6535,7 @@ function updateEnemies(dt){
     if(!['wind','goreWind','tusk'].includes(e.state)) hideSector(e);
     // 罠
     if(e.type!=='monkey'&&!['stun','trapped','dead'].includes(e.state)){
-      for(const t of traps){ if(t.state!=='armed') continue; if(dist(e.x,e.z,t.x,t.z)<1.1+e.r*0.5){ triggerTrap(t,e); break; } }
+      for(const t of traps){ if(t.state!=='armed'||t.type==='bait') continue; if(dist(e.x,e.z,t.x,t.z)<1.1+e.r*0.5){ triggerTrap(t,e); break; } }
     }
     // プレイヤーとの重なり
     const d=dist(e.x,e.z,P.x,P.z), rs=e.r+P.r;
@@ -6360,6 +6559,7 @@ function updateEnemies(dt){
   }
 }
 function triggerTrap(t,e){
+  if(t.type==='bait')return;
   if(t.type==='pit'){
     if(!['boar','bear','boss'].includes(e.type))return;
     setTrap(t,'sprung');sfx('trap');f10Noise(t.x,t.z,12,'impact');
@@ -6462,10 +6662,12 @@ function failEvent(){
 function bossCinema52(){return typeof bossE!=='undefined'&&bossE&&!bossE.removed&&bossE.state==='intro'&&S.mode==='playing';}
 function clearCinemaInput52(){keys.clear();held.atk=false;joy.id=null;joy.x=joy.y=0;cam.dragDX=0;P.dbuf=0;}
 function beastImpact52(e,power){
- const attenuation=Math.max(0,1-dist(e.x,e.z,P.x,P.z)/55);
+ const distance=dist(e.x,e.z,P.x,P.z);
+ const attenuation=Math.max(0,1-distance/55);
  S.ground52=Math.max(S.ground52||0,power*attenuation);
- if(AC&&AC.state==='running'&&!S.muted&&attenuation>0.01)noise(.27,.075*power*attenuation,130);
- if(AC&&AC.state==='running'&&!S.muted){const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.type='sine';o.frequency.setValueAtTime(65,t);o.frequency.exponentialRampToValueAtTime(26,t+.22);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.28*power*attenuation+.0001,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+.42);o.connect(g);g.connect(master);o.onended=()=>{o.disconnect();g.disconnect();};o.start(t);o.stop(t+.45);}
+ const audioAttenuation=attenuation*weatherSoundMul(distance,55);
+ if(AC&&AC.state==='running'&&!S.muted&&audioAttenuation>0.01)noise(.27,.075*power*audioAttenuation,130);
+ if(AC&&AC.state==='running'&&!S.muted){const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.type='sine';o.frequency.setValueAtTime(65,t);o.frequency.exponentialRampToValueAtTime(26,t+.22);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.28*power*audioAttenuation+.0001,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+.42);o.connect(g);g.connect(master);o.onended=()=>{o.disconnect();g.disconnect();};o.start(t);o.stop(t+.45);}
 }
 function tickCinema52(dt){
  const e=bossE;e.st+=dt;e.spd=0;clearCinemaInput52();
@@ -6710,8 +6912,12 @@ function interactables(){
       const choices=[];
       if(inv.trapKit>0)choices.push({label:'くくり罠を仕掛ける（くくり罠キット1）',act:()=>placeTrap(t,'snare')});
       if(inv.pitKit>0)choices.push({label:'落とし穴を掘る（落とし穴キット1）',act:()=>placeTrap(t,'pit')});
-      L.push(choices.length?{d,label:choices.length===1?choices[0].label:'設置する罠を選ぶ',act:()=>chooseDefense('罠台',choices)}:
-        {d,label:'罠台：くくり罠・落とし穴キットが必要',act:()=>sfx('deny')});
+      if(!t.boss&&inv.baitKit>0)choices.push({label:'おとり餌場を設置（キット1・食料2）',act:()=>placeTrap(t,'bait')});
+      L.push(choices.length?{d,label:choices.length===1?choices[0].label:'設置する設備を選ぶ',act:()=>chooseDefense('罠台',choices)}:
+        {d,label:t.boss?'罠台：くくり罠・落とし穴キットが必要':'罠台：罠またはおとり餌場のキットが必要',act:()=>sfx('deny')});
+    }else if(t.type==='bait'){
+      if(t.state==='sprung')L.push({d,label:'おとり餌を補充（食料1・木材1）',act:()=>rearmTrap(t)});
+      else L.push({d,label:'おとり餌場：誘引中',act:()=>{}});
     }else if(t.state==='sprung')L.push({d,label:t.type==='pit'?'落とし穴を掘り直す（木材2）':'罠を掛け直す（木材1）',act:()=>rearmTrap(t)});
     else L.push({d,label:t.type==='pit'?'落とし穴：作動待ち':'くくり罠：作動待ち',act:()=>{}});
   }
@@ -6747,11 +6953,30 @@ function repairFence(g,cost,full){
   g.col.active=true; fenceVisual(g); toast(`${g.name}の柵を${full?'再建':'修理'}した`); sfx('wood');
 }
 function placeTrap(t,type='snare'){
-  const pit=type==='pit',k=pit?'pitKit':'trapKit';if(t.state!=='empty')return;
+  if(t.state!=='empty')return;
+  if(type==='bait'){
+    if(t.boss||inv.baitKit<=0)return;
+    f7Flush();
+    if(inv.food<2){toast('食料が足りない（必要2）',true);sfx('deny');return;}
+    foodTake('food',2);
+    inv.baitKit--;
+    activateBait(t);
+    return;
+  }
+  const pit=type==='pit',k=pit?'pitKit':'trapKit';
   if(inv[k]<=0){toast(pit?'落とし穴キットがない':'くくり罠キットがない',true);sfx('deny');return;}
   inv[k]--;setTrap(t,'armed',type);toast(pit?'落とし穴を設置した':'くくり罠を仕掛けた');sfx('trap');saveGame();
 }
 function rearmTrap(t){
+  if(t.state!=='sprung')return;
+  if(t.type==='bait'){
+    f7Flush();
+    if(inv.food<1||inv.wood<1){toast('食料1と木材1が必要',true);sfx('deny');return;}
+    foodTake('food',1);
+    inv.wood--;
+    activateBait(t);
+    return;
+  }
   const cost=t.type==='pit'?2:1;
   if(inv.wood<cost){toast('木材が足りない（必要'+cost+'）',true);sfx('deny');return;}
   inv.wood-=cost;setTrap(t,'armed');toast(t.type==='pit'?'落とし穴を掘り直した':'罠を掛け直した');sfx('trap');saveGame();
@@ -6768,10 +6993,13 @@ const RNAME={wood:'木材',food:'食料',hide:'獣素材',fang:'ヌシの牙',st
 const RECIPES=[
  {id:'onigiri',name:'おにぎり',cost:{food:2},desc:'塩をきかせて竹の皮で包んだ握り飯。体力+35・満腹+25。手持ちで約30分もつ（生の食料は約20分）。Q または 1 で食べる',give:()=>{foodAdd('onigiri',1);}},
  {id:'bento',name:'精進弁当',cost:{food:3,hide:1},desc:'煮しめと漬物の精進料理。体力+60・満腹+50・30秒間 攻撃力+30%。手持ちで約40分もつ。2 で食べる',give:()=>{foodAdd('bento',1);}},
+ {id:'grilledVeg',name:FOODS.grilledVeg.name,cost:{food:2,straw:1},desc:'藁を燃料に野菜を焼く。満腹+40・体力+15・30秒間 移動速度+10%。',give:()=>{foodAdd('grilledVeg',1);}},
+ {id:'herbPorridge',name:FOODS.herbPorridge.name,cost:{food:1,straw:1,rope:1},desc:'藁を燃料に、縄から取った繊維を使って煮込む。30秒かけて体力が最大40回復。',give:()=>{foodAdd('herbPorridge',1);}},
  {id:'fence',name:'木柵キット',cost:{wood:4},desc:'柵台に設置。獣の侵入を止める（耐久120）。町民はくぐり戸から通れる',give:()=>{inv.fenceKit++;}},
  {id:'trap',name:'くくり罠キット',cost:{wood:2,hide:1},desc:'罠台に設置。イノシシ・クマを3.5秒拘束し22ダメージ。サルには効かない。使用後は木材1で掛け直し',lock:()=>!prog.unlockTrap,lockMsg:'小規模襲撃を退けると解放',give:()=>{inv.trapKit++;}},
  {id:'spikeFence',name:'トゲ柵キット',cost:{wood:4,hide:1},desc:'柵台に設置。耐久90。接触した獣に6ダメージと体勢削り',give:()=>{inv.spikeKit++;}},
  {id:'pitTrap',name:'落とし穴キット',cost:{wood:4,rope:1},desc:'罠台に設置。イノシシ・クマを5秒拘束し28ダメージ。サルは飛び越える。ヌシは2.5秒。使用後は木材2で掘り直し',lock:()=>!prog.unlockTrap,lockMsg:'小規模襲撃を退けると解放',give:()=>{inv.pitKit++;}},
+ {id:'bait',name:'おとり餌場キット',cost:{wood:2,rope:1},desc:'通常の罠台で食料2を使って設置。半径25mの徘徊中の野性獣を誘う。90秒経過か獣が食べると終了。食料1・木材1で補充',give:()=>{inv.baitKit++;}},
  {id:'nata2',name:'鉈を鍛える（Lv2）',cost:{wood:3,hide:3},desc:'通常14／強36・耐久80に強化（耐久も全回復）',show:()=>prog.arms.nata1!=null,give:()=>{armUpgrade('nata1','nata2');}},
  {id:'nata3',name:'鉈を鍛える（Lv3）',cost:{wood:5,hide:6},desc:'通常18／強46・耐久100に強化（耐久も全回復）',show:()=>prog.arms.nata2!=null,give:()=>{armUpgrade('nata2','nata3');}},
  {id:'spear',name:'牙槍',cost:{wood:4,hide:4,fang:1},desc:'ヌシの牙を穂先にした槍。通常22／強58・リーチ大・耐久140',lock:()=>!prog.unlockBoss,lockMsg:'ヌシ討伐で解放',show:()=>prog.arms.spear==null,give:()=>{armGain('spear',true);}},
@@ -6828,14 +7056,31 @@ function hideAllOv(){ for(const id of ['title','howto','pause','craft','inv','de
 function openPause(){ if(S.mode!=='playing') return; S.mode='paused'; keys.clear(); $('pause').hidden=false; f11Pause(); f31Pause();
   $('pauseInfo').textContent=`経過 ${fmtTime(stats.time)}　撃退 ${stats.kills}　見切り ${stats.perfect}`; }
 function openCraft(){ stopBeastVoices51(); S.mode='menu'; keys.clear(); renderCraft(); $('craft').hidden=false; }
-function openInv(){ f31Inv(); f34Body();
+function renderHuntRecords(){
+  const list=$('invHuntRecords'); list.innerHTML='';
+  for(const type of HUNT_TYPES){
+    const row=stats.hunt.byType[type];
+    f9El('div','clue',`${ET[type].name}　討伐 ${row.kills}／最高連続 ${row.best}／見切り ${row.perfect}`,list);
+  }
+  if(huntTotal('kills')>=HUNT_GOALS.total)f9El('div','clue','🏆 狩人の証（討伐計100体）',list);
+}
+function openInv(){ f31Inv(); f34Body(); renderHuntRecords();
   stopBeastVoices51(); S.mode='menu'; keys.clear();
   const g=$('invGrid'); g.innerHTML='';
-  const items=[['木材',inv.wood],['食料',inv.food],['獣素材',inv.hide],['藁',inv.straw],['縄',inv.rope],['石',inv.stone],['竹',inv.bamboo],['屑鉄',inv.iron],['大根の種',inv.seed],['ヌシの牙',inv.fang],['おにぎり',inv.onigiri],['精進弁当',inv.bento],['木柵キット',inv.fenceKit],['トゲ柵キット',inv.spikeKit],['杭柵キット',inv.stakeKit],['くくり罠キット',inv.trapKit],['落とし穴キット',inv.pitKit]];
+  const items=[['木材',inv.wood],['食料',inv.food],['獣素材',inv.hide],['藁',inv.straw],['縄',inv.rope],['石',inv.stone],['竹',inv.bamboo],['屑鉄',inv.iron],['大根の種',inv.seed],['ヌシの牙',inv.fang],['おにぎり',inv.onigiri],['精進弁当',inv.bento],['木柵キット',inv.fenceKit],['トゲ柵キット',inv.spikeKit],['杭柵キット',inv.stakeKit],['くくり罠キット',inv.trapKit],['落とし穴キット',inv.pitKit],['おとり餌場キット',inv.baitKit]];
   f7Flush(); const fk={'食料':'food','おにぎり':'onigiri','精進弁当':'bento'};
   for(const [n,v] of items){ if(v===0&&(n==='ヌシの牙'||n==='杭柵キット'||n==='大根の種')) continue; const d=document.createElement('div'); const k=fk[n]; let sub='';
     if(k&&v>0&&F7.store){ const w=f7Warn(k,'hand'); sub=`<small class="f7s">${w?`うち傷みかけ ${w}・`:''}最短の残り${f7Min(f7Left(k,'hand'))}</small>`; }
     d.innerHTML=`<span>${n}${sub}</span><b>${v}</b>`; g.appendChild(d); }
+  for(const k of STRAW_MEALS){
+    if(inv[k]<=0)continue;
+    const row=document.createElement('div'); row.style.gridColumn='1 / -1';
+    const warning=f7Warn(k,'hand');
+    row.innerHTML=`<span>${FOODS[k].name} <b>${inv[k]}</b><small class="f7s">${warning?`うち傷みかけ ${warning}・`:''}最短の残り${f7Min(f7Left(k,'hand'))}</small></span>`;
+    const button=document.createElement('button'); button.type='button'; button.textContent='食べる';
+    button.addEventListener('click',()=>{ eat(k); openInv(); });
+    row.appendChild(button); g.appendChild(row);
+  }
   if(typeof f7InvExtra==='function') f7InvExtra(g);
   const w=equippedWeapon();
   $('invWeapon').textContent=w?`${w.name}　通常 ${w.light}／強 ${w.heavy}／耐久 ${Math.ceil(P.dur)}/${w.maxDur}${P.dur<=0?'（刃こぼれ：威力40%）':''}`:`素手　パンチ ${UNARMED_PUNCH_DMG}／キック ${UNARMED_KICK_DMG}`; // v0.45
@@ -6854,6 +7099,8 @@ function fmtTime(s){ s=Math.floor(s); return `${Math.floor(s/60)}:${String(s%60)
 function playerDie(reason){
   if(S.mode==='dead') return;
   P.dead=true; stats.deaths++;
+  stats.hunt.last=null; stats.hunt.streak=0;
+  P.vegT=0; P.porridgeT=0;
   S.mode='dead'; keys.clear();
   sfx('lose');
   $('deadTitle').textContent=reason==='core'?'拠点が突破された……':'力尽きた……';
@@ -6887,6 +7134,86 @@ function showResult(){
   $('result').hidden=false;
 }
 
+// ================= 天候（演出のみ） =================
+const WEATHER_PREF='eiheiji_weatherEffects';
+const WEATHER_NAMES={clear:'晴れ',fog:'霧',rain:'雨'};
+const WEATHER_WAIT={clear:160,fog:55,rain:85};
+let weatherReduced=false;
+try{ weatherReduced=localStorage.getItem(WEATHER_PREF)==='reduced'; }catch(e){}
+const weather={state:'clear',left:WEATHER_WAIT.clear,fog:0,rain:0,strength:weatherReduced?0.38:1};
+function resetWeather(){
+  weather.state='clear'; weather.left=WEATHER_WAIT.clear;
+  weather.fog=0; weather.rain=0; weather.strength=weatherReduced?0.38:1;
+}
+function updateWeatherState(dt,daytime){
+  if(weather.state==='clear'&&!daytime)return;
+  weather.left-=dt;
+  if(weather.left>0)return;
+  if(weather.state==='clear'&&Math.random()<0.48)weather.state='fog';
+  else if(weather.state==='fog')weather.state='rain';
+  else weather.state='clear';
+  weather.left=WEATHER_WAIT[weather.state];
+}
+function blendWeather(dt){
+  const mix=1-Math.exp(-dt*0.32), visible=S.mode!=='title';
+  weather.fog=lerp(weather.fog,visible&&weather.state==='fog'?1:0,mix);
+  weather.rain=lerp(weather.rain,visible&&weather.state==='rain'?1:0,mix);
+  weather.strength=lerp(weather.strength,weatherReduced?0.38:1,mix);
+}
+function weatherSoundMul(distance,range){
+  return 1-0.26*weather.rain*weather.strength*Math.min(1,distance/range);
+}
+function tintRain(color,amount){
+  const grey=color.r*0.2126+color.g*0.7152+color.b*0.0722;
+  const sat=amount*0.35, light=1-amount*0.12;
+  color.setRGB(lerp(color.r,grey,sat)*light,lerp(color.g,grey,sat)*light,lerp(color.b,grey,sat)*light);
+}
+const RAIN_MAX=LOWQ?88:192, RAIN_LOW=LOWQ?32:60, RAIN_WIDTH=28, RAIN_HEIGHT=20;
+let rainLines=null, rainTime=0;
+function buildRain(){
+  const positions=new THREE.BufferAttribute(new Float32Array(RAIN_MAX*6),3);
+  positions.setUsage(THREE.DynamicDrawUsage);
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',positions);
+  const material=new THREE.LineBasicMaterial({color:0xb5cde0,transparent:true,opacity:0,depthWrite:false});
+  rainLines=new THREE.LineSegments(geometry,material);
+  rainLines.visible=false; rainLines.frustumCulled=false;
+  scene.add(rainLines);
+}
+function updateRain(dt){
+  const intensity=weather.rain*weather.strength;
+  rainLines.visible=S.mode!=='title'&&intensity>0.02;
+  if(!rainLines.visible)return;
+  const count=Math.round(lerp(RAIN_LOW,RAIN_MAX,clamp((weather.strength-0.38)/0.62,0,1)));
+  rainTime=(rainTime+dt*17)%RAIN_HEIGHT;
+  const pos=rainLines.geometry.attributes.position, data=pos.array;
+  const cx=camera.position.x, cy=camera.position.y, cz=camera.position.z;
+  const half=RAIN_WIDTH/2;
+  rainLines.position.set(cx,cy,cz);
+  for(let i=0;i<count;i++){
+    const x0=i*7.271-cx+half, z0=i*11.719-cz+half, y0=i*3.117-rainTime;
+    const x=x0-Math.floor(x0/RAIN_WIDTH)*RAIN_WIDTH-half;
+    const z=z0-Math.floor(z0/RAIN_WIDTH)*RAIN_WIDTH-half;
+    const y=y0-Math.floor(y0/RAIN_HEIGHT)*RAIN_HEIGHT-7;
+    const j=i*6;
+    data[j]=x; data[j+1]=y; data[j+2]=z;
+    data[j+3]=x-0.1; data[j+4]=y+0.9; data[j+5]=z;
+  }
+  pos.needsUpdate=true;
+  rainLines.geometry.setDrawRange(0,count*2);
+  rainLines.material.opacity=0.38*intensity;
+}
+function updateWeatherButton(){
+  const b=$('btnWeather');
+  b.textContent='天候の演出：'+(weatherReduced?'控えめ':'標準');
+  b.setAttribute('aria-pressed',String(weatherReduced));
+}
+function toggleWeatherEffects(){
+  weatherReduced=!weatherReduced;
+  try{ localStorage.setItem(WEATHER_PREF,weatherReduced?'reduced':'standard'); }catch(e){}
+  updateWeatherButton();
+}
+
 // ================= 昼夜・光 =================
 let lightMode='day', lightK={day:1,dusk:0,night:0};
 function snapLight(){ for(const k in lightK) lightK[k]=k===lightMode?1:0; } // 空の色をすぐ切り替える（タイトルとゲーム開始のとき）
@@ -6895,6 +7222,7 @@ function setDusk(on){ if(lightMode!=='night'||(f10Has('F')&&prog.stage!=='invasi
 const _top=new THREE.Color(), _hor=new THREE.Color(), _fog=new THREE.Color(), FOREST_FOG=new THREE.Color(0xa7bd9a), ARENA_FOG=new THREE.Color(0xc4c3a6);
 let skyT=0;
 function updateLighting(dt){
+  blendWeather(dt);
   for(const k of ['day','dusk','night']) lightK[k]=lerp(lightK[k],lightMode===k?1:0,1-Math.exp(-dt*1.2));
   const s=lightK.day+lightK.dusk+lightK.night; const d=lightK.day/s, du=lightK.dusk/s, n=lightK.night/s;
   const mix=(o,key)=>o.setRGB(SKYC.day[key].r*d+SKYC.dusk[key].r*du+SKYC.night[key].r*n,SKYC.day[key].g*d+SKYC.dusk[key].g*du+SKYC.night[key].g*n,SKYC.day[key].b*d+SKYC.dusk[key].b*du+SKYC.night[key].b*n);
@@ -6902,8 +7230,14 @@ function updateLighting(dt){
   // 山林の中は緑がかった空気、広場は少しかすむ（夜は控えめ）
   let fc=0; for(const [ox,oz] of [[0,0],[7,0],[-7,0],[0,7],[0,-7]]) if(clsAt(P.x+ox,P.z+oz)===1) fc+=0.2; S.forestK=lerp(S.forestK||0,fc,1-Math.exp(-dt*1.5)); const ff=S.forestK*(1-n*0.7), af=clamp((ARENA.r+12-dist(P.x,P.z,ARENA.x,ARENA.z))/8,0,1)*(1-n*0.7);
   _fog.lerp(FOREST_FOG,ff*0.55).lerp(ARENA_FOG,af*0.4);
+  const rainK=weather.rain*weather.strength*(1-n*0.55);
+  if(rainK>0){ tintRain(_top,rainK); tintRain(_hor,rainK); tintRain(_fog,rainK); }
   scene.fog.color.copy(_fog); scene.background.copy(_fog);
   scene.fog.near=lerp(lerp(80,40,n),26,ff); scene.fog.far=lerp(lerp(760,320,n),170,ff);
+  // 昼の霧は遠端が約6割。夜は既存距離の8割以上を残す。
+  const mist=clamp((weather.fog+weather.rain*0.36)*weather.strength,0,1)*(1-n*0.5);
+  scene.fog.near*=1-mist*0.40;
+  scene.fog.far*=1-mist*0.40;
   skyT-=dt; if(skyT<=0){ skyT=0.1; paintSky(_top,_fog.clone().lerp(_hor,0.6),d+du*0.7+n*0.15); }
   skyMesh.position.set(camera.position.x,0,camera.position.z);
   if(farHills) farHills.material.color.setRGB(d+du*0.95+n*0.2,d+du*0.78+n*0.24,d+du*0.7+n*0.36);
@@ -6913,6 +7247,10 @@ function updateLighting(dt){
   sun.intensity=(0.72*d+0.6*du+0.22*n)*(1-ff*0.25);
   sun.color.setRGB(1.0*d+1.0*du+0.55*n,0.94*d+0.72*du+0.62*n,0.82*d+0.45*du+0.95*n); // v0.45：時間帯の色温度（夕はオレンジ・夜は月青）
   sun.color.setRGB(1.0*d+1.0*du+0.6*n,0.95*d+0.66*du+0.68*n,0.84*d+0.42*du+0.95*n);
+  if(rainK>0){
+    hemi.intensity*=1-rainK*0.10; sun.intensity*=1-rainK*0.19;
+    tintRain(hemi.color,rainK*0.4); tintRain(sun.color,rainK*0.5);
+  }
   sun.position.set(P.x-18,40,P.z+14); sun.target.position.set(P.x,0,P.z); sun.target.updateMatrixWorld();
   const fl=0.9+Math.sin(S.time*13)*0.06+Math.sin(S.time*7.3)*0.04;
   baseLights.forEach(l=>{ l.intensity=(du*0.9+n*1.6)*fl; });
@@ -6929,11 +7267,22 @@ function saveGame(){
   try{
     if(P.weapon) prog.arms[P.weapon]=P.dur; // v0.45：素手のときは武器耐久を書き戻さない
     const data={v:1,inv,weapon:P.weapon,dur:P.dur,full:P.full,arms:prog.arms,f5:f5Save(),
-      prog:Object.assign({stage:checkpointStage(),unlockTrap:prog.unlockTrap,unlockBoss:prog.unlockBoss,clues:prog.clues,bossDefeated:prog.bossDefeated,scoutTower:!!prog.scoutTower,scoutWarned:!!prog.scoutWarned,scoutRaidWarned:!!prog.scoutRaidWarned},f31SaveProg()),
+      prog:Object.assign({stage:checkpointStage(),unlockTrap:prog.unlockTrap,unlockBoss:prog.unlockBoss,clues:prog.clues,bossDefeated:prog.bossDefeated,scoutTower:!!prog.scoutTower,scoutWarned:!!prog.scoutWarned,scoutRaidWarned:!!prog.scoutRaidWarned,townRequests:prog.townRequests},f31SaveProg()),
       fences:GAPS.map(g=>g.fence.type?{type:g.fence.type,hp:g.fence.broken?0:g.fence.hp}:null),
-      traps:traps.map(t=>t.type==='pit'?{type:'pit',state:t.state}:t.state),stats,nodes:NODES.map(n=>n.avail?1:0),g4:prog.g4,f4:f4Save(),f7:f7Save(),f8:f8Save(),f9:f9Save(),f10:f10Save()};
+      traps:traps.map(saveTrap),stats,nodes:NODES.map(n=>n.avail?1:0),g4:prog.g4,f4:f4Save(),f7:f7Save(),f8:f8Save(),f9:f9Save(),f10:f10Save()};
     localStorage.setItem(SAVE_KEY,JSON.stringify(data));
   }catch(e){ storageOK=false; }
+}
+function saveTrap(t){
+  if(t.type==='bait')return {type:'bait',state:t.state,remaining:t.baitTime};
+  return t.type==='pit'?{type:'pit',state:t.state}:t.state;
+}
+function restoreTrap(t,s){
+  const type=s?.type==='pit'?'pit':s?.type==='bait'&&!t.boss?'bait':'snare';
+  let state=typeof s==='string'?s:s?.state;
+  const remaining=Number.isFinite(s?.remaining)?clamp(s.remaining,0,BAIT_DURATION):0;
+  if(type==='bait'&&state==='armed'&&remaining<=0)state='sprung';
+  setTrap(t,['armed','sprung'].includes(state)?state:'empty',type,remaining);
 }
 function readSave(){
   try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw) return null; const d=JSON.parse(raw); if(!d||d.v!==1||typeof d.inv!=='object') return null; return d; }
@@ -6949,12 +7298,16 @@ function applySave(d){
     const loadedWeapon=equippedWeapon(); P.dur=num(d.dur,loadedWeapon?loadedWeapon.maxDur:0,0,loadedWeapon?loadedWeapon.maxDur:0); P.full=num(d.full,100,0,100);
     prog.arms={}; if(d.arms&&typeof d.arms==='object') for(const k in d.arms) if(WEAPONS[k]) prog.arms[k]=num(d.arms[k],WEAPONS[k].maxDur,0,WEAPONS[k].maxDur); if(P.weapon) prog.arms[P.weapon]=P.dur; prog.f5=f5Load(d.f5); updHolster(); // 素手状態も保存データから正しく復元
     const p=d.prog||{};
+    prog.townRequests=loadTownRequests(p.townRequests);
     prog.stage=STAGES.includes(p.stage)?p.stage:'talk';
     prog.unlockTrap=!!p.unlockTrap; prog.unlockBoss=!!p.unlockBoss; prog.bossDefeated=!!p.bossDefeated; prog.scoutTower=!!p.scoutTower; prog.scoutWarned=!!p.scoutWarned; prog.scoutRaidWarned=!!p.scoutRaidWarned; f31LoadProg(p); // v0.31 任意項目（無ければ Lv1・熟練0・防具なし）
     if(Array.isArray(p.clues)) prog.clues=[0,1,2].map(i=>!!p.clues[i]);
     prog.introSeen=true;
     if(prog.stage==='invasionPrep') prog.prepT=150;
-    if(d.stats) for(const k of Object.keys(stats)) stats[k]=num(d.stats[k],0,0,1e7);
+    if(d.stats){
+      for(const k of ['kills','deaths','crafts','time','perfect']) stats[k]=num(d.stats[k],0,0,1e7);
+      stats.hunt=loadHuntRecords(d.stats.hunt);
+    }
     prog.f4=f4Load(d.f4);
     prog.f10=f10Load(d.f10); // 古いセーブは「伏線はまだ調べていない」で始める
     prog.f9=f9Load(d.f9); // 古いセーブは「頼んでいない」で始める
@@ -6971,6 +7324,7 @@ function applySave(d){
 
 // ================= ゲーム開始・リセット =================
 function resetWorld(extra){
+  resetWeather();
   f47ApplyVisual();
   clearRaidEnemies(); ev.kind=null; ev.phase=null; ev.queue=[]; ev.ended=false;
   for(const e of [...enemies]) removeEnemy(e);
@@ -6983,10 +7337,7 @@ function resetWorld(extra){
   trackSpawns.length=0; trackShow=null; g4Apply(); f4Apply(); f5Apply(); f7Apply(); f8Apply(); f9Reset(); f10Apply();
   spawnFieldEnemies();
   GAPS.forEach((g,i)=>{ const f=extra&&extra.fences[i]; if(f&&(f.type==='wood'||f.type==='stake'||f.type==='spike')) setFence(g,f.type,num(f.hp,0,0,999)); else setFence(g,null); });
-  traps.forEach((t,i)=>{const s=extra&&extra.traps[i],type=s&&typeof s==='object'&&s.type==='pit'?'pit':'snare';
-    const state=typeof s==='string'?s:(s&&typeof s==='object'?s.state:null);
-    setTrap(t,['armed','sprung'].includes(state)?state:'empty',type);
-  });
+  traps.forEach((t,i)=>restoreTrap(t,extra&&extra.traps[i]));
   scoutVisual();
   NODES.forEach((n,i)=>setNode(n,!(extra&&extra.nodes[i]===0)));
   for(const c of CLUES) c.g.visible=!prog.clues[c.id];
@@ -7061,6 +7412,7 @@ function updatePlayer(dt){
     else if(a.t>=a.dur){ endAttack(a); const b=takeBuffer(); if(b) startAttack(b.k,b.aim); }
   } else {
     spd=(keys.has('shift')?1.65:6.2)*(P.full<=0?0.85:1)*mag*ml*f4SpeedMul()*(1+f47Stats().speed);
+    if(P.vegT>0) spd*=1+VEG_SPEED_BONUS*Math.min(P.vegT,dt)/dt;
     const drive=1-Math.exp(-dt*(ml?18:24));
     P.lvx48=lerp(P.lvx48||0,mx*spd,drive);P.lvz48=lerp(P.lvz48||0,mz*spd,drive);
     if(!ml&&Math.hypot(P.lvx48,P.lvz48)<.04){P.lvx48=0;P.lvz48=0;}
@@ -7071,6 +7423,12 @@ function updatePlayer(dt){
   if(P.atk||P.dodge||P.stagger>0){P.lvx48=0;P.lvz48=0;}
   resolve(P,false);
   // 満腹・自然回復
+  P.vegT=Math.max(0,P.vegT-dt);
+  if(P.porridgeT>0){
+    const active=Math.min(P.porridgeT,dt);
+    P.porridgeT-=active;
+    P.hp=Math.min(P.maxHp,P.hp+active*PORRIDGE_HEAL/MEAL_BUFF_TIME);
+  }
   P.full=Math.max(0,P.full-dt/7);
   f7Update(dt); // 食べ物の経過時間（満腹度と同じゲームの時間）
   if(P.full>=60&&S.time-P.lastHurt>5&&P.hp<P.maxHp){ P.regen=(P.regen||0)+dt; if(P.regen>1.5){ P.regen=0; P.hp=Math.min(P.maxHp,P.hp+1);} }
@@ -7410,7 +7768,7 @@ function updateWorld(dt){
     if(s.e&&!s.e.removed&&s.e.state!=='dead') continue;
     if(s.calm) continue; s.timer+=dt;
     const hint=s.trk36Hint,valid=!!(hint&&hint.until>S.time);
-    if(s.timer>(valid?75:100)&&dist(P.x,P.z,s.x,s.z)>32&&!ev.kind){
+    if(s.timer>fieldRespawnDelay(valid,prog.bossDefeated)&&dist(P.x,P.z,s.x,s.z)>32&&!ev.kind){
       let x=s.x,z=s.z,near=false;
       if(valid&&Math.random()<0.7){
         const nx=hint.x+rr(-6,6),nz=hint.z+rr(-6,6);
@@ -7425,6 +7783,8 @@ function updateWorld(dt){
   for(const p of parts){ if(p.life<=0) continue; p.life-=dt; p.vy-=18*dt; p.m.position.x+=p.vx*dt; p.m.position.y=Math.max((p.gy||0)+0.05,p.m.position.y+p.vy*dt); p.m.position.z+=p.vz*dt; p.m.rotation.x+=dt*8; if(p.life<=0) p.m.visible=false; }
 }
 function updateProgress(dt){ f31Tick(dt);
+  tickTownRequests(dt);
+  if(!ev.kind&&!bossActive)updateWeatherState(dt,f10Phase()==='day');
   stats.time+=dt;
   f11PrepCheck(); // v0.29.1：調査の前に手掛かりを2つ調べていても、調査の段階に入れば予兆が来る
   if(prog.stage==='gather'&&inv.wood>=4&&inv.food>=2){ prog.stage='buildFence'; toast('素材がそろった！ 拠点の作業台へ'); say(npcYone,'ようけ集めたのう。作業台で柵をこしらえてや。'); saveGame(); }
@@ -7678,13 +8038,14 @@ function frame(now){
   if(S.mode!=='title'){ updateLabels(S.mode==='playing'?raw:0); }
   updateLighting(raw);
   updateCamera(rdt);
+  updateRain(rdt);
   updateChunks(rdt); updateRice();
   renderer.render(scene,camera); f11AfterRender(); f11Update(rdt); f31Update();
 }
 
 // ================= 初期化 =================
 try{
-  buildWorld(); f31Build(); buildPillars(); buildBarrier(); buildNodes(); buildClues(); buildFenceSlots(); buildTraps(); buildScoutSite();
+  buildWorld(); buildRain(); f31Build(); buildPillars(); buildBarrier(); buildNodes(); buildClues(); buildFenceSlots(); buildTraps(); buildScoutSite();
   spawnFieldEnemies(); setupBoss();
 }catch(e){ console.error(e); fatal('ゲーム世界の構築中にエラーが発生しました：'+e.message); return; }
 try{ warmIcons(); }catch(e){} // v0.45：アイコンを一度だけ生成
@@ -7848,6 +8209,7 @@ $('btnResume').onclick=closeOverlay;
 $('btnAim').onclick=()=>{ applyAimMode(AIM.mode==='facing'?'cursor':'facing'); }; // v0.45：押すたびにカーソル⇔プレイヤーの向き
 $('btnAimTitle').onclick=()=>{ applyAimMode(AIM.mode==='facing'?'cursor':'facing'); };
 updateAimBtns(); // v0.45：保存しておいたモードを起動時に表示
+$('btnWeather').onclick=toggleWeatherEffects; updateWeatherButton();
 function applyShadow(on){ shadowPref=on; renderer.shadowMap.enabled=on; sun.castShadow=on; scene.traverse(o=>{ if(o.material){ (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.needsUpdate=true); } }); for(const m of fadeMap.values()) m.needsUpdate=true; try{ localStorage.setItem('eiheiji_shadow',on?'1':'0'); }catch(e){} $('btnShadow').textContent='高画質の影：'+(on?'オン':'オフ'); }
 $('btnPerf').onclick=()=>f11Toggle(); $('btnPerfRec').onclick=()=>{ f11RecStart(); f11Pause(); };
 $('btnShadow').onclick=()=>{ applyShadow(!shadowPref); toast(shadowPref?'影をオンにした（描画が重くなります）':'影をオフにした'); };
@@ -7858,7 +8220,9 @@ $('btnCraftClose').onclick=closeOverlay; $('btnStoreClose').onclick=closeOverlay
 $('btnInvClose').onclick=closeOverlay;
 $('btnRetry').onclick=retryFromBase;
 $('btnRestart').onclick=()=>{ try{ localStorage.removeItem(SAVE_KEY);}catch(e){} startNew(); };
-$('btnContinuePlay').onclick=()=>{ $('result').hidden=true; S.mode='playing'; cv.focus(); };
+$('btnContinuePlay').onclick=()=>{ $('result').hidden=true; S.mode='playing'; cv.focus();
+  toast('沢の静けさが戻り、山の獣が以前より早く姿を見せるようになった。');
+};
 $('btnResultTitle').onclick=()=>$('btnToTitle').onclick();
 // タイトル画面の背景用カメラ
 P.x=158; P.z=22; P.facing=Math.PI; setCam(0.4); lightMode='dusk'; snapLight(); animatePlayer(0,0); updateCamera(0.016); updateChunks(0,true);
