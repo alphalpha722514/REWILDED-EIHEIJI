@@ -3984,8 +3984,8 @@ function f11PrepCheck(){ if(prog.stage==='explore'&&!ev.kind&&prog.clues.filter(
 // ===== v0.30：大規模侵攻の力の釣り合い（侵攻だけに効く。小規模襲撃・野生・ヌシ戦は変えない） =====
 // hpMul：侵攻の獣の体力（今までの襲撃の倍率 F6D.raidMul に掛ける）、dmgMul：侵攻の獣が主人公に与える傷、coreMul：やぐらへの被害、rest：波を倒し切ったあと次の波までの小休止（秒）
 const F11B={hpMul:1.6, dmgMul:1.1, coreMul:1, rest:10, w2:1}; // v0.30 既定（v0.29 までは 1・1・1・0・0） // w2：第2波の東口のイノシシ1頭を沢口へ（東口だけが先に破られる偏りを減らす）
-function f11InvHp(hp){ return ev.kind==='invasion'?Math.round(hp*F11B.hpMul):hp; }
-function f11InvDmg(dmg,src){ return (src&&src.mode==='raid'&&ev.kind==='invasion')?Math.max(1,Math.round(dmg*F11B.dmgMul)):dmg; }
+function f11InvHp(hp){ return ev.kind==='chapter2'?Math.round(hp*C2_DEFENSE.hpMul):ev.kind==='invasion'?Math.round(hp*F11B.hpMul):hp; }
+function f11InvDmg(dmg,src){ if(!src||src.mode!=='raid')return dmg; return ev.kind==='chapter2'?Math.max(1,Math.round(dmg*C2_DEFENSE.damageMul)):ev.kind==='invasion'?Math.max(1,Math.round(dmg*F11B.dmgMul)):dmg; }
 function f11Rest(dt){ // 波を倒し切ったときだけ呼ぶ。小休止が終わったら true
   if(ev.kind==='chapter2'){ev.restT=(ev.restT||0)+dt;return ev.restT>=C2_DEFENSE.rest;}
   if(ev.kind!=='invasion'||!(F11B.rest>0)) return true;
@@ -5412,8 +5412,13 @@ function syncChapter2(){
   return prog.chapter2;
 }
 // Opening encounter tuning is provisional; no chapter-ending story is inferred here.
-const C2_DEFENSE={warning:20,coreHp:300,rest:6,coreDamage:8,coreInterval:2.4,
-  waves:[[[0,0],[0,2],[1,4],[1,6]],[[1,0],[2,2],[0,4],[2,6],[1,8],[0,10]],[[2,0],[0,2],[1,4],[2,6],[0,8],[1,10],[2,12],[0,14]]]};
+const C2_DEFENSE={warning:30,coreHp:300,rest:18,coreDamage:14,coreInterval:2.0,hpMul:2.0,damageMul:1.6,
+  // Mixed attackers make existing fences and traps useful; cap remains eight live enemies.
+  waves:[
+    [['boar',0,0],['boar',1,0],['monkey',2,1],['monkey',0,3],['boar',2,4],['monkey',1,5],['bear',0,7],['monkey',2,8]],
+    [['boar',1,0],['bear',2,0],['monkey',0,1],['boar',0,2],['monkey',2,3],['bear',1,5],['boar',2,6],['monkey',1,7],['boar',0,9],['monkey',0,10]],
+    [['bear',0,0],['boar',1,0],['boar',2,0],['monkey',1,1],['monkey',2,2],['bear',2,4],['boar',0,5],['monkey',0,6],['bear',1,8],['boar',2,9],['monkey',1,10],['boar',1,12]]
+  ]};
 function chapter2Opening(){return prog.chapter2?.progress||{};}
 function prepareChapter2(){
   if(!prog.bossDefeated||ev.kind||bossActive||P.dead)return false;
@@ -5423,23 +5428,23 @@ function prepareChapter2(){
   return true;
 }
 function startChapter2Defense(){
-  if(!prog.bossDefeated||ev.kind||bossActive||P.dead||chapter2Opening().defenseComplete)return false;
+  if(!prog.bossDefeated||ev.kind||bossActive||P.dead)return false;
   if(dist(P.x,P.z,npcGen.x,npcGen.z)>8)return false;
   if(!prepareChapter2())return false;
   ev.kind='chapter2';ev.phase='warn';ev.t=C2_DEFENSE.warning;ev.ended=false;ev.ids.clear();
   ev.queue=[];ev.waveIdx=0;ev.waveT=0;ev.restT=0;ev.stolen=0;
   ev.coreMax=C2_DEFENSE.coreHp;ev.coreHp=ev.coreMax;
-  ev.waves=C2_DEFENSE.waves.map(w=>w.map(([gap,delay])=>['monkey',gap,delay]));
+  ev.waves=C2_DEFENSE.waves.map(w=>w.map(entry=>entry.slice()));
   for(const e of enemies)if(e.mode==='field'&&e.state!=='dead'&&inBase(e.x,e.z,14))setState(e,'return');
-  banner('光明寺への襲撃','猿の部隊が三方向から接近。町民とともに火の見やぐらを守る',4);
+  banner('光明寺への襲撃','猿・イノシシ・クマが三方向から接近。柵と罠で足止めし、火の見やぐらを守る',4);
   sfx('bell'); return true;
 }
 function chapter2Panel(n,st,bx){
   if(n!==npcGen||!prog.bossDefeated)return;
   const done=chapter2Opening().defenseComplete;
-  f9El('div','clue',done?'第二章：光明寺防衛戦を完了。上志比への出発は次の更新で追加予定。':
-    '第二章：光明寺への襲撃。三方向から来る猿に備える。慧心は柵を修理し、源さんは接近方向を知らせる。猿には罠が効かない。',st);
-  if(!done&&!ev.kind)f9Btn(bx,'npc_chapter2','第二章の防衛戦を始める',startChapter2Defense,{pri:1});
+  f9El('div','clue',done?'第二章：光明寺防衛戦を完了。強化された防衛戦に再挑戦できます（全3波・猿／猪／熊）。強化武器・防具・三方向の柵と罠・回復食・修理資材を準備してください。クリア記録は維持されます。上志比への出発は次の更新で追加予定。':
+    '第二章：高難度の三方向防衛戦（全3波）。強化武器と部位防具を整え、三方向の柵を修理・強化し、門前に罠を設置。回復食と武器・柵の修理資材も用意してください。罠はイノシシ・クマを止めます。柵と罠を抜ける猿は優先して迎撃。慧心が柵を修理し、源さんが接近方向を知らせます。波の間の18秒で修理・罠の掛け直しを。',st);
+  if(!ev.kind)f9Btn(bx,'npc_chapter2',done?'第二章の防衛戦に再挑戦':'第二章の防衛戦を始める',startChapter2Defense,{pri:1});
 }
 function freshState(){
   inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,baitKit:0,onigiri:1,bento:0,grilledVeg:0,herbPorridge:0,fang:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0};
@@ -7872,7 +7877,7 @@ function updateProgress(dt){ f31Tick(dt);
 }
 function objective(){
   if(prog.bossDefeated&&chapter2Opening().openingStarted){
-    if(ev.kind==='chapter2')return ['第二章：猿部隊から火の見やぐらを守る。猿には罠が効かない',CORE];
+    if(ev.kind==='chapter2')return ['第二章：三方向の混成部隊からやぐらを守る。猪・熊は柵と罠で止め、猿を迎撃',CORE];
     if(chapter2Opening().defenseComplete)return ['第二章：光明寺防衛戦を完了。上志比への出発は次の更新で追加予定',null];
     return ['第二章：拠点で装備を整え、見張りの源さんに話しかけて防衛戦を始める',npcGen];
   }

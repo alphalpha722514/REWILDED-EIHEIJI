@@ -26,21 +26,24 @@ assert.equal(run('startChapter2Defense()'),false,'locked before boss');
 run('prog.bossDefeated=true;P.x=100');
 assert.equal(run('startChapter2Defense()'),false,'requires presence at lookout');
 run('P.x=0');assert.equal(run('startChapter2Defense()'),true);
-assert.equal(run('ev.kind'),'chapter2');assert.equal(run('ev.waves.flat().length'),18);
-assert.equal(run("ev.waves.flat().every(w=>w[0]==='monkey')"),true);
+assert.equal(run('ev.kind'),'chapter2');assert.equal(run('ev.waves.flat().length'),30);
+assert.deepEqual(JSON.parse(run('JSON.stringify(ev.waves.map(w=>w.length))')),[8,10,12]);
+assert.equal(run("ev.waves.every(w=>['boar','bear','monkey'].every(t=>w.some(e=>e[0]===t)))"),true);
+assert.equal(run("ev.waves.every(w=>[0,1,2].every(g=>w.some(e=>e[1]===g)))"),true);
 assert.equal(run('startChapter2Defense()'),false,'no duplicate');
-run('updateEvent(20)');assert.equal(run('ev.phase'),'fight');
+run('updateEvent(30)');assert.equal(run('ev.phase'),'fight');
 run('updateEvent(20);alive=1;updateEvent(60)');assert.equal(run('ev.waveIdx'),0,'no next wave while monkeys remain');
-run('alive=0;updateEvent(6)');assert.equal(run('ev.waveIdx'),1);
-run('updateEvent(20);alive=0;updateEvent(6);updateEvent(20);alive=0;updateEvent(6)');
+run('alive=0;updateEvent(18)');assert.equal(run('ev.waveIdx'),1);
+for(let i=0;i<12&&run('ev.kind');i++)run('alive=0;updateEvent(18)');
 assert.equal(run('ev.kind'),null);assert.equal(run('chapter2Opening().defenseComplete'),true);
 assert.equal(run('prog.stage'),'cleared','chapter 1 completion intact');
 assert.equal(run('syncChapter2().currentChapter'),2);
-assert.equal(run('startChapter2Defense()'),false,'completed cannot replay');
+assert.equal(run('startChapter2Defense()'),true,'completed save can replay');
+assert.equal(run('chapter2Opening().defenseComplete'),true,'replay keeps completion');
 run('prog.chapter2.progress.defenseComplete=false;ev.kind=null');assert.equal(run('startChapter2Defense()'),true);
 run('ev.kind=null;ev.phase=null;ev.queue=[]');assert.equal(run('startChapter2Defense()'),true,'retry from prepared state');
 assert.match(html,/if\(kind==='chapter2'\)[\s\S]*?saveGame\(\);return;/);
-console.log('PASS: unlock, proximity, duplicate start, 18 monkeys / 3 waves, rest, completion, chapter persistence, retry');
+console.log('PASS: unlock, proximity, duplicate start, 30 mixed attackers / 3 waves, rest, completion, chapter persistence, retry');
 vm.runInContext(`
 ${extract('targetOf')}
 ${extract('tDist')}
@@ -52,6 +55,29 @@ const attacker={x:13,z:10,r:1,mode:'raid',type:'monkey',gap:0,rphase:'core',stat
 `,ctx);
 assert.equal(run('targetOf(attacker).kind'),'core');
 run('updateMonkey(attacker,1)');assert.equal(run('damaged'),0,'windup before damage');
-run('updateMonkey(attacker,1.4)');assert.equal(run('damaged'),8,'attacks core');
+run('updateMonkey(attacker,1)');assert.equal(run('damaged'),14,'attacks core');
 run("ev.kind='invasion'");assert.equal(run('targetOf(attacker).kind'),'store','chapter 1 monkey behavior unchanged');
 console.log('PASS: chapter 2 core target/windup/damage; chapter 1 store target');
+
+vm.runInContext(`${extract('f11InvHp')}${extract('f11InvDmg')}`,ctx);
+run("ev.kind='chapter2'");
+assert.equal(run('f11InvHp(29)'),58);
+assert.equal(run("f11InvDmg(38,{mode:'raid'})"),61);
+assert.equal(run("f11InvDmg(38,{mode:'field'})"),38,'field enemies unchanged');
+run("F11B.hpMul=1.6;F11B.dmgMul=1.1;ev.kind='invasion'");
+assert.equal(run('f11InvHp(29)'),46);
+assert.equal(run("f11InvDmg(38,{mode:'raid'})"),42);
+run("ev.kind='raid'");assert.equal(run('f11InvHp(29)'),29);
+assert.equal(run("f11InvDmg(38,{mode:'raid'})"),38);
+// Preparation acts through real target selection and trap effects, not an inventory gate.
+run("ev.kind='chapter2';GAPS[0].fence={type:'stake',broken:false};GAPS[0].c={x:0,z:0};");
+assert.equal(run("targetOf({type:'bear',mode:'raid',gap:0,rphase:'gate',x:0,z:0}).kind"),'fence');
+vm.runInContext(`
+${extract('triggerTrap')}
+const setTrap=(t,s)=>{t.state=s},f10Noise=()=>{},floatText=()=>{},damageEnemy=(e,d)=>{e.hp-=d};
+const trap={type:'pit',state:'armed',x:0,z:0},bear={type:'bear',hp:358,state:'chase',ind:{}};
+`,ctx);
+run('triggerTrap(trap,bear)');
+assert.equal(run('bear.hp'),330);assert.equal(run('bear.stunT'),5);
+assert.equal(run('trap.state'),'sprung');
+console.log('PASS: chapter-only HP/damage, unchanged chapter 1/field enemies, stake blocks bear, pit damages/stuns bear');
