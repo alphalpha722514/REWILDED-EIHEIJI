@@ -527,7 +527,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.57 防衛戦テスト版（本編とは別に保存）　第二章・光明寺防衛戦</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.58 防衛戦テスト版（本編とは別に保存）　第二章・光明寺防衛戦</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -3005,7 +3005,7 @@ const SWING={
   kick:(p,k)=>p===0?[0,LA(6,-8,eoQ(k)),LA(0,-.15,eoQ(k))]:p===1?[0,-14,LA(-.15,.45,whp(k))]:[0,LA(-14,-4,ovs(k)),LA(.45,0,k)],
 };
 const SH={r:-0.24,f:0.08,y:1.43}; const ARM=0.55, WSC=1.26; // 右肩の位置、肩から握りまで、武器の大きさ
-const SHAPE_T={slash:0.25,blunt:0.4,thrust:0.2,low:0.3,spin:0.25};
+const SHAPE_T={slash:0.32,blunt:0.4,thrust:0.36,low:0.36,spin:0.3}; // v0.58：当たりの太さを広げた（旧 slash .25／thrust .2／low .3／spin .25）
 const BAND={deer:[.1,1.65],weasel:[.03,.48],monkey:[0.1,1.1],boar:[0.2,1.2],bear:[0.2,2.2],boss:[0.3,3.5]}; // 獣の体の高さの帯（足元から）
 function phaseAt(a,t){ if(t<a.a0) return [0,t/Math.max(1e-3,a.a0)]; if(t<=a.a1) return [1,(t-a.a0)/Math.max(1e-3,a.a1-a.a0)]; return [2,Math.min(1,(t-a.a1)/Math.max(1e-3,a.dur-a.a1))]; }
 // t時点の武器の握り・根元・先端（世界座標）。out=[握り,根元,先端,向き]
@@ -3055,10 +3055,10 @@ const _h0=[new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3(),new THREE
 function sweepHits(a,t0,t1,cb){ const steps=Math.max(2,Math.ceil((t1-t0)/0.008)); const thick=SHAPE_T[a.mv.shape]||0.25;
   const near=[]; for(const e of enemies){ if(e.state==='dead'||e.removed||a.hit.has(e.id)) continue; if(dist(P.x,P.z,e.x,e.z)>6+e.r) continue; near.push(e); } if(!near.length) return;
   for(let i=0;i<=steps;i++){ const t=t0+(t1-t0)*i/steps; const s=swingPts(a,t,_h0); let bx=s[1].x,by=s[1].y,bz=s[1].z; const tx=s[2].x,ty=s[2].y,tz=s[2].z;
-    if(a.mv.shape==='thrust'){ bx=(bx+tx)/2; by=(by+ty)/2; bz=(bz+tz)/2; } // 槍は穂先側の半分だけ
+    if(a.mv.shape==='thrust'){ bx+=(tx-bx)*0.3; by+=(ty-by)*0.3; bz+=(tz-bz)*0.3; } // 槍は穂先側の7割（v0.58：旧は半分）
     for(const e of near){ if(a.hit.has(e.id)) continue; const dx=tx-bx, dz=tz-bz, L2=dx*dx+dz*dz||1e-6; const u=clamp(((e.x-bx)*dx+(e.z-bz)*dz)/L2,0,1);
       const px=bx+dx*u, pz=bz+dz*u, py=by+(ty-by)*u; const d=Math.hypot(e.x-px,e.z-pz); if(d>e.r+thick) continue;
-      const band=BAND[e.type]||[0.2,1.5], eg=groundH(e.x,e.z); if(py<eg+band[0]-0.3||py>eg+band[1]+0.3) continue;
+      const band=BAND[e.type]||[0.2,1.5], eg=groundH(e.x,e.z); if(py<eg+band[0]-0.45||py>eg+band[1]+0.45) continue; // v0.58：高さの余裕 0.3→0.45
       a.hit.add(e.id); cb(e,px,py,pz); if(F6.debug) dbgHit(px,py,pz); } } }
 // 武器の残像（先端と根元を結ぶ帯）
 const TRN=12; const trailGeo=new THREE.BufferGeometry(); trailGeo.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(TRN*2*3),3)); { const idx=[]; for(let i=0;i<TRN-1;i++){ const a=i*2; idx.push(a,a+1,a+2,a+1,a+3,a+2); } trailGeo.setIndex(idx); }
@@ -6325,7 +6325,7 @@ function joyVec(){ const m=Math.hypot(joy.x,joy.y); return m>0.18?{x:joy.x,z:joy
 function autoAim(){
   let best=null,bs=1e9; const w=equippedWeapon(); const R=(w?w.range:1.45)+2.6;
   for(const e of enemies){ if(e.state==='dead') continue; const d=dist(P.x,P.z,e.x,e.z)-e.r; if(d>R) continue;
-    const a=Math.atan2(e.x-P.x,e.z-P.z); if(famOf(P.weapon)==='spear'&&Math.abs(angDiff(P.facing,a))>0.6) continue; const sc=d+Math.abs(angDiff(P.facing,a))*1.6; if(sc<bs){bs=sc;best=a;} }
+    const a=Math.atan2(e.x-P.x,e.z-P.z); if(famOf(P.weapon)==='spear'&&Math.abs(angDiff(P.facing,a))>0.9) continue; /* v0.58：槍の自動の狙いを 0.6→0.9 に */ const sc=d+Math.abs(angDiff(P.facing,a))*1.6; if(sc<bs){bs=sc;best=a;} }
   return best;
 }
 
@@ -6370,9 +6370,24 @@ function startAttack(kind,aimSnapshot=null){
   if(mv.counter){ P.ctrT=0; const f=nearestFoe(5); if(f) counterFacing=Math.atan2(f.x-P.x,f.z-P.z); const w=equippedWeapon(); const reach=Math.max(0.9,(w?w.range:1.45)-0.6); P.atk.lungeD=f?clamp(dist(P.x,P.z,f.x,f.z)-f.r-reach,0,1.5):0; P.atk.counterFacing=counterFacing; } // 素手にも安全な短い間合いを設定。反撃対象の向きは攻撃中も保持
   if(mv.swap){ P.swT=0; P.swCD=S.time+SWAP.cd; }
   // 見切り反撃は対象へ向けた角度を優先し、直後の通常エイムで上書きしない。
-  P.facing=counterFacing==null?(aimSnapshot==null?aimAngle():aimSnapshot):counterFacing; P.atk.aimAngle=P.facing; P.buffer=null; if(P.weapon) f4AttachChop(P.atk); // 攻撃方向を開始時に固定。素手は伐採・採石に向かわせない
+  P.facing=counterFacing==null?attackAimNow(aimSnapshot):counterFacing; P.atk.aimAngle=P.facing; P.buffer=null; if(P.weapon) f4AttachChop(P.atk); // 攻撃方向を開始時に固定。素手は伐採・採石に向かわせない
   if(mv.kind==='heavy'){ heavyRing.visible=true; } else sfx('swing');
   return true;
+}
+// v0.58：攻撃の向き（2026-11-12 ユーザー指摘「連続攻撃の向きを WASD で直せない」）
+// 1. 移動入力（WASD・スティック）があれば、技が出る瞬間にその方向へ向き直す（連続攻撃の途中でも）。
+//    入力の向きから ±40° 以内・届く範囲に獣がいれば、その獣へ合わせる（狙いの補助）。
+// 2. 移動入力がなく、カーソルモードでマウス操作中なら、押した瞬間ではなく技が出る瞬間のカーソルへ向ける。
+// 3. それ以外は、これまでどおり（押した瞬間の向き／自動の狙い／体の向き）。
+function assistAim(base){ const w=equippedWeapon(); const R=(w?w.range:1.45)+1.2; let best=null,bs=1e9;
+  for(const e of enemies){ if(e.state==='dead'||e.removed) continue; const d=dist(P.x,P.z,e.x,e.z)-e.r; if(d>R) continue;
+    const a=Math.atan2(e.x-P.x,e.z-P.z), da=Math.abs(angDiff(base,a)); if(da>0.7) continue; const sc=da*2+d*0.3; if(sc<bs){ bs=sc; best=a; } }
+  return best; }
+function attackAimNow(aimSnapshot){
+  const mi=inputWorld();
+  if(mi.mag>0.25){ const base=Math.atan2(mi.x,mi.z); const a=assistAim(base); return a==null?base:a; }
+  if(AIM.mode==='cursor'&&mouse.active) return aimAngle();
+  return aimSnapshot==null?aimAngle():aimSnapshot;
 }
 function tryDodge(fromBuf){
   if(bossCinema52()) return;

@@ -47,7 +47,7 @@
 
 ## 作業の進め方
 - main へ入れる前に、作業ブランチで検証する。変更は小さく分ける。
-- テスト：`node tests/chapter2-save.cjs`、`node tests/chapter2-defense.cjs`、`node tests/classic-body.cjs`、`node tests/death-penalty.cjs`。防衛戦の勝率は `tools/defense-sim.cjs`（`docs/p1-sim-baseline.md`）。画面の確認は Playwright（SwiftShader）で起動と表示を見る。
+- テスト：`node tests/chapter2-save.cjs`、`node tests/chapter2-defense.cjs`、`node tests/classic-body.cjs`、`node tests/death-penalty.cjs`、`node tests/combat-aim.cjs`。防衛戦の勝率は `tools/defense-sim.cjs`（`docs/p1-sim-baseline.md`）。画面の確認は Playwright（SwiftShader）で起動と表示を見る。
 - 報告では「コードに存在／コミット済み／公開済み／PCで確認／iPhoneで確認」を区別する。実機で確かめていないことを確認済みと書かない。
 - 各フェーズで、変更履歴・使った3Dアセットと版・実装済み／未実装・テスト結果・未解決の不具合・セーブ互換・次の工程を `docs/` に残す。
 
@@ -63,5 +63,6 @@
 | `docs/p1-sim-baseline.md` | 防衛戦の勝率測定ツールと基準値 |
 | `docs/p1-balance-report.md` | P1 の測定結果・調整（v0.55・v0.56 で反映）・未確認事項 |
 | `docs/death-penalty.md` | 倒れたときの代償（v0.56） |
+| `docs/combat-aim.md` | 攻撃の向きと当たり判定（v0.58） |
 
 - 試遊版の作り方：`python3 tools/build-p1-preview.py`（本編をコピーし、A／B／C ボタンと試遊用の保存キーを足して `previews/p1-balance/` を作る）。本編を変えたら作り直す。
