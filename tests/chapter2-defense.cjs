@@ -31,6 +31,8 @@ assert.equal(run('ev.kind'),'chapter2');assert.equal(run('ev.waves.flat().length
 assert.deepEqual(JSON.parse(run('JSON.stringify(ev.waves.map(w=>w.length))')),[8,10,12]);
 assert.equal(run("ev.waves.every(w=>['boar','bear','monkey'].every(t=>w.some(e=>e[0]===t)))"),true);
 assert.equal(run("ev.waves.every(w=>[0,1,2].every(g=>w.some(e=>e[1]===g)))"),true);
+// v0.57: monkeys are the largest group (18 of 30)
+assert.equal(run("ev.waves.flat().filter(e=>e[0]==='monkey').length"),18);
 assert.equal(run('startChapter2Defense()'),false,'no duplicate');
 run('updateEvent(30)');assert.equal(run('ev.phase'),'fight');
 run('updateEvent(20);alive=1;updateEvent(60)');assert.equal(run('ev.waveIdx'),0,'no next wave while monkeys remain');
@@ -66,7 +68,7 @@ const attacker={x:13,z:10,r:1,mode:'raid',type:'monkey',gap:0,rphase:'core',stat
 `,ctx);
 assert.equal(run('targetOf(attacker).kind'),'core');
 run('updateMonkey(attacker,1)');assert.equal(run('damaged'),0,'windup before damage');
-run('updateMonkey(attacker,1)');assert.equal(run('damaged'),14,'attacks core');
+run('updateMonkey(attacker,1)');assert.equal(run('damaged'),run('C2_DEFENSE.coreDamage'),'attacks core');
 run("ev.kind='invasion'");assert.equal(run('targetOf(attacker).kind'),'store','chapter 1 monkey behavior unchanged');
 // v0.55: monkeys stop to climb an intact fence in chapter 2 only
 run("ev.kind='chapter2';Object.assign(GAPS[0],{out:{x:50,z:50},in:{x:60,z:60},fence:{type:'wood',broken:false}})");

@@ -526,7 +526,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.56 デモ版　第二章・光明寺防衛戦</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.57 デモ版　第二章・光明寺防衛戦</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -5710,12 +5710,13 @@ function syncChapter2(){
 }
 // Opening encounter tuning is provisional; no chapter-ending story is inferred here.
 // v0.56（試遊を受けて 2026-11-12 承認・案②）：やぐら 540、攻撃倍率 1.2、波の間の休息 25秒、猿は無傷の柵を7秒かけてよじ登る（climb）
-const C2_DEFENSE={warning:30,coreHp:540,rest:25,coreDamage:14,coreInterval:2.0,hpMul:2.0,damageMul:1.2,climb:7,
+// v0.57（2026-11-12 指示）：猿の割合を上げた（30匹中 猿18・猪8・熊4。v0.56 までは 猿12・猪13・熊5）。猿のやぐらへの一撃 14→10
+const C2_DEFENSE={warning:30,coreHp:540,rest:25,coreDamage:10,coreInterval:2.0,hpMul:2.0,damageMul:1.2,climb:7,
   // Mixed attackers make existing fences and traps useful; cap remains eight live enemies.
   waves:[
-    [['boar',0,0],['boar',1,0],['monkey',2,1],['monkey',0,3],['boar',2,4],['monkey',1,5],['bear',0,7],['monkey',2,8]],
-    [['boar',1,0],['bear',2,0],['monkey',0,1],['boar',0,2],['monkey',2,3],['bear',1,5],['boar',2,6],['monkey',1,7],['boar',0,9],['monkey',0,10]],
-    [['bear',0,0],['boar',1,0],['boar',2,0],['monkey',1,1],['monkey',2,2],['bear',2,4],['boar',0,5],['monkey',0,6],['bear',1,8],['boar',2,9],['monkey',1,10],['boar',1,12]]
+    [['monkey',0,0],['boar',1,0],['monkey',2,1],['monkey',1,3],['boar',2,4],['monkey',0,5],['bear',0,7],['monkey',2,8]],
+    [['monkey',1,0],['boar',0,0],['monkey',2,1],['bear',2,2],['monkey',0,3],['boar',1,5],['monkey',1,6],['monkey',2,7],['boar',0,9],['monkey',0,10]],
+    [['bear',0,0],['monkey',1,0],['monkey',2,1],['boar',1,2],['monkey',0,3],['bear',2,4],['monkey',1,5],['boar',0,6],['monkey',2,7],['boar',2,9],['monkey',0,10],['monkey',1,12]]
   ]};
 function chapter2Opening(){return prog.chapter2?.progress||{};}
 function prepareChapter2(){
@@ -5734,14 +5735,14 @@ function startChapter2Defense(){
   ev.coreMax=C2_DEFENSE.coreHp;ev.coreHp=ev.coreMax;
   ev.waves=C2_DEFENSE.waves.map(w=>w.map(entry=>entry.slice()));
   for(const e of enemies)if(e.mode==='field'&&e.state!=='dead'&&inBase(e.x,e.z,14))setState(e,'return');
-  banner('光明寺への襲撃','猿・イノシシ・クマが三方向から接近。柵と罠で足止めし、火の見やぐらを守る',4);
+  banner('光明寺への襲撃','猿の群れを中心に、イノシシ・クマも三方向から接近。柵と罠で足止めし、火の見やぐらを守る',4);
   sfx('bell'); return true;
 }
 function chapter2Panel(n,st,bx){
   if(n!==npcGen||!prog.bossDefeated)return;
   const done=chapter2Opening().defenseComplete;
   f9El('div','clue',done?'第二章：光明寺防衛戦を完了。強化された防衛戦に再挑戦できます（全3波・猿／猪／熊）。強化武器・防具・三方向の柵と罠・回復食・修理資材を準備してください。クリア記録は維持されます。上志比への出発は次の更新で追加予定。':
-    '第二章：高難度の三方向防衛戦（全3波）。強化武器と部位防具を整え、三方向の柵を修理・強化し、門前に罠を設置。回復食と武器・柵の修理資材も用意してください。罠はイノシシ・クマを止めます。柵と罠を抜ける猿は優先して迎撃。慧心が柵を修理し、源さんが接近方向を知らせます。波の間の18秒で修理・罠の掛け直しを。',st);
+    '第二章：高難度の三方向防衛戦（全3波）。強化武器と部位防具を整え、三方向の柵を修理・強化し、門前に罠を設置。回復食と武器・柵の修理資材も用意してください。罠はイノシシ・クマを止めます。柵と罠を抜ける猿は優先して迎撃。慧心が柵を修理し、源さんが接近方向を知らせます。波の間の'+C2_DEFENSE.rest+'秒で修理・罠の掛け直しを。',st);
   if(!ev.kind)f9Btn(bx,'npc_chapter2',done?'第二章の防衛戦に再挑戦':'第二章の防衛戦を始める',startChapter2Defense,{pri:1});
 }
 function freshState(){
