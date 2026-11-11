@@ -61,3 +61,6 @@
 | `docs/chapter2-map-plan.md` | 上志比マップの調査と計画 |
 | `docs/phase-p1-status.md` | P1 の現状整理 |
 | `docs/p1-sim-baseline.md` | 防衛戦の勝率測定ツールと基準値 |
+| `docs/p1-balance-report.md` | P1 の測定結果と調整案（承認待ち） |
+
+- 試遊版の作り方：`python3 tools/build-p1-preview.py`（`previews/p1-balance/` を作る。保存キーは試遊用）。
