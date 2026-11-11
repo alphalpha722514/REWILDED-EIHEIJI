@@ -526,7 +526,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.51 デモ版　光明寺マップ</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.54 デモ版　第二章・光明寺防衛戦</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -674,6 +674,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
     <p style="font-size:13px;color:var(--washi-dim)">この章の物語はここまで。このまま光明寺の町を探索して、新しい装備を試せます。</p>
     <div class="btns">
       <button class="pri" id="btnContinuePlay">探索を続ける</button>
+      <button id="btnChapter2">第二章へ（光明寺で準備）</button>
       <button id="btnResultTitle">タイトルへ</button>
     </div>
   </div>
@@ -3432,6 +3433,7 @@ function renderNPC(){ const n=f9Cur; if(!n) return; $('npcName').textContent=n.n
   if(n===npcEshin){ if(f9Has('C')) f9EshinPanel(st,bx); else f9El('div','nl',ev.kind?'いまは柵の修理に出ている（戦いの間）':'戦いの間は、傷んだ柵を直しに行く',st); }
   if(n===npcYone&&f9Has('B')) f9YonePanel(st,bx);
   renderTownDelivery(n,bx);
+  chapter2Panel(n,st,bx);
   if(n===npcGen&&!f9Has('D')) f9El('div','nl',ev.kind?'獣の数を叫んで知らせている':'見張り台から外を見張っている',st);
 }
 function f9Talk(n){ closeOverlay(); const story=n===npcTome&&f9Story(n)||n===npcTome&&prog.stage==='invasionPrep'; talkTo(n);
@@ -3985,6 +3987,7 @@ const F11B={hpMul:1.6, dmgMul:1.1, coreMul:1, rest:10, w2:1}; // v0.30 既定（
 function f11InvHp(hp){ return ev.kind==='invasion'?Math.round(hp*F11B.hpMul):hp; }
 function f11InvDmg(dmg,src){ return (src&&src.mode==='raid'&&ev.kind==='invasion')?Math.max(1,Math.round(dmg*F11B.dmgMul)):dmg; }
 function f11Rest(dt){ // 波を倒し切ったときだけ呼ぶ。小休止が終わったら true
+  if(ev.kind==='chapter2'){ev.restT=(ev.restT||0)+dt;return ev.restT>=C2_DEFENSE.rest;}
   if(ev.kind!=='invasion'||!(F11B.rest>0)) return true;
   if(!(ev.restT>0)) toast(`第${ev.waveIdx+1}波を退けた。次の群れまで約${F11B.rest}秒（食べる・罠を掛け直すなら今）`);
   ev.restT=(ev.restT||0)+dt; if(ev.restT>=F11B.rest){ ev.restT=0; return true; } return false;
@@ -5390,7 +5393,7 @@ function recordHuntPerfect(src){
 function fieldRespawnDelay(tracked,bossCleared){
   return (tracked?75:100)*(bossCleared?FIELD_RESPAWN_AFTER_BOSS:1);
 }
-// Chapter 2 phase 1: additive save foundation; region travel awaits its map.
+// Chapter 2: playable opening defense. Travel awaits the surveyed Kamishihi map.
 function chapter2State(saved,bossCleared){
   const s=saved&&typeof saved==='object'&&!Array.isArray(saved)?saved:{};
   return {
@@ -5398,7 +5401,7 @@ function chapter2State(saved,bossCleared){
     unlocked:!!bossCleared,
     // The loaded world is still Komyoji. Never restore an unavailable map.
     currentRegion:'komyoji',
-    currentChapter:1,
+    currentChapter:bossCleared&&s.progress?.openingStarted===true?2:1,
     regions:{komyoji:{unlocked:true},kamishihi:{unlocked:!!bossCleared}},
     // Preserve future phase data without enabling unfinished gameplay.
     progress:s.progress&&typeof s.progress==='object'&&!Array.isArray(s.progress)?s.progress:{}
@@ -5407,6 +5410,36 @@ function chapter2State(saved,bossCleared){
 function syncChapter2(){
   prog.chapter2=chapter2State(prog.chapter2,prog.bossDefeated);
   return prog.chapter2;
+}
+// Opening encounter tuning is provisional; no chapter-ending story is inferred here.
+const C2_DEFENSE={warning:20,coreHp:300,rest:6,coreDamage:8,coreInterval:2.4,
+  waves:[[[0,0],[0,2],[1,4],[1,6]],[[1,0],[2,2],[0,4],[2,6],[1,8],[0,10]],[[2,0],[0,2],[1,4],[2,6],[0,8],[1,10],[2,12],[0,14]]]};
+function chapter2Opening(){return prog.chapter2?.progress||{};}
+function prepareChapter2(){
+  if(!prog.bossDefeated||ev.kind||bossActive||P.dead)return false;
+  const c=syncChapter2(); c.progress.openingStarted=true; c.currentChapter=2;
+  hideAllOv(); S.mode='playing'; keys.clear(); cv.focus(); saveGame();
+  banner('第二章　光明寺への襲撃','拠点に戻り、見張りの源さんのもとで防衛の準備を整える',4);
+  return true;
+}
+function startChapter2Defense(){
+  if(!prog.bossDefeated||ev.kind||bossActive||P.dead||chapter2Opening().defenseComplete)return false;
+  if(dist(P.x,P.z,npcGen.x,npcGen.z)>8)return false;
+  if(!prepareChapter2())return false;
+  ev.kind='chapter2';ev.phase='warn';ev.t=C2_DEFENSE.warning;ev.ended=false;ev.ids.clear();
+  ev.queue=[];ev.waveIdx=0;ev.waveT=0;ev.restT=0;ev.stolen=0;
+  ev.coreMax=C2_DEFENSE.coreHp;ev.coreHp=ev.coreMax;
+  ev.waves=C2_DEFENSE.waves.map(w=>w.map(([gap,delay])=>['monkey',gap,delay]));
+  for(const e of enemies)if(e.mode==='field'&&e.state!=='dead'&&inBase(e.x,e.z,14))setState(e,'return');
+  banner('光明寺への襲撃','猿の部隊が三方向から接近。町民とともに火の見やぐらを守る',4);
+  sfx('bell'); return true;
+}
+function chapter2Panel(n,st,bx){
+  if(n!==npcGen||!prog.bossDefeated)return;
+  const done=chapter2Opening().defenseComplete;
+  f9El('div','clue',done?'第二章：光明寺防衛戦を完了。上志比への出発は次の更新で追加予定。':
+    '第二章：光明寺への襲撃。三方向から来る猿に備える。慧心は柵を修理し、源さんは接近方向を知らせる。猿には罠が効かない。',st);
+  if(!done&&!ev.kind)f9Btn(bx,'npc_chapter2','第二章の防衛戦を始める',startChapter2Defense,{pri:1});
 }
 function freshState(){
   inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,baitKit:0,onigiri:1,bento:0,grilledVeg:0,herbPorridge:0,fang:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0};
@@ -6139,6 +6172,7 @@ function targetOf(e){
       if(e.carry) return {kind:'flee',x:e.home.x,z:e.home.z};
       if(e.rphase==='approach'){ if(dist(e.x,e.z,g.out.x,g.out.z)<2) e.rphase='gate'; else return {kind:'point',x:g.out.x,z:g.out.z}; }
       if(e.rphase==='gate'){ if(dist(e.x,e.z,g.in.x,g.in.z)<2) e.rphase='core'; else return {kind:'point',x:g.in.x,z:g.in.z}; }
+      if(ev.kind==='chapter2')return {kind:'core',x:CORE.x,z:CORE.z};
       return {kind:'store',x:STORE.x,z:STORE.z};
     }
     if(e.rphase==='approach'){ if(dist(e.x,e.z,g.out.x,g.out.z)<2.2) e.rphase='gate'; else return {kind:'point',x:g.out.x,z:g.out.z}; }
@@ -6311,6 +6345,14 @@ function updateMonkey(e,dt){
     case 'raid': {
       if(e.aggro){ setState(e,'kite'); e.atkT=1.2; break; }
       if(t.kind==='flee'){ steer(e,t.x,t.z,ET.monkey.speed,dt); if(dist(e.x,e.z,t.x,t.z)<2){ e.fled=true; removeEnemy(e); return; } break; }
+      if(ev.kind==='chapter2'&&t.kind==='core'&&tDist(e,t)<1.5){
+        e.spd=0;faceTo(e,Math.atan2(t.x-e.x,t.z-e.z),10,dt);
+        e.c2CoreT=(e.c2CoreT||0)+dt;
+        showSector(e,1.9,1.8,Math.min(1,e.c2CoreT/C2_DEFENSE.coreInterval));
+        if(e.c2CoreT>=C2_DEFENSE.coreInterval){e.c2CoreT=0;hideSector(e);damageCore(C2_DEFENSE.coreDamage);}
+        break;
+      }
+      e.c2CoreT=0;
       steer(e,t.x,t.z,ET.monkey.speed*0.85,dt);
       if(t.kind==='store'&&dist(e.x,e.z,STORE.x,STORE.z)<3){
         f7Flush(); const fromSt=F7.store&&f7Count('food','store')>0; let k='food',n=Math.min(2,fromSt?f7Count('food','store'):inv.food); if(n<=0){ k='wood'; n=Math.min(2,inv.wood); }
@@ -6550,7 +6592,7 @@ function updateEnemies(dt){
     f10Post(e,prev); }
     if(e.removed) continue;
     if(e.state!=='wind'&&e.state!=='chargeWind') e.ind.visible=false;
-    if(!['wind','goreWind','tusk'].includes(e.state)) hideSector(e);
+    if(!['wind','goreWind','tusk'].includes(e.state)&&!(ev.kind==='chapter2'&&e.state==='raid'&&e.c2CoreT>0)) hideSector(e);
     // 罠
     if(e.type!=='monkey'&&!['stun','trapped','dead'].includes(e.state)){
       for(const t of traps){ if(t.state!=='armed'||t.type==='bait') continue; if(dist(e.x,e.z,t.x,t.z)<1.1+e.r*0.5){ triggerTrap(t,e); break; } }
@@ -6633,7 +6675,7 @@ function startEvent(kind){
 function queueWave(i){
   for(const [type,gap,delay] of ev.waves[i]) ev.queue.push({type,gap,t:ev.t+delay});
   ev.waveT=0;
-  if(ev.kind==='invasion') toast(`第${i+1}波　${[...new Set(ev.waves[i].map(w=>GAPS[w[1]].name))].join('・')}から接近`,true);
+  if(ev.kind==='invasion'||ev.kind==='chapter2') toast(`第${i+1}波　${[...new Set(ev.waves[i].map(w=>GAPS[w[1]].name))].join('・')}から接近`,true);
 }
 function raidAlive(){ let n=0; for(const e of enemies) if(ev.ids.has(e.id)&&e.state!=='dead'&&!e.removed) n++; return n; }
 function updateEvent(dt){
@@ -6645,7 +6687,7 @@ function updateEvent(dt){
       const e=spawnEnemy(q.type,sp.x+rr(-2,2),sp.z+rr(-2,2),'raid',{gap:q.gap}); e.home={x:sp.x,z:sp.z}; ev.ids.add(e.id); ev.queue.splice(i,1); } }
   const alive=raidAlive();
   if(ev.queue.length===0){
-    if(ev.waveIdx<ev.waves.length-1&&((alive===0&&f11Rest(dt))||ev.waveT>45)){ ev.restT=0; ev.waveIdx++; queueWave(ev.waveIdx); if(ev.kind==='invasion') sfx('bell'); }
+    if(ev.waveIdx<ev.waves.length-1&&((alive===0&&f11Rest(dt))||(ev.kind!=='chapter2'&&ev.waveT>45))){ ev.restT=0; ev.waveIdx++; queueWave(ev.waveIdx); if(ev.kind==='invasion') sfx('bell'); }
     else if(ev.waveIdx>=ev.waves.length-1&&alive===0) winEvent();
   }
   // 火の見やぐらの揺れ戻し
@@ -6656,6 +6698,11 @@ function winEvent(){
   if(ev.ended) return; ev.ended=true;
   const kind=ev.kind; ev.kind=null; ev.phase=null; ev.queue=[];
   sfx('win');
+  if(kind==='chapter2'){
+    const c=syncChapter2();c.progress.openingStarted=true;c.progress.defenseComplete=true;c.currentChapter=2;
+    banner('光明寺防衛戦　完了','町で装備と物資を整えられます。上志比への出発は次の更新で追加予定です。',5);
+    saveGame();return;
+  }
   if(kind==='raid'){
     inv.hide+=3; foodAdd('food',3); inv.wood+=2; prog.unlockTrap=true;
     banner('襲撃を退けた！','報酬：獣素材3・食料3・木材2　／　新レシピ「くくり罠」解放',3.2);
@@ -7824,6 +7871,12 @@ function updateProgress(dt){ f31Tick(dt);
   prog.lastSaveT+=dt; if(prog.lastSaveT>30&&!ev.kind&&!bossActive){ prog.lastSaveT=0; saveGame(); }
 }
 function objective(){
+  if(prog.bossDefeated&&chapter2Opening().openingStarted){
+    if(ev.kind==='chapter2')return ['第二章：猿部隊から火の見やぐらを守る。猿には罠が効かない',CORE];
+    if(chapter2Opening().defenseComplete)return ['第二章：光明寺防衛戦を完了。上志比への出発は次の更新で追加予定',null];
+    return ['第二章：拠点で装備を整え、見張りの源さんに話しかけて防衛戦を始める',npcGen];
+  }
+  if(prog.bossDefeated)return ['自由探索／第二章：見張りの源さんに話しかけると防衛戦を始められる',npcGen];
   switch(prog.stage){
     case 'talk': return ['拠点の中央にいる区長トミオに話しかける',npcTome];
     case 'gather': return [`拠点の外の畑と、線路の向こうの山すそで素材を集める　木材 ${Math.min(inv.wood,4)}/4・食料 ${Math.min(inv.food,2)}/2`,{x:180,z:110}];
@@ -7871,7 +7924,7 @@ function updateHUD(dt){
   setTxt('objText',ot); setTxt('questText',qt); updateObjDir(); updateStRing();
   let et='';
   if(ev.kind&&ev.phase==='warn') et=`${ev.kind==='raid'?'襲撃':'侵攻'}開始まで ${Math.ceil(ev.t)} 秒`;
-  else if(ev.kind&&ev.phase==='fight') et=ev.kind==='invasion'?`第${ev.waveIdx+1}波／全3波　残りの獣 ${raidAlive()+ev.queue.length}`:`残りの獣 ${raidAlive()+ev.queue.length}`;
+  else if(ev.kind&&ev.phase==='fight') et=(ev.kind==='invasion'||ev.kind==='chapter2')?`第${ev.waveIdx+1}波／全${ev.waves.length}波　残りの獣 ${raidAlive()+ev.queue.length}`:`残りの獣 ${raidAlive()+ev.queue.length}`;
   else if(prog.stage==='invasionPrep') et=`大規模侵攻まで ${fmtTime(prog.prepT)}`;
   setTxt('evText',et);
   $('coreBar').hidden=!(ev.kind&&ev.phase==='fight');
@@ -8244,6 +8297,7 @@ $('btnContinuePlay').onclick=()=>{ $('result').hidden=true; S.mode='playing'; cv
   toast('沢の静けさが戻り、山の獣が以前より早く姿を見せるようになった。');
 };
 $('btnResultTitle').onclick=()=>$('btnToTitle').onclick();
+$('btnChapter2').onclick=prepareChapter2;
 // タイトル画面の背景用カメラ
 P.x=158; P.z=22; P.facing=Math.PI; setCam(0.4); lightMode='dusk'; snapLight(); animatePlayer(0,0); updateCamera(0.016); updateChunks(0,true);
 setTimeout(()=>$('title').classList.remove('tIntro'),2600); // 登場演出は最初の1回だけ（タイトルへ戻ったときは繰り返さない）
