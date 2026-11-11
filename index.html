@@ -5390,9 +5390,27 @@ function recordHuntPerfect(src){
 function fieldRespawnDelay(tracked,bossCleared){
   return (tracked?75:100)*(bossCleared?FIELD_RESPAWN_AFTER_BOSS:1);
 }
+// Chapter 2 phase 1: additive save foundation; region travel awaits its map.
+function chapter2State(saved,bossCleared){
+  const s=saved&&typeof saved==='object'&&!Array.isArray(saved)?saved:{};
+  return {
+    version:1,
+    unlocked:!!bossCleared,
+    // The loaded world is still Komyoji. Never restore an unavailable map.
+    currentRegion:'komyoji',
+    currentChapter:1,
+    regions:{komyoji:{unlocked:true},kamishihi:{unlocked:!!bossCleared}},
+    // Preserve future phase data without enabling unfinished gameplay.
+    progress:s.progress&&typeof s.progress==='object'&&!Array.isArray(s.progress)?s.progress:{}
+  };
+}
+function syncChapter2(){
+  prog.chapter2=chapter2State(prog.chapter2,prog.bossDefeated);
+  return prog.chapter2;
+}
 function freshState(){
   inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,baitKit:0,onigiri:1,bento:0,grilledVeg:0,herbPorridge:0,fang:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0};
-  prog={gear:f47Fresh(),stage:'talk',unlockTrap:false,unlockBoss:false,clues:[false,false,false],bossDefeated:false,scoutTower:false,scoutWarned:false,scoutRaidWarned:false,prepT:150,gatherT:0,introSeen:false,lastSaveT:0,townRequests:loadTownRequests(),g4:g4Fresh(),f4:f4Fresh(),level:1,exp:0,mastery:{nata:0,axe:0,club:0,spear:0},xph:0}; prog.f7=f7FromInv(); f7Sync(); prog.f8=f8Fresh(); prog.f9=f9Fresh(); prog.f10=f10Fresh();
+  prog={gear:f47Fresh(),stage:'talk',unlockTrap:false,unlockBoss:false,clues:[false,false,false],bossDefeated:false,scoutTower:false,scoutWarned:false,scoutRaidWarned:false,prepT:150,gatherT:0,introSeen:false,lastSaveT:0,townRequests:loadTownRequests(),g4:g4Fresh(),f4:f4Fresh(),level:1,exp:0,mastery:{nata:0,axe:0,club:0,spear:0},xph:0}; prog.f7=f7FromInv(); f7Sync(); prog.f8=f8Fresh(); prog.f9=f9Fresh(); prog.f10=f10Fresh(); prog.chapter2=chapter2State(null,false);
   stats={kills:0,deaths:0,crafts:0,time:0,perfect:0,hunt:loadHuntRecords()};
   P.lvx48=0;P.lvz48=0;
   P.maxHp=100; P.hp=100; P.full=100; P.weapon='nata1'; P.dur=120; prog.arms={nata1:120}; prog.f5=f5Fresh(); P.dead=false; P.atk=null; P.dodge=null; P.buffer=null; P.stagger=0; P.buffT=0; P.vegT=0; P.porridgeT=0; resetCombat();
@@ -7265,8 +7283,9 @@ function checkpointStage(){ const s=prog.stage; return s==='raid'?'buildFence':s
 function saveGame(){
   if(!storageOK) return;
   try{
+    syncChapter2();
     if(P.weapon) prog.arms[P.weapon]=P.dur; // v0.45：素手のときは武器耐久を書き戻さない
-    const data={v:1,inv,weapon:P.weapon,dur:P.dur,full:P.full,arms:prog.arms,f5:f5Save(),
+    const data={v:1,chapter2:prog.chapter2,inv,weapon:P.weapon,dur:P.dur,full:P.full,arms:prog.arms,f5:f5Save(),
       prog:Object.assign({stage:checkpointStage(),unlockTrap:prog.unlockTrap,unlockBoss:prog.unlockBoss,clues:prog.clues,bossDefeated:prog.bossDefeated,scoutTower:!!prog.scoutTower,scoutWarned:!!prog.scoutWarned,scoutRaidWarned:!!prog.scoutRaidWarned,townRequests:prog.townRequests},f31SaveProg()),
       fences:GAPS.map(g=>g.fence.type?{type:g.fence.type,hp:g.fence.broken?0:g.fence.hp}:null),
       traps:traps.map(saveTrap),stats,nodes:NODES.map(n=>n.avail?1:0),g4:prog.g4,f4:f4Save(),f7:f7Save(),f8:f8Save(),f9:f9Save(),f10:f10Save()};
@@ -7301,6 +7320,7 @@ function applySave(d){
     prog.townRequests=loadTownRequests(p.townRequests);
     prog.stage=STAGES.includes(p.stage)?p.stage:'talk';
     prog.unlockTrap=!!p.unlockTrap; prog.unlockBoss=!!p.unlockBoss; prog.bossDefeated=!!p.bossDefeated; prog.scoutTower=!!p.scoutTower; prog.scoutWarned=!!p.scoutWarned; prog.scoutRaidWarned=!!p.scoutRaidWarned; f31LoadProg(p); // v0.31 任意項目（無ければ Lv1・熟練0・防具なし）
+    prog.chapter2=chapter2State(d.chapter2,prog.bossDefeated);
     if(Array.isArray(p.clues)) prog.clues=[0,1,2].map(i=>!!p.clues[i]);
     prog.introSeen=true;
     if(prog.stage==='invasionPrep') prog.prepT=150;
