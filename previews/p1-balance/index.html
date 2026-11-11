@@ -527,7 +527,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">P1 調整テスト版（本編とは別に保存）　第二章・光明寺防衛戦</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.55 防衛戦テスト版（本編とは別に保存）　第二章・光明寺防衛戦</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -5710,6 +5710,7 @@ function syncChapter2(){
   return prog.chapter2;
 }
 // Opening encounter tuning is provisional; no chapter-ending story is inferred here.
+// v0.55（P1 承認 2026-11-11）：やぐら 300→420、攻撃倍率 1.6→1.4、猿は無傷の柵を4秒かけてよじ登る（climb）
 const C2_DEFENSE={warning:30,coreHp:420,rest:18,coreDamage:14,coreInterval:2.0,hpMul:2.0,damageMul:1.4,climb:4,
   // Mixed attackers make existing fences and traps useful; cap remains eight live enemies.
   waves:[
@@ -5830,7 +5831,7 @@ refreshWeaponMesh();
 const heavyRing=mesh(ringGeo,bmat(0xffd27a,0.6),0,0.06,0,1,1,1); heavyRing.visible=false; scene.add(heavyRing);
 
 
-// ---- P1 試遊用（試遊版だけ）：A／B／C の準備を整えて、源さんの横から始める ----
+// ---- 試遊用（試遊版だけ）：A／B／C の準備を整えて、源さんの横から始める ----
 const P1TEST={
  A:{level:2,weapon:'nata1',armor:{},gates:[null,null,null],traps:[],food:{onigiri:0,bento:0},wood:0},
  B:{level:3,weapon:'nata2',armor:{head:'basic_head',chest:'basic_chest'},gates:['wood','stake',null],traps:[[0,'pit'],[2,'snare']],food:{onigiri:3,bento:0},wood:4},
@@ -5845,7 +5846,7 @@ function p1TestStart(k){ const c=P1TEST[k];
  f7Flush(); inv.onigiri=0; inv.bento=0; if(c.food.onigiri) foodAdd('onigiri',c.food.onigiri); if(c.food.bento) foodAdd('bento',c.food.bento); inv.wood=c.wood;
  GAPS.forEach((g,i)=>setFence(g,c.gates[i]||null)); for(const [i,kind] of c.traps) setTrap(traps[i],'armed',kind);
  P.x=npcGen.x+1.2; P.z=npcGen.z+1.2;
- banner('P1 試遊：準備'+k,'源さんに話しかけて「第二章の防衛戦を始める」を選んでください（本編とは別に保存）',5); saveGame(); }
+ banner('試遊：準備'+k,'源さんに話しかけて「第二章の防衛戦を始める」を選んでください（本編とは別に保存）',5); saveGame(); }
 for(const k of ['A','B','C']){ const b=document.getElementById('btnP1'+k); if(b) b.addEventListener('click',()=>p1TestStart(k)); }
 // ================= NPC =================
 const NPCS=[]; const TOMIO_SCALE=1.035;
@@ -5989,7 +5990,7 @@ function damageFence(gp,dmg){
   spawnParticles(gp.c.x,1,gp.c.z,8,0x9a7a4e,4);
   floatText(gp.c.x,2.4,gp.c.z,`-${Math.round(dmg)}`,'#e8c890');
   sfx('wood');
-  if(f.hp<=0){ f.broken=true; gp.col.active=false; fenceVisual(gp); toast(`${gp.name}の柵が壊された！ 木材2で再建できる`,true); sfx('break'); }
+  if(f.hp<=0){ f.broken=true; gp.col.active=false; fenceVisual(gp); toast(`${gp.name}の柵が壊された！ 木材2で再建できる${ev.kind==='chapter2'?'（慧心は壊れた柵を直せない）':''}`,true); sfx('break'); }
   else if(!wasWorn&&f.hp/f.max<0.4) fenceVisual(gp);
 }
 function spikeFenceContact(gp,e){
@@ -6665,7 +6666,7 @@ function updateMonkey(e,dt){
       break; }
     case 'raid': {
       if(e.aggro){ setState(e,'kite'); e.atkT=1.2; break; }
-      if(e.climbT>0){ e.climbT-=dt; e.spd=0; break; }
+      if(e.climbT>0){ e.climbT-=dt; e.spd=0; break; } // v0.55：第2章、無傷の柵をよじ登っている間は止まる
       if(t.kind==='flee'){ steer(e,t.x,t.z,ET.monkey.speed,dt); if(dist(e.x,e.z,t.x,t.z)<2){ e.fled=true; removeEnemy(e); return; } break; }
       if(ev.kind==='chapter2'&&t.kind==='core'&&tDist(e,t)<1.5){
         e.spd=0;faceTo(e,Math.atan2(t.x-e.x,t.z-e.z),10,dt);
@@ -6998,6 +6999,7 @@ function queueWave(i){
   for(const [type,gap,delay] of ev.waves[i]) ev.queue.push({type,gap,t:ev.t+delay});
   ev.waveT=0;
   if(ev.kind==='invasion'||ev.kind==='chapter2') toast(`第${i+1}波　${[...new Set(ev.waves[i].map(w=>GAPS[w[1]].name))].join('・')}から接近`,true);
+  if(ev.kind==='chapter2'){ sfx('alert'); toast('山の方で、サルの鋭い鳴き声が響いた……',true); if(i===0) say(npcGen,'サルどもが鳴き交わしとる……まるで号令や。どっかに頭がおるんかもしれん'); } // v0.55：統率者の気配（正体は明かさない）
 }
 function raidAlive(){ let n=0; for(const e of enemies) if(ev.ids.has(e.id)&&e.state!=='dead'&&!e.removed) n++; return n; }
 function updateEvent(dt){
@@ -7021,9 +7023,12 @@ function winEvent(){
   const kind=ev.kind; ev.kind=null; ev.phase=null; ev.queue=[];
   sfx('win');
   if(kind==='chapter2'){
-    const c=syncChapter2();const first=!c.progress.defenseComplete&&!c.progress.defenseRewarded;c.progress.openingStarted=true;c.progress.defenseComplete=true;c.currentChapter=2;
-    if(first){ c.progress.defenseRewarded=true; inv.wood+=6; inv.straw+=6; foodAdd('onigiri',2); banner('光明寺防衛戦　完了','住民からの礼：木材6・藁6・おにぎり2。上志比への出発は次の更新で追加予定です。',5); }
-    else banner('光明寺防衛戦　完了（再挑戦）','戦績を更新しました。報酬は初回のみです。',5);
+    const c=syncChapter2();const first=!c.progress.defenseRewarded;c.progress.openingStarted=true;c.progress.defenseComplete=true;c.currentChapter=2;
+    if(first){ // v0.55：住民からの礼は1回だけ（記録 defenseRewarded。報酬導入前にクリアしたセーブにも1回だけ出る）
+      c.progress.defenseRewarded=true; inv.wood+=6; inv.straw+=6; foodAdd('onigiri',2);
+      banner('光明寺防衛戦　完了','住民からの礼：木材6・藁6・おにぎり2。上志比への出発は次の更新で追加予定です。',5);
+      queueDialog([[npcTome,'みんなで守りきったのう。……ほんとに、ようやってくれた。'],[npcEshin,'柵もやぐらも、まだ立っております。皆さんの手があったからこそです。'],[npcYone,'けど、あのサルら、鳴き声ひとつで一斉に動いとったぞ。ただの群れやないわ。'],[npcGen,'山はまだ静かになっとらん。……上志比の方も、様子を見に行かんとあかんかもしれんな。']]);
+    } else banner('光明寺防衛戦　完了（再挑戦）','戦績を更新しました。住民からの礼は初回のみです。',5);
     saveGame();return;
   }
   if(kind==='raid'){
