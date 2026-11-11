@@ -34,8 +34,8 @@ assert.equal(run("ev.waves.every(w=>[0,1,2].every(g=>w.some(e=>e[1]===g)))"),tru
 assert.equal(run('startChapter2Defense()'),false,'no duplicate');
 run('updateEvent(30)');assert.equal(run('ev.phase'),'fight');
 run('updateEvent(20);alive=1;updateEvent(60)');assert.equal(run('ev.waveIdx'),0,'no next wave while monkeys remain');
-run('alive=0;updateEvent(18)');assert.equal(run('ev.waveIdx'),1);
-for(let i=0;i<12&&run('ev.kind');i++)run('alive=0;updateEvent(18)');
+run('alive=0;updateEvent(C2_DEFENSE.rest)');assert.equal(run('ev.waveIdx'),1);
+for(let i=0;i<12&&run('ev.kind');i++)run('alive=0;updateEvent(C2_DEFENSE.rest)');
 assert.equal(run('ev.kind'),null);assert.equal(run('chapter2Opening().defenseComplete'),true);
 assert.equal(run('prog.stage'),'cleared','chapter 1 completion intact');
 // v0.55: first-clear reward once, with the short villager dialogue
@@ -44,12 +44,12 @@ assert.equal(run('chapter2Opening().defenseRewarded'),true);
 assert.equal(run('syncChapter2().currentChapter'),2);
 assert.equal(run('startChapter2Defense()'),true,'completed save can replay');
 assert.equal(run('chapter2Opening().defenseComplete'),true,'replay keeps completion');
-run('updateEvent(30)');for(let i=0;i<12&&run('ev.kind');i++)run('alive=0;updateEvent(18)');
+run('updateEvent(30)');for(let i=0;i<12&&run('ev.kind');i++)run('alive=0;updateEvent(C2_DEFENSE.rest)');
 assert.equal(run('ev.kind'),null,'replay can be won');
 assert.deepEqual(JSON.parse(run('JSON.stringify([inv.wood,inv.straw,food.onigiri,dialogs])')),[6,6,2,1],'no reward on replay');
 // a save that cleared before rewards existed gets the reward once
 run('delete prog.chapter2.progress.defenseRewarded;ev.kind=null;ev.phase=null;ev.queue=[]');assert.equal(run('startChapter2Defense()'),true);
-run('updateEvent(30)');for(let i=0;i<12&&run('ev.kind');i++)run('alive=0;updateEvent(18)');
+run('updateEvent(30)');for(let i=0;i<12&&run('ev.kind');i++)run('alive=0;updateEvent(C2_DEFENSE.rest)');
 assert.deepEqual(JSON.parse(run('JSON.stringify([inv.wood,inv.straw,food.onigiri])')),[12,12,4],'legacy clear rewarded once');
 run('prog.chapter2.progress.defenseComplete=false;ev.kind=null');assert.equal(run('startChapter2Defense()'),true);
 run('ev.kind=null;ev.phase=null;ev.queue=[]');assert.equal(run('startChapter2Defense()'),true,'retry from prepared state');
@@ -71,8 +71,8 @@ run("ev.kind='invasion'");assert.equal(run('targetOf(attacker).kind'),'store','c
 // v0.55: monkeys stop to climb an intact fence in chapter 2 only
 run("ev.kind='chapter2';Object.assign(GAPS[0],{out:{x:50,z:50},in:{x:60,z:60},fence:{type:'wood',broken:false}})");
 vm.runInContext("var climber={x:50,z:50.5,r:1,mode:'raid',type:'monkey',gap:0,rphase:'approach',state:'raid',home:{x:0,z:0},aggro:false};",ctx);
-run('targetOf(climber)');assert.equal(run('climber.climbT'),4,'climb starts at intact fence');
-run('updateMonkey(climber,1)');assert.equal(run('climber.climbT'),3);assert.equal(run('climber.x'),50,'stays while climbing');
+run('targetOf(climber)');assert.equal(run('climber.climbT'),run('C2_DEFENSE.climb'),'climb starts at intact fence');
+run('updateMonkey(climber,1)');assert.equal(run('climber.climbT'),run('C2_DEFENSE.climb')-1);assert.equal(run('climber.x'),50,'stays while climbing');
 run("GAPS[0].fence.broken=true;climber.rphase='approach';climber.climbT=0;targetOf(climber)");assert.equal(run('climber.climbT'),0,'broken fence: no climb');
 run("ev.kind='invasion';GAPS[0].fence.broken=false;climber.rphase='approach';targetOf(climber)");assert.equal(run('climber.climbT'),0,'chapter 1: no climb');
 console.log('PASS: chapter 2 core target/windup/damage; chapter 1 store target; chapter 2 fence climb');
@@ -80,7 +80,7 @@ console.log('PASS: chapter 2 core target/windup/damage; chapter 1 store target; 
 vm.runInContext(`${extract('f11InvHp')}${extract('f11InvDmg')}`,ctx);
 run("ev.kind='chapter2'");
 assert.equal(run('f11InvHp(29)'),58);
-assert.equal(run("f11InvDmg(38,{mode:'raid'})"),53);
+assert.equal(run("f11InvDmg(38,{mode:'raid'})"),46);
 assert.equal(run("f11InvDmg(38,{mode:'field'})"),38,'field enemies unchanged');
 run("F11B.hpMul=1.6;F11B.dmgMul=1.1;ev.kind='invasion'");
 assert.equal(run('f11InvHp(29)'),46);

@@ -526,7 +526,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.55 デモ版　第二章・光明寺防衛戦</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.56 デモ版　第二章・光明寺防衛戦</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -656,7 +656,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
   <div class="card">
     <h2 id="deadTitle">力尽きた……</h2>
     <p id="deadReason"></p>
-    <p style="font-size:13px;color:var(--washi-dim)">「拠点で立て直す」：素材・装備・設置した柵や罠はそのまま。進行中の戦いは準備段階からやり直しになります。</p>
+    <p style="font-size:13px;color:var(--washi-dim)">「拠点で立て直す」：素材・防具・設置した柵や罠はそのまま。ただし体力は半分、満腹は少し減り、手に持っていた武器が傷みます。柵は直らず、野の獣も傷が癒えます。進行中の戦いは準備段階からやり直しになります。</p>
     <div class="btns">
       <button class="pri" id="btnRetry">拠点で立て直す</button>
       <button id="btnRestart">最初からやり直す</button>
@@ -5709,8 +5709,8 @@ function syncChapter2(){
   return prog.chapter2;
 }
 // Opening encounter tuning is provisional; no chapter-ending story is inferred here.
-// v0.55（P1 承認 2026-11-11）：やぐら 300→420、攻撃倍率 1.6→1.4、猿は無傷の柵を4秒かけてよじ登る（climb）
-const C2_DEFENSE={warning:30,coreHp:420,rest:18,coreDamage:14,coreInterval:2.0,hpMul:2.0,damageMul:1.4,climb:4,
+// v0.56（試遊を受けて 2026-11-12 承認・案②）：やぐら 540、攻撃倍率 1.2、波の間の休息 25秒、猿は無傷の柵を7秒かけてよじ登る（climb）
+const C2_DEFENSE={warning:30,coreHp:540,rest:25,coreDamage:14,coreInterval:2.0,hpMul:2.0,damageMul:1.2,climb:7,
   // Mixed attackers make existing fences and traps useful; cap remains eight live enemies.
   waves:[
     [['boar',0,0],['boar',1,0],['monkey',2,1],['monkey',0,3],['boar',2,4],['monkey',1,5],['bear',0,7],['monkey',2,8]],
@@ -7493,14 +7493,13 @@ function retryFromBase(){
   if(wasEv==='raid'||prog.stage==='raid'){ prog.stage='buildFence'; prog.raidDelay=-6; }
   if(wasEv==='invasion'||prog.stage==='invasion'){ prog.stage='invasionPrep'; prog.prepT=90; setNight(false); setDusk(true); }
   if(bossActive||prog.stage==='boss'){ prog.stage='toBoss'; }
-  // 柵の応急処置
-  for(const g of GAPS){ const f=g.fence; if(f.type&&f.hp<f.max*0.5){ f.broken=false; f.hp=f.max*0.5; g.col.active=true; fenceVisual(g);} }
+  // v0.56：倒れた代償（2026-11-12 承認）。柵の無料修理はやめた（壊れた柵・傷んだ柵はそのまま）
   setupBoss(); $('bossBar').hidden=true; setBarrier(!(prog.stage==='toBoss'||prog.stage==='cleared'));
-  P.x=PSPAWN.x; P.z=PSPAWN.z; P.facing=0; setCam(0); resetCombat(); P.hp=P.maxHp; P.full=Math.max(P.full,60); P.dead=false; P.atk=null; P.dodge=null; P.stagger=0; P.buffer=null; heavyRing.visible=false;
+  P.x=PSPAWN.x; P.z=PSPAWN.z; P.facing=0; setCam(0); resetCombat(); P.hp=Math.ceil(P.maxHp*0.5); P.full=Math.max(15,P.full-25); /* v0.56：体力は半分、満腹は25減る */ if(P.weapon&&WEAPONS[P.weapon]){ P.dur=Math.max(0,P.dur-WEAPONS[P.weapon].maxDur*0.25); prog.arms[P.weapon]=P.dur; } /* v0.56：手に持っていた武器の耐久 -25% */ P.dead=false; P.atk=null; P.dodge=null; P.stagger=0; P.buffer=null; heavyRing.visible=false;
   // 拠点付近の野生の敵を初期位置へ
-  for(const e of enemies) if(e.mode==='field'&&e.state!=='dead'){ e.x=e.home.x; e.z=e.home.z; setState(e,'idle'); }
+  for(const e of enemies) if(e.mode==='field'&&e.state!=='dead'){ e.x=e.home.x; e.z=e.home.z; e.hp=e.maxHp; setState(e,'idle'); } // v0.56：野の獣も傷が癒える（倒れながら削る戦い方を防ぐ）
   hideAllOv(); S.mode='playing'; S.slowmo=0; S.hitstop=0;
-  toast('拠点で態勢を立て直した'); saveGame();
+  toast('拠点で態勢を立て直した（体力半分・満腹 −25・武器が傷んだ）'); saveGame();
 }
 function showResult(){
   stopBeastVoices51(); S.mode='menu'; keys.clear(); $('bossBar').hidden=true;
