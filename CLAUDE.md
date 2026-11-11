@@ -59,3 +59,5 @@
 | `docs/character-classic-body.md` | プレイヤー・村人の体の決定と検証 |
 | `docs/chapter2-progress.md` | 第2章の実装状況 |
 | `docs/chapter2-map-plan.md` | 上志比マップの調査と計画 |
+| `docs/phase-p1-status.md` | P1 の現状整理 |
+| `docs/p1-sim-baseline.md` | 防衛戦の勝率測定ツールと基準値 |
