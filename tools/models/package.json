@@ -1,0 +1,12 @@
+{
+  "name": "rewilded-model-tools",
+  "private": true,
+  "description": "Tripo などの GLB を調べて軽くする道具（docs/mutant-monkey-glb-check.md）。npm install してから node で使う。",
+  "type": "module",
+  "dependencies": {
+    "@gltf-transform/core": "^4",
+    "@gltf-transform/extensions": "^4",
+    "@gltf-transform/functions": "^4",
+    "meshoptimizer": "^0.22"
+  }
+}

@@ -65,6 +65,7 @@
 | `docs/phase-p2-status.md` | P2 の現状整理（上志比マップと移動） |
 | `docs/p2-region.md` | 地域の仕組み（光明寺は常駐・ほかは一時、座標のずらし、移動・失敗時の復旧・セーブ） |
 | `docs/p2-kamishihi-map.md` | 上志比の地図（出典・利用条件・座標と縮尺・広さ・作り直し方・ゲーム内の作り・確認・未実装） |
+| `docs/mutant-monkey-glb-check.md` | 変異したサル（Tripo の GLB）の検査・軽量化の試作・修正方針・確認事項。道具は `tools/models/` |
 | `docs/p2-investigation.md` | P2 統合指示書 v3.0 への初期調査（防具の原因・地理データ・スズキ・順序・確認事項） |
 | `docs/p1-sim-baseline.md` | 防衛戦の勝率測定ツールと基準値 |
 | `docs/p1-balance-report.md` | P1 の測定結果・調整（v0.55・v0.56 で反映）・未確認事項 |
