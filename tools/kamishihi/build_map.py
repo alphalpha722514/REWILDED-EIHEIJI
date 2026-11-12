@@ -29,6 +29,7 @@ MX = 111320 * math.cos(math.radians(36.089))
 MY = 110950
 SEG = [(136.3770, 136.4005, 0.8), (136.4005, 136.4145, 0.15), (136.4145, 136.4245, 0.8)]  # 東西の区間と縮尺
 LAT_S, LAT_N = 36.0712, 36.0881
+PLAY_MAXX = 7530  # 東の端：市荒川の家並み（x≈7150〜7500）の少し先（2026-11-12 ユーザー決定「市荒川まで」。位置は暫定）
 X0 = 5000.0                               # 西の端の x
 STEP = 3.2                                # 格子の間隔（光明寺と同じ。実際の4m）
 HREF, SHIFT = 44.0, -11.5
@@ -299,9 +300,60 @@ def main():
                 if (a[0] - x) * (b[0] - x) <= 0 and a[0] != b[0]:
                     return round(a[1] + (x - a[0]) / (b[0] - a[0]) * (b[1] - a[1]), 1)
         return dflt
+    # ---- 歩ける範囲（2026-11-12 ユーザー決定：川の南側と市荒川までに絞る） ----
+    # 着く所から、九頭竜川（水）を渡らずに歩いて行ける陸だけ。範囲の中の支流などは、両岸とも歩ける所にかかる橋なら渡れる。
+    # 北岸へ渡る橋は、片側が範囲の外なので入らない。東は市荒川の家並みの少し先（PLAY_MAXX）まで。
+    play = {'minX': X0 + 24, 'maxX': min(round(X0 + W - 24, 1), PLAY_MAXX), 'minZ': round(z0 + 24, 1), 'maxZ': round(z1 - 24, 1)}
+    def cell_in_play(i, k):
+        x, z = X0 + i * STEP, z0 + k * STEP
+        return play['minX'] <= x <= play['maxX'] and play['minZ'] <= z <= play['maxZ']
+    bridge_cells = []
+    for r in roads:
+        if not r['b'] or r['tn']:
+            continue
+        cells = set()
+        for a, b in zip(r['p'], r['p'][1:]):
+            L = math.dist(a, b); n = max(1, int(L / 1.0))
+            for t in range(n + 1):
+                x = a[0] + (b[0] - a[0]) * t / n; z = a[1] + (b[1] - a[1]) * t / n
+                cells.add((int(round((x - X0) / STEP)), int(round((z - z0) / STEP))))
+        ends = [(int(round((r['p'][0][0] - X0) / STEP)), int(round((r['p'][0][1] - z0) / STEP))),
+                (int(round((r['p'][-1][0] - X0) / STEP)), int(round((r['p'][-1][1] - z0) / STEP)))]
+        bridge_cells.append((ends, cells))
+    passable = [C[n] != 2 for n in range(nx * ny)]
+    def flood():
+        R = bytearray(nx * ny)
+        ai, ak = int(round((arrival['x'] - X0) / STEP)), int(round((arrival['z'] - z0) / STEP))
+        R[ak * nx + ai] = 1; stack = [(ai, ak)]
+        while stack:
+            i, k = stack.pop()
+            for di, dk in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                j, l = i + di, k + dk
+                if 0 <= j < nx and 0 <= l < ny and not R[l * nx + j] and passable[l * nx + j] and cell_in_play(j, l):
+                    R[l * nx + j] = 1; stack.append((j, l))
+        return R
+    R = flood()
+    for _ in range(4):  # 両岸とも歩ける所にかかる橋を足して、もう一度
+        added = False
+        for ends, cells in bridge_cells:
+            if all(0 <= i < nx and 0 <= k < ny and R[k * nx + i] for i, k in ends):
+                for i, k in cells:
+                    if 0 <= i < nx and 0 <= k < ny and not passable[k * nx + i]:
+                        passable[k * nx + i] = True; added = True
+        if not added:
+            break
+        R = flood()
+    reach_bits = bytearray((nx * ny + 7) // 8)
+    for n in range(nx * ny):
+        if R[n]:
+            reach_bits[n >> 3] |= 1 << (n & 7)
+    ks = [n // nx for n in range(nx * ny) if R[n]]; iz = [n % nx for n in range(nx * ny) if R[n]]
+    play['minZ'] = max(play['minZ'], round(z0 + min(ks) * STEP - 6, 1)); play['maxZ'] = min(play['maxZ'], round(z0 + max(ks) * STEP + 6, 1))
+    play['minX'] = max(play['minX'], round(X0 + min(iz) * STEP - 6, 1)); play['maxX'] = min(play['maxX'], round(X0 + max(iz) * STEP + 6, 1))
+    print('reach cells', sum(R), 'area', round(sum(R) * STEP * STEP / 1e6, 3), 'M  play', play)
     data = {
         'name': '上志比', 'S': S, 'grid': {'x0': X0, 'z0': round(z0, 2), 'step': STEP, 'nx': nx, 'ny': ny},
-        'play': {'minX': X0 + 24, 'maxX': round(X0 + W - 24, 1), 'minZ': round(z0 + 24, 1), 'maxZ': round(z1 - 24, 1)},
+        'play': play, 'reach': base64.b64encode(bytes(reach_bits)).decode(),
         'terrain': base64.b64encode(q).decode(), 'cls': base64.b64encode(bytes(cb)).decode(), 'water': base64.b64encode(wq).decode(),
         'roads': roads, 'rails': rails, 'streams': streams, 'farms': farms, 'bld': bld, 'pts': pts,
         'arrival': arrival, 'exitWest': {'x': X0 + 24, 'z': road_z(X0 + 24, arrival['z']), 'r': 12},

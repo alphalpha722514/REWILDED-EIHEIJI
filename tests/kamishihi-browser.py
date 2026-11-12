@@ -130,6 +130,15 @@ async def main():
                   const deck = R.groundH(q[0], q[1]), terr = R.REG.live.h === undefined ? 0 : 0;
                   return {blocked, deck, bridge: R.REG.live.bridgeAt(q[0], q[1])}; }""")
                 print('川と橋：', W)
+                N = await pg.evaluate("""async () => { const R = window.__r, K = R.KAMI, D = K.D;
+                  const inR = (x, z) => { const i = Math.round((x - K.X0) / K.GS), k = Math.round((z - K.Z0) / K.GS), n = k * K.nx + i; return !!(K.R[n >> 3] & (1 << (n & 7))); };
+                  let nb = null; for (const r of D.roads) { if (!r.b || r.tn) continue; const q = r.p[Math.floor(r.p.length / 2)]; if (!inR(q[0], q[1]) && R.REG.live.bridgeAt(q[0], q[1]) !== null) { nb = q; break; } }
+                  const sx = R.P.x, sz = R.P.z; let blocked = null;
+                  if (nb) { R.P.x = nb[0]; R.P.z = nb[1]; await new Promise(r => requestAnimationFrame(r)); await new Promise(r => requestAnimationFrame(r)); blocked = Math.hypot(R.P.x - nb[0], R.P.z - nb[1]) > 1; R.P.x = sx; R.P.z = sz; }
+                  let cnt = 0; for (let n = 0; n < K.nx * K.ny; n++) if (K.R[n >> 3] & (1 << (n & 7))) cnt++;
+                  return {northBridge: nb, blocked, area: cnt * K.GS * K.GS / 1e6, maxX: D.play.maxX}; }""")
+                print('歩ける範囲：', N)
+                check(N['northBridge'] is not None and N['blocked'] and 2.2 < N['area'] < 2.7 and N['maxX'] <= 7530, f'歩けるのは川の南側と市荒川まで（北岸への橋は渡れない。{N["area"]:.2f}百万）')
                 check(W['blocked'] and W['bridge'] is not None and abs(W['deck'] - W['bridge']) < 0.01, '九頭竜川には入れず、橋の上は橋の高さを歩く')
                 if SHOTS:
                     os.makedirs(SHOTS, exist_ok=True)

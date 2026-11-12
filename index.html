@@ -526,7 +526,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.60 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.60.1 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -7540,7 +7540,7 @@ function retryFromBase(){
   if(bossActive||prog.stage==='boss'){ prog.stage='toBoss'; }
   // v0.56：倒れた代償（2026-11-12 承認）。柵の無料修理はやめた（壊れた柵・傷んだ柵はそのまま）
   setupBoss(); $('bossBar').hidden=true; setBarrier(!(prog.stage==='toBoss'||prog.stage==='cleared'));
-  P.x=PSPAWN.x; P.z=PSPAWN.z; P.facing=0; if(typeof REG!=='undefined'&&REG.cur!=='komyoji'&&REG.live){ const a=REG.live.respawn||REG.live.arrival; P.x=a.x; P.z=a.z; P.facing=a.facing||0; } /* v0.60 ほかの地域で倒れたら、その地域の着いた場所で起きる（暫定） */ setCam(P.facing); resetCombat(); P.hp=Math.ceil(P.maxHp*0.5); P.full=Math.max(15,P.full-25); /* v0.56：体力は半分、満腹は25減る */ if(P.weapon&&WEAPONS[P.weapon]){ P.dur=Math.max(0,P.dur-WEAPONS[P.weapon].maxDur*0.25); prog.arms[P.weapon]=P.dur; } /* v0.56：手に持っていた武器の耐久 -25% */ P.dead=false; P.atk=null; P.dodge=null; P.stagger=0; P.buffer=null; heavyRing.visible=false;
+  P.x=PSPAWN.x; P.z=PSPAWN.z; P.facing=0; if(typeof REG!=='undefined'&&REG.cur!=='komyoji'&&REG.live){ const a=REG.live.respawn||REG.live.arrival; P.x=a.x; P.z=a.z; P.facing=a.facing||0; } /* v0.60 ほかの地域で倒れたら、その地域の着いた場所で起きる（2026-11-12 ユーザー決定：上志比は西の端） */ setCam(P.facing); resetCombat(); P.hp=Math.ceil(P.maxHp*0.5); P.full=Math.max(15,P.full-25); /* v0.56：体力は半分、満腹は25減る */ if(P.weapon&&WEAPONS[P.weapon]){ P.dur=Math.max(0,P.dur-WEAPONS[P.weapon].maxDur*0.25); prog.arms[P.weapon]=P.dur; } /* v0.56：手に持っていた武器の耐久 -25% */ P.dead=false; P.atk=null; P.dodge=null; P.stagger=0; P.buffer=null; heavyRing.visible=false;
   // 拠点付近の野生の敵を初期位置へ
   for(const e of enemies) if(e.mode==='field'&&e.state!=='dead'){ e.x=e.home.x; e.z=e.home.z; e.hp=e.maxHp; setState(e,'idle'); } // v0.56：野の獣も傷が癒える（倒れながら削る戦い方を防ぐ）
   hideAllOv(); S.mode='playing'; S.slowmo=0; S.hitstop=0;
@@ -8541,9 +8541,11 @@ function kamiGrid(){ if(KAMI) return KAMI; const D=window.KAMISHIHI_MAP, g=D.gri
   const dec=b=>{ const raw=Uint8Array.from(atob(b),c=>c.charCodeAt(0)); return new Uint16Array(raw.buffer); };
   const q=dec(D.terrain), w=dec(D.water), H=new Float32Array(nx*ny), WL=new Float32Array(nx*ny), C=new Uint8Array(nx*ny), cr=Uint8Array.from(atob(D.cls),c=>c.charCodeAt(0));
   for(let n=0;n<nx*ny;n++){ H[n]=q[n]/50-40; WL[n]=w[n]?w[n]/50-40:-999; const b=cr[n>>1]; C[n]=(n&1)?(b>>4):(b&15); }
-  KAMI={D,nx,ny,X0:g.x0,Z0:g.z0,GS:g.step,H,WL,C,W:(nx-1)*g.step,DD:(ny-1)*g.step}; return KAMI; }
+  const R=D.reach?Uint8Array.from(atob(D.reach),c=>c.charCodeAt(0)):null; // 歩ける範囲（1マス1ビット。川の南側と市荒川まで）
+  KAMI={D,nx,ny,X0:g.x0,Z0:g.z0,GS:g.step,H,WL,C,R,W:(nx-1)*g.step,DD:(ny-1)*g.step}; return KAMI; }
 function kamiH(x,z){ const K=KAMI, fi=clamp((x-K.X0)/K.GS,0,K.nx-1.001), fk=clamp((z-K.Z0)/K.GS,0,K.ny-1.001), i=Math.floor(fi), k=Math.floor(fk), a=fi-i, b=fk-k, H=K.H, n=k*K.nx+i;
   return (H[n]*(1-a)+H[n+1]*a)*(1-b)+(H[n+K.nx]*(1-a)+H[n+K.nx+1]*a)*b; }
+function kamiReach(x,z){ const K=KAMI, i=Math.round((x-K.X0)/K.GS), k=Math.round((z-K.Z0)/K.GS); if(i<0||k<0||i>=K.nx||k>=K.ny) return false; if(!K.R) return K.C[k*K.nx+i]!==2; const n=k*K.nx+i; return !!(K.R[n>>3]&(1<<(n&7))); }
 function kamiCls(x,z){ const K=KAMI, i=Math.round((x-K.X0)/K.GS), k=Math.round((z-K.Z0)/K.GS); if(i<0||k<0||i>=K.nx||k>=K.ny) return 1; return K.C[k*K.nx+i]; }
 // 光明寺の東の出口（国道416号の東の端）と、上志比から戻ったときに着く所
 function roadZAt(name,x){ for(const r of MD.roads){ if(r.n!==name) continue; for(let i=0;i<r.p.length-1;i++){ const [ax,az]=r.p[i], [bx,bz]=r.p[i+1]; if((ax-x)*(bx-x)<=0&&ax!==bx) return az+(x-ax)/(bx-ax)*(bz-az); } } return null; }
@@ -8591,6 +8593,8 @@ function kamishihiBuild(ctx){
   for(const r of D.roads){ if(r.tn) continue; path(r.p); c.strokeStyle=r.k==='track'||r.k==='path'||r.k==='footway'?'#9c917a':'#6c6c6c'; c.lineWidth=(r.w+0.6)*pxm; c.stroke(); }
   for(const r of D.rails){ path(r); c.strokeStyle='#857a70'; c.lineWidth=3.6*pxm; c.stroke(); }
   ctx.mapCanvas=cv;
+  const mk=document.createElement('canvas'); mk.width=K.nx; mk.height=K.ny; { const mc=mk.getContext('2d'), id=mc.createImageData(K.nx,K.ny); // 地図で歩けない所を暗くする
+    for(let n=0;n<K.nx*K.ny;n++){ const ok=K.R?(K.R[n>>3]&(1<<(n&7))):1; if(!ok){ id.data[n*4]=14; id.data[n*4+1]=12; id.data[n*4+2]=10; id.data[n*4+3]=150; } } mc.putImageData(id,0,0); }
   const tex=own(new THREE.CanvasTexture(cv)); tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy()); tex.encoding=THREE.LinearEncoding;
   const gm=own(new THREE.MeshLambertMaterial({map:tex}));
   { const rx=(K.W/2.2).toFixed(1), rz=(K.DD/2.2).toFixed(1); gm.onBeforeCompile=sh=>{ sh.uniforms.detailMap={value:detailTex};
@@ -8667,8 +8671,9 @@ function kamishihiBuild(ctx){
   ctx.leaving=false;
   let dryX=D.arrival.x, dryZ=D.arrival.z, wetT=-99;
   ctx.update=dt=>{ const px=camera.position.x, pz=camera.position.z; let made=0;
-    // 九頭竜川には入れない（橋の上は別）。川に入ったら、直前の岸へ戻す
-    if(S.mode==='playing'&&!REG.busy){ if(kamiCls(P.x,P.z)===2&&bridgeAt(P.x,P.z)===null){ P.x=dryX; P.z=dryZ; if(stats.time-wetT>6){ wetT=stats.time; toast('九頭竜川は深くて入れない'); } } else { dryX=P.x; dryZ=P.z; } }
+    // 歩けるのは川の南側と市荒川まで（2026-11-12 ユーザー決定）。九頭竜川・北岸へ渡る橋・範囲の外に出たら、直前の所へ戻す
+    if(S.mode==='playing'&&!REG.busy){ if(!kamiReach(P.x,P.z)){ const msg=bridgeAt(P.x,P.z)!==null?'川の向こうへは渡れない':kamiCls(P.x,P.z)===2?'九頭竜川は深くて入れない':'この先へは行けない';
+        P.x=dryX; P.z=dryZ; if(stats.time-wetT>6){ wetT=stats.time; toast(msg); } } else { dryX=P.x; dryZ=P.z; } }
     for(let n=0;n<tiles.length;n++){ const t=tiles[n], d=rectD(t,px,pz);
       if(d<NEAR_D&&!t.near&&made<2){ nearMake(t); made++; } else if(d>NEAR_D+160&&t.near) nearDrop(t); // 1フレームに2区画まで
       const lod=(d<NEAR_D&&t.near)?0:1; if(lod!==t.lod||(t.near&&t.near.visible!==(lod===0))){ t.lod=lod; if(t.near) t.near.visible=lod===0; t.far.visible=lod===1; }
@@ -8682,6 +8687,7 @@ function kamishihiBuild(ctx){
   // ---- ミニマップ（地面の絵の、いる所のまわりを切り出す） ----
   ctx.drawMini=(c2,W,H)=>{ const k=TW/K.W, sw=W*MINI_M*k, sh=H*MINI_M*k, sx=(P.x-K.X0)*k-sw/2, sz=(P.z-K.Z0)*k-sh/2;
     c2.globalAlpha=0.92; c2.imageSmoothingEnabled=true; c2.drawImage(cv,sx,sz,sw,sh,0,0,W,H); c2.globalAlpha=1;
+    const km=K.nx/TW; c2.drawImage(mk,sx*km,sz*km,sw*km,sh*km,0,0,W,H);
     const X=x=>(x-P.x)/MINI_M+W/2, Z=z=>(z-P.z)/MINI_M+H/2;
     for(const e of enemies){ if(e.state==='dead'||dist(e.x,e.z,P.x,P.z)>60) continue; c2.fillStyle='#e0533c'; c2.beginPath(); c2.arc(X(e.x),Z(e.z),2.4,0,TAU); c2.fill(); }
     const ex=D.exitWest; c2.fillStyle='#f0c34a'; c2.fillRect(X(ex.x)-3,Z(ex.z)-3,6,6);
@@ -8690,7 +8696,7 @@ function kamishihiBuild(ctx){
   ctx.drawMap=(c2,W,H)=>{ const B=ctx.bounds, s0=Math.min(W/(B.maxX-B.minX+40),H/(B.maxZ-B.minZ+40))*MAPV.zoom;
     const hw=W/2/s0, hh=H/2/s0; MAPV.cx=clamp(MAPV.cx,B.minX+Math.min(hw,(B.maxX-B.minX)/2),B.maxX-Math.min(hw,(B.maxX-B.minX)/2)); MAPV.cz=clamp(MAPV.cz,B.minZ+Math.min(hh,(B.maxZ-B.minZ)/2),B.maxZ-Math.min(hh,(B.maxZ-B.minZ)/2));
     const X=x=>(x-MAPV.cx)*s0+W/2, Z=z=>(z-MAPV.cz)*s0+H/2; c2.fillStyle='#1d1714'; c2.fillRect(0,0,W,H);
-    c2.imageSmoothingEnabled=true; c2.drawImage(cv,X(K.X0),Z(K.Z0),K.W*s0,K.DD*s0);
+    c2.imageSmoothingEnabled=true; c2.drawImage(cv,X(K.X0),Z(K.Z0),K.W*s0,K.DD*s0); c2.drawImage(mk,X(K.X0),Z(K.Z0),K.W*s0,K.DD*s0);
     c2.fillStyle='rgba(10,8,6,.55)'; c2.beginPath(); c2.rect(0,0,W,H); c2.rect(X(B.minX),Z(B.minZ),(B.maxX-B.minX)*s0,(B.maxZ-B.minZ)*s0); c2.fill('evenodd');
     const lab=(t,x,y,col='#fff',sz=12)=>{ c2.font=`bold ${sz}px "Zen Kaku Gothic New",sans-serif`; c2.lineWidth=3; c2.strokeStyle='rgba(0,0,0,.75)'; c2.strokeText(t,x,y); c2.fillStyle=col; c2.fillText(t,x,y); };
     for(const st of D.pts.station){ c2.fillStyle='#fff'; c2.fillRect(X(st[0])-4,Z(st[1])-4,8,8); lab(st[2]+'駅',X(st[0])+7,Z(st[1])+4); }
