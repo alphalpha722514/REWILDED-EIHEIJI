@@ -21,7 +21,7 @@ THREE = open(os.environ.get('THREE_JS', '/home/claude/v010/node_modules/three/bu
 SRC = open(os.path.join(ROOT, os.environ.get('STUDIO_HTML', 'index.html')), encoding='utf8').read()
 HOOK = ("window.__studio={THREE,makeHuman,get pm(){return pm},get NPCS(){return NPCS},"
         "get SUZUKI_OPTS(){return typeof SUZUKI_OPTS!=='undefined'?SUZUKI_OPTS:null},"
-        "get f60EnsureArmor(){return typeof f60EnsureArmor!=='undefined'?f60EnsureArmor:null}};\n")
+        "get F60_GARMENTS(){return typeof F60_GARMENTS!=='undefined'?F60_GARMENTS:null}};\n")
 ANCHOR = 'function updateNPCs(dt){'
 assert SRC.count(ANCHOR) == 1, 'anchor'
 HTML = SRC.replace(ANCHOR, HOOK + ANCHOR)
@@ -41,16 +41,15 @@ async (who) => {
   for (const id of who) {
     let g = null;
     if (id === 'player') g = S.pm.g;
-    else if (id.startsWith('wear:')) { // 着替えの確認：wear:-chest,-legs,-feet（脱ぐ）／wear:hat=forest（帽子。髪をしまう）
-      const m = S.makeHuman({player47: true}), w = {}; let hat = null;
-      for (const t of id.slice(5).split(',')) { if (t.startsWith('-')) w[t.slice(1)] = false; else if (t.startsWith('hat=')) hat = t.slice(4); }
-      if (hat) { w.hair = false; w.band = false; w.hatHair = true; for (const l of m.layers.head) l.visible = l.userData.variant === hat; }
-      m.setWear && m.setWear(w); g = m.g; }
-    else if (id.startsWith('player@')) { // 防具の外観案：player@forest など（頭・胸・脚・靴をその組で着せる）
-      const set = id.slice(7), m = S.makeHuman({player47: true}); const t0 = performance.now();
-      for (const slot of ['chest', 'legs', 'feet']) S.f60EnsureArmor(m, slot, set);
-      window.__armorMs = (window.__armorMs || []).concat([[set, Math.round(performance.now() - t0)]]);
-      for (const slot of ['head', 'chest', 'legs', 'feet']) for (const l of m.layers[slot]) l.visible = l.userData.variant === set;
+    else if (id.startsWith('wear:') || id.startsWith('player@')) {
+      // wear:chest=none,legs=forest,feet=base,head=tracker（部位ごと。none=脱ぐ／base=初期の服／組の名前=その組の服）
+      // player@forest は頭・胸・脚・靴をその組で着せる
+      const m = S.makeHuman({player47: true}), w = {}, t0 = performance.now();
+      const spec = id.startsWith('player@') ? ['head', 'chest', 'legs', 'feet'].map(k => k + '=' + id.slice(7)).join(',') : id.slice(5);
+      for (const t of spec.split(',').filter(Boolean)) { const [slot, v] = t.split('=');
+        if (v === 'none' || v === 'base') w[slot] = v;
+        else { const gid = v + '_' + slot; m.wardrobe.ensure(gid, slot, S.F60_GARMENTS[v][slot]); w[slot] = gid; } }
+      m.setWear(w); window.__armorMs = (window.__armorMs || []).concat([[id, Math.round(performance.now() - t0)]]);
       g = m.g; }
     else if (id === 'suzuki') g = S.makeHuman(S.SUZUKI_OPTS).g;
     else { const n = S.NPCS.find(n => n.id === id); if (n) g = n.m.g; }
