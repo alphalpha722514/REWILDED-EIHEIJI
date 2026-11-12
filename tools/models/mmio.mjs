@@ -14,7 +14,7 @@ if (cmd === 'dump') {
   w('pos', new Float32Array(pr.getAttribute('POSITION').getArray())); w('nor', new Float32Array(pr.getAttribute('NORMAL').getArray()));
   w('uv', new Float32Array(pr.getAttribute('TEXCOORD_0').getArray())); w('idx', new Uint32Array(pr.getIndices().getArray()));
   const m = doc.getRoot().listMaterials()[0];
-  fs.writeFileSync(`${dir}/color.jpg`, m.getBaseColorTexture().getImage()); fs.writeFileSync(`${dir}/normal.png`, m.getNormalTexture().getImage());
+  fs.writeFileSync(`${dir}/color.jpg`, m.getBaseColorTexture().getImage()); if (m.getNormalTexture()) fs.writeFileSync(`${dir}/normal.png`, m.getNormalTexture().getImage());
   fs.writeFileSync(`${dir}/meta.json`, JSON.stringify({ verts: pr.getAttribute('POSITION').getCount(), tris: pr.getIndices().getCount() / 3 }));
   console.log('dumped', dir);
 }

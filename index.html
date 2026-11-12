@@ -5185,6 +5185,76 @@ function makeCreature(key,spec){
   const ol=keep(new THREE.SkinnedMesh(geo,beastOutlineMat)); g.add(ol); ol.bind(sk,skin.bindMatrix); ol.userData.isOutline=true;
   return {g,B,sm,abs};
 }
+// ================= v0.61（P2）変異したサル：形・骨・動き =================
+// 形は別ファイル（data/models/mutant-monkey.js、tools/models/mm_rig.py で作成）。出番の前に mutantLoad() で読む。
+// 通常の猿（makeMonkey）・双子猿とは別の敵。動きはコードで作る（mutantPose）。
+const MUTANT_SRC=['data/models/mutant-monkey.js?v=061','../../data/models/mutant-monkey.js?v=061'];
+let MUTANT=null;
+function mutantLoad(){ return loadScriptTry(MUTANT_SRC,()=>!!window.MUTANT_MONKEY_MODEL).then(()=>mutantAssets()); }
+function mutantAssets(){ if(MUTANT) return MUTANT; const D=window.MUTANT_MONKEY_MODEL; if(!D) return null;
+  const bin=(b,T)=>{ const u=Uint8Array.from(atob(b),c=>c.charCodeAt(0)); return new T(u.buffer); };
+  const lo=D.lo, hi=D.hi, dq=q=>{ const o=new Float32Array(q.length); for(let i=0;i<q.length;i++){ const k=i%3; o[i]=lo[k]+(hi[k]-lo[k])*q[i]/65535; } return o; };
+  const nn=a=>{ const o=new Float32Array(a.length); for(let i=0;i<a.length;i++) o[i]=a[i]/127; return o; };
+  const uvq=bin(D.uv,Uint16Array), uv=new Float32Array(uvq.length); for(let i=0;i<uv.length;i++) uv[i]=uvq[i]/65535;
+  const si=new THREE.BufferAttribute(bin(D.skinIndex,Uint8Array),4), sw=new THREE.BufferAttribute(bin(D.skinWeight,Uint8Array),4,true), ix=new THREE.BufferAttribute(bin(D.index,Uint16Array),1);
+  const mk=(p,n,withUv)=>{ const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(dq(bin(p,Uint16Array)),3)); g.setAttribute('normal',new THREE.BufferAttribute(nn(bin(n,Int8Array)),3));
+    if(withUv) g.setAttribute('uv',new THREE.BufferAttribute(uv,2)); g.setAttribute('skinIndex',si); g.setAttribute('skinWeight',sw); g.setIndex(ix); g.computeBoundingSphere(); g.boundingSphere.radius*=1.6; return g; };
+  const geo=mk(D.pos,D.nor,true), hull=mk(D.hullPos,D.hullNor,false);
+  const img=new Image(), tex=new THREE.Texture(img); tex.flipY=false; tex.encoding=THREE.LinearEncoding; tex.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
+  img.onload=()=>{ tex.needsUpdate=true; }; img.src=D.tex; // glTF の UV（左上が原点）なので flipY は使わない
+  const mat=new THREE.MeshToonMaterial({color:0xffffff,map:tex,gradientMap:toneTex,skinning:true});
+  const ol=new THREE.MeshBasicMaterial({color:0x1e1610,side:THREE.BackSide,skinning:true});
+  ol.onBeforeCompile=sh=>{ sh.vertexShader=sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n transformed += normalize(normal) * 0.022;'); }; ol.customProgramCacheKey=()=>'mutantol';
+  MUTANT={D,geo,hull,tex,mat,ol}; return MUTANT; }
+function makeMutant(){ const A=mutantAssets(); if(!A) return null;
+  const g=new THREE.Group(), B={}, abs={};
+  for(const [name,parent,p] of A.D.bones){ const b=new THREE.Bone(); b.name=name; abs[name]=p; const pa=parent?abs[parent]:[0,0,0]; b.position.set(p[0]-pa[0],p[1]-pa[1],p[2]-pa[2]); (parent?B[parent]:g).add(b); B[name]=b; }
+  const skin=keep(new THREE.SkinnedMesh(A.geo,A.mat)); skin.castShadow=true; g.add(skin);
+  g.updateMatrixWorld(true); const sk=new THREE.Skeleton(A.D.bones.map(b=>B[b[0]])); skin.bind(sk);
+  const ol=keep(new THREE.SkinnedMesh(A.hull,A.ol)); g.add(ol); ol.bind(sk,skin.bindMatrix); ol.userData.isOutline=true; ol.raycast=()=>{};
+  const rest={}; for(const k in B) rest[k]=B[k].position.clone();
+  return {g,B,rest,skin,ol,kind:'mutant'}; }
+// 動き：name = idle（待機）／walk（歩く）／run（四つ足で走る）／pounce（飛びかかり）／scratch（ひっかき）／flinch（ひるみ）／fall（倒れる）
+// t は経過秒、ph は一度きりの動き（pounce・scratch・flinch・fall）の進み 0〜1。骨は休みの形（回転なし）からの回転で決める。
+// 回転の向き：x 回りの正は「下へ垂れた手足を後ろへ」「前を向いた頭を下へ」。体の左は +x。
+function mutantPose(m,name,t,ph=0){ const B=m.B;
+  for(const k in B){ B[k].rotation.set(0,0,0); B[k].position.copy(m.rest[k]); }
+  const S=Math.sin, C=Math.cos, cl=v=>Math.max(0,Math.min(1,v)), ease=v=>v*v*(3-2*v), seg=(a,b)=>ease(cl((ph-a)/(b-a)));
+  const R=B.root, tail=(a,f)=>{ B.tail1.rotation.y=a*S(t*f); B.tail2.rotation.y=a*1.4*S(t*f-0.7); B.tail3.rotation.y=a*1.8*S(t*f-1.4); };
+  const breathe=()=>{ B.chest.rotation.x=0.035*S(t*1.7); B.neck.rotation.x=-0.02*S(t*1.7); };
+  if(name==='idle'){ breathe(); tail(0.18,1.3); B.head.rotation.y=0.45*S(t*0.45)*S(t*0.23+1); B.head.rotation.x=0.08*S(t*0.7);
+    B.hips.rotation.z=0.03*S(t*0.6); R.position.y=0.015*S(t*1.7); B.foreArmL.rotation.x=0.04*S(t*0.9); B.foreArmR.rotation.x=0.04*S(t*0.9+2); return; }
+  if(name==='walk'||name==='run'){ const run=name==='run', f=run?2.3:1.05, c=t*f*Math.PI*2;
+    // 歩く：左後ろ→左前→右後ろ→右前（四つ足の歩き）。走る：前足2本・後ろ足2本がそろって跳ねる（バウンド）
+    const ph4=run?{LH:0,RH:0.08,LF:0.5,RF:0.58}:{LH:0,LF:0.25,RH:0.5,RF:0.75};
+    const aL=run?0.75:0.42, aA=run?0.85:0.45;
+    const leg=(s,o)=>{ const a=c+o*2*Math.PI; B['thigh'+s].rotation.x=-aL*S(a); B['shin'+s].rotation.x=(run?0.9:0.55)*Math.max(0,S(a+1.4)); B['foot'+s].rotation.x=aL*0.6*S(a)-0.3*Math.max(0,S(a+1.4)); };
+    const arm=(s,o)=>{ const a=c+o*2*Math.PI; B['upperArm'+s].rotation.x=-aA*S(a); B['foreArm'+s].rotation.x=(run?0.7:0.4)*Math.max(0,S(a+1.2)); B['hand'+s].rotation.x=aA*0.5*S(a); };
+    leg('L',ph4.LH); leg('R',ph4.RH); arm('L',ph4.LF); arm('R',ph4.RF);
+    if(run){ B.spine.rotation.x=0.18*S(c+1.0); B.chest.rotation.x=0.14*S(c+1.6); R.position.y=0.10*Math.max(0,S(c*1+0.3))+0.02; B.hips.rotation.x=-0.1*S(c+0.4); B.head.rotation.x=-0.12*S(c+1.6)-0.06; tail(0.12,6); B.tail1.rotation.x=-0.25; }
+    else { R.position.y=0.03*Math.abs(S(c*2)); B.hips.rotation.z=0.05*S(c); B.chest.rotation.z=-0.05*S(c+0.8); B.chest.rotation.y=0.06*S(c); B.head.rotation.y=-0.05*S(c); tail(0.15,2.2); }
+    return; }
+  if(name==='pounce'){ // 0〜0.35 ためる（かがむ）→ 0.35〜0.75 跳ぶ（両腕を前へ・脚を後ろへ伸ばす）→ 0.75〜1 着地
+    const cr=seg(0,0.3)*(1-seg(0.35,0.45)), air=seg(0.35,0.48)*(1-seg(0.72,0.85)), land=seg(0.75,0.85)*(1-seg(0.88,1));
+    B.thighL.rotation.x=B.thighR.rotation.x=-0.5*cr+0.9*air-0.4*land; B.shinL.rotation.x=B.shinR.rotation.x=0.9*cr-0.2*air+0.6*land; B.footL.rotation.x=B.footR.rotation.x=-0.4*cr+0.7*air-0.2*land;
+    B.upperArmL.rotation.x=B.upperArmR.rotation.x=0.35*cr-1.15*air+0.2*land; B.foreArmL.rotation.x=B.foreArmR.rotation.x=0.5*cr-0.45*air+0.3*land;
+    B.upperArmL.rotation.z=0.25*air; B.upperArmR.rotation.z=-0.25*air; B.handL.rotation.x=B.handR.rotation.x=-0.4*air;
+    B.spine.rotation.x=0.18*cr-0.25*air+0.1*land; B.chest.rotation.x=0.15*cr-0.2*air; B.head.rotation.x=-0.3*cr-0.25*air; B.tail1.rotation.x=-0.5*air; B.tail2.rotation.x=-0.3*air;
+    R.rotation.x=0.28*air; R.position.y=-0.18*cr-0.12*land; return; } // 空中では体を前へ倒し、腕を相手へ伸ばす
+  if(name==='scratch'){ // 右の大きな前腕で振り下ろす：0〜0.4 振りかぶる（上体を起こす）→ 0.4〜0.55 振り下ろし → 0.55〜1 戻る
+    const up=seg(0,0.38)*(1-seg(0.4,0.55)), sw=seg(0.4,0.55)*(1-seg(0.62,1)), rec=1-seg(0.55,1);
+    B.spine.rotation.x=-0.35*up+0.12*sw; B.chest.rotation.x=-0.3*up+0.2*sw; B.chest.rotation.y=-0.35*up+0.4*sw; B.head.rotation.x=0.25*up-0.1*sw;
+    B.upperArmR.rotation.x=-2.3*up-0.2*sw; B.upperArmR.rotation.z=0.35*up-0.5*sw; B.foreArmR.rotation.x=0.9*up-0.2*sw; B.handR.rotation.x=0.4*up-0.6*sw;
+    B.upperArmL.rotation.x=0.15*up*rec; B.thighL.rotation.x=B.thighR.rotation.x=-0.2*up; B.shinL.rotation.x=B.shinR.rotation.x=0.25*up; B.tail1.rotation.x=-0.3*up;
+    R.position.y=0.06*up; return; }
+  if(name==='flinch'){ const k=Math.sin(Math.PI*cl(ph))*(1-0.3*ph); // 頭と胸がのけぞり、腕が少し上がる
+    B.head.rotation.x=-0.45*k; B.neck.rotation.x=-0.2*k; B.chest.rotation.x=-0.28*k; B.spine.rotation.x=-0.12*k;
+    B.upperArmL.rotation.x=B.upperArmR.rotation.x=-0.35*k; B.foreArmL.rotation.x=B.foreArmR.rotation.x=0.3*k; B.tail1.rotation.x=-0.3*k; R.position.z=-0.12*k; return; }
+  if(name==='fall'){ const k=ease(cl(ph)), sl=ease(cl(ph*1.4)); // 横へ倒れ、手足の力が抜ける
+    R.rotation.z=-1.45*k; R.position.y=0.42*k; R.position.x=0.25*k; B.head.rotation.x=0.4*sl; B.head.rotation.z=0.3*sl;
+    B.upperArmL.rotation.x=-0.9*sl; B.upperArmR.rotation.x=-0.6*sl; B.upperArmR.rotation.z=0.4*sl; B.foreArmL.rotation.x=0.25*sl; B.foreArmR.rotation.x=0.35*sl;
+    B.thighL.rotation.x=-0.5*sl; B.thighR.rotation.x=-0.3*sl; B.shinL.rotation.x=0.9*sl; B.shinR.rotation.x=0.7*sl; B.spine.rotation.x=0.15*sl; B.tail1.rotation.x=0.3*sl; B.tail2.rotation.x=0.3*sl; return; }
+}
 // 楕円体の表面の奥行き（目などを顔の表面に乗せるため）
 function surfZ(c,r,x,y){ const u=(x-c[0])/r[0], v=(y-c[1])/r[1]; return c[2]+r[2]*Math.sqrt(Math.max(0,1-u*u-v*v)); }
 
