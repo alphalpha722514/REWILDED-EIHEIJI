@@ -60,6 +60,7 @@
 | `docs/chapter2-progress.md` | 第2章の実装状況 |
 | `docs/chapter2-map-plan.md` | 上志比マップの調査と計画 |
 | `docs/phase-p1-status.md` | P1 の現状整理 |
+| `docs/phase-p2-status.md` | P2 の現状整理（上志比マップと移動） |
 | `docs/p1-sim-baseline.md` | 防衛戦の勝率測定ツールと基準値 |
 | `docs/p1-balance-report.md` | P1 の測定結果・調整（v0.55・v0.56 で反映）・未確認事項 |
 | `docs/death-penalty.md` | 倒れたときの代償（v0.56） |
