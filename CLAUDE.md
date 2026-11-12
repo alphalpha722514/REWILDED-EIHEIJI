@@ -49,7 +49,7 @@
 
 ## 作業の進め方
 - main へ入れる前に、作業ブランチで検証する。変更は小さく分ける。
-- テスト：`node tests/chapter2-save.cjs`、`node tests/chapter2-defense.cjs`、`node tests/classic-body.cjs`、`node tests/death-penalty.cjs`、`node tests/combat-aim.cjs`。防衛戦の勝率は `tools/defense-sim.cjs`（`docs/p1-sim-baseline.md`）。画面の確認は Playwright（SwiftShader）で起動と表示を見る。
+- テスト：`node tests/chapter2-save.cjs`、`node tests/chapter2-defense.cjs`、`node tests/classic-body.cjs`、`node tests/death-penalty.cjs`、`node tests/combat-aim.cjs`。主人公の着替え（初期の服の見た目が変わっていないか）は `python3 tests/wardrobe-browser.py`（画面のない Chromium、数分）。防衛戦の勝率は `tools/defense-sim.cjs`（`docs/p1-sim-baseline.md`）。画面の確認は Playwright（SwiftShader）で起動と表示を見る。
 - 報告では「コードに存在／コミット済み／公開済み／PCで確認／iPhoneで確認」を区別する。実機で確かめていないことを確認済みと書かない。
 - 各フェーズで、変更履歴・使った3Dアセットと版・実装済み／未実装・テスト結果・未解決の不具合・セーブ互換・次の工程を `docs/` に残す。
 

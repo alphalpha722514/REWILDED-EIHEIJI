@@ -4738,13 +4738,13 @@ function makeHumanClassic(o){
   const C=h=>new THREE.Color(h);
   const top=headY+R*1.35+(O.hair&&O.hair.style==='bun'?R*0.4:0);
   const BX=0.62*gi+0.14, BZ=0.5*gi+0.14;
-  const pieces=[]; const add=(name,field,y0,y1,color,cover,opt)=>pieces.push({name,field,min:[-BX,y0,-BZ],max:[BX,y1,BZ],color,cover,opt});
+  const pieces=[]; const add=(name,field,y0,y1,color,cover,opt)=>{ const pc={name,field,min:[-BX,y0,-BZ],max:[BX,y1,BZ],color,cover,opt}; pieces.push(pc); return pc; };
   // 体（肌）
   add('body',bodyField,-0.03,top,()=>SKIN,false);
   // ---- ズボン ----
   const bt=O.bottom; let pantsT=0;
-  if(bt){ const t=bt.t||0.03; pantsT=t; const ptop=T(bt.top||0.46); const wide=bt.wide||0;
-    const bootTopY=ankY+(knY-ankY)*({boots:0.5,rubber:0.85,tabi:0.3,shoes:0.05}[(O.shoes||{}).kind||'shoes']);
+  const buildPants=(bt,add)=>{ const t=bt.t||0.03; const ptop=T(bt.top||0.46); const wide=bt.wide||0;
+    const bootTopY=ankY+(knY-ankY)*({boots:0.5,rubber:0.85,tabi:0.3,shoes:0.05}[bt.hemFor||(O.shoes||{}).kind||'shoes']);
     const hemY=Math.max(ankY+0.04,bootTopY-0.03);
     const leg=s=>{ const th=thigh(s), sh=shin(s); return (x,y,z)=>{ const k=clamp((hipY-y)/(hipY-hemY),0,1); const tt=bt.taper?t+wide*Math.pow(1-k,0.7):t+wide*Math.sin(Math.min(1,k*1.15)*Math.PI*0.85);
       let d=SDF.smin(th(x,y,z),sh(x,y,z),0.05)-tt;
@@ -4766,23 +4766,26 @@ function makeHumanClassic(o){
       if(bt.waistBand&&y>ptop-0.035) return bt.col2||bt.col; // v0.60 ジャージの腰ゴム
       if(bt.stripe&&y<ptop-0.035&&Math.abs(Math.atan2(z,Math.abs(x)-legX))<0.16) return bt.stripe; // v0.60 ジャージの横の線
       return bt.col; },true);
-  }
+  return t; }; // v0.60 着替え：同じ作り方で別のズボンも作れるように関数にした（元の形は同じ）
+  if(bt) pantsT=buildPants(bt,add);
   // ---- 靴 ----
   const sh=O.shoes;
-  if(sh){ const t=sh.t||0.028; const frac={boots:0.5,rubber:0.85,tabi:0.3,shoes:0.05}[sh.kind]||0.05; const bTop=ankY+(knY-ankY)*frac+(sh.kind==='shoes'?0.03:0);
+  const buildShoes=(sh,add)=>{ const t=sh.t||0.028; const frac={boots:0.5,rubber:0.85,tabi:0.3,shoes:0.05}[sh.kind]||0.05; const bTop=ankY+(knY-ankY)*frac+(sh.kind==='shoes'?0.03:0);
     const boot=s=>{ const ft=footF(s), sn=shin(s); return (x,y,z)=>Math.max(SDF.smin(ft(x,y,z)-t,sn(x,y,z)-t-(sh.kind==='rubber'?0.012:0),0.04),y-bTop,-0.012-y); };
     const shoeCol=(x,y,z)=>{
       if(y<(sh.soleH||0.03)) return sh.sole||0x1e1a18;
       if(sh.gore&&Math.abs(Math.abs(x)-legX)>0.055&&y>0.075&&y<bTop-0.015&&Math.abs(z)<0.05) return sh.gore; // サイドゴア
       if(sh.gore&&z<-0.07&&y>bTop-0.035&&Math.abs(Math.abs(x)-legX)<0.012) return sh.gore; // 後ろの輪
+      if(sh.split&&z>0.1&&y<0.09&&Math.abs(Math.abs(x)-legX-0.016)<0.007) return sh.split; // 足袋の指の割れ目
       if(sh.kind==='boots'&&y>bTop-0.025) return sh.col2||0x7a6048;
       if(sh.kind==='boots'&&z>0.07&&Math.abs(Math.abs(x)-legX)<0.014&&y>0.06) return 0xd8cdb4; // 靴ひも
       return sh.col; };
-    for(const s of [-1,1]){ const f=boot(s); const p0=pieces.length; add('shoes',f,-0.03,bTop+0.03,shoeCol,true); pieces[p0].min[0]=s<0?-BX:0; pieces[p0].max[0]=s<0?0:BX; } // 左右の靴は別の形（くっつかない）
-  }
+    for(const s of [-1,1]){ const f=boot(s); const pc=add('shoes',f,-0.03,bTop+0.03,shoeCol,true); pc.min[0]=s<0?-BX:0; pc.max[0]=s<0?0:BX; } // 左右の靴は別の形（くっつかない）
+  return true; };
+  if(sh) buildShoes(sh,add);
   // ---- 上着 ----
   const tp=O.top; let topT=0, topHem=0;
-  if(tp){ const t=tp.t||0.032; topT=t; const hem=T(tp.hem||0.43); topHem=hem; const cut=tp.cut!=null?tp.cut:0.95;
+  const buildTop=(tp,add)=>{ const t=tp.t||0.032; const hem=T(tp.hem||0.43); const cut=tp.cut!=null?tp.cut:0.95;
     const neckCut=T(0.93)+0.02; const tor=(x,y,z)=>Math.max(torso(x,y,z)-t,hem-y,(y-neckCut)-Math.max(0,Math.hypot(x,z)-0.16*nk-0.04)*0.8); // 首まわりは開ける
     const sl=[-1,1].map(s=>{ const S=segU(EL(s),WR(s)), ua=upArm(s), fa=foreArm(s);
       const cuffC=atS(S,cut), cuffR=fR0+(fR1-fR0)*cut+t*0.9;
@@ -4817,7 +4820,8 @@ function makeHumanClassic(o){
       if(tp.check) return checkCol(tp,x,y,z);
       if(tp.refl&&tp.reflSleeve){ for(const s of [-1,1]){ const S=segU(SH(s),EL(s)); const a=along(S,x,y,z); if(Math.abs(a-0.62)<0.05&&Math.sign(x)===s) return REFL; } }
       return tp.col; },true);
-  }
+  return {t,hem}; };
+  if(tp){ const r=buildTop(tp,add); topT=r.t; topHem=r.hem; }
   // ---- 羽織（前を開けた外衣。v0.28 区長トミオ）----
   const ct=O.coat; let coatT=0;
   if(ct){ const t=topT+(ct.t||0.03); coatT=t; const hem=T(ct.hem||0.36); const cut=0.93; const op=ct.open||0.075;
@@ -4922,13 +4926,14 @@ function makeHumanClassic(o){
     add('underShirt',shirt,T(0.46)-0.03,shY+0.16,(x,y,z)=>y>shY+0.035&&Math.abs(x)<0.11?0xdcd8cc:0xeeebe2,false,{extra:true});
     const shorts=(x,y,z)=>Math.max(bodyField(x,y,z)-tU,Math.min(torsoLo(x,y,z)-0.05,thigh(-1)(x,y,z)-0.05,thigh(1)(x,y,z)-0.05),y-(T(0.47)+0.01),(hipY-0.2)-y);
     add('underShorts',shorts,hipY-0.23,T(0.47)+0.04,(x,y,z)=>y>T(0.47)-0.025?0xd8d6cc:0x3c4a64,false,{extra:true});
-    if(hairPc) add('hatHair',(x,y,z)=>Math.max(hairPc.field(x,y,z)+0.006,y-(headY+R*0.36)),headY-R*1.3,headY+R*0.5,hairPc.color,false,{extra:true});
+    if(hairPc) add('hatHair',(x,y,z)=>Math.max(hairPc.field(x,y,z)+0.006,y-(headY+R*0.36),z-R*0.35),headY-R*1.3,headY+R*0.5,hairPc.color,false,{extra:true}); // 帽子の下：横と後ろだけ
     for(let i=nO;i<pieces.length;i++) pieces[i].opt.covers=pieces.slice(0,nO).filter(q=>q.name!=='body'); }
   const grpOf=pc=>WR_GROUP[pc.name]||'body', GBIT={};
   for(const pc of pieces){ const g2=grpOf(pc); if(!(g2 in GBIT)) GBIT[g2]=1<<Object.keys(GBIT).length; }
   const e=step*0.18; const allP=[],allN=[],allC=[],allI=[],allW=[],idx=[];
   const covers=pieces.map((p,i)=>(p.opt&&p.opt.covers)||pieces.filter((q,j)=>!(q.opt&&q.opt.extra)&&((j>i&&q.cover)||j<i))); // 外側の服の中、または内側の形の中に隠れる面は描かない
-  const vMask=[], triOf=[]; // 頂点ごとに「どの部品群に隠れるか」、部品ごとの三角形
+  const vMask=[], vRank=[], triOf=[]; // 頂点ごとに「どの部品群に隠れるか」、着替えの重なりの順位、部品ごとの三角形
+  const RANKOF=O.wardrobe?{underShirt:0,underShorts:0,pants:1,shoes:2,top:3,belt:3,armband:3}:{};
   const stat={};
   pieces.forEach((pc,pi)=>{ const i0=idx.length;
     // 服ごとに動かせる骨を限る（下半身の服は腕に、上着は脚に引っぱられない）
@@ -4946,12 +4951,14 @@ function makeHumanClassic(o){
       const ent=Object.entries(wb).sort((a,b)=>b[1]-a[1]).slice(0,4); const sum=ent.reduce((s,a)=>s+a[1],0)||1;
       for(let q=0;q<4;q++){ allI.push(ent[q]?BONE_ID[ent[q][0]]:0); allW.push(ent[q]?ent[q][1]/sum:0); }
     }
-    for(let v=0;v<nv;v++) vMask.push(hidden[v]);
+    const rk=RANKOF[pc.name]; for(let v=0;v<nv;v++){ vMask.push(hidden[v]); vRank.push(rk==null?-1:rk); }
     const mi=m.idx, tl=new Uint32Array(mi.length); for(let t=0;t<mi.length;t++) tl[t]=mi[t]+base; triOf.push({tl,bit:GBIT[grpOf(pc)],name:pc.name});
     stat[pc.name]=(stat[pc.name]||0)+mi.length/3;
   });
   // 表示する三角形：部品群が出ていて、3つの頂点が全部「出ている部品群」に隠れていないもの（全部出ていれば元と同じ）
-  const visTris=(act,out)=>{ let n=0; for(const {tl,bit,name} of triOf){ if(!(bit&act)) continue; const n0=n; for(let t=0;t<tl.length;t+=3){ const a=tl[t],b=tl[t+1],c=tl[t+2]; if((vMask[a]&act)&&(vMask[b]&act)&&(vMask[c]&act)) continue; if(out){ out[n]=a; out[n+1]=b; out[n+2]=c; } else idx.push(a,b,c); n+=3; } if(!out) stat[name]=(stat[name]||0)+(n-n0)/3; } return n; };
+  let xm=null, ax=0; // 外側に着た別の服に隠れる面（着替えのときだけ）
+  const hid=(v,act)=>(vMask[v]&act)||(ax&&(xm[v]&ax));
+  const visTris=(act,out)=>{ let n=0; for(const {tl,bit,name} of triOf){ if(!(bit&act)) continue; const n0=n; for(let t=0;t<tl.length;t+=3){ const a=tl[t],b=tl[t+1],c=tl[t+2]; if(hid(a,act)&&hid(b,act)&&hid(c,act)) continue; if(out){ out[n]=a; out[n+1]=b; out[n+2]=c; } else idx.push(a,b,c); n+=3; } if(!out) stat[name]=(stat[name]||0)+(n-n0)/3; } return n; };
   const ALL=Object.values(GBIT).reduce((a,b)=>a|b,0), DEF=ALL&~((GBIT.hatHair||0)|(GBIT.underT||0)|(GBIT.underB||0)); // 下着は脱いだときだけ
   for(const k in stat) stat[k]=0; visTris(DEF,null);
   const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.Float32BufferAttribute(allP,3)); geo.setAttribute('normal',new THREE.Float32BufferAttribute(allN,3)); geo.setAttribute('color',new THREE.Float32BufferAttribute(allC,3));
@@ -4979,45 +4986,88 @@ function makeHumanClassic(o){
     headC.add(mesh(G.cyl,mat(0x2a8a4a),0,R*0.52,-R*0.06,R*0.99,R*0.09,R*1.01)); // 緑の線
     const lamp=mesh(G.cyl8,mat(0x3a3a3a),0,R*0.56,R*0.98,0.06,0.05,0.06); lamp.rotation.x=Math.PI/2; headC.add(lamp); const lens=mesh(G.circ,bmat(0xfff2c0),0,R*0.56,R*0.98+0.027,0.045,1,0.045); lens.rotation.x=Math.PI/2; headC.add(lens); }
   if(O.glasses){ // v0.60 眼鏡（スズキ）：大きめで角の丸い四角の枠。固い部品として頭に付ける
-    const gc=mat(O.glasses.col||0x1f3f9a), ey=-R*0.05, ez=R*0.99, ex=R*0.37, lw2=R*0.6, lh=R*0.48, rc=R*0.15, fr=R*0.06;
+    const gc=mat(O.glasses.col||0x1f3f9a), sz=O.glasses.size||1, ey=-R*0.05, ez=R*0.99, ex=R*0.37*sz, lw2=R*0.6*sz, lh=R*0.48*sz, rc=R*0.15*sz, fr=R*0.06*Math.min(sz,1.15);
     const rr2=(w,h,r)=>{ const sh=new THREE.Shape(), x0=-w/2, y0=-h/2; sh.moveTo(x0+r,y0); sh.lineTo(x0+w-r,y0); sh.quadraticCurveTo(x0+w,y0,x0+w,y0+r); sh.lineTo(x0+w,y0+h-r); sh.quadraticCurveTo(x0+w,y0+h,x0+w-r,y0+h);
       sh.lineTo(x0+r,y0+h); sh.quadraticCurveTo(x0,y0+h,x0,y0+h-r); sh.lineTo(x0,y0+r); sh.quadraticCurveTo(x0,y0,x0+r,y0); return sh; };
-    const frameG=cached('glassFrame'+R.toFixed(3),()=>{ const sh=rr2(lw2,lh,rc); sh.holes.push(rr2(lw2-fr*2,lh-fr*2,Math.max(0.004,rc-fr))); const g2=new THREE.ExtrudeGeometry(sh,{depth:R*0.05,bevelEnabled:false,curveSegments:5}); g2.translate(0,0,-R*0.025); return g2; });
-    const lensG=cached('glassLens'+R.toFixed(3),()=>new THREE.ShapeGeometry(rr2(lw2-fr*2,lh-fr*2,Math.max(0.004,rc-fr)),5));
-    for(const s of [-1,1]){ const zf=ez-Math.abs(ex)*0.14;
+    const frameG=cached('glassFrame'+R.toFixed(3)+'_'+sz,()=>{ const sh=rr2(lw2,lh,rc); sh.holes.push(rr2(lw2-fr*2,lh-fr*2,Math.max(0.004,rc-fr))); const g2=new THREE.ExtrudeGeometry(sh,{depth:R*0.05,bevelEnabled:false,curveSegments:5}); g2.translate(0,0,-R*0.025); return g2; });
+    const lensG=cached('glassLens'+R.toFixed(3)+'_'+sz,()=>new THREE.ShapeGeometry(rr2(lw2-fr*2,lh-fr*2,Math.max(0.004,rc-fr)),5));
+    for(const s of [-1,1]){ const zf=ez-Math.abs(ex)*0.16;
       const fm=new THREE.Mesh(frameG,gc); fm.position.set(s*ex,ey,zf); fm.rotation.y=s*0.2; headC.add(fm);
       const ln=new THREE.Mesh(lensG,bmat(0xdfe8f0,0.35)); ln.position.set(s*ex,ey,zf-0.002); ln.rotation.y=s*0.2; headC.add(ln);
-      const tmp=mesh(G.box,gc,s*R*0.72,ey+R*0.08,R*0.4,0.018,0.026,R*0.95); tmp.rotation.y=s*0.32; headC.add(tmp); }
-    headC.add(mesh(G.box,gc,0,ey+R*0.08,ez+0.004,R*0.2,0.02,0.02)); }
+      const tmp=mesh(G.box,gc,s*Math.max(R*0.72,ex+lw2*0.5-R*0.02),ey+R*0.08,R*0.38,0.018,0.026,R*0.95); tmp.rotation.y=s*0.32; headC.add(tmp); }
+    headC.add(mesh(G.box,gc,0,ey+R*0.08,ez+0.004,Math.max(R*0.2,(ex-lw2*0.5)*2+0.02),0.02,0.02)); }
   if(O.hat==='bunpin'||(hr.style==='bun')){ const pin=mesh(G.cyl8,mat(0xd2402e),0,R*0.78,-R*0.5,0.018,R*1.1,0.018); pin.rotation.z=Math.PI/2; headC.add(pin); }
-  // v0.60 防具の重ね着：体の形・色・骨は一切変えず、外側に別の殻を作って同じ骨で動かす（外せば元の服装のまま）
-  const layer=defs=>{ const LP=[],LN=[],LC=[],LI=[],LW=[],LX=[];
-    for(const d of defs){ const mm=surfaceNets(d.field,[-BX,d.y0,-BZ],[BX,d.y1,BZ],step); const pos=mm.pos, nv=pos.length/3; if(!nv) continue; const base=LP.length/3, f=d.field;
+  // v0.60 着替え：防具は初期の服に重ねず、初期の服と同じ作り方（buildTop/buildPants/buildShoes・帽子）で丸ごと作った別の服。
+  // 部位の重なり（靴はズボンのすそ、上着はズボンの腰を覆う）は、外側に着た服の中に入る内側の面を描かないことで処理する。
+  const RANKS={legs:1,feet:2,chest:3,head:4};
+  const ALLOWG={pants:/^(body|leg|shin|foot)/,shoes:/^(leg|shin|foot)/,top:/^(body|chest|head|arm|fore|hand)/,gaiter:/^(leg|shin|foot)/,hat:/^(head)/};
+  const unionF=pcs=>{ const fs=pcs.map(p=>p.field); return (x,y,z)=>{ let d=1e9; for(const f of fs){ const v=f(x,y,z); if(v<d) d=v; } return d; }; };
+  const buildGaiter=(ga,add)=>{ const t=ga.t||0.05, y0=ankY+0.05, y1=knY-(ga.below||0.05);
+    for(const s of [-1,1]){ const sn=shin(s); const pc=add('gaiter',(x,y,z)=>Math.max(sn(x,y,z)-t-0.004*Math.sin(y*120),y0-y,y-y1),y0-0.03,y1+0.03,
+      (x,y,z)=>Math.abs(y-y1+0.02)<0.012||Math.abs(y-y0-0.025)<0.012?(ga.tie||0x6a5440):(Math.sin(y*95+x*20)>0.82?(ga.col2||ga.col):ga.col),true); pc.min[0]=s<0?-BX:0; pc.max[0]=s<0?0:BX; } };
+  const buildHat=(h,add)=>{ const hy=headY;
+    if(h.kind==='kasa'){ const ap=hy+R*1.5, sl=0.42, rb=R*1.7, th=0.016; // 藁の笠：浅い円すい（髪の上にのせる）
+      add('hat',(x,y,z)=>{ const r=Math.hypot(x,z+R*0.04), ys=ap-r*sl; return Math.max(Math.abs(y-ys)*0.94-th,r-rb); },hy+R*0.6,ap+0.05,
+        (x,y,z)=>{ const r=Math.hypot(x,z+R*0.04); if(r>rb-0.025) return h.col2; return Math.sin(r*95)>0.55?h.col2:h.col; },true);
+      add('hat',(x,y,z)=>SDF.ell(x,y,z,[0,ap-0.005,-R*0.04],[R*0.12,R*0.07,R*0.12]),ap-0.06,ap+0.06,()=>h.col2,true); return; }
+    const dome=h.kind==='helmet'?[R*1.1,R*0.92,R*1.14]:[R*1.04,R*0.8,R*1.06], cy=hy+R*(h.kind==='helmet'?0.2:0.28), cut=hy+R*(h.kind==='helmet'?0.16:0.3);
+    add('hat',(x,y,z)=>{ let d=Math.max(SDF.ell(x,y,z,[0,cy,-R*0.04],dome),cut-y); if(h.kind==='helmet') d=SDF.smin(d,Math.max(SDF.ell(x,y,z,[0,cy+R*0.05,-R*0.04],[R*0.14,dome[1]*1.06,dome[2]*0.98]),cy-y),0.02); return d; },cut-0.03,cy+dome[1]+0.05,
+      (x,y,z)=>{ if(y<cut+0.02) return h.col2; if(h.kind==='helmet'&&Math.abs(x)<R*0.13&&y>cy) return h.col2; if(h.kind==='cap'&&y>cy+dome[1]-0.02) return h.col2; return h.col; },true);
+    if(h.kind==='helmet') add('hat',(x,y,z)=>Math.max(SDF.ell(x,y,z,[0,cut+0.008,-R*0.02],[R*1.3,0.016,R*1.36]),-SDF.ell(x,y,z,[0,cut,-R*0.04],[R*1.02,0.05,R*1.06])),cut-0.04,cut+0.04,()=>h.col2,true);
+    if(h.kind==='cap') add('hat',(x,y,z)=>SDF.ell(x,y,z,[0,cut+0.004,R*0.98],[R*0.62,0.014,R*0.5]),cut-0.04,cut+0.04,()=>h.col2,true); };
+  const meshFromPieces=pcs=>{ const LP=[],LN=[],LC=[],LI=[],LW=[],tris=[],vm=[];
+    const cov=pcs.map((p,i)=>pcs.filter((q,j)=>(j>i&&q.cover)||j<i).map(q=>q.field));
+    pcs.forEach((pc,pi)=>{ const mm=surfaceNets(pc.field,pc.min,pc.max,step); const pos=mm.pos, nv=pos.length/3; if(!nv) return; const base=LP.length/3, f=pc.field, allow=ALLOWG[pc.name];
       for(let v=0;v<nv;v++){ let x=pos[v*3], y=pos[v*3+1], z=pos[v*3+2];
         for(let it=0;it<2;it++){ const dd=f(x,y,z); const gx=f(x+e,y,z)-f(x-e,y,z), gy=f(x,y+e,z)-f(x,y-e,z), gz=f(x,y,z+e)-f(x,y,z-e); const gl=Math.hypot(gx,gy,gz)||1; x-=dd*gx/gl; y-=dd*gy/gl; z-=dd*gz/gl; }
         const gx=f(x+e,y,z)-f(x-e,y,z), gy=f(x,y+e,z)-f(x,y-e,z), gz=f(x,y,z+e)-f(x,y,z-e); const gl=Math.hypot(gx,gy,gz)||1;
-        LP.push(x,y,z); LN.push(gx/gl,gy/gl,gz/gl);
-        const c=C(d.color(x,y,z)); const j=1+(hash3(x*40,y*40,z*40)-0.5)*0.05; LC.push(c.r*j,c.g*j,c.b*j);
-        const wb={}; for(const p of P){ if(d.bones&&!d.bones.test(p.bone)) continue; const dd=p.fn(x,y,z); const w=Math.exp(-Math.max(0,dd)/0.03); wb[p.bone]=(wb[p.bone]||0)+w; }
+        LP.push(x,y,z); LN.push(gx/gl,gy/gl,gz/gl); let h=0; for(const cf of cov[pi]) if(cf(x,y,z)<-0.004){ h=1; break; } vm.push(h);
+        const c=C(pc.color(x,y,z)); const j=1+(hash3(x*40,y*40,z*40)-0.5)*0.05; LC.push(c.r*j,c.g*j,c.b*j);
+        const wb={}; for(const p of P){ if(allow&&!allow.test(p.bone)) continue; const dd=p.fn(x,y,z); const w=Math.exp(-Math.max(0,dd)/0.03); wb[p.bone]=(wb[p.bone]||0)+w; }
+        if(pc.name==='hat') wb.head=(wb.head||0)+8;
         const ent=Object.entries(wb).sort((a,b)=>b[1]-a[1]).slice(0,4); const sum=ent.reduce((s,a)=>s+a[1],0)||1;
-        for(let q=0;q<4;q++){ LI.push(ent[q]?BONE_ID[ent[q][0]]:0); LW.push(ent[q]?ent[q][1]/sum:0); }
-      }
-      for(const t of mm.idx) LX.push(t+base);
-    }
+        for(let q=0;q<4;q++){ LI.push(ent[q]?BONE_ID[ent[q][0]]:0); LW.push(ent[q]?ent[q][1]/sum:0); } }
+      for(const t of mm.idx) tris.push(t+base); });
     const lg=new THREE.BufferGeometry(); lg.setAttribute('position',new THREE.Float32BufferAttribute(LP,3)); lg.setAttribute('normal',new THREE.Float32BufferAttribute(LN,3)); lg.setAttribute('color',new THREE.Float32BufferAttribute(LC,3));
-    lg.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(LI,4)); lg.setAttribute('skinWeight',new THREE.Float32BufferAttribute(LW,4)); lg.setIndex(LX); lg.computeBoundingSphere(); if(lg.boundingSphere) lg.boundingSphere.radius*=1.4; lg.userData.own=true;
+    lg.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(LI,4)); lg.setAttribute('skinWeight',new THREE.Float32BufferAttribute(LW,4));
+    const capG=new Uint32Array(tris.length); lg.setIndex(new THREE.BufferAttribute(capG,1)); lg.computeBoundingSphere(); if(lg.boundingSphere) lg.boundingSphere.radius*=1.4; lg.userData.own=true;
     const grp=new THREE.Group(), s1=new THREE.SkinnedMesh(lg,sm), s2=new THREE.SkinnedMesh(lg,om); s1.castShadow=true; grp.add(s1); grp.add(s2); root.add(grp);
-    s1.bind(sk,skin.bindMatrix); s2.bind(sk,skin.bindMatrix); grp.userData.tris=LX.length/3; return grp; };
-  const armorKit={layer,T,gi,wst,nk,R,headY,hipY,knY,ankY,shY,chY,legX,lR0,lR1,sR1,fw,aR0,aR1,fR0,fR1,topT,pantsT,topHem,BX,BZ,
-    torso,torsoLo,torsoHi,thigh,shin,footF,upArm,foreArm,handF,SH,EL,WR,segU,along,atS,surfZ,tHiC,tHiR,tLoC,tLoR};
+    s1.bind(sk,skin.bindMatrix); s2.bind(sk,skin.bindMatrix);
+    return {grp,geo:lg,cap:capG,pos:LP,tris,vm:Uint8Array.from(vm),xm:new Uint32Array(LP.length/3),last:-1}; };
+  const W=O.wardrobe?{srcs:[],gar:{},bitN:0}:null;
+  if(W){ xm=new Uint32Array(allP.length/3);
+    const baseSrc=(slot,names)=>{ const pc=pieces.filter(p=>names.includes(p.name)); if(pc.length) W.srcs.push({id:'base:'+slot,slot,rank:RANKS[slot],bit:1<<(W.bitN++),field:unionF(pc)}); };
+    baseSrc('legs',['pants']); baseSrc('feet',['shoes']); baseSrc('chest',['top','belt','armband']); }
+  const cullBy=(src,pos,rankAt,mask)=>{ for(let v=0;v<pos.length/3;v++){ const r=rankAt(v); if(r<0||r>=src.rank) continue; if(src.field(pos[v*3],pos[v*3+1],pos[v*3+2])<-0.004) mask[v]|=src.bit; } };
+  const ensureGarment=(id,slot,spec)=>{ if(!W||W.gar[id]) return W&&W.gar[id]; if(W.bitN>=31) return null;
+    const pcs=[], addG=(name,field,y0,y1,color,cover,opt)=>{ const pc={name,field,min:[-BX,y0,-BZ],max:[BX,y1,BZ],color,cover,opt}; pcs.push(pc); return pc; };
+    if(spec.top) buildTop(spec.top,addG); if(spec.bottom) buildPants(spec.bottom,addG); if(spec.shoes) buildShoes(spec.shoes,addG); if(spec.gaiter) buildGaiter(spec.gaiter,addG); if(spec.hat) buildHat(spec.hat,addG);
+    if(!pcs.length) return null;
+    const Gm=meshFromPieces(pcs); Gm.slot=slot; Gm.rank=RANKS[slot]; Gm.grp.visible=false; Gm.grp.userData.garment=id; Gm.hairFull=!!(spec.hat&&spec.hat.hair==='full');
+    const src={id,slot,rank:Gm.rank,bit:1<<(W.bitN++),field:unionF(pcs)};
+    cullBy(src,allP,v=>vRank[v],xm);                                                  // 新しい服が、体側の内側の服（ズボン・下着など）を隠す
+    for(const k in W.gar){ const H=W.gar[k]; cullBy(src,H.pos,()=>H.rank,H.xm); H.last=-1; } // 内側に着るほかの服も隠す
+    for(const s2 of W.srcs) cullBy(s2,Gm.pos,()=>s2.rank>Gm.rank?Gm.rank:-1,Gm.xm);  // 外側の服がこの服を隠す
+    W.srcs.push(src); Gm.src=src; W.gar[id]=Gm; W.lastAct=-1; return Gm; };
+  const garTris=(Gm,act)=>{ let n=0; const t=Gm.tris, vm=Gm.vm, x=Gm.xm, cap=Gm.cap; const h=v=>vm[v]||(x[v]&act);
+    for(let i=0;i<t.length;i+=3){ const a=t[i],b=t[i+1],c=t[i+2]; if(h(a)&&h(b)&&h(c)) continue; cap[n]=a; cap[n+1]=b; cap[n+2]=c; n+=3; }
+    Gm.geo.index.needsUpdate=true; Gm.geo.setDrawRange(0,n); };
   const armL=B.armL, armR=B.armR; armL.userData.hand=B.handL; armR.userData.hand=B.handR; armL.userData.fore=B.foreL; armR.userData.fore=B.foreR;
   const legs=[B.legL,B.legR]; legs[0].userData.shin=B.shinL; legs[1].userData.shin=B.shinR;
-  let setWear=null;
-  if(O.wardrobe){ const cap=new Uint32Array(triOf.reduce((a,b)=>a+b.tl.length,0)); cap.set(idx); geo.setIndex(new THREE.BufferAttribute(cap,1)); geo.setDrawRange(0,idx.length);
-    let cur=DEF; setWear=w=>{ let act=ALL; for(const k of ['chest','legs','feet','hair','band']) if(GBIT[k]&&w[k]===false) act&=~GBIT[k];
-      if(GBIT.hatHair&&w.hatHair!==true) act&=~GBIT.hatHair; if(GBIT.underT&&w.chest!==false) act&=~GBIT.underT; if(GBIT.underB&&w.legs!==false) act&=~GBIT.underB;
-      if(act===cur) return; cur=act; const n=visTris(act,cap); geo.index.needsUpdate=true; geo.setDrawRange(0,n); }; }
-  const m={g,root,body:B.body,chest:B.chest,legs,armL,armR,head,face:null,R,soft:{lag:[0,0],prev:[0,0]},skin,tris:idx.length/3,stat,armorKit,setWear};
+  let setWear=null, wardrobe=null;
+  if(W){ const cap=new Uint32Array(triOf.reduce((a,b)=>a+b.tl.length,0)); cap.set(idx); geo.setIndex(new THREE.BufferAttribute(cap,1)); geo.setDrawRange(0,idx.length);
+    let cur=DEF, curX=0;
+    // w = {chest,legs,feet:'base'|'none'|服のID, head:'none'|服のID}。初期の服は 'base'、脱いだら 'none'（下着）
+    setWear=w=>{ const wv=k=>w[k]==null?(k==='head'?'none':'base'):w[k];
+      let act=ALL; for(const k of ['chest','legs','feet']) if(GBIT[k]&&wv(k)!=='base') act&=~GBIT[k];
+      const hg=W.gar[wv('head')], full=hg&&hg.hairFull;
+      if(wv('head')!=='none'){ if(GBIT.band) act&=~GBIT.band; if(full){ if(GBIT.hatHair) act&=~GBIT.hatHair; } else if(GBIT.hair) act&=~GBIT.hair; } else if(GBIT.hatHair) act&=~GBIT.hatHair;
+      if(GBIT.underT&&wv('chest')!=='none') act&=~GBIT.underT; if(GBIT.underB&&wv('legs')!=='none') act&=~GBIT.underB;
+      let actX=0; for(const sr of W.srcs) if(wv(sr.slot)===(sr.id.startsWith('base:')?'base':sr.id)) actX|=sr.bit;
+      if(act!==cur||actX!==curX){ cur=act; curX=actX; ax=actX; const n=visTris(act,cap); geo.index.needsUpdate=true; geo.setDrawRange(0,n); }
+      for(const k in W.gar){ const Gm=W.gar[k], on=wv(Gm.slot)===k; Gm.grp.visible=on; if(on&&Gm.last!==actX){ Gm.last=actX; garTris(Gm,actX); } } };
+    wardrobe={ensure:ensureGarment,W}; }
+  const m={g,root,body:B.body,chest:B.chest,legs,armL,armR,head,face:null,R,soft:{lag:[0,0],prev:[0,0]},skin,tris:idx.length/3,stat,setWear,wardrobe};
   if(o.extra) o.extra({g,root,body:B.body,chest:B.chest,head,armL,armR,R,T});
   g.traverse(c=>{ if(c.isMesh&&!c.isSkinnedMesh) c.castShadow=true; });
   shadowBlob(g,0.45*gi*(o.scale||1),0.4*(o.scale||1));
@@ -5045,9 +5095,9 @@ function suzukiClub({chest,body,T}){
   return c;
 }
 const SUZUKI_OPTS={scale:0.79,tall:1.2,legLen:1.95,armLen:1.5,girth:0.84,waist:0.82,neck:0.86,headR:0.45,limb:0.8,legGap:1.25,step:0.024,muscle:1,
-  outfit:{bottom:{col:0x1f6a38,col2:0x165029,top:0.48,stripe:0xf0f0e6,waistBand:true,t:0.026},
+  outfit:{bottom:{col:0x1f6a38,col2:0x165029,top:0.48,stripe:0xf2c41c,waistBand:true,t:0.026}, // 横の線は黄色（2026-11-12 ユーザー指定）
     kesa:{col:0x5a4430,col2:0x46341f}, // 棍棒を背負うひも
-    hair:{style:'center',col:0x1c1814},glasses:{col:0x1f3f9a},armband:false},
+    hair:{style:'center',col:0x1c1814},glasses:{col:0x101a33,size:1.22},armband:false}, // 眼鏡：黒に近い青・顔に対して大きく（2026-11-12 ユーザー指定）
   extra:suzukiClub};
 function makeHuman(o={}){
   const player=!!o.player47;
@@ -5055,7 +5105,7 @@ function makeHuman(o={}){
   m.classic=true; m.rigid=player; m.restHip=0;
   m.hair=new THREE.Group();                                   // 防具の表示処理が参照する（古い体では髪は体に含まれる）
   m.layers={head:[],chest:[],legs:[],feet:[]};
-  if(player){ // 防具（頭）：かぶり物だけは古い体の頭に重ねて表示する。胸・脚・靴の見た目の重ね着は、古い体では出せない
+  if(player&&!m.wardrobe){ // 防具（頭）：かぶり物だけは古い体の頭に重ねて表示する（v0.60 着替えのある体では使わない）
     const hc=m.head.children.find(c=>c.isGroup)||m.head, k=m.R/0.145;
     for(const v of ['forest','tracker','basic']){
       const hat=new THREE.Group(); hat.position.set(0,-0.2*k,0); hat.scale.setScalar(k); hc.add(hat);
@@ -5693,55 +5743,37 @@ function f47Stats(){
  out.cut=Math.min(F47_ARMOR_CAP.total,out.slotCut+out.gloveCut);
  return out;
 }
-// v0.60（P2・作業C）防具の見た目：今の体（makeHumanClassic）の外側に重ねる殻。形・色は暫定の外観案（ユーザーの確認待ち）。
-// 体の骨と同じ骨で動くので、ひざ・ひじ・足の動きに追従する。外すと元の服装に戻る（体そのものは変えない）。
-function f60ArmorDefs(k,slot,set){
-  const {T,SH,aR0,topT,pantsT,topHem,shY,hipY,knY,ankY,legX,lR0,lR1,torso,thigh,shin,footF,surfZ,tHiC,tHiR}=k;
-  const bTop=ankY+(knY-ankY)*0.5, Y0=-0.05, BODY=/^(body|chest)/, PADS=/^(chest|arm)/, LEG=/^(body|leg|shin)/, FOOT=/^(shin|foot)/;
-  const shell=(t,hem,top,hole=0.035)=>(x,y,z)=>{ let d=Math.max(torso(x,y,z)-t,hem-y,y-top); for(const s of [-1,1]){ const a=SH(s); d=Math.max(d,-(Math.hypot(x-a[0]*1.05,y-a[1]+0.02,z)-(aR0+topT+hole))); } return d; };
-  const legs2=f=>(x,y,z)=>Math.min(f(-1,x,y,z),f(1,x,y,z));
-  const out=[];
-  if(slot==='chest'){
-    if(set==='basic'){ const f=shell(topT+0.045,topHem-0.02,shY+0.08);
-      out.push({field:f,y0:topHem-0.06,y1:shY+0.14,bones:BODY,color:(x,y,z)=>Math.sin(y*58)>0.86||Math.abs(x)<0.01&&z>0?0xa58b62:0xcdb38a}); }
-    if(set==='forest'){ const f=shell(topT+0.042,T(0.5),shY+0.09);
-      out.push({field:f,y0:T(0.5)-0.04,y1:shY+0.15,bones:BODY,color:(x,y,z)=>{ if(z>0&&y>T(0.66)&&y<T(0.86)&&Math.abs(x)<0.15) return Math.sin(x*90)>0.92?0x6e6a58:0x4c5236; if(y<T(0.5)+0.03) return 0x3e4430; return 0x5f6a3c; }});
-      const pad=(x,y,z)=>Math.min(...[-1,1].map(s=>{ const a=SH(s); return SDF.ell(x,y,z,[a[0]*1.12,a[1]+0.03,0],[0.12,0.075,0.13]); }));
-      out.push({field:pad,y0:shY-0.1,y1:shY+0.16,bones:PADS,color:(x,y,z)=>y<shY-0.0?0x3b3a2e:0x4f4b3a}); }
-    if(set==='tracker'){ const f=shell(topT+0.028,T(0.56),shY+0.06,0.05);
-      const pk=(x,y,z)=>Math.min(...[-1,1].map(s=>{ const px=s*0.1*k.gi, py=T(0.74); return SDF.box(x,y,z,[px,py,surfZ(tHiC,tHiR,px,py)+topT+0.03],[0.05,0.045,0.02],0.01); }));
-      out.push({field:(x,y,z)=>Math.min(f(x,y,z),pk(x,y,z)),y0:T(0.56)-0.04,y1:shY+0.12,bones:BODY,color:(x,y,z)=>{ const d=pk(x,y,z); if(d<0.004) return 0x76683f; if(Math.abs(y-T(0.56))<0.03) return 0x6a5d3a; return 0x8c7d56; }}); }
-  }
-  if(slot==='legs'){
-    if(set==='basic'){ const th=(s,x,y,z)=>SDF.smin(SDF.ell(x,y,z,[s*legX,(hipY+knY)/2,lR0*0.72+pantsT],[0.085,0.12,0.04]),SDF.ell(x,y,z,[s*legX,knY+0.01,lR1+pantsT+0.006],[0.07,0.075,0.035]),0.03);
-      out.push({field:legs2(th),y0:knY-0.12,y1:hipY+0.05,bones:LEG,color:(x,y,z)=>Math.abs(y-knY)<0.07?0x9d8762:0xb59f74}); }
-    if(set==='forest'){ const g=(s,x,y,z)=>{ const plate=Math.max(shin(s)(x,y,z)-(pantsT+0.03),-(z-0.0),y-(knY-0.03),(bTop+0.02)-y); const knee=SDF.ell(x,y,z,[s*legX,knY+0.01,lR1+pantsT+0.01],[0.085,0.09,0.05]); return Math.min(plate,knee); };
-      out.push({field:legs2(g),y0:bTop-0.03,y1:knY+0.12,bones:LEG,color:(x,y,z)=>Math.abs(y-knY-0.01)<0.08?0x45463c:(Math.sin(y*80)>0.9?0x3d3e34:0x55583f)}); }
-    if(set==='tracker'){ const g=(s,x,y,z)=>Math.max(shin(s)(x,y,z)-(pantsT+0.018),(bTop-0.01)-y,y-(knY-0.02));
-      out.push({field:legs2(g),y0:bTop-0.04,y1:knY+0.02,bones:LEG,color:(x,y,z)=>Math.sin((y+Math.atan2(x,z)*0.03)*70)>0.55?0x564630:0x6b5a3c}); }
-  }
-  if(slot==='feet'){
-    if(set==='basic'){ const g=(s,x,y,z)=>Math.max(shin(s)(x,y,z)-(pantsT+0.03),(bTop-0.05)-y,y-(knY-0.07));
-      out.push({field:legs2(g),y0:bTop-0.08,y1:knY-0.03,bones:FOOT,color:(x,y,z)=>Math.abs(y-(knY-0.09))<0.012||Math.abs(y-(bTop-0.03))<0.012?0x7a6648:0xd5c8a8}); }
-    if(set==='forest'){ const g=(s,x,y,z)=>Math.max(SDF.smin(footF(s)(x,y,z)-0.04,shin(s)(x,y,z)-0.042,0.03),y-(bTop+0.03),-0.02-y);
-      out.push({field:legs2(g),y0:Y0,y1:bTop+0.08,bones:FOOT,color:(x,y,z)=>y<0.045?0x15120f:z>0.12&&y<0.11?0x5a5a52:y>bTop?0x4a3a2c:0x3b2f25}); }
-    if(set==='tracker'){ const g=(s,x,y,z)=>Math.max(SDF.smin(footF(s)(x,y,z)-0.04,shin(s)(x,y,z)-0.042,0.03),y-(ankY+0.13),-0.015-y);
-      out.push({field:legs2(g),y0:Y0,y1:ankY+0.18,bones:FOOT,color:(x,y,z)=>{ if(y<0.03) return 0x1a1a1e; const s=Math.sign(x); if(z>0.1&&Math.abs(x-s*legX-0.018*s)<0.007) return 0x15181f; if(z<-0.04&&Math.sin(y*90)>0.8) return 0xb8b090; return 0x2b3242; }}); }
-  }
-  return out;
-}
-function f60EnsureArmor(m,slot,set){
-  if(!m||!m.armorKit||!m.layers||!set||set==='work'||slot==='head') return;
-  if(m.layers[slot].some(l=>l.userData.variant===set)) return;
-  const defs=f60ArmorDefs(m.armorKit,slot,set); if(!defs.length) return;
-  const grp=m.armorKit.layer(defs); grp.userData.variant=set; grp.visible=false; m.layers[slot].push(grp);
-}
+// v0.60（P2・作業C）防具の見た目：初期の服に重ねず、初期の服と同じ作り方で丸ごと作った服（形・色は暫定の外観案。ユーザーの確認待ち）。
+// 体の骨と同じ骨で動く。初めて着たときに作る。
+const F60_GARMENTS={
+  basic:{   // 藁の笠／厚着の上着／当て布の脚袋／丈夫な脚絆
+    head:{hat:{kind:'kasa',col:0xd2bb82,col2:0xa98f5c,hair:'full'}},
+    chest:{top:{col:0xa3865c,col2:0x7d6442,hem:0.4,cut:0.9,collar:'stand',buttons:true,stripes:0x8c7049,t:0.04}},
+    legs:{bottom:{col:0x5e5546,col2:0x4b4337,top:0.47,patch:0x8d7a58,kneePad:0x7a6a4c,t:0.03,hemFor:'boots'}},
+    feet:{shoes:{kind:'tabi',col:0x4a3c2c,sole:0x2a221a},gaiter:{col:0xd9cfb4,col2:0xc4b896,tie:0x6a5440,t:0.05}}},
+  forest:{  // 山守の保安帽／補強上着／防護ズボン／踏張り靴
+    head:{hat:{kind:'helmet',col:0xcaa036,col2:0xa27e22}},
+    chest:{top:{col:0x56623a,col2:0x434d2c,hem:0.42,cut:0.9,collar:'stand',zip:true,pockets:true,elbowPad:0x2c3024,refl:0.74,reflSleeve:true,t:0.036}},
+    legs:{bottom:{col:0x40472f,col2:0x343a26,top:0.47,kneePad:0x25272a,cargo:true,cargoBig:true,t:0.03,hemFor:'boots'}},
+    feet:{shoes:{kind:'boots',col:0x3b2d21,col2:0x574333,sole:0x141210,soleH:0.042,t:0.034}}},
+  tracker:{ // 沢追いの作業帽／軽装上着／脚衣／足袋靴
+    head:{hat:{kind:'cap',col:0x6b6046,col2:0x564c36}},
+    chest:{top:{col:0x8c7c54,col2:0x6f613f,hem:0.44,sleeve:'rolled',cut:0.55,collar:'stand',pockets:true,zip:true,t:0.03}},
+    legs:{bottom:{col:0x58584a,col2:0x46463a,top:0.47,taper:true,gaiter:0x6f5c3c,t:0.028,hemFor:'tabi'}},
+    feet:{shoes:{kind:'tabi',col:0x2b3242,sole:0x1a1a1e,split:0x161a24}}}};
+// 装備から、主人公の服の状態（初期の服／脱いだ／丸ごとの服）を決める
+function f60WearOf(g){ const w={};
+  for(const slot of G47S){ const id=g.equip[slot], a=G47[id];
+    if(!a){ w[slot]='none'; continue; }
+    const spec=F60_GARMENTS[a.set]&&F60_GARMENTS[a.set][slot];
+    if(spec&&pm.wardrobe){ pm.wardrobe.ensure(id,slot,spec); w[slot]=pm.wardrobe.W.gar[id]?id:'base'; }
+    else w[slot]=slot==='head'?'none':'base'; } // 町民の作業着・引き継いだ旧式は初期の服のまま
+  return w; }
 function f47ApplyVisual(){
  const g=prog.gear||f47Fresh();
- if(pm&&pm.setWear){ const q=g.equip; pm.setWear({chest:!!q.chest,legs:!!q.legs,feet:!!q.feet,hair:!q.head,band:!q.head,hatHair:!!q.head}); } // v0.60 脱いだ部位は下着、帽子のときは髪をしまう
+ if(pm&&pm.setWear){ pm.setWear(f60WearOf(g)); return; } // v0.60 主人公：初期の服／脱いだら下着／ほかの防具は丸ごとの服。帽子のときは髪をしまう
  for(const slot of G47S){
   const a=G47[g.equip[slot]],variant=pm.classic?a?.set:a?.set==='basic'?'work':a?.set;
-  if(pm.classic) f60EnsureArmor(pm,slot,variant); // v0.60 今の体に重ねる防具の殻（初めて着けたときに作る）
   for(const layer of pm.layers[slot]){
    const glove=slot==='chest'&&layer.userData.style==='gloves';
    layer.visible=glove&&inv.armor>0?layer.userData.variant==='work':!!a&&variant===layer.userData.variant;
