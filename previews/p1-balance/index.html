@@ -527,7 +527,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.59.1 防衛戦テスト版（本編とは別に保存）　第二章・光明寺防衛戦</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.60 防衛戦テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -1781,6 +1781,7 @@ function safeZoneAt(x,z,m=0){ if(inBase(x,z,m)) return {name:'光明寺防衛区
 function inSafe(x,z,m=0){ return !!safeZoneAt(x,z,m); }
 const DAMAGED=[];
 function dmgSeverity(x,z){
+  if(x>REGION_X0&&REG.live&&REG.live.severity!=null) return REG.live.severity; // v0.60 ほかの地域（地域ごとの荒れ具合）
   let s=clamp((z+260)/290,0,1);
   const st=(MD.pts.station||[]).find(p=>p[2]==='光明寺'); if(st) s*=clamp((dist(x,z,st[0],st[1])-30)/160,0.45,1);
   if(inSafe(x,z,14)) s=0;
@@ -2108,6 +2109,7 @@ function buildTraces(){
   for(const c of closures) N(c.x-Math.sin(c.yaw)*8,c.z-Math.cos(c.yaw)*8,'warn','倒木のため通行止め','迂回してください。');
   N(-150,132,'danger','立入禁止','この先 クマの痕跡あり。');
   N(-30,-12,'danger','近づくな','地面がえぐれている。何が通ったのか、まだ分かっていない。—桜隊');
+  N(KOMYOJI_EAST.x-10,KOMYOJI_EAST.z,'warn','この先 上志比','国道416号を東へ。牧福島・山王・市荒川へ続く。'); // v0.60 上志比への出口（防衛戦のあとで通れる）
   addNotice(100,204,'tag','地鳴りあり 近づくな','沢の奥で地鳴りあり。近づくな。',{yaw:Math.PI*0.9,lines:['沢の奥で','地鳴りあり']});
   const sh=(MD.pts.shop||[])[0]; if(sh) N(sh[0]+6,sh[1]+4,'paper','本日 品切れ','米・電池は品切れです。入荷は未定。');
   N(176,-156,'paper','獣の侵入経路を確認中','足跡を見つけたら、踏まずに詰所へ知らせてください。');
@@ -2830,7 +2832,10 @@ function mapScale(){ const s0=Math.min(MAPV.W/(MAP_B.maxX-MAP_B.minX),MAPV.H/(MA
 function clampMapCenter(){ const s=mapScale(), hw=MAPV.W/2/s, hh=MAPV.H/2/s; const mx=(MAP_B.minX+MAP_B.maxX)/2, mz=(MAP_B.minZ+MAP_B.maxZ)/2;
   MAPV.cx=hw*2>=MAP_B.maxX-MAP_B.minX?mx:clamp(MAPV.cx,MAP_B.minX+hw,MAP_B.maxX-hw); MAPV.cz=hh*2>=MAP_B.maxZ-MAP_B.minZ?mz:clamp(MAPV.cz,MAP_B.minZ+hh,MAP_B.maxZ-hh); }
 function mapZoom(k,ax,az){ const z0=MAPV.zoom; MAPV.zoom=clamp(MAPV.zoom*k,1,8); if(ax!=null){ const r=MAPV.zoom/z0; MAPV.cx=ax+(MAPV.cx-ax)/r; MAPV.cz=az+(MAPV.cz-az)/r; } drawMap(); }
-function drawMap(){ const cv=$('mapCv'); if(!cv||$('mapOv').hidden) return; const c=cv.getContext('2d'); const d=MAPV.dpr, W=MAPV.W, H=MAPV.H; c.setTransform(d,0,0,d,0,0); clampMapCenter();
+function drawMap(){ const cv=$('mapCv'); if(!cv||$('mapOv').hidden) return; const c=cv.getContext('2d'); const d=MAPV.dpr, W=MAPV.W, H=MAPV.H; c.setTransform(d,0,0,d,0,0);
+  const lg=document.querySelector('#mapOv .maplegend'); if(lg) lg.hidden=!!(REG.live&&REG.live.drawMap); // 光明寺の凡例は光明寺だけ
+  if(REG.live&&REG.live.drawMap){ REG.live.drawMap(c,W,H); return; } // v0.60 ほかの地域の地図
+  clampMapCenter();
   const s=mapScale(); const X=x=>(x-MAPV.cx)*s+W/2, Z=z=>(z-MAPV.cz)*s+H/2;
   c.fillStyle='#1d1714'; c.fillRect(0,0,W,H);
   if(!miniMap) buildMiniMap();
@@ -7066,7 +7071,7 @@ function winEvent(){
     const c=syncChapter2();const first=!c.progress.defenseRewarded;c.progress.openingStarted=true;c.progress.defenseComplete=true;c.currentChapter=2;
     if(first){ // v0.55：住民からの礼は1回だけ（記録 defenseRewarded。報酬導入前にクリアしたセーブにも1回だけ出る）
       c.progress.defenseRewarded=true; inv.wood+=6; inv.straw+=6; foodAdd('onigiri',2);
-      banner('光明寺防衛戦　完了','住民からの礼：木材6・藁6・おにぎり2。上志比への出発は次の更新で追加予定です。',5);
+      banner('光明寺防衛戦　完了','住民からの礼：木材6・藁6・おにぎり2。東の出口（国道416号）から上志比へ行けるようになった。',5);
       queueDialog([[npcTome,'みんなで守りきったのう。……ほんとに、ようやってくれた。'],[npcEshin,'柵もやぐらも、まだ立っております。皆さんの手があったからこそです。'],[npcYone,'けど、あのサルら、鳴き声ひとつで一斉に動いとったぞ。ただの群れやないわ。'],[npcGen,'山はまだ静かになっとらん。……上志比の方も、様子を見に行かんとあかんかもしれんな。']]);
     } else banner('光明寺防衛戦　完了（再挑戦）','戦績を更新しました。住民からの礼は初回のみです。',5);
     saveGame();return;
@@ -8239,9 +8244,10 @@ function updateProgress(dt){ f31Tick(dt);
   prog.lastSaveT+=dt; if(prog.lastSaveT>30&&!ev.kind&&!bossActive){ prog.lastSaveT=0; saveGame(); }
 }
 function objective(){
+  if(REG.cur!=='komyoji'&&REG.live&&REG.live.objective) return REG.live.objective(); // v0.60 ほかの地域
   if(prog.bossDefeated&&chapter2Opening().openingStarted){
     if(ev.kind==='chapter2')return ['第二章：三方向の混成部隊からやぐらを守る。猪・熊は柵と罠で止め、猿を迎撃',CORE];
-    if(chapter2Opening().defenseComplete)return ['第二章：光明寺防衛戦を完了。上志比への出発は次の更新で追加予定',null];
+    if(chapter2Opening().defenseComplete)return ['第二章：光明寺防衛戦を完了。東の出口（国道416号）から上志比へ向かえる',KOMYOJI_EAST];
     return ['第二章：拠点で装備を整え、見張りの源さんに話しかけて防衛戦を始める',npcGen];
   }
   if(prog.bossDefeated)return ['自由探索／第二章：見張りの源さんに話しかけると防衛戦を始められる',npcGen];
@@ -8326,6 +8332,7 @@ function buildMiniMap(){
 }
 function drawMini(){
   const c=mini, W=150, H=196; c.clearRect(0,0,W,H);
+  if(REG.live&&REG.live.drawMini){ REG.live.drawMini(c,W,H); return; } // v0.60 ほかの地域
   if(!miniMap) buildMiniMap();
   const sw=W*MINI_M*MINI_S, sh=H*MINI_M*MINI_S; const sx=(P.x-TG.GX0)*MINI_S-sw/2, sz=(P.z-TG.GZ0)*MINI_S-sh/2;
   c.globalAlpha=0.92; c.drawImage(miniMap,sx,sz,sw,sh,0,0,W,H); c.globalAlpha=1;
@@ -8480,7 +8487,7 @@ function frame(now){
   updateLighting(raw);
   updateCamera(rdt);
   updateRain(rdt);
-  updateChunks(rdt); updateRice();
+  updateChunks(rdt); updateRice(); if(REG.live&&REG.live.update) REG.live.update(rdt); else if(REG.cur==='komyoji') regionGateKomyoji();
   renderer.render(scene,camera); f11AfterRender(); f11Update(rdt); f31Update();
 }
 
@@ -8498,7 +8505,7 @@ function disposeOwned(root){ root.traverse(o=>{ const g=o.geometry; if(g&&g.user
 // 地域の作業台：地域の build(ctx) は、ここに物と当たり判定を登録する
 function regionCtx(id){ const group=new THREE.Group(); group.name='region:'+id; scene.add(group);
   const ctx={id,group,colliders:[],enemies:[],x0:REGION_X0,h:null,cls:null,bounds:null,arrival:null,
-    own(x){ if(x&&x.userData) x.userData.own=true; return x; },
+    own(x){ if(x){ if(!x.userData) x.userData={}; x.userData.own=true; } return x; }, // r128 のテクスチャには userData が無いので足す
     add(o){ group.add(o); return o; },
     box(...a){ const o=addBox(...a); ctx.colliders.push(o); return o; },
     circle(...a){ const o=addCircle(...a); ctx.colliders.push(o); return o; },
@@ -8527,9 +8534,12 @@ async function regionTravel(id,at=null,opt={}){
     if(id==='komyoji'){ komyojiShow(true); if(REG.homeBounds){ Object.assign(BOUNDS,REG.homeBounds); REG.homeBounds=null; }
       const a=at||(REG.defs[from]&&REG.defs[from].homeArrival)||PSPAWN; P.x=a.x; P.z=a.z; P.facing=a.facing||0; }
     else { if(from==='komyoji'){ REG.homeBounds=Object.assign({},BOUNDS); komyojiShow(false); }
-      const ctx=regionCtx(id); REG.live=ctx; REG.defs[id].build(ctx);
+      const def=REG.defs[id]; if(def.load) await def.load(); // 地域のデータ（別ファイル）を読む
+      const ctx=regionCtx(id); REG.live=ctx; REG.hfn=(x,z)=>ctx.h?ctx.h(x,z):0; REG.cfn=(x,z)=>ctx.cls?ctx.cls(x,z):1; if(def.bounds) Object.assign(BOUNDS,def.bounds());
+      const n0=[boxes.length,circles.length,oboxes.length]; // 作りの中で直接足された当たり判定（genBuilding など）も、この地域の物として覚える
+      try{ def.build(ctx); } finally { const have=new Set(ctx.colliders); for(const o of [...boxes.slice(n0[0]),...circles.slice(n0[1]),...oboxes.slice(n0[2])]) if(!have.has(o)) ctx.colliders.push(o); }
       if(!ctx.h||!ctx.bounds||!ctx.arrival) throw new Error('地域の形が足りない');
-      REG.hfn=ctx.h; REG.cfn=ctx.cls; Object.assign(BOUNDS,ctx.bounds);
+      Object.assign(BOUNDS,ctx.bounds);
       const a=at||ctx.arrival; P.x=a.x; P.z=a.z; P.facing=a.facing||0; }
     REG.cur=id; if(prog.chapter2) prog.chapter2.currentRegion=id;
     setCam(P.facing); resetCombat(); updateChunks(0,true); saveGame();
@@ -8537,6 +8547,175 @@ async function regionTravel(id,at=null,opt={}){
   }catch(e){ console.error(e);
     regionResetHome(); P.x=PSPAWN.x; P.z=PSPAWN.z; P.facing=0; if(prog.chapter2) prog.chapter2.currentRegion='komyoji';
     S.mode=mode==='loading'?'playing':mode; toast('地域の読み込みに失敗したため、光明寺に戻りました',true); saveGame(); return false; }
+}
+
+// ================= v0.60（P2 作業B）上志比 =================
+// 地図データは別ファイル（data/kamishihi/kamishihi-map.js）。上志比へ移るときだけ読む。作り方は docs/p2-kamishihi-map.md
+const KAMI_SRC=['data/kamishihi/kamishihi-map.js?v=060','../../data/kamishihi/kamishihi-map.js?v=060'];
+function loadScriptTry(urls,test){ return new Promise((res,rej)=>{ if(test()) return res(); let i=0, done=false; const fin=(f,v)=>{ if(!done){ done=true; f(v); } };
+  const next=()=>{ if(i>=urls.length) return fin(rej,new Error('地図データを読み込めない')); const sc=document.createElement('script'); sc.src=urls[i++]; sc.onload=()=>test()?fin(res):next(); sc.onerror=()=>{ sc.remove(); next(); }; document.head.appendChild(sc); };
+  next(); setTimeout(()=>fin(rej,new Error('地図データの読み込みが時間切れ')),45000); }); }
+let KAMI=null;
+function kamiGrid(){ if(KAMI) return KAMI; const D=window.KAMISHIHI_MAP, g=D.grid, nx=g.nx, ny=g.ny;
+  const dec=b=>{ const raw=Uint8Array.from(atob(b),c=>c.charCodeAt(0)); return new Uint16Array(raw.buffer); };
+  const q=dec(D.terrain), w=dec(D.water), H=new Float32Array(nx*ny), WL=new Float32Array(nx*ny), C=new Uint8Array(nx*ny), cr=Uint8Array.from(atob(D.cls),c=>c.charCodeAt(0));
+  for(let n=0;n<nx*ny;n++){ H[n]=q[n]/50-40; WL[n]=w[n]?w[n]/50-40:-999; const b=cr[n>>1]; C[n]=(n&1)?(b>>4):(b&15); }
+  KAMI={D,nx,ny,X0:g.x0,Z0:g.z0,GS:g.step,H,WL,C,W:(nx-1)*g.step,DD:(ny-1)*g.step}; return KAMI; }
+function kamiH(x,z){ const K=KAMI, fi=clamp((x-K.X0)/K.GS,0,K.nx-1.001), fk=clamp((z-K.Z0)/K.GS,0,K.ny-1.001), i=Math.floor(fi), k=Math.floor(fk), a=fi-i, b=fk-k, H=K.H, n=k*K.nx+i;
+  return (H[n]*(1-a)+H[n+1]*a)*(1-b)+(H[n+K.nx]*(1-a)+H[n+K.nx+1]*a)*b; }
+function kamiCls(x,z){ const K=KAMI, i=Math.round((x-K.X0)/K.GS), k=Math.round((z-K.Z0)/K.GS); if(i<0||k<0||i>=K.nx||k>=K.ny) return 1; return K.C[k*K.nx+i]; }
+// 光明寺の東の出口（国道416号の東の端）と、上志比から戻ったときに着く所
+function roadZAt(name,x){ for(const r of MD.roads){ if(r.n!==name) continue; for(let i=0;i<r.p.length-1;i++){ const [ax,az]=r.p[i], [bx,bz]=r.p[i+1]; if((ax-x)*(bx-x)<=0&&ax!==bx) return az+(x-ax)/(bx-ax)*(bz-az); } } return null; }
+const KOMYOJI_EAST={x:612,z:roadZAt('国道416号',612)??160}, KOMYOJI_EAST_ARRIVE={x:588,z:roadZAt('国道416号',588)??160,facing:-Math.PI/2};
+function kamishihiOpen(){ const c=prog.chapter2; return !!(prog.bossDefeated&&c&&c.progress&&c.progress.defenseComplete); }
+let gateNoteT=-99;
+let gateArmed=false;
+function regionGateKomyoji(){ if(S.mode!=='playing'||REG.busy||P.dead) return; const d=dist(P.x,P.z,KOMYOJI_EAST.x,KOMYOJI_EAST.z); if(d>19) gateArmed=true; if(d>11||!gateArmed) return;
+  if(!kamishihiOpen()){ if(stats.time-gateNoteT>8){ gateNoteT=stats.time; toast('この先は上志比。まだ行く時ではない'); } return; }
+  if(!regionCanTravel()){ if(stats.time-gateNoteT>8){ gateNoteT=stats.time; toast('今は光明寺を離れられない',true); } return; }
+  gateArmed=false; regionTravel('kamishihi'); }
+regionDefine('kamishihi',{name:'上志比', load:()=>loadScriptTry(KAMI_SRC,()=>!!window.KAMISHIHI_MAP).then(()=>{ kamiGrid(); }),
+  bounds:()=>Object.assign({},window.KAMISHIHI_MAP.play), homeArrival:KOMYOJI_EAST_ARRIVE, build:kamishihiBuild});
+const NEAR_D=120; // 上志比：細かい地面を描く距離（区画の端から）
+function kamishihiBuild(ctx){
+  const K=kamiGrid(), D=K.D, TL=56, own=ctx.own;
+  // 橋：橋の上では橋の高さを地面にする（九頭竜川や小川を歩いて渡れる。光明寺の橋の作り ribbon と同じ高さ）
+  const BR=new Map(), BC=16, bkey=(i,k)=>i*100003+k;
+  for(const r of D.roads){ if(!r.b||r.tn) continue; const p=r.p, hA=kamiH(p[0][0],p[0][1]), hB=kamiH(p[p.length-1][0],p[p.length-1][1]); let tot=0; const acc=[0];
+    for(let i=1;i<p.length;i++){ tot+=dist(p[i-1][0],p[i-1][1],p[i][0],p[i][1]); acc.push(tot); }
+    for(let i=0;i<p.length-1;i++){ const sg={ax:p[i][0],az:p[i][1],bx:p[i+1][0],bz:p[i+1][1],ha:lerp(hA,hB,tot?acc[i]/tot:0)+0.5,hb:lerp(hA,hB,tot?acc[i+1]/tot:0)+0.5,w:r.w/2+0.4};
+      const i0=Math.floor((Math.min(sg.ax,sg.bx)-sg.w)/BC), i1=Math.floor((Math.max(sg.ax,sg.bx)+sg.w)/BC), k0=Math.floor((Math.min(sg.az,sg.bz)-sg.w)/BC), k1=Math.floor((Math.max(sg.az,sg.bz)+sg.w)/BC);
+      for(let ii=i0;ii<=i1;ii++) for(let kk=k0;kk<=k1;kk++){ const kk2=bkey(ii,kk); let a=BR.get(kk2); if(!a){ a=[]; BR.set(kk2,a); } a.push(sg); } } }
+  const bridgeAt=(x,z)=>{ const a=BR.get(bkey(Math.floor(x/BC),Math.floor(z/BC))); if(!a) return null; let best=null;
+    for(const sg of a){ const dx=sg.bx-sg.ax, dz=sg.bz-sg.az, L2=dx*dx+dz*dz||1e-6, t=clamp(((x-sg.ax)*dx+(z-sg.az)*dz)/L2,0,1); if(Math.hypot(sg.ax+dx*t-x,sg.az+dz*t-z)>sg.w) continue; const h=lerp(sg.ha,sg.hb,t); if(best===null||h>best) best=h; }
+    return best; };
+  ctx.h=kamiH; ctx.cls=kamiCls; ctx.bounds=Object.assign({},D.play); ctx.arrival=D.arrival; ctx.respawn=D.arrival; // 作る間は地形の高さそのまま（橋の帯は ribbon が両端の高さから作る）
+  ctx.severity=0.5; // 荒れ具合（暫定）：家の傷みと「警戒区域」の表示に使う
+  const toU=x=>(x-K.X0)/K.W, toV=z=>(z-K.Z0)/K.DD;
+  // ---- 1) 地面の絵（分類・田畑・庭・小川・道を塗る。光明寺と同じ色づかい） ----
+  const TW=2048, TH=Math.round(2048*K.DD/K.W), cv=document.createElement('canvas'); cv.width=TW; cv.height=TH; const c=cv.getContext('2d');
+  { const sm=document.createElement('canvas'); sm.width=K.nx; sm.height=K.ny; const sc=sm.getContext('2d'), id=sc.createImageData(K.nx,K.ny);
+    const pal=[[118,152,74],[52,78,44],[64,110,124],[186,178,156],[132,166,86],[150,146,138],[160,150,110],[176,176,172]];
+    for(let n=0;n<K.nx*K.ny;n++){ const p=pal[K.C[n]]||pal[0], v=(hash2(n%K.nx,(n/K.nx)|0)-0.5)*14; id.data[n*4]=clamp(p[0]+v,0,255); id.data[n*4+1]=clamp(p[1]+v,0,255); id.data[n*4+2]=clamp(p[2]+v*0.6,0,255); id.data[n*4+3]=255; }
+    sc.putImageData(id,0,0); c.imageSmoothingEnabled=true; c.drawImage(sm,0,0,TW,TH); }
+  const path=(pts,close)=>{ c.beginPath(); pts.forEach((p,i)=>{ const u=toU(p[0])*TW, v=toV(p[1])*TH; if(i) c.lineTo(u,v); else c.moveTo(u,v); }); if(close) c.closePath(); };
+  const pxm=TW/K.W;
+  D.farms.forEach(f=>{ const r=hash2(f[0][0],f[0][1]); let col; // 荒らされた田畑も少し混ぜる（獣の被害）
+    if(r<0.66) col=`rgb(${96+r*30|0},${142+r*24|0},${58+r*10|0})`; else if(r<0.8) col=`rgb(${150+r*10|0},140,92)`; else if(r<0.9) col='rgb(110,128,72)'; else col='rgb(128,108,74)';
+    path(f,true); c.fillStyle=col; c.fill(); c.lineWidth=Math.max(1.2,0.9*pxm); c.strokeStyle='rgba(170,160,112,0.9)'; c.stroke(); });
+  c.fillStyle='rgba(168,160,140,0.85)';
+  for(const b of D.bld){ const [x,z,l,w,rot]=b, cs=Math.cos(rot), sn=Math.sin(rot), L=l/2+2.6, Wd=w/2+2.6; c.beginPath(); [[-L,-Wd],[L,-Wd],[L,Wd],[-L,Wd]].forEach(([a,e],i)=>{ const u=toU(x+a*cs-e*sn)*TW, v=toV(z+a*sn+e*cs)*TH; if(i) c.lineTo(u,v); else c.moveTo(u,v); }); c.closePath(); c.fill(); }
+  c.lineCap='round'; c.lineJoin='round';
+  for(const st of D.streams){ path(st.p); c.strokeStyle='#7d8a6a'; c.lineWidth=(st.w+2.4)*pxm; c.stroke(); path(st.p); c.strokeStyle='#4f8396'; c.lineWidth=st.w*pxm; c.stroke(); }
+  for(const r of D.roads){ if(r.tn) continue; path(r.p); c.strokeStyle=r.k==='track'||r.k==='path'||r.k==='footway'?'#9c917a':'#6c6c6c'; c.lineWidth=(r.w+0.6)*pxm; c.stroke(); }
+  for(const r of D.rails){ path(r); c.strokeStyle='#857a70'; c.lineWidth=3.6*pxm; c.stroke(); }
+  ctx.mapCanvas=cv;
+  const tex=own(new THREE.CanvasTexture(cv)); tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy()); tex.encoding=THREE.LinearEncoding;
+  const gm=own(new THREE.MeshLambertMaterial({map:tex}));
+  { const rx=(K.W/2.2).toFixed(1), rz=(K.DD/2.2).toFixed(1); gm.onBeforeCompile=sh=>{ sh.uniforms.detailMap={value:detailTex};
+      sh.fragmentShader='uniform sampler2D detailMap;\n'+sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n float dtl=texture2D(detailMap,vUv*vec2('+rx+','+rz+')).r; diffuseColor.rgb*=0.55+dtl*0.62;'); };
+    gm.customProgramCacheKey=()=>'kamiGround'; }
+  // ---- 2) 地形：区画ごとに近い用（細かい）と遠い用（粗く、森は木の高さに盛る） ----
+  const NCX=Math.ceil((K.nx-1)/TL), NCZ=Math.ceil((K.ny-1)/TL), tiles=[];
+  const tileGeo=(ci,ck,st,canopy)=>{ const i0=ci*TL, k0=ck*TL, i1=Math.min(K.nx-1,i0+TL), k1=Math.min(K.ny-1,k0+TL); const ii=[], kk=[];
+    for(let i=i0;i<i1;i+=st) ii.push(i); ii.push(i1); for(let k=k0;k<k1;k+=st) kk.push(k); kk.push(k1);
+    const hAt=(i,k)=>{ let h=K.H[k*K.nx+i]; if(canopy&&K.C[k*K.nx+i]===1) h+=8+hash2(i,k)*5; return h; }; const pos=[], nor=[], uv=[], idx=[], NC=ii.length;
+    for(const k of kk) for(const i of ii){ const x=K.X0+i*K.GS, z=K.Z0+k*K.GS; pos.push(x,hAt(i,k),z); const hl=hAt(Math.max(0,i-1),k), hr=hAt(Math.min(K.nx-1,i+1),k), hu=hAt(i,Math.max(0,k-1)), hd=hAt(i,Math.min(K.ny-1,k+1));
+      const nx=(hl-hr)/(2*K.GS), nz=(hu-hd)/(2*K.GS), l=Math.hypot(nx,1,nz); nor.push(nx/l,1/l,nz/l); uv.push(toU(x),1-toV(z)); }
+    for(let b=0;b<kk.length-1;b++) for(let a=0;a<NC-1;a++){ const v=b*NC+a; idx.push(v,v+NC,v+1,v+1,v+NC,v+NC+1); }
+    const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); g.setIndex(idx); g.computeBoundingSphere(); return own(g); };
+  for(let ck=0;ck<NCZ;ck++) for(let ci=0;ci<NCX;ci++){ const t={cx:K.X0+(ci+0.5)*TL*K.GS, cz:K.Z0+(ck+0.5)*TL*K.GS, lod:-1};
+    t.ci=ci; t.ck=ck; t.near=null; t.far=new THREE.Mesh(tileGeo(ci,ck,4,true),gm); // 近い用は近づいたときに作り、離れたら捨てる（メモリを抑える）
+    t.far.receiveShadow=true; t.far.visible=false; ctx.add(t.far); tiles.push(t); }
+  const nearMake=t=>{ const m=new THREE.Mesh(tileGeo(t.ci,t.ck,1,false),gm); m.receiveShadow=true; ctx.add(m); t.near=m; };
+  const nearDrop=t=>{ ctx.group.remove(t.near); t.near.geometry.dispose(); t.near=null; };
+  const HT=TL*K.GS/2, rectD=(t,x,z)=>Math.hypot(Math.max(0,Math.abs(x-t.cx)-HT),Math.max(0,Math.abs(z-t.cz)-HT)); // 区画の端までの距離
+  for(const t of tiles) if(rectD(t,D.arrival.x,D.arrival.z)<NEAR_D) nearMake(t); // 着いた所のまわりは先に作る
+  // ---- 3) 九頭竜川の水面 ----
+  { const pos=[], idx=[], vid=new Int32Array(K.nx*K.ny).fill(-1);
+    for(let k=0;k<K.ny;k++) for(let i=0;i<K.nx;i++){ let wl=-999; for(let b=-1;b<=1;b++) for(let a=-1;a<=1;a++){ const ii=i+a, kk=k+b; if(ii>=0&&kk>=0&&ii<K.nx&&kk<K.ny) wl=Math.max(wl,K.WL[kk*K.nx+ii]); }
+      if(wl<-900) continue; vid[k*K.nx+i]=pos.length/3; pos.push(K.X0+i*K.GS,wl-0.15,K.Z0+k*K.GS); }
+    for(let k=0;k<K.ny-1;k++) for(let i=0;i<K.nx-1;i++){ const a=vid[k*K.nx+i], b=vid[k*K.nx+i+1], cc2=vid[(k+1)*K.nx+i], d2=vid[(k+1)*K.nx+i+1]; if(a<0||b<0||cc2<0||d2<0) continue; idx.push(a,cc2,b,b,cc2,d2); }
+    if(idx.length){ const g=own(new THREE.BufferGeometry()); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals(); g.computeBoundingSphere();
+      ctx.add(new THREE.Mesh(g,own(new THREE.MeshLambertMaterial({color:0x5f9fb8,transparent:true,opacity:0.86})))); } }
+  // ---- 4) 道・線路・小川（光明寺と同じ帯の作り方） ----
+  const tileOf=(x,z)=>{ const ci=clamp(Math.floor((x-K.X0)/(TL*K.GS)),0,NCX-1), ck=clamp(Math.floor((z-K.Z0)/(TL*K.GS)),0,NCZ-1); return tiles[ck*NCX+ci]; };
+  const rmat=own(new THREE.MeshLambertMaterial({vertexColors:true,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
+  { const gbs=new Map(), gbOf=(x,z)=>{ const t=tileOf(x,z); let g=gbs.get(t); if(!g){ g=new GB(); g.frame(0,0,0,0); gbs.set(t,g); } return g; };
+    const asph=cc(0x5f6062), asph2=cc(0x6a6a68), track=cc(0x8f846c), white=cc(0xe8e6e0), orange=cc(0xd98a2a), rust=cc(0x8a5a3a), gravel=cc(0x8a8076);
+    const deco=new GB(); deco.frame(0,0,0,0);
+    const each=(pts,fn)=>{ for(const pc of splitLine(pts)){ const mid=pc[Math.floor(pc.length/2)]; fn(gbOf(mid[0],mid[1]),pc); } };
+    for(const r of D.roads){ if(r.tn) continue; const major=r.k==='trunk'||r.k==='primary'||r.k==='secondary'||r.k==='tertiary';
+      const col=(r.k==='track'||r.k==='path'||r.k==='footway')?track:(r.k==='service'?asph2:asph);
+      if(r.b){ const mid=r.p[Math.floor(r.p.length/2)]; ribbon(gbOf(mid[0],mid[1]),r.p,r.w,0.07,col,{bridge:true,deck:0.5}); bridgeDeco(deco,r); }
+      else each(r.p,(gb,pc)=>{ ribbon(gb,pc,r.w,0.07,col,{step:3.5});
+        if(major){ for(const sd of [-1,1]) ribbon(gb,pc,0.15,0.1,white,{off:sd*(r.w/2-0.35),step:6}); ribbon(gb,pc,0.18,0.1,orange,{step:6}); }
+        else if(r.k==='unclassified'){ for(const sd of [-1,1]) ribbon(gb,pc,0.12,0.1,white,{off:sd*(r.w/2-0.3),step:6}); ribbon(gb,pc,0.5,0.095,rust,{step:6}); } }); }
+    for(const r of D.rails) each(r,(gb,pc)=>{ ribbon(gb,pc,3.4,0.12,gravel,{step:3}); for(const sd of [-1,1]) ribbon(gb,pc,0.12,0.32,cc(0x5a4a42),{off:sd*0.55,step:3}); });
+    for(const st of D.streams) if(!st.cul) each(st.p,(gb,pc)=>ribbon(gb,pc,st.w,-0.25,cc(0x5a8fa2),{step:3}));
+    for(const [t,gb] of gbs){ const m=new THREE.Mesh(own(gb.geo()),rmat); m.receiveShadow=true; m.visible=false; ctx.add(m); t.road=m; }
+    if(deco.i.length) ctx.add(new THREE.Mesh(own(deco.geo()),vcMat)); }
+  // ---- 5) 建物（光明寺と同じ作り方。いくつかは獣に荒らされている） ----
+  { const by=new Map(); for(const b of D.bld){ const t=tileOf(b[0],b[1]); let a=by.get(t); if(!a){ a=[]; by.set(t,a); } a.push(b); } // 当たり判定は genBuilding が足す
+    for(const [t,list] of by){ const gb=new GB(), lo=new GB(); for(const b of list) genBuilding(gb,lo,b);
+      t.bld=new THREE.Mesh(own(gb.geo()),vcMat); t.bld.castShadow=true; t.bld.receiveShadow=true; t.bld.visible=false; ctx.add(t.bld);
+      t.bldInk=new THREE.Mesh(own(inkGeo(t.bld.geometry,0.07)),inkMat); t.bldInk.visible=false; t.bldInk.raycast=()=>{}; ctx.add(t.bldInk);
+      t.bldLo=new THREE.Mesh(own(lo.geo()),vcMat); t.bldLo.visible=false; ctx.add(t.bldLo); } }
+  // ---- 6) 森の木（森の所に、まばらに。近くだけ細かく描き、当たり判定をつける） ----
+  { const busy=new Uint8Array(K.nx*K.ny), mark=(x,z,r)=>{ const i0=Math.floor((x-r-K.X0)/K.GS), i1=Math.ceil((x+r-K.X0)/K.GS), k0=Math.floor((z-r-K.Z0)/K.GS), k1=Math.ceil((z+r-K.Z0)/K.GS);
+      for(let k=Math.max(0,k0);k<=Math.min(K.ny-1,k1);k++) for(let i=Math.max(0,i0);i<=Math.min(K.nx-1,i1);i++) busy[k*K.nx+i]=1; };
+    for(const r of D.roads) for(let i=0;i<r.p.length-1;i++){ const [ax,az]=r.p[i], [bx,bz]=r.p[i+1], L=dist(ax,az,bx,bz); for(let t=0;t<=L;t+=2) mark(lerp(ax,bx,t/(L||1)),lerp(az,bz,t/(L||1)),r.w/2+2); }
+    for(const b of D.bld) mark(b[0],b[1],Math.max(b[2],b[3])/2+3);
+    const perTile=new Map(), m4=new THREE.Matrix4(), q=new THREE.Quaternion(), e=new THREE.Euler(), sc=new THREE.Vector3(), v=new THREE.Vector3();
+    for(let k=0;k<K.ny;k++) for(let i=0;i<K.nx;i++){ const n=k*K.nx+i; if(K.C[n]!==1||busy[n]) continue; if(hash2(i*1.37,k*0.91)>0.3) continue;
+      const x=K.X0+(i+hash2(k,i)*0.8-0.4)*K.GS, z=K.Z0+(k+hash2(i+7,k)*0.8-0.4)*K.GS, t=tileOf(x,z); let L=perTile.get(t); if(!L){ L=[]; perTile.set(t,L); } L.push([x,kamiH(x,z)-0.15,z,0.95+hash2(i,k*3)*0.6]); }
+    const hiG=forestTreeGeo(), loG=treeGeos(), inkG=own(inkGeo(hiG,0.07)); let nTree=0;
+    for(const [t,L] of perTile){ const hi=new THREE.InstancedMesh(hiG,vcMat,L.length), lo=new THREE.InstancedMesh(loG,vcMat,L.length);
+      L.forEach((tr,j)=>{ e.set(0,hash2(tr[0],tr[2])*TAU,0); q.setFromEuler(e); sc.set(tr[3],tr[3]*(0.95+hash2(tr[2],tr[0])*0.25),tr[3]); v.set(tr[0],tr[1],tr[2]); m4.compose(v,q,sc); hi.setMatrixAt(j,m4); lo.setMatrixAt(j,m4);
+        if(tr[0]>ctx.bounds.minX&&tr[0]<ctx.bounds.maxX&&tr[2]>ctx.bounds.minZ&&tr[2]<ctx.bounds.maxZ) ctx.circle(tr[0],tr[2],0.45*tr[3],'tree',{h:tr[1]+7}); });
+      for(const m of [hi,lo]){ m.frustumCulled=false; m.visible=false; m.castShadow=m===hi; ctx.add(m); }
+      const ink=new THREE.InstancedMesh(inkG,inkMat,L.length); ink.instanceMatrix=hi.instanceMatrix; ink.frustumCulled=false; ink.visible=false; ink.raycast=()=>{}; ctx.add(ink);
+      t.trees=hi; t.treeFar=lo; t.treeInk=ink; nTree+=L.length; ctx.instanced=(ctx.instanced||[]).concat([hi,lo,ink]); }
+    ctx.treeCount=nTree; }
+  // ---- 7) 光明寺へ戻る道しるべ（国道416号の西の端） ----
+  { const ex=D.exitWest, g=new THREE.Group(); g.add(mesh(G.box,mat(0x6b5a44),0,1.1,0,0.14,2.2,0.14)); g.add(mesh(G.box,mat(0xf0ead8),0,2.0,0,1.6,0.42,0.06));
+    g.position.set(ex.x+6,kamiH(ex.x+6,ex.z+6)+0,ex.z+6); g.rotation.y=Math.PI/2; ctx.add(g); }
+  ctx.h=(x,z)=>{ const h=kamiH(x,z), b=bridgeAt(x,z); return b!==null&&b>h?b:h; }; ctx.bridgeAt=bridgeAt; // 作り終えたら、橋の上を歩けるようにする
+  ctx.onDispose=()=>{ for(const m of ctx.instanced||[]) if(m.dispose) m.dispose(); KAMI=null; };
+  // ---- 毎フレーム：区画の細かさ・木・建物の表示と、光明寺へ戻る出口 ----
+  ctx.leaving=false;
+  let dryX=D.arrival.x, dryZ=D.arrival.z, wetT=-99;
+  ctx.update=dt=>{ const px=camera.position.x, pz=camera.position.z; let made=0;
+    // 九頭竜川には入れない（橋の上は別）。川に入ったら、直前の岸へ戻す
+    if(S.mode==='playing'&&!REG.busy){ if(kamiCls(P.x,P.z)===2&&bridgeAt(P.x,P.z)===null){ P.x=dryX; P.z=dryZ; if(stats.time-wetT>6){ wetT=stats.time; toast('九頭竜川は深くて入れない'); } } else { dryX=P.x; dryZ=P.z; } }
+    for(let n=0;n<tiles.length;n++){ const t=tiles[n], d=rectD(t,px,pz);
+      if(d<NEAR_D&&!t.near&&made<2){ nearMake(t); made++; } else if(d>NEAR_D+160&&t.near) nearDrop(t); // 1フレームに2区画まで
+      const lod=(d<NEAR_D&&t.near)?0:1; if(lod!==t.lod||(t.near&&t.near.visible!==(lod===0))){ t.lod=lod; if(t.near) t.near.visible=lod===0; t.far.visible=lod===1; }
+      const near=d<TREE_NEAR+25, mid=d<400; if(t.trees){ t.trees.visible=near; t.treeInk.visible=near&&d<INK_NEAR*0.6; t.treeFar.visible=!near&&mid; }
+      if(t.road) t.road.visible=d<420; if(t.bld){ t.bld.visible=d<220; t.bldInk.visible=d<INK_NEAR; t.bldLo.visible=d>=220&&d<800; } }
+    const ex=D.exitWest, de=dist(P.x,P.z,ex.x,ex.z); if(de>ex.r+8) ctx.armed=true; // 一度離れてから出口に入ったときだけ戻る
+    if(ctx.armed&&!ctx.leaving&&S.mode==='playing'&&!REG.busy&&de<ex.r){
+      if(regionCanTravel()){ ctx.leaving=true; regionTravel('komyoji',KOMYOJI_EAST_ARRIVE); }
+      else if(stats.time-gateNoteT>8){ gateNoteT=stats.time; toast('今はここを離れられない',true); } } };
+  ctx.objective=()=>['第二章：上志比を歩いて調べる（光明寺へは西の出口・国道416号から戻れる）',null];
+  // ---- ミニマップ（地面の絵の、いる所のまわりを切り出す） ----
+  ctx.drawMini=(c2,W,H)=>{ const k=TW/K.W, sw=W*MINI_M*k, sh=H*MINI_M*k, sx=(P.x-K.X0)*k-sw/2, sz=(P.z-K.Z0)*k-sh/2;
+    c2.globalAlpha=0.92; c2.imageSmoothingEnabled=true; c2.drawImage(cv,sx,sz,sw,sh,0,0,W,H); c2.globalAlpha=1;
+    const X=x=>(x-P.x)/MINI_M+W/2, Z=z=>(z-P.z)/MINI_M+H/2;
+    for(const e of enemies){ if(e.state==='dead'||dist(e.x,e.z,P.x,P.z)>60) continue; c2.fillStyle='#e0533c'; c2.beginPath(); c2.arc(X(e.x),Z(e.z),2.4,0,TAU); c2.fill(); }
+    const ex=D.exitWest; c2.fillStyle='#f0c34a'; c2.fillRect(X(ex.x)-3,Z(ex.z)-3,6,6);
+    c2.save(); c2.translate(W/2,H/2); c2.rotate(-P.facing+Math.PI); c2.fillStyle='#ffffff'; c2.beginPath(); c2.moveTo(0,-5); c2.lineTo(3.5,4); c2.lineTo(-3.5,4); c2.closePath(); c2.fill(); c2.restore(); };
+  // ---- 全体地図（地面の絵をそのまま使う） ----
+  ctx.drawMap=(c2,W,H)=>{ const B=ctx.bounds, s0=Math.min(W/(B.maxX-B.minX+40),H/(B.maxZ-B.minZ+40))*MAPV.zoom;
+    const hw=W/2/s0, hh=H/2/s0; MAPV.cx=clamp(MAPV.cx,B.minX+Math.min(hw,(B.maxX-B.minX)/2),B.maxX-Math.min(hw,(B.maxX-B.minX)/2)); MAPV.cz=clamp(MAPV.cz,B.minZ+Math.min(hh,(B.maxZ-B.minZ)/2),B.maxZ-Math.min(hh,(B.maxZ-B.minZ)/2));
+    const X=x=>(x-MAPV.cx)*s0+W/2, Z=z=>(z-MAPV.cz)*s0+H/2; c2.fillStyle='#1d1714'; c2.fillRect(0,0,W,H);
+    c2.imageSmoothingEnabled=true; c2.drawImage(cv,X(K.X0),Z(K.Z0),K.W*s0,K.DD*s0);
+    c2.fillStyle='rgba(10,8,6,.55)'; c2.beginPath(); c2.rect(0,0,W,H); c2.rect(X(B.minX),Z(B.minZ),(B.maxX-B.minX)*s0,(B.maxZ-B.minZ)*s0); c2.fill('evenodd');
+    const lab=(t,x,y,col='#fff',sz=12)=>{ c2.font=`bold ${sz}px "Zen Kaku Gothic New",sans-serif`; c2.lineWidth=3; c2.strokeStyle='rgba(0,0,0,.75)'; c2.strokeText(t,x,y); c2.fillStyle=col; c2.fillText(t,x,y); };
+    for(const st of D.pts.station){ c2.fillStyle='#fff'; c2.fillRect(X(st[0])-4,Z(st[1])-4,8,8); lab(st[2]+'駅',X(st[0])+7,Z(st[1])+4); }
+    lab('← 光明寺',X(D.exitWest.x)+4,Z(D.exitWest.z)-8,'#ffe08a',13); lab('上志比',X(B.minX)+10,Z(B.minZ)+22,'#fff',16);
+    c2.save(); c2.translate(X(P.x),Z(P.z)); c2.rotate(-P.facing+Math.PI); c2.fillStyle='#ffd23a'; c2.strokeStyle='#000'; c2.lineWidth=1.5; c2.beginPath(); c2.moveTo(0,-9); c2.lineTo(6,7); c2.lineTo(0,3); c2.lineTo(-6,7); c2.closePath(); c2.fill(); c2.stroke(); c2.restore();
+    lab('地形：国土地理院 標高タイル／道・建物：© OpenStreetMap contributors',8,H-10,'#cfc6b4',10); };
 }
 
 // ================= 初期化 =================
