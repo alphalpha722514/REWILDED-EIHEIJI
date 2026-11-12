@@ -8,16 +8,23 @@
 - **座標をずらす**：ほかの地域は x が `REGION_X0`（4000）より東に置く。光明寺と座標が重ならないので、光明寺の村人・獣・採集・当たり判定と混ざらない。カメラの見える距離（3200m）より遠い。
 - 地面の高さ `groundH` と地面の種類 `clsAt` は、x が `REGION_X0` より東なら地域の関数、そうでなければ光明寺の地図（今までと同じ計算）。
 
-## 地域の作り方（作業Bで上志比をここに足す）
+## 地域の作り方（上志比は `docs/p2-kamishihi-map.md`）
 ```js
-regionDefine('kamishihi',{name:'上志比', homeArrival:{x,z,facing}, build(ctx){
+regionDefine('kamishihi',{name:'上志比', homeArrival:{x,z,facing},
+  load(){ return Promise }, // 任意：地域のデータを読む（別ファイル）。作る前に待つ
+  bounds(){ return {minX,…} }, // 任意：作る前に範囲を先に決める（作る中で範囲を使う道具がある）
+  build(ctx){
   // ctx.add(物)、ctx.own(ジオメトリ・材質・テクスチャ)＝捨てるときに解放する印
   // ctx.box()/ctx.circle()/ctx.obox()＝当たり判定（捨てるときに外す）
   // ctx.enemies.push(e)＝この地域の獣（捨てるときに外す）、ctx.onDispose＝追加の後片付け
   ctx.h=(x,z)=>高さ; ctx.cls=(x,z)=>地面の種類; ctx.bounds={minX,maxX,minZ,maxZ};
   ctx.arrival={x,z,facing}; ctx.respawn={x,z}; // 着く場所・倒れたときに起きる場所
+  // 任意（v0.60 作業B）：ctx.update(dt) 毎フレーム／ctx.drawMap(c,W,H) 全体地図／ctx.drawMini(c,W,H) ミニマップ
+  //   ctx.objective() 目的の表示／ctx.severity 荒れ具合（家の傷み・区域の表示）
 }});
 ```
+- 作る間も `groundH`・`clsAt` はこの地域の関数を使う（`build` の前に `REG.hfn`・`REG.cfn`・範囲を設定する）。
+- 作る中で道具（`genBuilding` など）が直接足した当たり判定も、この地域の物として覚えて、出るときに外す。
 - 移動：`regionTravel(id, 着く場所, {force})`。ロード画面を出し、前の地域を捨て、次を作る。**作るのに失敗したら光明寺へ戻して知らせる**。
 - 移動できないとき：防衛戦・襲撃などの最中、ボス戦中、倒れている間、ロード中。
 - ほかの地域にいる間は、光明寺の襲撃・侵攻は起きない（`startEvent` で止める）。
@@ -33,5 +40,8 @@ regionDefine('kamishihi',{name:'上志比', homeArrival:{x,z,facing}, build(ctx)
 - 勝率測定（A・B・C 各8回、同じ乱数）：main と出力が1文字も違わない。
 - 未確認：PC・iPhone の実機（往復のくり返しでの重さ・落ちないか）。
 
-## まだ無いもの（作業B以降）
-- 上志比の地図そのもの（`kamishihi` の定義）、境目まで歩いて移る入口、全体地図とミニマップの切り替え、地域ごとの採集・獣の保存、スズキの同行。
+## 作業B（v0.60）で足したもの
+- 上志比の地図（`kamishihi`）、光明寺の東の出口と上志比の西の出口（歩いて移る）、全体地図・ミニマップ・目的の表示の切り替え。詳細は `docs/p2-kamishihi-map.md`。
+
+## まだ無いもの
+- 地域ごとの採集・獣の保存、スズキの同行。

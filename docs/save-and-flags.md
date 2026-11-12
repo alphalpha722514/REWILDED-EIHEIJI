@@ -60,7 +60,7 @@
 |---|---|
 | `version` | 1 |
 | `unlocked` | ヌシ討伐済みなら true |
-| `currentRegion` | 最後にいた地域。**作りがあり（`REG.defs`）、第2章が開放済みのときだけ**復元し、それ以外（旧セーブ・未実装の地域）は `komyoji`（v0.60） |
+| `currentRegion` | 最後にいた地域（`komyoji`／`kamishihi`）。**作りがあり（`REG.defs`）、第2章が開放済みのときだけ**復元し、それ以外（旧セーブ・未実装の地域）は `komyoji`（v0.60）。上志比で保存したら、つづきからは上志比の着く所から（位置は保存しない） |
 | `currentChapter` | ヌシ討伐済みで、かつ `progress.openingStarted` が true なら 2。それ以外は 1 |
 | `regions` | `komyoji` は常に解放。`kamishihi` はヌシ討伐で解放扱い（地図は未実装） |
 | `progress` | 第2章の進み。中身はそのまま保存する（後の段階用） |
