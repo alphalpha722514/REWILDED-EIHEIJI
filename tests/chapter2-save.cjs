@@ -17,6 +17,13 @@ for (const malformed of [undefined, null, false, [], 'old', 42]) {
 assert.equal(state({unlocked:true}, false).unlocked, false);
 assert.equal(state({currentChapter:2,currentRegion:'kamishihi'}, true).currentRegion, 'komyoji');
 assert.deepEqual(state({progress:{quest:'saved'}}, true).progress, {quest:'saved'});
+// v0.60: a saved region is restored only when that region exists (playable) and chapter 2 is unlocked
+vm.runInContext("var REG={defs:{kamishihi:{name:'上志比'}}};", ctx);
+assert.equal(state({currentRegion:'kamishihi'}, true).currentRegion, 'kamishihi', 'playable region restored');
+assert.equal(state({currentRegion:'kamishihi'}, false).currentRegion, 'komyoji', 'locked: back to Komyoji');
+assert.equal(state({currentRegion:'nowhere'}, true).currentRegion, 'komyoji', 'unknown region: Komyoji');
+assert.equal(state({currentRegion:42}, true).currentRegion, 'komyoji');
+vm.runInContext('REG.defs={};', ctx);
 vm.runInContext(`
 const SAVE_KEY='eiheiji_vs_beasts_v010'; let storageOK=true;
 let stored;
