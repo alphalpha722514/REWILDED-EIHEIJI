@@ -70,13 +70,23 @@ assert.equal(run('targetOf(attacker).kind'),'core');
 run('updateMonkey(attacker,1)');assert.equal(run('damaged'),0,'windup before damage');
 run('updateMonkey(attacker,1)');assert.equal(run('damaged'),run('C2_DEFENSE.coreDamage'),'attacks core');
 run("ev.kind='invasion'");assert.equal(run('targetOf(attacker).kind'),'store','chapter 1 monkey behavior unchanged');
-// v0.55: monkeys stop to climb an intact fence in chapter 2 only
-run("ev.kind='chapter2';Object.assign(GAPS[0],{out:{x:50,z:50},in:{x:60,z:60},fence:{type:'wood',broken:false}})");
+// v0.55/v0.59: monkeys climb at the fence line in chapter 2 only; stake takes longer; a hit knocks them off
+vm.runInContext(`${extract('c2ClimbTime')}${extract('c2StartClimb')}${extract('c2ClimbFall')}const C2CLIMB={toastT:-99};`,ctx);
+run("ev.kind='chapter2';S.time=0;Object.assign(GAPS[0],{c:{x:50,z:55},out:{x:50,z:50},in:{x:50,z:60},fence:{type:'wood',broken:false}})");
 vm.runInContext("var climber={x:50,z:50.5,r:1,mode:'raid',type:'monkey',gap:0,rphase:'approach',state:'raid',home:{x:0,z:0},aggro:false};",ctx);
-run('targetOf(climber)');assert.equal(run('climber.climbT'),run('C2_DEFENSE.climb'),'climb starts at intact fence');
-run('updateMonkey(climber,1)');assert.equal(run('climber.climbT'),run('C2_DEFENSE.climb')-1);assert.equal(run('climber.x'),50,'stays while climbing');
-run("GAPS[0].fence.broken=true;climber.rphase='approach';climber.climbT=0;targetOf(climber)");assert.equal(run('climber.climbT'),0,'broken fence: no climb');
-run("ev.kind='invasion';GAPS[0].fence.broken=false;climber.rphase='approach';targetOf(climber)");assert.equal(run('climber.climbT'),0,'chapter 1: no climb');
+run('targetOf(climber)');assert.equal(run('climber.climbT||0'),0,'no climb at the outer approach point');
+run('climber.z=54.2;targetOf(climber)');assert.equal(run('climber.climbT'),run('C2_DEFENSE.climb'),'climb starts at the fence line');
+run('updateMonkey(climber,1)');assert.equal(run('climber.climbT'),run('C2_DEFENSE.climb')-1);assert.equal(run('climber.z'),54.2,'stays while climbing');
+run('P.x=50;P.z=52;targetOf(climber)');assert.equal(run('climber.aggro'),false,'no aggro while on the fence');
+assert.equal(run('c2ClimbFall(climber)'),true,'hit while climbing: falls');assert.equal(run('climber.climbT'),0);assert.equal(run('climber.climbDone'),false,'must climb again');
+run('P.x=100;P.z=100;targetOf(climber)');assert.equal(run('climber.climbT'),run('C2_DEFENSE.climb'),'climbs again from the start');
+run('updateMonkey(climber,C2_DEFENSE.climb)');assert.equal(run('climber.climbDone'),true,'climb completes');
+run('targetOf(climber)');assert.equal(run('climber.climbT'),0,'no second climb after crossing');
+assert.equal(run('c2ClimbFall(climber)'),false,'not climbing: no fall');
+run("GAPS[0].fence.type='stake';climber.climbDone=false;targetOf(climber)");assert.equal(run('climber.climbT'),run('C2_DEFENSE.climb*C2_DEFENSE.climbStakeMul'),'stake fence takes longer');
+run("GAPS[0].fence.broken=true;updateMonkey(climber,0.1)");assert.equal(run('climber.climbT'),0,'fence breaks mid-climb: goes through');
+run("climber.climbDone=false;targetOf(climber)");assert.equal(run('climber.climbT'),0,'broken fence: no climb');
+run("ev.kind='invasion';GAPS[0].fence.broken=false;climber.rphase='gate';targetOf(climber)");assert.equal(run('climber.climbT'),0,'chapter 1: no climb');
 console.log('PASS: chapter 2 core target/windup/damage; chapter 1 store target; chapter 2 fence climb');
 
 vm.runInContext(`${extract('f11InvHp')}${extract('f11InvDmg')}`,ctx);

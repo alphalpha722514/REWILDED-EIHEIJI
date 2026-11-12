@@ -526,7 +526,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.58 デモ版　第二章・光明寺防衛戦</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.59 デモ版　第二章・光明寺防衛戦</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -5711,7 +5711,8 @@ function syncChapter2(){
 // Opening encounter tuning is provisional; no chapter-ending story is inferred here.
 // v0.56（試遊を受けて 2026-11-12 承認・案②）：やぐら 540、攻撃倍率 1.2、波の間の休息 25秒、猿は無傷の柵を7秒かけてよじ登る（climb）
 // v0.57（2026-11-12 指示）：猿の割合を上げた（30匹中 猿18・猪8・熊4。v0.56 までは 猿12・猪13・熊5）。猿のやぐらへの一撃 14→10
-const C2_DEFENSE={warning:30,coreHp:540,rest:25,coreDamage:10,coreInterval:2.0,hpMul:2.0,damageMul:1.2,climb:7,
+const C2_DEFENSE={warning:30,coreHp:540,rest:25,coreDamage:10,coreInterval:2.0,hpMul:2.0,damageMul:1.2,climb:9,climbStakeMul:1.5,climbFallStun:1.2, // v0.59（暫定）：柵の線でよじ登る。杭柵は1.5倍かかる。登っている最中に叩くと落ちて、登り直し
+
   // Mixed attackers make existing fences and traps useful; cap remains eight live enemies.
   waves:[
     [['monkey',0,0],['boar',1,0],['monkey',2,1],['monkey',1,3],['boar',2,4],['monkey',0,5],['bear',0,7],['monkey',2,8]],
@@ -6436,6 +6437,19 @@ function weaponDmg(kind){
 }
 
 // ================= 敵へのダメージ =================
+// v0.59（暫定）：第2章のサルの柵越え。柵の線で止まってよじ登り、登り切るまで中に入れない。
+// 登っている最中に叩けば落ちて、もう一度はじめから登り直す（気絶つき）。杭柵は登るのに時間がかかる。
+const C2CLIMB={toastT:-99};
+function c2ClimbTime(g){ return (C2_DEFENSE.climb||0)*(g.fence.type==='stake'?(C2_DEFENSE.climbStakeMul||1):1); }
+function c2StartClimb(e,g){
+  e.climbT=c2ClimbTime(g); if(!(e.climbT>0)) return;
+  floatText(e.x,2.1,e.z,'柵をよじ登っている','#f0dca0');
+  if(typeof S!=='undefined'&&S.time!=null&&S.time-C2CLIMB.toastT>4){ C2CLIMB.toastT=S.time; toast(`${g.name}の柵にサルが取りついた！ 登り切る前に叩けば落とせる`); }
+}
+function c2ClimbFall(e){
+  if(e.type!=='monkey'||e.mode!=='raid'||ev.kind!=='chapter2'||!(e.climbT>0)) return false;
+  e.climbT=0; e.climbDone=false; floatText(e.x,2.3,e.z,'柵から落ちた！','#9be38a',true); return true;
+}
 function damageEnemy(e,dmg,kind,fromAng,info=null){
   if(e.state==='dead') return; f31Hit(info); if(kind==='heavy') f10Noise(e.x,e.z,12,'impact'); // 強い衝撃の音
   let mult=1; if(e.state==='broken') mult=1.3; // 体勢が崩れている間は受けるダメージ×1.3
@@ -6457,12 +6471,14 @@ function damageEnemy(e,dmg,kind,fromAng,info=null){
   spawnParticles(e.x,1,e.z,kind==='heavy'?10:6,e.type==='monkey'?0xd0b090:0xc9503c,kind==='heavy'?6:4);
   // 反応
   if(e.mode==='field'&&['idle','return','notice','search','probe','threat'].includes(e.state)){ e.state=e.type==='monkey'?'kite':'chase'; e.st=0; e.f10pose=null; if(e.type==='bear') e.f10fought=true; } // 攻撃されたらすぐ戦闘（F10 の新しい状態からも）
-  if(e.mode==='raid') e.aggro=true;
+  const fell=c2ClimbFall(e); // v0.59：登っている最中に叩かれたサルは落ちる
+  if(e.mode==='raid'&&!fell) e.aggro=true;
   const kb=e.type==='boss'?0:e.type==='bear'?(kind==='heavy'?0.6:0):kind==='heavy'?1.6:0.6;
   if(kb){ e.x+=Math.sin(fromAng)*kb; e.z+=Math.cos(fromAng)*kb; resolve(e,true,e.type==='monkey'); }
   // 体勢とひるみ（ひるみはサル0.8秒・イノシシ1.2秒に1回まで。クマとヌシはひるまない）
   const broke=e.hp-0>0&&applyPoise(e,info);
-  if(!broke&&canFlinch(e,kind,info)){ e.flinchT=S.time; setState(e,'hurt'); e.ind.visible=false; if(e.sector) e.sector.visible=false; }
+  if(fell&&e.hp>0){ setState(e,'stun'); e.stunT=C2_DEFENSE.climbFallStun; e.ind.visible=false; if(e.sector) e.sector.visible=false; }
+  else if(!broke&&canFlinch(e,kind,info)){ e.flinchT=S.time; setState(e,'hurt'); e.ind.visible=false; if(e.sector) e.sector.visible=false; }
   if(e.hp<=0) killEnemy(e,trk36BonusFor(e));
   else if(e.type==='boss'&&e.phase===1&&e.hp<e.maxHp*0.5){ e.phase=2; banner('ヌシが怒り狂った！','突進が連続し、地響きの踏みつけを使ってくる',2.4); sfx('roar'); S.shake=0.5; }
 }
@@ -6484,12 +6500,13 @@ function targetOf(e){
   const pd=dist(e.x,e.z,P.x,P.z);
   if(e.mode==='raid'){
     if(e.aggro&&(pd>12||P.dead)) e.aggro=false;
-    if(!e.aggro&&pd<5.5&&!P.dead&&!e.carry) e.aggro=true;
+    if(!e.aggro&&pd<5.5&&!P.dead&&!e.carry&&!(e.climbT>0)) e.aggro=true; // v0.59：柵にしがみついている間はプレイヤーに向かわない
     if(e.aggro) return {kind:'player',x:P.x,z:P.z};
     const g=GAPS[e.gap];
     if(e.type==='monkey'){
       if(e.carry) return {kind:'flee',x:e.home.x,z:e.home.z};
-      if(e.rphase==='approach'){ if(dist(e.x,e.z,g.out.x,g.out.z)<2){ e.rphase='gate'; if(ev.kind==='chapter2'&&g.fence.type&&!g.fence.broken){ e.climbT=C2_DEFENSE.climb||0; if(e.climbT>0) floatText(e.x,2.1,e.z,'柵をよじ登っている','#f0dca0'); } } else return {kind:'point',x:g.out.x,z:g.out.z}; }
+      if(e.rphase==='approach'){ if(dist(e.x,e.z,g.out.x,g.out.z)<2){ e.rphase='gate'; } else return {kind:'point',x:g.out.x,z:g.out.z}; }
+      if(e.rphase==='gate'&&ev.kind==='chapter2'&&!e.climbDone&&!(e.climbT>0)&&g.fence.type&&!g.fence.broken&&dist(e.x,e.z,g.c.x,g.c.z)<1.6) c2StartClimb(e,g); // v0.59：柵の線でよじ登る
       if(e.rphase==='gate'){ if(dist(e.x,e.z,g.in.x,g.in.z)<2) e.rphase='core'; else return {kind:'point',x:g.in.x,z:g.in.z}; }
       if(ev.kind==='chapter2')return {kind:'core',x:CORE.x,z:CORE.z};
       return {kind:'store',x:STORE.x,z:STORE.z};
@@ -6663,7 +6680,7 @@ function updateMonkey(e,dt){
       break; }
     case 'raid': {
       if(e.aggro){ setState(e,'kite'); e.atkT=1.2; break; }
-      if(e.climbT>0){ e.climbT-=dt; e.spd=0; break; } // v0.55：第2章、無傷の柵をよじ登っている間は止まる
+      if(e.climbT>0){ const g=GAPS[e.gap]; if(!g.fence.type||g.fence.broken){ e.climbT=0; } else { e.climbT-=dt; e.spd=0; if(e.climbT<=0){ e.climbT=0; e.climbDone=true; } break; } } // v0.55／v0.59：第2章、無傷の柵をよじ登っている間は止まる（柵が壊れたらそのまま通る）
       if(t.kind==='flee'){ steer(e,t.x,t.z,ET.monkey.speed,dt); if(dist(e.x,e.z,t.x,t.z)<2){ e.fled=true; removeEnemy(e); return; } break; }
       if(ev.kind==='chapter2'&&t.kind==='core'&&tDist(e,t)<1.5){
         e.spd=0;faceTo(e,Math.atan2(t.x-e.x,t.z-e.z),10,dt);
