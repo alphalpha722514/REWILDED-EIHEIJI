@@ -3,7 +3,7 @@ python3 lineup.py 出力.png "名前=GLB[:ol]" ...   （:ol で輪郭線をつ�
 """
 import asyncio, base64, os, sys
 from playwright.async_api import async_playwright
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))); T3 = os.environ.get('THREE_DIR', '/home/claude/v010/node_modules/three')
+ROOT = '/home/claude/rewilded-eiheiji'; T3 = os.environ.get('THREE_DIR', '/home/claude/v010/node_modules/three')
 THREE = open(f'{T3}/build/three.min.js').read(); GLTF = open(f'{T3}/examples/js/loaders/GLTFLoader.js').read(); MO = open(f'{T3}/examples/js/libs/meshopt_decoder.js').read()
 SRC = open(f'{ROOT}/index.html', encoding='utf8').read()
 HOOK = "window.__s={makeHuman,makeMonkey,outlineMatT};\n"
@@ -36,7 +36,7 @@ JS = r"""async (items) => { const T = THREE, S = window.__s, W = 1500, H = 560;
   const sc = new T.Scene(); sc.background = new T.Color(0xe9e4d8); sc.add(new T.HemisphereLight(0xfff2dc, 0x6f6450, 0.6));
   const dl = new T.DirectionalLight(0xfff0d8, 0.7); dl.position.set(3, 6, 8); sc.add(dl);
   const gr = new T.Mesh(new T.PlaneGeometry(60, 60), new T.MeshBasicMaterial({color: 0xd6cfbf})); gr.rotation.x = -Math.PI / 2; sc.add(gr);
-  const objs = [['主人公', S.makeHuman({player47: true}).g], ['通常の猿', S.makeMonkey().g]];
+  const objs = [["主人公", S.makeHuman({player47: true}).g], ["通常の猿", S.makeMonkey().g]];
   for (const [name, b64, ol] of items) {
     const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer; const L = new T.GLTFLoader(); L.setMeshoptDecoder(MeshoptDecoder);
     const gl = await new Promise((res, rej) => L.parse(bin, '', res, rej)); const g = new T.Group(); g.add(gl.scene);

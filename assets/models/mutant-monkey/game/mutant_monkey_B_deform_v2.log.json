@@ -1,0 +1,19 @@
+{
+ "removed_small_faces": 0,
+ "genital_vertices": 43,
+ "old_tail_vertices": 177,
+ "new_tail_tris": 250,
+ "variant": "deform v2",
+ "head_scale": 1.15,
+ "inflate": 0.006,
+ "forearm_thickness": 1.55,
+ "hand_scale": 1.25,
+ "feet_scale": 1.08,
+ "scale": 2.0240431997935544,
+ "feet_y": -0.44907808336809474,
+ "height": 1.9474736502278003,
+ "min_y": -0.09568597763136853,
+ "verts": 8888,
+ "tris": 11827,
+ "scale_color_boost": "saturation x1.6, value x1.12 (blue hue)"
+}

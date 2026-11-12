@@ -96,7 +96,7 @@ def ring_color(region):
     cols = []
     for f in ring:
         u, v = UV[I[f]].mean(0)
-        cols.append(a[int((1 - v) * TS) % TS, int(u * TS) % TS])
+        cols.append(a[int(v * TS) % TS, int(u * TS) % TS])  # glTF の UV は画像の左上が (0,0)
     return np.median(np.array(cols), 0)
 
 
@@ -107,7 +107,7 @@ def paint_faces(faces, col, seed):
     for f in faces:
         jit = rng.normal(0, 6, 3)
         cc = tuple(int(np.clip(col[k] + jit[k], 0, 255)) for k in range(3))
-        d.polygon([(UV[i, 0] * TS, (1 - UV[i, 1]) * TS) for i in I[f]], fill=cc, outline=cc)
+        d.polygon([(UV[i, 0] * TS, UV[i, 1] * TS) for i in I[f]], fill=cc, outline=cc)
 
 
 # ---- 2) 股（生殖器）：出っ張りを縮めてならし、色を周りの毛に合わせる ----
@@ -134,7 +134,7 @@ P = WP[wid].copy()
 
 # ---- 4) 新しい尾（丸い筒。後ろ下がり35°、先が少し垂れる） ----
 # UV は元の尾の毛の部分（1024 で 20×80 の長方形）。尾の色をそのまま使う
-du0, dv0, dw, dh = 64 / 1024, 484 / 1024, 20 / 1024, 80 / 1024
+du0, dv0, dw, dh = 64 / 1024, 460 / 1024, 20 / 1024, 80 / 1024  # 画像の左上から（行 = v）
 # この長方形（元の尾の毛の所。元の尾は体に収めたので見えない）に、お尻の毛の色で縦の毛すじを描き直す
 rng = np.random.default_rng(7)
 rx, ry, rw, rh = int(du0 * TS), int(dv0 * TS), int(dw * TS), int(dh * TS)
@@ -148,14 +148,14 @@ for _ in range(rw * 3):
 fur = np.clip(fur + rng.normal(0, 3, fur.shape), 0, 255).astype(np.uint8)
 tex.paste(Image.fromarray(fur).filter(ImageFilter.GaussianBlur(0.6)), (rx, ry))
 R0 = np.array([-0.318, 0.122, 0.0])
-ang = math.radians(-6)  # 付け根は水平より少し上向き。先へ行くほど垂れる（正面から脚の間に見えないように）
+ang = math.radians(-10)  # 付け根は水平より少し上向き。先へ行くほど垂れる（正面から脚の間に見えないように）
 dvec = np.array([-math.cos(ang), -math.sin(ang), 0.0])
 L, RINGS, SIDES = 0.215, 13, 10
 TR = 1.2 if ver == 'deform' else 1.0  # デフォルメ版は少し太い
 cen = []
 for k in range(RINGS):
     t = k / (RINGS - 1)
-    cen.append(R0 + dvec * L * t + np.array([0, -0.11 * t * t, 0]))
+    cen.append(R0 + dvec * L * t + np.array([0, -0.08 * t * t, 0]))
 cen = np.array(cen)
 newP, newUV = [], []
 for k in range(RINGS):
@@ -166,8 +166,8 @@ for k in range(RINGS):
     for s in range(SIDES + 1):
         a = 2 * math.pi * s / SIDES + math.pi / 2  # 継ぎ目は下側
         newP.append(cen[k] + r * (math.cos(a) * side + math.sin(a) * up))
-        newUV.append([du0 + dw * s / SIDES, 1 - (dv0 + dh * t)])
-newP.append(cen[-1] + (cen[-1] - cen[-2]) * 0.3); newUV.append([du0 + dw / 2, 1 - (dv0 + dh)])
+        newUV.append([du0 + dw * s / SIDES, dv0 + dh * t])
+newP.append(cen[-1] + (cen[-1] - cen[-2]) * 0.3); newUV.append([du0 + dw / 2, dv0 + dh])
 base = len(P)
 newI = []
 for k in range(RINGS - 1):
@@ -203,27 +203,44 @@ def vnormals(P, I, wid, n):
 
 feet_y0 = float(P[(P[:, 0] < 0.1) & (P[:, 1] < -0.3)][:, 1].min())  # 大きさは加工前の足の裏から決める（両方の版で同じ倍率）
 if ver == 'deform':
+    # v2（2026-11-13 ユーザー指示）：頭の大きさは控えめ、鱗のある前腕を大きく太く強調
+    HEAD, INFL, FOREARM, HAND, FEET = 1.15, 0.006, 1.55, 1.25, 1.08
+    sm = lambda e0, e1, x: np.clip((x - e0) / (e1 - e0), 0, 1) ** 2 * (3 - 2 * np.clip((x - e0) / (e1 - e0), 0, 1))
     H0 = np.array([0.065, 0.27, 0.0])
     hd = np.array([0.87, 0.49, 0.0]); hd /= np.linalg.norm(hd)
-    pr = (P - H0) @ hd
-    sm = lambda e0, e1, x: np.clip((x - e0) / (e1 - e0), 0, 1) ** 2 * (3 - 2 * np.clip((x - e0) / (e1 - e0), 0, 1))
-    wz = 1 - sm(0.13, 0.17, np.abs(P[:, 2]))
-    wy = sm(0.08, 0.14, P[:, 1])
-    w = sm(-0.02, 0.06, pr) * wz * wy
+    w = sm(-0.02, 0.06, (P - H0) @ hd) * (1 - sm(0.13, 0.17, np.abs(P[:, 2]))) * sm(0.08, 0.14, P[:, 1])  # 頭
     NN = vnormals(P, I, wid2, n2)
-    P = P + NN * (0.007 * (1 - w))[:, None]  # 体と手足を少し太く
-    # 手と足を少し大きく（手首・足首を中心に。下ほど強く）
-    for lo_mask, top_off in [((P[:, 0] > 0.15) & (P[:, 1] < -0.30), 0.05), ((P[:, 0] < 0.08) & (P[:, 0] > -0.3) & (P[:, 1] < -0.36), 0.04)]:
-        for sgn in (-1, 1):
-            m = lo_mask & (np.sign(P[:, 2]) == sgn) & (np.abs(P[:, 2]) > 0.05)
-            if not m.any():
-                continue
-            pv = P[m].mean(0); pv[1] = P[m][:, 1].max()
-            near = (np.abs(P[:, 2] - pv[2]) < 0.12) & (np.abs(P[:, 0] - pv[0]) < 0.14)
-            wt = np.clip((pv[1] + top_off - P[:, 1]) / (top_off * 2), 0, 1) * near
-            P = pv + (P - pv) * (1 + 0.14 * wt)[:, None]
-    P = H0 + (P - H0) * (1 + 0.45 * w)[:, None]
-    log['head_scale'] = 1.45; log['inflate'] = 0.007; log['hands_feet'] = 1.14
+    P = P + NN * (INFL * (1 - w))[:, None]  # 体と手足を少し太く
+    # 前腕：左右それぞれ、高さごとの断面の中心から外へ広げる（肘の下から手首まで。肘と手首でなめらかにつなぐ）
+    EL_Y, FULL_Y, WR_Y = 0.07, -0.03, -0.34
+    for sgn in (-1, 1):
+        arm = (np.sign(P[:, 2]) == sgn) & (P[:, 0] > 0.06) & (np.abs(P[:, 2]) > 0.11) & (P[:, 1] < 0.16) & (P[:, 1] > -0.52)
+        ys = np.arange(0.16, -0.52, -0.02); cx, cz = [], []
+        for y in ys:
+            sl = arm & (np.abs(P[:, 1] - y) < 0.015)
+            cx.append(P[sl, 0].mean() if sl.any() else np.nan); cz.append(P[sl, 2].mean() if sl.any() else np.nan)
+        cx, cz = np.array(cx), np.array(cz); ok = ~np.isnan(cx)
+        fx = lambda y: np.interp(-y, -ys[ok], cx[ok]); fz = lambda y: np.interp(-y, -ys[ok], cz[ok])
+        y = P[arm, 1]
+        wf = sm(EL_Y, FULL_Y, y) * (1 - 0.25 * sm(WR_Y + 0.02, WR_Y - 0.06, y))  # 肘で0→下で1、手首の先で少し戻す
+        k = 1 + (FOREARM - 1) * wf
+        Q = P[arm].copy(); Q[:, 0] = fx(y) + (Q[:, 0] - fx(y)) * k; Q[:, 2] = fz(y) + (Q[:, 2] - fz(y)) * k
+        P[arm] = Q
+        # 手：地面につく所を中心に大きく（手首から下ほど強く）
+        hand = arm & (P[:, 1] < WR_Y)
+        if hand.any():
+            pv = P[hand].mean(0); pv[1] = P[hand][:, 1].min()
+            wt = sm(WR_Y, WR_Y - 0.07, P[:, 1]) * hand
+            P = pv + (P - pv) * (1 + (HAND - 1) * wt)[:, None]
+    # 足：少しだけ大きく
+    for sgn in (-1, 1):
+        ft = (np.sign(P[:, 2]) == sgn) & (P[:, 0] < 0.08) & (P[:, 0] > -0.3) & (P[:, 1] < -0.36) & (np.abs(P[:, 2]) > 0.05)
+        if ft.any():
+            pv = P[ft].mean(0); pv[1] = P[ft][:, 1].min()
+            wt = sm(-0.36, -0.41, P[:, 1]) * ft
+            P = pv + (P - pv) * (1 + (FEET - 1) * wt)[:, None]
+    P = H0 + (P - H0) * (1 + (HEAD - 1) * w)[:, None]
+    log.update({'variant': 'deform v2', 'head_scale': HEAD, 'inflate': INFL, 'forearm_thickness': FOREARM, 'hand_scale': HAND, 'feet_scale': FEET})
 
 # ---- 6) 向き・原点・大きさ ----
 feet = P[(P[:, 0] < 0.1) & (P[:, 1] < -0.3)]
@@ -251,6 +268,16 @@ if ver == 'deform':
     t2 = ImageEnhance.Brightness(t2).enhance(1.12)
     q = t2.quantize(colors=24, method=Image.Quantize.MEDIANCUT).convert('RGB')
     tex = Image.blend(t2, q, 0.5)
+    # 前腕の鱗（青みの所）を少し鮮やかに・明るくして目立たせる（v2）
+    hsv = np.asarray(tex.convert('HSV')).astype(np.float64)
+    hue = hsv[:, :, 0] * 360 / 255
+    mk = ((hue > 150) & (hue < 260) & (hsv[:, :, 1] > 12)).astype(np.float64)
+    from scipy.ndimage import gaussian_filter
+    mk = gaussian_filter(mk, 2.0)
+    hsv[:, :, 1] = np.clip(hsv[:, :, 1] * (1 + 0.6 * mk), 0, 255)
+    hsv[:, :, 2] = np.clip(hsv[:, :, 2] * (1 + 0.12 * mk), 0, 255)
+    tex = Image.fromarray(hsv.astype(np.uint8), 'HSV').convert('RGB')
+    log['scale_color_boost'] = 'saturation x1.6, value x1.12 (blue hue)'
 mm.save(out, P, NN, UV, I)
 meta = json.load(open(f'{out}/meta.json')); meta['keep_tail_tris'] = int(log['new_tail_tris']); json.dump(meta, open(f'{out}/meta.json', 'w'))  # 尾は減らさない（最後の面）
 tex.save(f'{out}/color.jpg', quality=92)
