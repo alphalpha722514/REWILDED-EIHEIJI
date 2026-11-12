@@ -41,6 +41,11 @@ async (who) => {
   for (const id of who) {
     let g = null;
     if (id === 'player') g = S.pm.g;
+    else if (id.startsWith('wear:')) { // 着替えの確認：wear:-chest,-legs,-feet（脱ぐ）／wear:hat=forest（帽子。髪をしまう）
+      const m = S.makeHuman({player47: true}), w = {}; let hat = null;
+      for (const t of id.slice(5).split(',')) { if (t.startsWith('-')) w[t.slice(1)] = false; else if (t.startsWith('hat=')) hat = t.slice(4); }
+      if (hat) { w.hair = false; w.band = false; w.hatHair = true; for (const l of m.layers.head) l.visible = l.userData.variant === hat; }
+      m.setWear && m.setWear(w); g = m.g; }
     else if (id.startsWith('player@')) { // 防具の外観案：player@forest など（頭・胸・脚・靴をその組で着せる）
       const set = id.slice(7), m = S.makeHuman({player47: true}); const t0 = performance.now();
       for (const slot of ['chest', 'legs', 'feet']) S.f60EnsureArmor(m, slot, set);
@@ -101,7 +106,7 @@ async def main():
             for t, u in zip(['正面', '横', '背面'], imgs)) + '</body>'
         p2 = await (await b.new_context(viewport={'width': 1500, 'height': 400})).new_page()
         await p2.set_content(html)
-        await p2.screenshot(path=out, full_page=True)
+        await p2.screenshot(path=out, full_page=True, timeout=240000)
         if errs:
             print('page errors:', errs[:5])
         print('wrote', out)
