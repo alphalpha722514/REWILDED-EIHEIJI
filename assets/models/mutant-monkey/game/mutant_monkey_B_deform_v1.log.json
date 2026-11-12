@@ -1,0 +1,15 @@
+{
+ "removed_small_faces": 0,
+ "genital_vertices": 43,
+ "old_tail_vertices": 177,
+ "new_tail_tris": 250,
+ "head_scale": 1.45,
+ "inflate": 0.007,
+ "hands_feet": 1.14,
+ "scale": 2.0240431997935544,
+ "feet_y": -0.4625670820615937,
+ "height": 2.1031312390356685,
+ "min_y": -0.1257474048493184,
+ "verts": 8888,
+ "tris": 11827
+}

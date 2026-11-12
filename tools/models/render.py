@@ -6,6 +6,7 @@ views: front,side,back,top,q34,… を , でつなぐ。zoom=x,y,z,r（その点
 """
 import asyncio
 import base64
+import json
 import os
 import sys
 
@@ -19,10 +20,11 @@ src, out = sys.argv[1], sys.argv[2]
 mode = sys.argv[3] if len(sys.argv) > 3 else 'tex'
 views = (sys.argv[4] if len(sys.argv) > 4 else 'front,side,back,q34').split(';' if ';' in (sys.argv[4] if len(sys.argv) > 4 else '') else ',')
 B64 = base64.b64encode(open(src, 'rb').read()).decode()
+PTS = open(os.environ['PTS']).read() if os.environ.get('PTS') else '[]'  # 赤い点で示す位置の JSON [[x,y,z],…]
 SIZE = int(os.environ.get('RSIZE', '640'))
 
 JS = r"""
-async ([b64, mode, views, size]) => {
+async ([b64, mode, views, size, pts]) => {
   const T = THREE, W = size, H = size;
   const r = new T.WebGLRenderer({antialias: true, preserveDrawingBuffer: true}); r.setSize(W, H); r.setPixelRatio(1);
   r.outputEncoding = T.sRGBEncoding;
@@ -42,6 +44,8 @@ async ([b64, mode, views, size]) => {
       const back = new T.MeshBasicMaterial({color: 0xff2020, side: T.BackSide}); const b = new T.Mesh(m.geometry, back); m.add(b); m.material = front; }
   }
   if (mode === 'wireover') for (const m of meshes) { const w = new T.Mesh(m.geometry, new T.MeshBasicMaterial({color: 0x000000, wireframe: true, transparent: true, opacity: 0.25})); m.add(w); }
+  if (pts.length) { const pg = new T.BufferGeometry(); pg.setAttribute('position', new T.Float32BufferAttribute(pts.flat(), 3));
+    sc.add(new T.Points(pg, new T.PointsMaterial({color: 0xff1010, size: 5, sizeAttenuation: false, depthTest: true}))); }
   const cam = new T.PerspectiveCamera(30, W / H, 0.01, 100), out = [];
   const R = Math.max(sz.x, sz.y, sz.z) * 1.95;
   for (const v of views) {
@@ -67,7 +71,7 @@ async def main():
         await pg.add_script_tag(content=THREE)
         await pg.add_script_tag(content=GLTF)
         await pg.add_script_tag(content=MESHOPT)
-        res = await pg.evaluate(JS, [B64, mode, views, SIZE])
+        res = await pg.evaluate(JS, [B64, mode, views, SIZE, json.loads(PTS)])
         print('box', res['box'], 'tris', res['tris'])
         html = '<body style="margin:0;background:#ccc;display:flex;flex-wrap:wrap">' + ''.join(
             f'<div style="font:16px sans-serif"><div style="padding:2px 6px">{v}</div><img src="{u}" style="display:block;width:{SIZE}px"></div>' for v, u in zip(views, res['imgs'])) + '</body>'
