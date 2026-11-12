@@ -4758,6 +4758,8 @@ function makeHumanClassic(o){
       if(bt.gaiter&&y<knY-0.02) return bt.gaiter;
       if(bt.cargoBig&&Math.abs(Math.abs(x)-(legX+lR0*0.92+t))<0.035&&Math.abs(y-((hipY+knY)/2+0.06))<0.014) return bt.col2||bt.col; // 袋の蓋
       if(bt.pleat&&z>0.04&&y>knY&&Math.abs(Math.abs(x)-legX)<0.006) return bt.col2||bt.col; // 前のプリーツ
+      if(bt.waistBand&&y>ptop-0.035) return bt.col2||bt.col; // v0.60 ジャージの腰ゴム
+      if(bt.stripe&&y<ptop-0.035&&Math.abs(Math.atan2(z,Math.abs(x)-legX))<0.16) return bt.stripe; // v0.60 ジャージの横の線
       return bt.col; },true);
   }
   // ---- 靴 ----
@@ -4883,8 +4885,15 @@ function makeHumanClassic(o){
       tufts.push((x,y,z)=>SDF.cone(x,y,z,[0,headY+R*0.1,-R*0.85],[0,headY-R*0.42,-R*1.1],0.09*R/0.33,0.014)); // 襟足
       for(const [xi,zi] of [[-0.3,-0.2],[0.25,-0.4],[0.0,0.15]]) tufts.push((x,y,z)=>SDF.cone(x,y,z,[xi*R,headY+R*0.82,zi*R],[xi*R*1.3,headY+R*1.12,(zi-0.25)*R],0.07*R/0.33,0.01)); // てっぺんのはね
     }
+    if(hr.style==='center'){ // v0.60 センター分け（スズキ）：まん中で左右に分け、前髪を外へ流す
+      for(const s of [-1,1]){
+        tufts.push((x,y,z)=>SDF.cone(x,y,z,[s*0.06*R,headY+0.78*R,R*0.42],[s*0.62*R,headY+0.3*R,R*0.86],0.12*R/0.33,0.02));
+        tufts.push((x,y,z)=>SDF.cone(x,y,z,[s*0.5*R,headY+0.55*R,R*0.6],[s*0.9*R,headY+0.05*R,R*0.5],0.09*R/0.33,0.016));
+        tufts.push((x,y,z)=>SDF.cone(x,y,z,[s*R*0.8,headY+R*0.1,-R*0.25],[s*R*1.06,headY-R*0.3,-R*0.3],0.07*R/0.33,0.012)); }
+      tufts.push((x,y,z)=>SDF.cone(x,y,z,[0,headY+R*0.1,-R*0.85],[0,headY-R*0.36,-R*1.06],0.09*R/0.33,0.014)); }
     if(hr.style==='bun') tufts.push((x,y,z)=>SDF.ell(x,y,z,[0,headY+R*0.78,-R*0.5],[R*0.42,R*0.4,R*0.42]));
-    add('hair',(x,y,z)=>{ let d=Math.max(headF(x,y,z)-t,lineF(x,y,z)); for(const f of tufts) d=SDF.smin(d,f(x,y,z),0.025); return d; },headY-R*1.3,top,(x,y,z)=>{
+    const partF=hr.style==='center'?(x,y,z)=>(z>-R*0.2&&y>headY+R*0.2)?0.016-Math.abs(x):-1:null; // 分け目のすじ
+    add('hair',(x,y,z)=>{ let d=Math.max(headF(x,y,z)-t,lineF(x,y,z)); for(const f of tufts) d=SDF.smin(d,f(x,y,z),0.025); if(partF) d=Math.max(d,partF(x,y,z)); return d; },headY-R*1.3,top,(x,y,z)=>{
       return hairC; },true);
   }
   // ---- 手ぬぐい（鉢巻き）----
@@ -4943,10 +4952,37 @@ function makeHumanClassic(o){
     const br=mesh(G.cyl,mat(0xe8e6de),0,R*0.3,R*0.1,R*1.1,0.03,R*1.2); headC.add(br);
     headC.add(mesh(G.cyl,mat(0x2a8a4a),0,R*0.52,-R*0.06,R*0.99,R*0.09,R*1.01)); // 緑の線
     const lamp=mesh(G.cyl8,mat(0x3a3a3a),0,R*0.56,R*0.98,0.06,0.05,0.06); lamp.rotation.x=Math.PI/2; headC.add(lamp); const lens=mesh(G.circ,bmat(0xfff2c0),0,R*0.56,R*0.98+0.027,0.045,1,0.045); lens.rotation.x=Math.PI/2; headC.add(lens); }
+  if(O.glasses){ // v0.60 眼鏡（スズキ）：顔の大きさに合わせた枠。固い部品として頭に付ける
+    const gc=mat(O.glasses.col||0x1f3f9a), ey=-R*0.06, ez=R*0.97, ex=R*0.36, rr=R*0.25;
+    const ring=cached('glassRing',()=>new THREE.TorusGeometry(1,0.16,6,18));
+    for(const s of [-1,1]){ const r=mesh(ring,gc,s*ex,ey,ez-Math.abs(ex)*0.12,rr,rr*0.86,rr); r.rotation.y=s*0.18; headC.add(r);
+      const lens=mesh(G.sph,bmat(0xdfe8f0,0.35),s*ex,ey,ez-Math.abs(ex)*0.12-0.004,rr*0.9,rr*0.78,0.004); lens.rotation.y=s*0.18; headC.add(lens);
+      const tmp=mesh(G.box,gc,s*R*0.66,ey+R*0.02,R*0.42,0.016,0.022,R*0.95); tmp.rotation.y=s*0.32; headC.add(tmp); }
+    headC.add(mesh(G.box,gc,0,ey+R*0.05,ez+0.004,R*0.24,0.018,0.018)); }
   if(O.hat==='bunpin'||(hr.style==='bun')){ const pin=mesh(G.cyl8,mat(0xd2402e),0,R*0.78,-R*0.5,0.018,R*1.1,0.018); pin.rotation.z=Math.PI/2; headC.add(pin); }
+  // v0.60 防具の重ね着：体の形・色・骨は一切変えず、外側に別の殻を作って同じ骨で動かす（外せば元の服装のまま）
+  const layer=defs=>{ const LP=[],LN=[],LC=[],LI=[],LW=[],LX=[];
+    for(const d of defs){ const mm=surfaceNets(d.field,[-BX,d.y0,-BZ],[BX,d.y1,BZ],step); const pos=mm.pos, nv=pos.length/3; if(!nv) continue; const base=LP.length/3, f=d.field;
+      for(let v=0;v<nv;v++){ let x=pos[v*3], y=pos[v*3+1], z=pos[v*3+2];
+        for(let it=0;it<2;it++){ const dd=f(x,y,z); const gx=f(x+e,y,z)-f(x-e,y,z), gy=f(x,y+e,z)-f(x,y-e,z), gz=f(x,y,z+e)-f(x,y,z-e); const gl=Math.hypot(gx,gy,gz)||1; x-=dd*gx/gl; y-=dd*gy/gl; z-=dd*gz/gl; }
+        const gx=f(x+e,y,z)-f(x-e,y,z), gy=f(x,y+e,z)-f(x,y-e,z), gz=f(x,y,z+e)-f(x,y,z-e); const gl=Math.hypot(gx,gy,gz)||1;
+        LP.push(x,y,z); LN.push(gx/gl,gy/gl,gz/gl);
+        const c=C(d.color(x,y,z)); const j=1+(hash3(x*40,y*40,z*40)-0.5)*0.05; LC.push(c.r*j,c.g*j,c.b*j);
+        const wb={}; for(const p of P){ if(d.bones&&!d.bones.test(p.bone)) continue; const dd=p.fn(x,y,z); const w=Math.exp(-Math.max(0,dd)/0.03); wb[p.bone]=(wb[p.bone]||0)+w; }
+        const ent=Object.entries(wb).sort((a,b)=>b[1]-a[1]).slice(0,4); const sum=ent.reduce((s,a)=>s+a[1],0)||1;
+        for(let q=0;q<4;q++){ LI.push(ent[q]?BONE_ID[ent[q][0]]:0); LW.push(ent[q]?ent[q][1]/sum:0); }
+      }
+      for(const t of mm.idx) LX.push(t+base);
+    }
+    const lg=new THREE.BufferGeometry(); lg.setAttribute('position',new THREE.Float32BufferAttribute(LP,3)); lg.setAttribute('normal',new THREE.Float32BufferAttribute(LN,3)); lg.setAttribute('color',new THREE.Float32BufferAttribute(LC,3));
+    lg.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(LI,4)); lg.setAttribute('skinWeight',new THREE.Float32BufferAttribute(LW,4)); lg.setIndex(LX); lg.computeBoundingSphere(); if(lg.boundingSphere) lg.boundingSphere.radius*=1.4; lg.userData.own=true;
+    const grp=new THREE.Group(), s1=new THREE.SkinnedMesh(lg,sm), s2=new THREE.SkinnedMesh(lg,om); s1.castShadow=true; grp.add(s1); grp.add(s2); root.add(grp);
+    s1.bind(sk,skin.bindMatrix); s2.bind(sk,skin.bindMatrix); grp.userData.tris=LX.length/3; return grp; };
+  const armorKit={layer,T,gi,wst,nk,R,headY,hipY,knY,ankY,shY,chY,legX,lR0,lR1,sR1,fw,aR0,aR1,fR0,fR1,topT,pantsT,topHem,BX,BZ,
+    torso,torsoLo,torsoHi,thigh,shin,footF,upArm,foreArm,handF,SH,EL,WR,segU,along,atS,surfZ,tHiC,tHiR,tLoC,tLoR};
   const armL=B.armL, armR=B.armR; armL.userData.hand=B.handL; armR.userData.hand=B.handR; armL.userData.fore=B.foreL; armR.userData.fore=B.foreR;
   const legs=[B.legL,B.legR]; legs[0].userData.shin=B.shinL; legs[1].userData.shin=B.shinR;
-  const m={g,root,body:B.body,chest:B.chest,legs,armL,armR,head,face:null,R,soft:{lag:[0,0],prev:[0,0]},skin,tris:idx.length/3,stat};
+  const m={g,root,body:B.body,chest:B.chest,legs,armL,armR,head,face:null,R,soft:{lag:[0,0],prev:[0,0]},skin,tris:idx.length/3,stat,armorKit};
   if(o.extra) o.extra({g,root,body:B.body,chest:B.chest,head,armL,armR,R,T});
   g.traverse(c=>{ if(c.isMesh&&!c.isSkinnedMesh) c.castShadow=true; });
   shadowBlob(g,0.45*gi*(o.scale||1),0.4*(o.scale||1));
@@ -4959,6 +4995,25 @@ const CLASSIC_PLAYER_OPTS={scale:0.9,tall:1.22,legLen:1.8,armLen:1.55,girth:0.8,
   outfit:{top:{col:0x2f4f86,col2:0x223a64,hem:0.43,sleeve:'rolled',cut:0.42,collar:'stand',zip:true,pockets:true,elbowPad:0x3a4250,refl:0.74,t:0.03},
     bottom:{col:0x4a4e44,col2:0x3e4238,top:0.47,kneePad:0x2c2e30,cargo:true,t:0.028},shoes:{kind:'boots',col:0x5a3e2c,col2:0x7a5a40},
     belt:{col:0x2a2420,pouch:0x5a5a48,buckle:true,y:0.405},hair:{style:'short',col:0x2a1e16},band:{col:0xf4f1e8,pat:0x2f5f9a}}};
+// v0.60（P2・試作）スズキ：主人公と同年代の陸上部。顔が大きめ・センター分け・濃い青の眼鏡・上半身は裸・緑のジャージ・裸足・背中に自作の大きな棍棒。
+// 体型・色・棍棒の形は暫定（ユーザーの確認待ち）。蹴りで戦うので脚を長めに。
+function suzukiClub({chest,body,T}){
+  body.add(mesh(G.sphLo,mat(0xc99a7a),0,T(0.52),0.168,0.016,0.022,0.01)); // へそ（上半身が裸だと分かるように）
+  const c=new THREE.Group(); c.position.set(0.02,T(0.8)-T(0.62),-0.28); c.rotation.set(0.12,0,-0.62); c.scale.setScalar(1.3); chest.add(c);
+  const wood=mat(0x8a6238), dark=mat(0x6a4a2a), tape=mat(0xe2dccb), wire=mat(0x8c9094);
+  c.add(outline(mesh(G.cyl8,wood,0,-0.12,0,0.045,0.62,0.045),0.02));              // 握り側の柄
+  c.add(outline(mesh(G.cyl8,wood,0,0.42,0,0.085,0.5,0.085),0.02));               // 太い先
+  c.add(outline(mesh(G.sph,wood,0,0.68,0,0.1,0.09,0.1),0.02));                    // 先の丸み
+  for(const [y,r] of [[0.3,0.088],[0.52,0.09]]) c.add(mesh(G.cyl8,wire,0,y,0,r+0.008,0.03,r+0.008)); // 巻いた針金
+  for(const y of [-0.3,-0.22,-0.14]) c.add(mesh(G.cyl8,tape,0,y,0,0.05,0.05,0.05));  // 握りのテープ
+  for(const [a,y] of [[0,0.4],[2.1,0.48],[4.2,0.6],[1.1,0.62]]){ const k=mesh(G.sphLo,dark,Math.sin(a)*0.08,y,Math.cos(a)*0.08,0.03,0.035,0.03); c.add(k); } // 木の節
+  return c;
+}
+const SUZUKI_OPTS={scale:0.9,tall:1.2,legLen:1.95,armLen:1.5,girth:0.76,waist:0.8,neck:0.82,headR:0.45,limb:0.76,legGap:1.25,step:0.024,
+  outfit:{bottom:{col:0x2f8a4c,col2:0x22683a,top:0.48,stripe:0xf0f0e6,waistBand:true,t:0.026},
+    kesa:{col:0x5a4430,col2:0x46341f}, // 棍棒を背負うひも
+    hair:{style:'center',col:0x1c1814},glasses:{col:0x1f3f9a},armband:false},
+  extra:suzukiClub};
 function makeHuman(o={}){
   const player=!!o.player47;
   const m=makeHumanClassic(player?CLASSIC_PLAYER_OPTS:o);
@@ -5603,10 +5658,54 @@ function f47Stats(){
  out.cut=Math.min(F47_ARMOR_CAP.total,out.slotCut+out.gloveCut);
  return out;
 }
+// v0.60（P2・作業C）防具の見た目：今の体（makeHumanClassic）の外側に重ねる殻。形・色は暫定の外観案（ユーザーの確認待ち）。
+// 体の骨と同じ骨で動くので、ひざ・ひじ・足の動きに追従する。外すと元の服装に戻る（体そのものは変えない）。
+function f60ArmorDefs(k,slot,set){
+  const {T,SH,aR0,topT,pantsT,topHem,shY,hipY,knY,ankY,legX,lR0,lR1,torso,thigh,shin,footF,surfZ,tHiC,tHiR}=k;
+  const bTop=ankY+(knY-ankY)*0.5, Y0=-0.05, BODY=/^(body|chest)/, PADS=/^(chest|arm)/, LEG=/^(body|leg|shin)/, FOOT=/^(shin|foot)/;
+  const shell=(t,hem,top,hole=0.035)=>(x,y,z)=>{ let d=Math.max(torso(x,y,z)-t,hem-y,y-top); for(const s of [-1,1]){ const a=SH(s); d=Math.max(d,-(Math.hypot(x-a[0]*1.05,y-a[1]+0.02,z)-(aR0+topT+hole))); } return d; };
+  const legs2=f=>(x,y,z)=>Math.min(f(-1,x,y,z),f(1,x,y,z));
+  const out=[];
+  if(slot==='chest'){
+    if(set==='basic'){ const f=shell(topT+0.045,topHem-0.02,shY+0.08);
+      out.push({field:f,y0:topHem-0.06,y1:shY+0.14,bones:BODY,color:(x,y,z)=>Math.sin(y*58)>0.86||Math.abs(x)<0.01&&z>0?0xa58b62:0xcdb38a}); }
+    if(set==='forest'){ const f=shell(topT+0.042,T(0.5),shY+0.09);
+      out.push({field:f,y0:T(0.5)-0.04,y1:shY+0.15,bones:BODY,color:(x,y,z)=>{ if(z>0&&y>T(0.66)&&y<T(0.86)&&Math.abs(x)<0.15) return Math.sin(x*90)>0.92?0x6e6a58:0x4c5236; if(y<T(0.5)+0.03) return 0x3e4430; return 0x5f6a3c; }});
+      const pad=(x,y,z)=>Math.min(...[-1,1].map(s=>{ const a=SH(s); return SDF.ell(x,y,z,[a[0]*1.12,a[1]+0.03,0],[0.12,0.075,0.13]); }));
+      out.push({field:pad,y0:shY-0.1,y1:shY+0.16,bones:PADS,color:(x,y,z)=>y<shY-0.0?0x3b3a2e:0x4f4b3a}); }
+    if(set==='tracker'){ const f=shell(topT+0.028,T(0.56),shY+0.06,0.05);
+      const pk=(x,y,z)=>Math.min(...[-1,1].map(s=>{ const px=s*0.1*k.gi, py=T(0.74); return SDF.box(x,y,z,[px,py,surfZ(tHiC,tHiR,px,py)+topT+0.03],[0.05,0.045,0.02],0.01); }));
+      out.push({field:(x,y,z)=>Math.min(f(x,y,z),pk(x,y,z)),y0:T(0.56)-0.04,y1:shY+0.12,bones:BODY,color:(x,y,z)=>{ const d=pk(x,y,z); if(d<0.004) return 0x76683f; if(Math.abs(y-T(0.56))<0.03) return 0x6a5d3a; return 0x8c7d56; }}); }
+  }
+  if(slot==='legs'){
+    if(set==='basic'){ const th=(s,x,y,z)=>SDF.smin(SDF.ell(x,y,z,[s*legX,(hipY+knY)/2,lR0*0.72+pantsT],[0.085,0.12,0.04]),SDF.ell(x,y,z,[s*legX,knY+0.01,lR1+pantsT+0.006],[0.07,0.075,0.035]),0.03);
+      out.push({field:legs2(th),y0:knY-0.12,y1:hipY+0.05,bones:LEG,color:(x,y,z)=>Math.abs(y-knY)<0.07?0x9d8762:0xb59f74}); }
+    if(set==='forest'){ const g=(s,x,y,z)=>{ const plate=Math.max(shin(s)(x,y,z)-(pantsT+0.03),-(z-0.0),y-(knY-0.03),(bTop+0.02)-y); const knee=SDF.ell(x,y,z,[s*legX,knY+0.01,lR1+pantsT+0.01],[0.085,0.09,0.05]); return Math.min(plate,knee); };
+      out.push({field:legs2(g),y0:bTop-0.03,y1:knY+0.12,bones:LEG,color:(x,y,z)=>Math.abs(y-knY-0.01)<0.08?0x45463c:(Math.sin(y*80)>0.9?0x3d3e34:0x55583f)}); }
+    if(set==='tracker'){ const g=(s,x,y,z)=>Math.max(shin(s)(x,y,z)-(pantsT+0.018),(bTop-0.01)-y,y-(knY-0.02));
+      out.push({field:legs2(g),y0:bTop-0.04,y1:knY+0.02,bones:LEG,color:(x,y,z)=>Math.sin((y+Math.atan2(x,z)*0.03)*70)>0.55?0x564630:0x6b5a3c}); }
+  }
+  if(slot==='feet'){
+    if(set==='basic'){ const g=(s,x,y,z)=>Math.max(shin(s)(x,y,z)-(pantsT+0.03),(bTop-0.05)-y,y-(knY-0.07));
+      out.push({field:legs2(g),y0:bTop-0.08,y1:knY-0.03,bones:FOOT,color:(x,y,z)=>Math.abs(y-(knY-0.09))<0.012||Math.abs(y-(bTop-0.03))<0.012?0x7a6648:0xd5c8a8}); }
+    if(set==='forest'){ const g=(s,x,y,z)=>Math.max(SDF.smin(footF(s)(x,y,z)-0.04,shin(s)(x,y,z)-0.042,0.03),y-(bTop+0.03),-0.02-y);
+      out.push({field:legs2(g),y0:Y0,y1:bTop+0.08,bones:FOOT,color:(x,y,z)=>y<0.045?0x15120f:z>0.12&&y<0.11?0x5a5a52:y>bTop?0x4a3a2c:0x3b2f25}); }
+    if(set==='tracker'){ const g=(s,x,y,z)=>Math.max(SDF.smin(footF(s)(x,y,z)-0.04,shin(s)(x,y,z)-0.042,0.03),y-(ankY+0.13),-0.015-y);
+      out.push({field:legs2(g),y0:Y0,y1:ankY+0.18,bones:FOOT,color:(x,y,z)=>{ if(y<0.03) return 0x1a1a1e; const s=Math.sign(x); if(z>0.1&&Math.abs(x-s*legX-0.018*s)<0.007) return 0x15181f; if(z<-0.04&&Math.sin(y*90)>0.8) return 0xb8b090; return 0x2b3242; }}); }
+  }
+  return out;
+}
+function f60EnsureArmor(m,slot,set){
+  if(!m||!m.armorKit||!m.layers||!set||set==='work'||slot==='head') return;
+  if(m.layers[slot].some(l=>l.userData.variant===set)) return;
+  const defs=f60ArmorDefs(m.armorKit,slot,set); if(!defs.length) return;
+  const grp=m.armorKit.layer(defs); grp.userData.variant=set; grp.visible=false; m.layers[slot].push(grp);
+}
 function f47ApplyVisual(){
  const g=prog.gear||f47Fresh();
  for(const slot of G47S){
-  const a=G47[g.equip[slot]],variant=a?.set==='basic'?'work':a?.set;
+  const a=G47[g.equip[slot]],variant=pm.classic?a?.set:a?.set==='basic'?'work':a?.set;
+  if(pm.classic) f60EnsureArmor(pm,slot,variant); // v0.60 今の体に重ねる防具の殻（初めて着けたときに作る）
   for(const layer of pm.layers[slot]){
    const glove=slot==='chest'&&layer.userData.style==='gloves';
    layer.visible=glove&&inv.armor>0?layer.userData.variant==='work':!!a&&variant===layer.userData.variant;
