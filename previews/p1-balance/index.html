@@ -645,6 +645,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
   </div>
 </div>
 
+<div class="ov" id="regionLoading" hidden style="z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(18,16,12,.86)"><div style="color:#efe6d2;font-size:20px;letter-spacing:.1em"><b></b>へ移動中……</div></div>
 <div class="ov" id="dialog" hidden>
   <div class="card">
     <div id="dlgName"></div>
@@ -953,8 +954,12 @@ function hAtRaw(x,z){ const fi=clamp((x-TG.GX0)/TG.GS,0,TG.nx-1.001), fk=clamp((
   const i=Math.floor(fi), k=Math.floor(fk), u=fi-i, v=fk-k, H=TG.H, n=k*TG.nx+i;
   return (H[n]*(1-u)+H[n+1]*u)*(1-v)+(H[n+TG.nx]*(1-u)+H[n+TG.nx+1]*u)*v; }
 flattenZones();
-const groundH=hAtRaw;
-function clsAt(x,z){ const i=Math.round((x-TG.GX0)/TG.GS), k=Math.round((z-TG.GZ0)/TG.GS); if(i<0||k<0||i>=TG.nx||k>=TG.ny) return 1; return TG.C[k*TG.nx+i]; }
+// v0.60（P2 作業A）地域：光明寺は起動時に作って残す（常駐）。ほかの地域は入るときに作り、出るときに捨てる。
+// ほかの地域は x を大きくずらした場所（REGION_X0 より東）に置くので、光明寺と座標が重ならない。光明寺にいる間は今までと同じ計算。
+const REGION_X0=4000;
+const REG={cur:'komyoji',defs:{},live:null,busy:false,hfn:null,cfn:null,homeBounds:null};
+const groundH=(x,z)=>(x>REGION_X0&&REG.hfn)?REG.hfn(x,z):hAtRaw(x,z);
+function clsAt(x,z){ if(x>REGION_X0&&REG.cfn) return REG.cfn(x,z); const i=Math.round((x-TG.GX0)/TG.GS), k=Math.round((z-TG.GZ0)/TG.GS); if(i<0||k<0||i>=TG.nx||k>=TG.ny) return 1; return TG.C[k*TG.nx+i]; }
 function isWater(x,z){ return clsAt(x,z)===2; }
 function segDist(px,pz,ax,az,bx,bz){ const dx=bx-ax, dz=bz-az; const t=clamp(((px-ax)*dx+(pz-az)*dz)/(dx*dx+dz*dz||1),0,1); return dist(px,pz,ax+dx*t,az+dz*t); }
 
@@ -5697,8 +5702,8 @@ function chapter2State(saved,bossCleared){
   return {
     version:1,
     unlocked:!!bossCleared,
-    // The loaded world is still Komyoji. Never restore an unavailable map.
-    currentRegion:'komyoji',
+    // v0.60：遊べる地域（作りがあり、開放済み）だけを復元する。それ以外は光明寺から（旧セーブも光明寺）
+    currentRegion:(typeof s.currentRegion==='string'&&s.currentRegion!=='komyoji'&&typeof REG!=='undefined'&&REG.defs[s.currentRegion]&&bossCleared)?s.currentRegion:'komyoji',
     currentChapter:bossCleared&&s.progress?.openingStarted===true?2:1,
     regions:{komyoji:{unlocked:true},kamishihi:{unlocked:!!bossCleared}},
     // Preserve future phase data without enabling unfinished gameplay.
@@ -7006,6 +7011,7 @@ function damageCore(d){
 // ================= イベント（襲撃・侵攻） =================
 const ev={kind:null,phase:null,t:0,queue:[],waveIdx:0,waveT:0,coreHp:300,coreMax:300,ids:new Set(),ended:false};
 function startEvent(kind){
+  if(REG.cur!=='komyoji') return; // v0.60 ほかの地域にいる間は、光明寺の襲撃・侵攻を起こさない
   if(ev.kind) return; // 二重起動防止
   ev.kind=kind; ev.phase='warn'; ev.t=kind==='raid'?15:10; ev.ended=false; ev.ids.clear(); ev.coreMax=kind==='raid'?200:300; ev.coreHp=ev.coreMax;
   ev.waveIdx=0; ev.waveT=0; ev.stolen=0;
@@ -7548,7 +7554,7 @@ function retryFromBase(){
   if(bossActive||prog.stage==='boss'){ prog.stage='toBoss'; }
   // v0.56：倒れた代償（2026-11-12 承認）。柵の無料修理はやめた（壊れた柵・傷んだ柵はそのまま）
   setupBoss(); $('bossBar').hidden=true; setBarrier(!(prog.stage==='toBoss'||prog.stage==='cleared'));
-  P.x=PSPAWN.x; P.z=PSPAWN.z; P.facing=0; setCam(0); resetCombat(); P.hp=Math.ceil(P.maxHp*0.5); P.full=Math.max(15,P.full-25); /* v0.56：体力は半分、満腹は25減る */ if(P.weapon&&WEAPONS[P.weapon]){ P.dur=Math.max(0,P.dur-WEAPONS[P.weapon].maxDur*0.25); prog.arms[P.weapon]=P.dur; } /* v0.56：手に持っていた武器の耐久 -25% */ P.dead=false; P.atk=null; P.dodge=null; P.stagger=0; P.buffer=null; heavyRing.visible=false;
+  P.x=PSPAWN.x; P.z=PSPAWN.z; P.facing=0; if(typeof REG!=='undefined'&&REG.cur!=='komyoji'&&REG.live){ const a=REG.live.respawn||REG.live.arrival; P.x=a.x; P.z=a.z; P.facing=a.facing||0; } /* v0.60 ほかの地域で倒れたら、その地域の着いた場所で起きる（暫定） */ setCam(P.facing); resetCombat(); P.hp=Math.ceil(P.maxHp*0.5); P.full=Math.max(15,P.full-25); /* v0.56：体力は半分、満腹は25減る */ if(P.weapon&&WEAPONS[P.weapon]){ P.dur=Math.max(0,P.dur-WEAPONS[P.weapon].maxDur*0.25); prog.arms[P.weapon]=P.dur; } /* v0.56：手に持っていた武器の耐久 -25% */ P.dead=false; P.atk=null; P.dodge=null; P.stagger=0; P.buffer=null; heavyRing.visible=false;
   // 拠点付近の野生の敵を初期位置へ
   for(const e of enemies) if(e.mode==='field'&&e.state!=='dead'){ e.x=e.home.x; e.z=e.home.z; e.hp=e.maxHp; setState(e,'idle'); } // v0.56：野の獣も傷が癒える（倒れながら削る戦い方を防ぐ）
   hideAllOv(); S.mode='playing'; S.slowmo=0; S.hitstop=0;
@@ -7779,13 +7785,14 @@ function resetWorld(extra){
   S.slowmo=0; S.hitstop=0; S.shake=0; S.resultT=0;
 }
 function startNew(){
-  freshState(); resetWorld(null); hideAllOv(); $('hud').hidden=false; S.mode='playing'; cv.focus();
+  regionResetHome(); freshState(); resetWorld(null); hideAllOv(); $('hud').hidden=false; S.mode='playing'; cv.focus();
   queueDialog([[{name:'――'},'……いつもの布団で眠ったはずだった。'],[{name:'――'},'目を覚ますと、見慣れた永平寺町の山並み。だが家々は木の柵に囲まれ、見張り台では誰かが半鐘を構えていた。'],[npcTome,'おーい、起きたんなら、こっちへ来ておくれ。（区長トミオに近づいて E ／スマホは「調べる」で話しかけよう）']],()=>saveGame());
 }
 function continueGame(){
   const d=readSave(); if(!d){ startNew(); return; }
-  const extra=applySave(d); resetWorld(extra); hideAllOv(); $('hud').hidden=false; S.mode='playing'; cv.focus();
+  regionResetHome(); const extra=applySave(d); resetWorld(extra); hideAllOv(); $('hud').hidden=false; S.mode='playing'; cv.focus();
   prog.raidDelay=-3; toast('つづきから再開した');
+  { const r=prog.chapter2&&prog.chapter2.currentRegion; if(r&&r!=='komyoji'&&REG.defs[r]) regionTravel(r,null,{force:true}); } // v0.60 最後にいた地域から再開
   if(prog.f7Migrated){ prog.f7Migrated=false; saveGame(); } // 移行したらすぐ保存（次のロードで新品に戻らない）
 }
 
@@ -8477,6 +8484,61 @@ function frame(now){
   renderer.render(scene,camera); f11AfterRender(); f11Update(rdt); f31Update();
 }
 
+// ================= v0.60（P2 作業A）地域の作る・捨てる・移動 =================
+function regionDefine(id,def){ REG.defs[id]=def; }
+function regionName(id){ return id==='komyoji'?'光明寺':(REG.defs[id]&&REG.defs[id].name)||id; }
+function regionCanTravel(){ return !REG.busy&&!ev.kind&&!bossActive&&!P.dead&&S.mode==='playing'; }
+// 当たり判定を網目から外す（地域を捨てるとき）
+function gridRemove(o){ const x0=o.k==='c'?o.x-o.r:o.minX, x1=o.k==='c'?o.x+o.r:o.maxX, z0=o.k==='c'?o.z-o.r:o.minZ, z1=o.k==='c'?o.z+o.r:o.maxZ;
+  for(let ix=Math.floor(x0/CG);ix<=Math.floor(x1/CG);ix++) for(let iz=Math.floor(z0/CG);iz<=Math.floor(z1/CG);iz++){ const k=cKey(ix,iz), a=cgrid.get(k); if(!a) continue; const i=a.indexOf(o); if(i>=0) a.splice(i,1); if(!a.length) cgrid.delete(k); }
+  const L=o.k==='b'?boxes:o.k==='c'?circles:oboxes; const i=L.indexOf(o); if(i>=0) L.splice(i,1); }
+// 地域が作った物だけを捨てる（共有のジオメトリ・材質は捨てない。own の印があるものだけ）
+function disposeOwned(root){ root.traverse(o=>{ const g=o.geometry; if(g&&g.userData&&g.userData.own) g.dispose();
+  const ms=Array.isArray(o.material)?o.material:o.material?[o.material]:[]; for(const m of ms) if(m.userData&&m.userData.own){ if(m.map&&m.map.userData&&m.map.userData.own) m.map.dispose(); m.dispose(); } }); }
+// 地域の作業台：地域の build(ctx) は、ここに物と当たり判定を登録する
+function regionCtx(id){ const group=new THREE.Group(); group.name='region:'+id; scene.add(group);
+  const ctx={id,group,colliders:[],enemies:[],x0:REGION_X0,h:null,cls:null,bounds:null,arrival:null,
+    own(x){ if(x&&x.userData) x.userData.own=true; return x; },
+    add(o){ group.add(o); return o; },
+    box(...a){ const o=addBox(...a); ctx.colliders.push(o); return o; },
+    circle(...a){ const o=addCircle(...a); ctx.colliders.push(o); return o; },
+    obox(...a){ const o=addOBox(...a); ctx.colliders.push(o); return o; }};
+  return ctx; }
+function regionDispose(ctx){ if(!ctx) return;
+  for(const o of ctx.colliders) gridRemove(o); ctx.colliders.length=0;
+  for(const e of ctx.enemies){ const i=enemies.indexOf(e); if(i>=0) enemies.splice(i,1); for(const k of ['m','ind','stars','sector','ringM']){ const v=e[k]; const ob=v&&(v.g||v); if(ob&&ob.parent) ob.parent.remove(ob); } }
+  ctx.enemies.length=0;
+  if(ctx.onDispose) try{ ctx.onDispose(); }catch(e){ console.error(e); }
+  scene.remove(ctx.group); disposeOwned(ctx.group); }
+function komyojiShow(v){ world.visible=v; if(farHills) farHills.visible=v; }
+// 光明寺へ即座に戻す（ニューゲーム・続きから・タイトルへ戻るとき。画面は出さない）
+function regionResetHome(){ if(REG.live){ try{ regionDispose(REG.live); }catch(e){ console.error(e); } REG.live=null; }
+  REG.hfn=null; REG.cfn=null; if(REG.homeBounds){ Object.assign(BOUNDS,REG.homeBounds); REG.homeBounds=null; } komyojiShow(true); REG.cur='komyoji'; REG.busy=false; $('regionLoading').hidden=true; }
+function regionLoading(on,name){ const el=$('regionLoading'); if(!el) return; if(on){ el.querySelector('b').textContent=name||''; } el.hidden=!on; }
+const nextFrame=()=>new Promise(r=>requestAnimationFrame(()=>r()));
+// 地域を移る。at={x,z,facing} で着く場所を指定（なければ地域の既定の場所）。失敗したら光明寺に戻す
+async function regionTravel(id,at=null,opt={}){
+  if(id===REG.cur&&!opt.reload) return true;
+  if(!opt.force&&!regionCanTravel()){ toast('今は移動できない',true); return false; }
+  if(id!=='komyoji'&&!REG.defs[id]){ toast(regionName(id)+'へはまだ行けない',true); return false; }
+  const from=REG.cur, mode=S.mode; REG.busy=true; S.mode='loading'; regionLoading(true,regionName(id)); await nextFrame(); await nextFrame();
+  try{
+    if(REG.live){ regionDispose(REG.live); REG.live=null; REG.hfn=null; REG.cfn=null; }
+    if(id==='komyoji'){ komyojiShow(true); if(REG.homeBounds){ Object.assign(BOUNDS,REG.homeBounds); REG.homeBounds=null; }
+      const a=at||(REG.defs[from]&&REG.defs[from].homeArrival)||PSPAWN; P.x=a.x; P.z=a.z; P.facing=a.facing||0; }
+    else { if(from==='komyoji'){ REG.homeBounds=Object.assign({},BOUNDS); komyojiShow(false); }
+      const ctx=regionCtx(id); REG.live=ctx; REG.defs[id].build(ctx);
+      if(!ctx.h||!ctx.bounds||!ctx.arrival) throw new Error('地域の形が足りない');
+      REG.hfn=ctx.h; REG.cfn=ctx.cls; Object.assign(BOUNDS,ctx.bounds);
+      const a=at||ctx.arrival; P.x=a.x; P.z=a.z; P.facing=a.facing||0; }
+    REG.cur=id; if(prog.chapter2) prog.chapter2.currentRegion=id;
+    setCam(P.facing); resetCombat(); updateChunks(0,true); saveGame();
+    S.mode=mode==='loading'?'playing':mode; regionLoading(false); REG.busy=false; return true;
+  }catch(e){ console.error(e);
+    regionResetHome(); P.x=PSPAWN.x; P.z=PSPAWN.z; P.facing=0; if(prog.chapter2) prog.chapter2.currentRegion='komyoji';
+    S.mode=mode==='loading'?'playing':mode; toast('地域の読み込みに失敗したため、光明寺に戻りました',true); saveGame(); return false; }
+}
+
 // ================= 初期化 =================
 try{
   buildWorld(); buildRain(); f31Build(); buildPillars(); buildBarrier(); buildNodes(); buildClues(); buildFenceSlots(); buildTraps(); buildScoutSite();
@@ -8649,7 +8711,7 @@ $('btnPerf').onclick=()=>f11Toggle(); $('btnPerfRec').onclick=()=>{ f11RecStart(
 $('btnShadow').onclick=()=>{ applyShadow(!shadowPref); toast(shadowPref?'影をオンにした（描画が重くなります）':'影をオフにした'); };
 $('btnShadow').textContent='高画質の影：'+(renderer.shadowMap.enabled?'オン':'オフ');
 $('btnSave').onclick=()=>{ saveGame(); toast(storageOK?(ev.kind||bossActive?'セーブした（戦闘中は開始前の状態で記録）':'セーブした'):'このブラウザでは保存できない',!storageOK); };
-$('btnToTitle').onclick=()=>{ saveGame(); hideAllOv(); $('hud').hidden=true; S.mode='title'; lightMode='dusk'; snapLight(); P.x=158; P.z=22; $('title').hidden=false; $('btnContinue').hidden=!readSave(); for(const f of floats) f.d.style.display='none'; for(const b of hpBars) b.style.display='none'; for(const [,b] of barkEls){b.t=0;b.d.style.display='none';} };
+$('btnToTitle').onclick=()=>{ saveGame(); regionResetHome(); hideAllOv(); $('hud').hidden=true; S.mode='title'; lightMode='dusk'; snapLight(); P.x=158; P.z=22; $('title').hidden=false; $('btnContinue').hidden=!readSave(); for(const f of floats) f.d.style.display='none'; for(const b of hpBars) b.style.display='none'; for(const [,b] of barkEls){b.t=0;b.d.style.display='none';} };
 $('btnCraftClose').onclick=closeOverlay; $('btnStoreClose').onclick=closeOverlay; $('btnNpcClose').onclick=closeOverlay; mapPtr(); $('objective').addEventListener('pointerdown',e=>{ e.stopPropagation(); objOpen.pin=!objOpen.pin; if(!objOpen.pin) objOpen.t=0; }); $('btnQuestClose').onclick=closeOverlay;
 $('btnInvClose').onclick=closeOverlay;
 $('btnRetry').onclick=retryFromBase;
