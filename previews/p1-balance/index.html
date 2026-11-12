@@ -8713,7 +8713,7 @@ function kamishihiBuild(ctx){
     c2.fillStyle='rgba(10,8,6,.55)'; c2.beginPath(); c2.rect(0,0,W,H); c2.rect(X(B.minX),Z(B.minZ),(B.maxX-B.minX)*s0,(B.maxZ-B.minZ)*s0); c2.fill('evenodd');
     const lab=(t,x,y,col='#fff',sz=12)=>{ c2.font=`bold ${sz}px "Zen Kaku Gothic New",sans-serif`; c2.lineWidth=3; c2.strokeStyle='rgba(0,0,0,.75)'; c2.strokeText(t,x,y); c2.fillStyle=col; c2.fillText(t,x,y); };
     for(const st of D.pts.station){ c2.fillStyle='#fff'; c2.fillRect(X(st[0])-4,Z(st[1])-4,8,8); lab(st[2]+'駅',X(st[0])+7,Z(st[1])+4); }
-    lab('← 光明寺',X(D.exitWest.x)+4,Z(D.exitWest.z)-8,'#ffe08a',13); lab('上志比',X(B.minX)+10,Z(B.minZ)+22,'#fff',16);
+    lab('← 光明寺',Math.max(6,X(D.exitWest.x)+4),Z(D.exitWest.z)-8,'#ffe08a',13); lab('上志比',10,24,'#fff',16); // 地域名は画面の左上に固定（拡大しても切れない）
     c2.save(); c2.translate(X(P.x),Z(P.z)); c2.rotate(-P.facing+Math.PI); c2.fillStyle='#ffd23a'; c2.strokeStyle='#000'; c2.lineWidth=1.5; c2.beginPath(); c2.moveTo(0,-9); c2.lineTo(6,7); c2.lineTo(0,3); c2.lineTo(-6,7); c2.closePath(); c2.fill(); c2.stroke(); c2.restore();
     lab('地形：国土地理院 標高タイル／道・建物：© OpenStreetMap contributors',8,H-10,'#cfc6b4',10); };
 }
