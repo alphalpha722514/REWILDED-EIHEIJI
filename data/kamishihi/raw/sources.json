@@ -1,0 +1,30 @@
+{
+ "osm_calib": {
+  "url": "https://api.openstreetmap.org/api/0.6/map?bbox=136.333,36.078,136.352,36.092",
+  "date": "2026-11-12",
+  "bytes": 1833068,
+  "license": "ODbL 1.0 (© OpenStreetMap contributors)"
+ },
+ "osm_kamishihi_w": {
+  "url": "https://api.openstreetmap.org/api/0.6/map?bbox=136.352,36.066,136.392,36.095",
+  "date": "2026-11-12",
+  "bytes": 4357306,
+  "license": "ODbL 1.0 (© OpenStreetMap contributors)"
+ },
+ "osm_kamishihi_e": {
+  "url": "https://api.openstreetmap.org/api/0.6/map?bbox=136.392,36.062,136.432,36.092",
+  "date": "2026-11-12",
+  "bytes": 2734536,
+  "license": "ODbL 1.0 (© OpenStreetMap contributors)"
+ },
+ "gsi_dem": {
+  "tiles": "z15 x28795-28802 y12856-12860",
+  "date": "2026-11-12",
+  "kinds": {
+   "dem5a_z15": 40,
+   "dem10_z14": 15
+  },
+  "url": "https://cyberjapandata.gsi.go.jp/xyz/dem5a/15/{x}/{y}.txt と dem/14/{x}/{y}.txt（5m の欠けを 10m で埋める）",
+  "license": "国土地理院コンテンツ利用規約（出典：国土地理院 標高タイル）"
+ }
+}
