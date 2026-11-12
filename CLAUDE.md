@@ -21,8 +21,10 @@
 4. Claude が実装する。プロンプトは実装前に現行コードと照合する。**確定仕様やコードと矛盾する箇所は変えずに報告する。**
 5. ユーザーが試遊・確認し、修正を依頼する。
 
-### 3Dモデル
-- 新しいモデルは「ChatGPT で画像 → ユーザーが Tripo で生成 → 必要なら Blender で調整 → Claude が統合」。完成済みのモデルは再生成しない。
+### 3Dモデル（2026-11-12 P2 指示書 v3.0 で更新）
+- **味方側のキャラクター（プレイヤー・村人・スズキなど新しい味方）は Claude が作る。** 今の画風（`makeHumanClassic`）にそろえ、正式に入れる前に確認用の画像（`tools/char-studio.py`）でユーザーの承認を得る。
+- **敵（野生動物・ボス）は従来どおり**「ChatGPT で画像 → ユーザーが Tripo で生成 → 必要なら Blender で調整 → Claude が統合」。完成済みのモデルは再生成しない。
+- **外見を保てる修正方法が確立するまで、プレイヤーモデルそのものの全面的な作り直しはしない**（2026-11-12 ユーザー方針）。体の作りを変えたら、防具なしの主人公・村人が main と画素単位で同じか比べる。
 - モデルが必要になったら、`docs/asset-registry.md` の【3Dモデル制作依頼】の12項目の形式でユーザーに知らせる。
 - モデル待ちの間も、AI・判定・HP・イベント・会話・カメラ・セーブ・UI は仮モデルで先に作る。仮モデルを正式アセットとして扱わない。差し替えやすい構造にする。
 - 元モデルと加工後のモデルは別ファイルで管理し、版を `docs/asset-registry.md` に記録する。
@@ -43,7 +45,7 @@
 ## 壊さないもの
 - セーブ：`docs/save-and-flags.md` の「変えてはいけない項目」を守る（`SAVE_KEY='eiheiji_vs_beasts_v010'`、`v:1`、既存キー名、旧セーブの読み込み）。
 - 確定した台詞（ヌシの遺言など）、UI、既存機能。
-- プレイヤーと村人の体：v0.54.1 で v0.32.1 のやわらかい体に戻した（`docs/character-classic-body.md`）。プレイヤーはくねくね無し。胸・脚・靴の防具はいったん見た目なし。
+- プレイヤーと村人の体：v0.54.1 で v0.32.1 のやわらかい体に戻した（`docs/character-classic-body.md`）。プレイヤーはくねくね無し。胸・脚・靴の防具の見た目は P2 で復旧中（体に重ねる殻。`docs/p2-investigation.md`）。
 
 ## 作業の進め方
 - main へ入れる前に、作業ブランチで検証する。変更は小さく分ける。
@@ -61,9 +63,11 @@
 | `docs/chapter2-map-plan.md` | 上志比マップの調査と計画 |
 | `docs/phase-p1-status.md` | P1 の現状整理 |
 | `docs/phase-p2-status.md` | P2 の現状整理（上志比マップと移動） |
+| `docs/p2-investigation.md` | P2 統合指示書 v3.0 への初期調査（防具の原因・地理データ・スズキ・順序・確認事項） |
 | `docs/p1-sim-baseline.md` | 防衛戦の勝率測定ツールと基準値 |
 | `docs/p1-balance-report.md` | P1 の測定結果・調整（v0.55・v0.56 で反映）・未確認事項 |
 | `docs/death-penalty.md` | 倒れたときの代償（v0.56） |
 | `docs/combat-aim.md` | 攻撃の向きと当たり判定（v0.58） |
 
+- キャラクターの確認画像：`python3 tools/char-studio.py 出力.png player suzuki gen`（`player@forest` で防具の組を着せる。`STUDIO_POSE=1` で動きの姿勢。`STUDIO_HTML` で別の index.html）。
 - 試遊版の作り方：`python3 tools/build-p1-preview.py`（本編をコピーし、A／B／C ボタンと試遊用の保存キーを足して `previews/p1-balance/` を作る）。本編を変えたら作り直す。
