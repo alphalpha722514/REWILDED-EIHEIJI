@@ -479,6 +479,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
      <div class="row"><span>落とし穴キット</span><b id="rPit">0</b></div>
     <div class="row" id="rStakeRow" hidden><span>杭柵キット</span><b id="rStake">0</b></div>
     <div class="row" id="rFangRow" hidden><span>ヌシの牙</span><b id="rFang">0</b></div>
+    <div class="row" id="rMutScaleRow" hidden><span>変異した鱗</span><b id="rMutScale">0</b></div>
   </div>
   <canvas id="mini" width="150" height="196"></canvas>
   <div id="coreBar" class="panel" hidden><div id="coreLbl"><span>火の見やぐら（防衛対象）の耐久</span><span class="num" id="coreV">300 / 300</span></div><div class="bigtrack"><div id="coreFill"></div></div></div>
@@ -527,7 +528,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.61 変異したサル テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.62 変異したサル テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -3103,8 +3104,8 @@ Object.assign(MOVES,{
 const FAMC={nata:'NC',axe:'AC',club:'CC',spear:'SC'}, FAMS={nata:'NS',axe:'AS',club:'CS',spear:'SS'};
 const CTR={win:1.2, perfectT:0.18}; const SWAP={win:0.25, use:0.6, cd:1.5};
 // 体勢（HPと別。保存しない）
-const POISE={deer:{max:40,t:1.4,fl:1.0},weasel:{max:15,t:.9,fl:.7},monkey:{max:20,t:1.2,fl:0.8},boar:{max:50,t:1.6,fl:1.2},bear:{max:120,t:2.0,fl:0},boss:{max:300,t:2.5,fl:0},mutant:{max:60,t:1.4,fl:1.0}};
-const WIND_ST=['wind','goreWind','stompWind','chargeWind','dash','tusk','scratchWind','pounceWind'], REC_ST=['recover','strike','goreRec','chargeRec','retreat','tuskRec'];
+const POISE={deer:{max:40,t:1.4,fl:1.0},weasel:{max:15,t:.9,fl:.7},monkey:{max:20,t:1.2,fl:0.8},boar:{max:50,t:1.6,fl:1.2},bear:{max:120,t:2.0,fl:0},boss:{max:300,t:2.5,fl:0},mutant:{max:150,t:1.8,fl:2.0}};
+const WIND_ST=['wind','goreWind','stompWind','chargeWind','dash','tusk','scratchWind','scratch2Wind','pounceWind'], REC_ST=['recover','strike','goreRec','chargeRec','retreat','tuskRec'];
 function initPoise(e){ const p=POISE[e.type]||POISE.boar; e.poise=p.max; e.poiseMax=p.max; e.poiseHitT=-9; e.poiseLowT=-9; e.flinchT=-9; e.brokenT=0; }
 function poiseDamage(e,info){ if(!info||!info.mv) return 0; const mv=info.mv;
   if(['stun','trapped','broken','dead'].includes(e.state)) return 0; // 拘束・気絶・崩れの間は削らない
@@ -3121,7 +3122,7 @@ function applyPoise(e,info){ const p=poiseDamage(e,info); if(p<=0) return false;
   floatText(e.x,2.2+e.r,e.z,'体勢崩し！','#f0c34a',true); sfx('stun'); S.shake=Math.max(S.shake,0.3); return true; }
 function canFlinch(e,kind,info){ const p=POISE[e.type]; if(!p||!p.fl) return false; if(S.time-e.flinchT<p.fl) return false;
   if(e.type==='monkey') return !['dead','stun','broken'].includes(e.state);
-  if(e.type==='mutant') return !['dead','stun','broken','flee','pounce','scratch'].includes(e.state)&&(kind==='heavy'||!!(info&&info.mv&&info.mv.counter)||['idle','alert','kite','retreat','recover'].includes(e.state)); // v0.61：強い一撃か、攻撃していない間だけひるむ
+  if(e.type==='mutant') return !['dead','stun','broken','flee','pounce','scratch','scratch2','scratch2Wind'].includes(e.state)&&(kind==='heavy'||!!(info&&info.mv&&info.mv.counter)||['idle','alert','kite','retreat','recover'].includes(e.state)); // v0.61：強い一撃か、攻撃していない間だけひるむ
   const strong=kind==='heavy'||(info&&info.mv&&(info.mv.counter||famOf(info.weapon)==='club'));
   return strong&&(['idle','chase','recover','return','alert'].includes(e.state)||(kind==='heavy'&&e.state==='wind')); }
 function updatePoise(e,dt){ if(e.poise==null) initPoise(e);
@@ -3149,7 +3150,7 @@ function onSwap(){ const a=P.atk; let open=false;
   if(open&&S.time>=(P.swCD||0)) P.swT=S.time+SWAP.use; }
 function nearestFoe(maxD){ let best=null,bd=maxD; for(const e of enemies){ if(e.state==='dead'||e.removed) continue; const d=dist(P.x,P.z,e.x,e.z)-e.r; if(d<bd){ bd=d; best=e; } } return best; }
 // ================= F6-D：獣の調整（同時に攻撃に入るのは2頭まで） =================
-const ATK_ST=['wind','charge','tusk','dash','strike','goreWind','stompWind','chargeWind','scratchWind','scratch','pounceWind','pounce'];
+const ATK_ST=['wind','charge','tusk','dash','strike','goreWind','stompWind','chargeWind','scratchWind','scratch','scratch2Wind','scratch2','pounceWind','pounce'];
 function attackSlotFree(e){ let n=0; for(const o of enemies){ if(o===e||o.state==='dead'||o.removed) continue; if(ATK_ST.includes(o.state)&&!(o.mode==='raid'&&!o.aggro)) n++; } return n<2; }
 function orbitPlayer(e,dt,spd){ // 順番待ち：4〜5mで回りながら待つ
   const away=f10OrbitAway(e); const pd=dist(e.x,e.z,P.x,P.z); const r=4.5; const a=away+(e.side||1)*0.5;
@@ -4010,7 +4011,7 @@ function f11WeakArms(){ return !Object.keys(prog.arms).some(k=>k!=='nata1'&&k!==
 // どれも保存は任意項目（無ければ安全な初期値）。設定だけは別の localStorage キーに置き、セーブ形式は変えない
 const F31={on:true};
 // ---- 育成：レベル ----
-const XP={kill:{deer:14,weasel:8,monkey:10,boar:15,bear:40,boss:150,mutant:25},quest:20,harvest:5,clue:15,lv:[0,100,250,450,700],max:5,hpStep:10};
+const XP={kill:{deer:14,weasel:8,monkey:10,boar:15,bear:40,boss:150,mutant:60},quest:20,harvest:5,clue:15,lv:[0,100,250,450,700],max:5,hpStep:10};
 function f31LvOf(exp){ let lv=1; for(let i=1;i<XP.lv.length;i++) if(exp>=XP.lv[i]) lv=i+1; return Math.min(XP.max,lv); }
 function f31MaxHp(lv){ return 100+XP.hpStep*((lv||1)-1); }
 function f31Xp(n,why){ if(!(n>0)||!prog) return; const before=prog.level||1; prog.exp=Math.min(XP.lv[XP.max-1],(prog.exp||0)+n); const lv=f31LvOf(prog.exp);
@@ -5244,12 +5245,17 @@ function mutantPose(m,name,t,ph=0){ const B=m.B;
     B.upperArmL.rotation.z=0.25*air; B.upperArmR.rotation.z=-0.25*air; B.handL.rotation.x=B.handR.rotation.x=-0.4*air;
     B.spine.rotation.x=0.18*cr-0.25*air+0.1*land; B.chest.rotation.x=0.15*cr-0.2*air; B.head.rotation.x=-0.3*cr-0.25*air; B.tail1.rotation.x=-0.5*air; B.tail2.rotation.x=-0.3*air;
     R.rotation.x=0.28*air; R.position.y=-0.18*cr-0.12*land; return; } // 空中では体を前へ倒し、腕を相手へ伸ばす
-  if(name==='scratch'){ // 右の大きな前腕で振り下ろす：0〜0.4 振りかぶる（上体を起こす）→ 0.4〜0.55 振り下ろし → 0.55〜1 戻る
+  if(name==='scratch'||name==='scratchL'){ // 大きな前腕で振り下ろす：0〜0.4 振りかぶる（上体を起こす）→ 0.4〜0.55 振り下ろし → 0.55〜1 戻る。scratch は右、scratchL（v0.62）は左で返す鏡写し
+    const L=name==='scratchL', a=L?'L':'R', o=L?'R':'L', sg=L?-1:1;
     const up=seg(0,0.38)*(1-seg(0.4,0.55)), sw=seg(0.4,0.55)*(1-seg(0.62,1)), rec=1-seg(0.55,1);
-    B.spine.rotation.x=-0.35*up+0.12*sw; B.chest.rotation.x=-0.3*up+0.2*sw; B.chest.rotation.y=-0.35*up+0.4*sw; B.head.rotation.x=0.25*up-0.1*sw;
-    B.upperArmR.rotation.x=-2.3*up-0.2*sw; B.upperArmR.rotation.z=0.35*up-0.5*sw; B.foreArmR.rotation.x=0.9*up-0.2*sw; B.handR.rotation.x=0.4*up-0.6*sw;
-    B.upperArmL.rotation.x=0.15*up*rec; B.thighL.rotation.x=B.thighR.rotation.x=-0.2*up; B.shinL.rotation.x=B.shinR.rotation.x=0.25*up; B.tail1.rotation.x=-0.3*up;
-    R.position.y=0.06*up; return; }
+    B.spine.rotation.x=-0.35*up+0.12*sw; B.chest.rotation.x=-0.3*up+0.2*sw; B.chest.rotation.y=sg*(-0.35*up+0.4*sw); B.head.rotation.x=0.25*up-0.1*sw;
+    B['upperArm'+a].rotation.x=-2.3*up-0.2*sw; B['upperArm'+a].rotation.z=sg*(0.35*up-0.5*sw); B['foreArm'+a].rotation.x=0.9*up-0.2*sw; B['hand'+a].rotation.x=0.4*up-0.6*sw;
+    B['upperArm'+o].rotation.x=0.15*up*rec; B.thighL.rotation.x=B.thighR.rotation.x=-0.2*up; B.shinL.rotation.x=B.shinR.rotation.x=0.25*up; B.tail1.rotation.x=-0.3*up;
+    R.position.y=0.06*up;
+    if(L){ const c=1-seg(0,0.3); // 右の振り下ろしの終わりの姿勢から、つなげて戻す
+      B.upperArmR.rotation.x+=-0.2*c; B.upperArmR.rotation.z+=-0.5*c; B.foreArmR.rotation.x+=-0.2*c; B.handR.rotation.x+=-0.6*c;
+      B.spine.rotation.x+=0.12*c; B.chest.rotation.x+=0.2*c; B.chest.rotation.y+=0.4*c; B.head.rotation.x+=-0.1*c; }
+    return; }
   if(name==='flinch'){ const k=Math.sin(Math.PI*cl(ph))*(1-0.3*ph); // 頭と胸がのけぞり、腕が少し上がる
     B.head.rotation.x=-0.45*k; B.neck.rotation.x=-0.2*k; B.chest.rotation.x=-0.28*k; B.spine.rotation.x=-0.12*k;
     B.upperArmL.rotation.x=B.upperArmR.rotation.x=-0.35*k; B.foreArmL.rotation.x=B.foreArmR.rotation.x=0.3*k; B.tail1.rotation.x=-0.3*k; R.position.z=-0.12*k; return; }
@@ -5831,7 +5837,7 @@ function chapter2Panel(n,st,bx){
   if(!ev.kind)f9Btn(bx,'npc_chapter2',done?'第二章の防衛戦に再挑戦':'第二章の防衛戦を始める',startChapter2Defense,{pri:1});
 }
 function freshState(){
-  inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,baitKit:0,onigiri:1,bento:0,grilledVeg:0,herbPorridge:0,fang:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0};
+  inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,baitKit:0,onigiri:1,bento:0,grilledVeg:0,herbPorridge:0,fang:0,mutScale:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0};
   prog={gear:f47Fresh(),stage:'talk',unlockTrap:false,unlockBoss:false,clues:[false,false,false],bossDefeated:false,scoutTower:false,scoutWarned:false,scoutRaidWarned:false,prepT:150,gatherT:0,introSeen:false,lastSaveT:0,townRequests:loadTownRequests(),g4:g4Fresh(),f4:f4Fresh(),level:1,exp:0,mastery:{nata:0,axe:0,club:0,spear:0},xph:0}; prog.f7=f7FromInv(); f7Sync(); prog.f8=f8Fresh(); prog.f9=f9Fresh(); prog.f10=f10Fresh(); prog.chapter2=chapter2State(null,false);
   stats={kills:0,deaths:0,crafts:0,time:0,perfect:0,hunt:loadHuntRecords()};
   P.lvx48=0;P.lvz48=0;
@@ -5923,19 +5929,20 @@ async function p2TestStart(){
  prog.chapter2.progress.openingStarted=true; prog.chapter2.progress.defenseComplete=true;
  prog.level=4; prog.exp=XP.lv[3]||0; P.maxHp=f31MaxHp(4); P.hp=P.maxHp; P.weapon='spear'; P.dur=WEAPONS.spear.maxDur; prog.arms.spear=P.dur;
  for(const [slot,id] of Object.entries({head:'forest_head',chest:'forest_chest',legs:'forest_legs',feet:'forest_feet'})){ if(!prog.gear.owned.includes(id)) prog.gear.owned.push(id); prog.gear.equip[slot]=id; }
- f47ApplyVisual(); updHolster(); refreshWeaponMesh();
+ f47ApplyVisual(); updHolster(); refreshWeaponMesh(); f7Flush(); inv.onigiri=0; inv.bento=0; foodAdd('onigiri',3); foodAdd('bento',2); // v0.62：強敵なので食料を持たせる（防衛戦の測定の C と同じ）
  const ok=await regionTravel('kamishihi',null,{force:true}); if(!ok){ toast('上志比を読み込めませんでした',true); return; }
  const st=(window.KAMISHIHI_MAP.pts.station||[]).find(s=>s[2]==='山王'); if(st){ P.x=st[0]+14; P.z=st[1]+6; P.facing=0; setCam(0); }
- banner('試遊：変異したサル','少しすると変異したサルが来ます（初遭遇：体力が減ると逃げ去る）。上のボタンでも呼べます',5);
+ banner('試遊：変異したサル','少しすると変異したサルが来ます（初遭遇：傷がたまると逃げ去る）。上のボタンで呼ぶ・回復できます',5);
  setTimeout(()=>{ if(S.mode==='playing') p2Spawn(true); },2500); saveGame(); }
 async function p2Spawn(fleeOnly){ const a=P.facing||0, x=P.x+Math.sin(a)*11, z=P.z+Math.cos(a)*11;
  const e=await spawnMutant(x,z,{fleeOnly,aggro:true}); if(e){ setState(e,'alert'); toast(fleeOnly?'変異したサル（初遭遇：逃げ去る）':'変異したサル（通常：倒せる）'); } }
 { const b=document.getElementById('btnP2Start'); if(b) b.addEventListener('click',()=>p2TestStart());
   const bar=document.createElement('div'); bar.id='p2bar'; bar.style.cssText='position:fixed;top:calc(6px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:30;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 16px)';
-  bar.innerHTML='<button id="p2a" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">サルを呼ぶ（初遭遇：逃げ去る）</button><button id="p2b" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">サルを呼ぶ（通常：倒せる）</button>';
+  bar.innerHTML='<button id="p2a" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">サルを呼ぶ（初遭遇：逃げ去る）</button><button id="p2b" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">サルを呼ぶ（通常：倒せる）</button><button id="p2c" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">回復・食料を足す</button>';
   document.body.appendChild(bar); bar.hidden=true;
   document.getElementById('p2a').addEventListener('click',e=>{ e.stopPropagation(); p2Spawn(true); cv.focus(); });
   document.getElementById('p2b').addEventListener('click',e=>{ e.stopPropagation(); p2Spawn(false); cv.focus(); });
+  document.getElementById('p2c').addEventListener('click',e=>{ e.stopPropagation(); if(!P.dead){ P.hp=P.maxHp; foodAdd('onigiri',2); toast('試遊：体力を戻し、おにぎりを2つ足した'); } cv.focus(); });
   setInterval(()=>{ bar.hidden=!(S.mode==='playing'); },300); }
 // ================= NPC =================
 const NPCS=[]; const TOMIO_SCALE=1.035;
@@ -6169,7 +6176,7 @@ const ET={
  monkey:{hp:34,r:0.45,speed:6.6,detect:12,name:'サル'},
  bear:{hp:210,r:1.05,speed:3.0,detect:11,name:'ツキノワグマ'},
  boss:{hp:720,r:1.9,speed:3.6,detect:40,name:'光明寺のヌシ'},
- mutant:{hp:150,r:0.72,speed:6.4,detect:16,name:'変異したサル'}, // v0.61（強さは暫定）
+ mutant:{hp:800,r:0.72,speed:7.0,detect:16,name:'変異したサル'}, // v0.62：強敵（体力・速さは暫定。docs/mutant-monkey-ai.md）
 };
 let eid=0;
 function spawnEnemy(type,x,z,mode,extra={}){
@@ -6214,13 +6221,17 @@ const dropGeos={};
 function dropGeo(k){ if(dropGeos[k]) return dropGeos[k]; const g=new THREE.Group();
   if(k==='hide'){ const r=mesh(G.cyl,mat(0x8a5a3a),0,0,0,0.2,0.55,0.2); r.rotation.z=Math.PI/2; g.add(r); for(const s of [-1,1]){ const e=mesh(G.cyl,mat(0xc89a70),s*0.28,0,0,0.19,0.02,0.19); e.rotation.z=Math.PI/2; g.add(e); } ad(g,mesh(G.torus,mat(0xd9c38a),0,0,0,0.21,0.21,0.3)).rotation.y=Math.PI/2; }
   else if(k==='food'){ g.add(mesh(lathe([[0,-0.3],[0.09,-0.2],[0.12,0.08],[0.1,0.18],[0,0.2]],10),mat(0xf6f2e8))); for(let i=0;i<3;i++){ const lf=mesh(G.cone6,mat(0x5f9a3a),Math.cos(i*2)*0.04,0.36,Math.sin(i*2)*0.04,0.06,0.3,0.03); lf.rotation.z=(i-1)*0.4; g.add(lf); } }
+  else if(k==='mutScale'){ for(const [a,y,z] of [[-0.55,-0.02,-0.05],[0.55,-0.02,-0.05],[0,0.04,0.06]]){ // v0.62：変異した鱗（前腕の青みの鱗。扇に開いた3枚を立てて見せる）
+      const t=new THREE.Group(); t.rotation.set(0.95,a,0); t.position.set(Math.sin(a)*0.05,y-0.12,z); g.add(t);
+      t.add(mesh(G.sphM,mat(0x3f6a92),0,0,-0.12,0.2,0.05,0.27)); ad(t,mesh(G.cone6,mat(0x35597c),0,0,-0.38,0.12,0.12,0.05)).rotation.x=-Math.PI/2;
+      t.add(mesh(G.sphM,mat(0x79a3c4),0,0.035,-0.16,0.12,0.02,0.16)); } }
   else { for(const [y,z] of [[-0.08,-0.13],[-0.08,0.13],[0.13,0]]){ const l=mesh(G.cyl8,mat(0x9a7650),0,y,z,0.13,0.7,0.13); l.rotation.z=Math.PI/2; g.add(l); for(const s of [-1,1]){ const e=mesh(G.cyl8,mat(0xe0c08a),s*0.351,y,z,0.12,0.01,0.12); e.rotation.z=Math.PI/2; g.add(e); } }
     for(const x of [-0.18,0.18]){ const r=mesh(G.torus,mat(0xd9c38a),x,0,0,0.3,0.3,0.3); r.rotation.y=Math.PI/2; g.add(r); } } // 縄で束ねた木材
   return dropGeos[k]=bakeGeo(g,0.08); }
 function spawnDrop(k,n,x,z,fb=null){
   if(drops.length>30){ const old=drops.shift(); scene.remove(old.m); f11Dispose([old.m]); }
   const m=new THREE.Group(); const b=new THREE.Mesh(dropGeo(k),vcMat); b.castShadow=true; m.add(b); inkFor(b,0.025);
-  m.add(mesh(G.circ,bmat(0xfff2b0,0.3),0,-0.5,0,0.5,1,0.5)); m.add(mesh(G.oct,bmat(0xffe08a,0.9),0,0.5,0,0.07,0.12,0.07));
+  m.add(mesh(G.circ,bmat(0xfff2b0,0.3),0,-0.5,0,0.5,1,0.5)); m.add(mesh(G.oct,bmat(k==='mutScale'?0x9fd8ff:0xffe08a,0.9),0,0.5,0,0.07,0.12,0.07)); // 変異した鱗は青い目印
   const px=x+rr(-0.6,0.6), pz=z+rr(-0.6,0.6); const y0=groundH(px,pz); m.userData.y0=y0; m.position.set(px,y0+0.6,pz); scene.add(m);
   drops.push({k,n,m,t:0,b:fb});
 }
@@ -6559,7 +6570,9 @@ function c2ClimbFall(e){
   e.climbT=0; e.climbDone=false; floatText(e.x,2.3,e.z,'柵から落ちた！','#9be38a',true); return true;
 }
 function damageEnemy(e,dmg,kind,fromAng,info=null){
-  if(e.state==='dead') return; f31Hit(info); if(kind==='heavy') f10Noise(e.x,e.z,12,'impact'); // 強い衝撃の音
+  if(e.state==='dead') return;
+  if(e.type==='mutant'&&e.state==='evade'&&e.st<MUT.evadeT*0.8){ floatText(e.x,2.2,e.z,'かわした','#c8c4b8'); return; } // v0.62：跳んでかわしている間は当たらない
+  f31Hit(info); if(kind==='heavy') f10Noise(e.x,e.z,12,'impact'); // 強い衝撃の音
   let mult=1; if(e.state==='broken') mult=1.3; // 体勢が崩れている間は受けるダメージ×1.3
   if(e.type==='boss'&&e.state==='stun') mult=1.6;
   if(e.state==='stun'&&e.type!=='boss') mult=1.25;
@@ -6581,7 +6594,7 @@ function damageEnemy(e,dmg,kind,fromAng,info=null){
   if(e.mode==='field'&&['idle','return','notice','search','probe','threat'].includes(e.state)){ e.state=e.type==='monkey'?'kite':'chase'; e.st=0; e.f10pose=null; if(e.type==='bear') e.f10fought=true; } // 攻撃されたらすぐ戦闘（F10 の新しい状態からも）
   const fell=c2ClimbFall(e); // v0.59：登っている最中に叩かれたサルは落ちる
   if(e.mode==='raid'&&!fell) e.aggro=true;
-  if(e.type==='mutant'){ e.aggro=true; if(e.fleeOnly&&(e.state==='flee'||e.hp<=e.maxHp*MUT.fleeAt)){ e.hp=Math.max(1,e.hp); mutantFlee(e); return; } if(e.state==='idle'||e.state==='alert') setState(e,'kite'); } // v0.61：初遭遇は体力が減ると逃げ去る（倒れない）
+  if(e.type==='mutant'){ e.aggro=true; if(e.fleeOnly&&(e.state==='flee'||e.maxHp-e.hp>=MUT.fleeDmg)){ e.hp=Math.max(1,e.hp); mutantFlee(e); return; } if(e.state==='idle'||e.state==='alert') setState(e,'kite'); } // v0.61：初遭遇は体力が減ると逃げ去る（倒れない）
   const kb=e.type==='boss'?0:e.type==='bear'?(kind==='heavy'?0.6:0):e.type==='mutant'?(kind==='heavy'?0.9:0.25):kind==='heavy'?1.6:0.6;
   if(kb){ e.x+=Math.sin(fromAng)*kb; e.z+=Math.cos(fromAng)*kb; resolve(e,true,e.type==='monkey'); }
   // 体勢とひるみ（ひるみはサル0.8秒・イノシシ1.2秒に1回まで。クマとヌシはひるまない）
@@ -6599,6 +6612,7 @@ function killEnemy(e,trackingBonus=0){
   if(e.type==='boss'){ bossDefeated(e); return; }
   const n={boar:2,monkey:1,bear:4,deer:2,weasel:1,mutant:3}[e.type]||1;
   spawnDrop('hide',n+(trackingBonus?1:0),e.x,e.z);
+  if(e.type==='mutant'&&MUT.killDrop>0&&!e.scaleDropped){ e.scaleDropped=true; spawnDrop('mutScale',MUT.killDrop,e.x,e.z); } // v0.62：貴重な素材「変異した鱗」（数は暫定）
   if(e.type==='bear'||Math.random()<(e.type==='boar'?0.5:0.35)) spawnDrop('food',e.type==='bear'?2:1,e.x,e.z);
   if(e.carry){ if(e.carry.n>0){ spawnDrop(e.carry.k,e.carry.n,e.x,e.z,e.carry.b||null); toast('サルが盗んだ物を取り返した'); } e.carry=null; }
   sfx('heavyHit');
@@ -6819,7 +6833,8 @@ function updateMonkey(e,dt){
   }
 }
 function showSector(e,range,arc,k){
-  if(!e.sector){ e.sector=new THREE.Mesh(sectorGeo(arc),new THREE.MeshBasicMaterial({color:0xff3b1f,transparent:true,opacity:0.3,depthWrite:false})); scene.add(e.sector); }
+  if(!e.sector){ e.sector=new THREE.Mesh(sectorGeo(arc),new THREE.MeshBasicMaterial({color:0xff3b1f,transparent:true,opacity:0.3,depthWrite:false})); e.sector.userData.arc=arc; scene.add(e.sector); }
+  else if(e.sector.userData.arc!==arc){ e.sector.geometry.dispose(); e.sector.geometry=sectorGeo(arc); e.sector.userData.arc=arc; } // v0.62：同じ獣が幅の違う攻撃を使うとき（変異したサルの噛みつきとひっかき）、予告の扇を作り直す
   e.sector.visible=true; e.sector.position.set(e.x,groundH(e.x,e.z)+0.12,e.z); e.sector.rotation.y=e.rot; e.sector.scale.set(range+e.r,1,range+e.r);
   e.sector.material.opacity=0.3+0.45*clamp(k,0,1);
 }
@@ -6861,7 +6876,7 @@ function updateBear(e,dt){
   }
 }
 // ---- ボス ----
-let bossE=null, bossActive=false;
+let bossE=null, bossActive=false, mutBar=false; // mutBar：変異したサルの体力をヌシの帯に出しているか（v0.62）
 function ensureRing(e){ if(!e.ringM){ e.ringM=new THREE.Mesh(new THREE.CircleGeometry(1,40).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0xe0533c,transparent:true,opacity:0.25,depthWrite:false})); scene.add(e.ringM);} return e.ringM; }
 function updateBoss(e,dt){
   const pd=dist(e.x,e.z,P.x,P.z); const pa=Math.atan2(P.x-e.x,P.z-e.z);
@@ -7007,33 +7022,44 @@ function updateEnemyAnim(e,dt){
 }
 // v0.45.1：たとえ遠距離でも必ず毎フレーム進める状態（予備動作・攻撃・突進。見た目と判定の一致を優先）
 const AILOD_SKIP=['wind','chargeWind','goreWind','stompWind','charge','dash','strike','tusk','gore','stomp','trapped','stun'];
-// ---- 変異したサルの AI（v0.61。強さはすべて暫定。docs/mutant-monkey-ai.md） ----
+// ---- 変異したサルの AI（v0.61。v0.62 で強敵に。強さはすべて暫定。docs/mutant-monkey-ai.md） ----
 // 凶暴化した猿と同じ一撃離脱（回り込み→突進→噛みつき→離れる）に、固有の「前腕のひっかき（広い扇・強い）」と「飛びかかり（離れた所から跳ぶ）」を足す。
-// e.fleeOnly（初遭遇）なら、体力が減ると逃げ去る（倒れない）。そうでなければ倒れる。狙う相手は e.tgt（無ければ主人公。スズキ用に差し替えられる）
-const MUT={bite:13, scratch:18, pounce:16, scratchR:2.5, scratchArc:2.5, pounceMin:5.5, pounceMax:10, fleeAt:0.45, fleeSpd:9.5};
+// v0.62（2026-11-13 ユーザー指示「もっと強敵に」）：右のひっかきの後に左の前腕で返す二連撃、攻撃の後の隙を短く、体力が半分を切ると猛り狂う（速く・間を詰め・連撃が増える）。
+// e.fleeOnly（初遭遇）なら、体力が減ると逃げ去る（倒れない・猛り狂わない）。そうでなければ倒れる。狙う相手は e.tgt（無ければ主人公。スズキ用に差し替えられる）
+const MUT={bite:20, scratch:30, scratch2:24, pounce:26, scratchR:2.6, scratchArc:2.6, s2Wind:0.32, pounceMin:5.0, pounceMax:11, pounceP:0.45,
+  dashSpd:11.5, kiteSpd:0.75, recT:0.45, pounceRecT:0.6, cd0:0.5, cd1:0.8, comboP:0.55,
+  rageAt:0.5, rageSpd:1.15, rageCD:0.6, rageComboP:0.85, ragePounceFollow:0.5,
+  evadeH:0.5, evadeL:0.15, evadeRage:1.3, evadeD:3.4, evadeT:0.3,
+  fleeDmg:230, fleeSpd:9.5, fleeDrop:1, killDrop:2}; // fleeDmg：初遭遇は、この量の傷を受けると逃げ去る（体力の割合ではなく量。体力を調整しても初遭遇の長さが変わらないように）
 function mutTarget(e){ const t=e.tgt; if(t&&!t.dead&&t.x!=null) return t; return P; }
 function mutantFlee(e){ if(e.state==='flee'||e.state==='dead') return; e.ind.visible=false; hideSector(e); e.airY=0; setState(e,'flee'); e.fleeing=true;
-  floatText(e.x,2.4,e.z,'キィィッ！','#e0b070',true); sfx('alert'); }
+  floatText(e.x,2.4,e.z,'キィィッ！','#e0b070',true); sfx('alert');
+  if(MUT.fleeDrop>0&&!e.scaleDropped){ e.scaleDropped=true; spawnDrop('mutScale',MUT.fleeDrop,e.x,e.z); } } // v0.62：初遭遇でも鱗が1枚はがれ落ちる（暫定）
+function mutantRage(e){ if(e.rage||e.fleeOnly) return; e.rage=true; floatText(e.x,2.6,e.z,'猛り狂った！','#ff7a5a',true); sfx('roar'); S.shake=Math.max(S.shake,0.3); }
 function updateMutant(e,dt){
-  const T=mutTarget(e), pd=dist(e.x,e.z,T.x,T.z), face=Math.atan2(T.x-e.x,T.z-e.z), sp=ET.mutant.speed;
-  const near=()=>pd-e.r-(T.r||0.4);
+  const T=mutTarget(e), pd=dist(e.x,e.z,T.x,T.z), face=Math.atan2(T.x-e.x,T.z-e.z), rg=e.rage?MUT.rageSpd:1, sp=ET.mutant.speed*rg;
+  const near=()=>pd-e.r-(T.r||0.4), cd=()=>(MUT.cd0+Math.random()*MUT.cd1)*(e.rage?MUT.rageCD:1);
+  if(!e.rage&&!e.fleeOnly&&e.hp<=e.maxHp*MUT.rageAt&&e.state!=='dead') mutantRage(e);
+  // v0.62：身軽さ。主人公が振りかぶったのを見ると、攻撃していない間なら後ろへ跳んでかわすことがある（強攻撃ほどよく見る）。攻撃の後の隙・ひるみ・崩れの間はかわせない
+  if(T===P&&P.atk&&P.atk!==e.seenAtk){ e.seenAtk=P.atk; const mv=MOVES[P.atk.id], hv=mv&&mv.kind==='heavy';
+    if(['kite','retreat','dash','alert'].includes(e.state)&&near()<4.2&&Math.random()<(hv?MUT.evadeH:MUT.evadeL)*(e.rage?MUT.evadeRage:1)){ hideSector(e); e.evadeDir=Math.atan2(e.x-P.x,e.z-P.z); setState(e,'evade'); } }
   switch(e.state){
     case 'idle': wanderUpdate(e,dt,1.6); if(canSee(e)||e.aggro){ e.aggro=true; setState(e,'alert'); alertMark(e); sfx('alert'); } break;
-    case 'alert': e.spd=0; faceTo(e,face,8,dt); if(e.st>0.6){ setState(e,'kite'); e.atkT=1.0+Math.random(); } break;
-    case 'hurt': e.spd=0; if(e.st>0.35) setState(e,Math.random()<0.5?'retreat':'kite'); break;
+    case 'alert': e.spd=0; faceTo(e,face,8,dt); if(e.st>0.6){ setState(e,'kite'); e.atkT=0.6+Math.random()*0.8; } break;
+    case 'hurt': e.spd=0; if(e.st>(e.rage?0.25:0.35)) setState(e,Math.random()<(e.rage?0.25:0.5)?'retreat':'kite'); break;
     case 'stun': case 'trapped': e.spd=0; e.stunT-=dt; if(e.stunT<=0) setState(e,'kite'); break;
     case 'kite': {
       e.atkT-=dt; const away=Math.atan2(e.x-T.x,e.z-T.z), want=6.5;
       let ang; if(pd<want-1.2) ang=away; else if(pd>want+2) ang=away+Math.PI; else ang=away+(e.side||1)*Math.PI/2;
       if(e.st>1.6){ e.side=Math.random()<0.5?-1:1; e.st=0; }
-      faceTo(e,ang,8,dt); moveDir(e,e.rot,sp*0.7,dt); e.spd=sp*0.7;
+      faceTo(e,ang,8,dt); moveDir(e,e.rot,sp*MUT.kiteSpd,dt); e.spd=sp*MUT.kiteSpd;
       if(e.atkT<=0&&attackSlotFree(e)){
-        if(pd>MUT.pounceMin&&pd<MUT.pounceMax&&Math.random()<0.45) setState(e,'pounceWind'); // 固有：飛びかかり
+        if(pd>MUT.pounceMin&&pd<MUT.pounceMax&&Math.random()<MUT.pounceP) setState(e,'pounceWind'); // 固有：飛びかかり
         else setState(e,'dash'); }
       break; }
     case 'dash': // 凶暴化した猿と同じ突進。近づいたら、噛みつき（同じ）か前腕のひっかき（固有）
-      faceTo(e,face,12,dt); moveDir(e,e.rot,10.5,dt); e.spd=10.5;
-      if(near()<1.2){ setState(e,Math.random()<0.5?'scratchWind':'wind'); }
+      faceTo(e,face,12,dt); moveDir(e,e.rot,MUT.dashSpd*rg,dt); e.spd=MUT.dashSpd*rg;
+      if(near()<1.2){ setState(e,Math.random()<0.6?'scratchWind':'wind'); }
       else if(e.st>1.4) setState(e,'retreat');
       break;
     case 'wind': { // 噛みつき（凶暴化した猿と同じ）
@@ -7048,7 +7074,15 @@ function updateMutant(e,dt){
         if(near()<MUT.scratchR&&a<MUT.scratchArc/2+0.15){ mutHit(e,T,MUT.scratch,7); S.shake=Math.max(S.shake,0.25); } else floatText(e.x,2.2,e.z,'空振り','#c8c4b8');
         sfx('heavyHit'); setState(e,'scratch'); }
       break; }
-    case 'scratch': e.spd=0; if(e.st>0.12) setState(e,'recover'); break; // 振り下ろし
+    case 'scratch': e.spd=0; if(e.st>0.12){ // 振り下ろし。v0.62：続けて左の前腕で返すことがある
+      if(near()<MUT.scratchR+1.6&&Math.random()<(e.rage?MUT.rageComboP:MUT.comboP)) setState(e,'scratch2Wind'); else setState(e,'recover'); } break;
+    case 'scratch2Wind': { // v0.62 固有：左の前腕の返し（予備動作が短い。少し踏み込む）
+      e.spd=0; if(e.st<0.2) faceTo(e,face,9,dt); moveDir(e,e.rot,2.2,dt); showSector(e,MUT.scratchR,MUT.scratchArc,e.st/MUT.s2Wind);
+      if(e.st>MUT.s2Wind){ hideSector(e); const a=Math.abs(angDiff(e.rot,face));
+        if(near()<MUT.scratchR&&a<MUT.scratchArc/2+0.15){ mutHit(e,T,MUT.scratch2,8); S.shake=Math.max(S.shake,0.25); } else floatText(e.x,2.2,e.z,'空振り','#c8c4b8');
+        sfx('heavyHit'); setState(e,'scratch2'); }
+      break; }
+    case 'scratch2': e.spd=0; if(e.st>0.14){ setState(e,'recover'); e.recT=MUT.recT+0.15; } break;
     case 'pounceWind': { // 固有：かがんで跳ぶ先を決める（線で予告）
       e.spd=0; faceTo(e,face,9,dt); const L=Math.min(MUT.pounceMax,pd);
       e.ind.visible=true; e.ind.position.set(e.x,groundH(e.x,e.z)+0.12,e.z); e.ind.rotation.y=e.rot; e.ind.scale.set(1.3,1,L);
@@ -7058,11 +7092,15 @@ function updateMutant(e,dt){
       e.x=lerp(J.x0,J.x1,k); e.z=lerp(J.z0,J.z1,k); resolve(e,true,false); e.airY=Math.sin(Math.PI*k)*(0.6+dist(J.x0,J.z0,J.x1,J.z1)*0.06); e.spd=0;
       if(k>=1){ e.airY=0; const d2=dist(e.x,e.z,T.x,T.z)-e.r-(T.r||0.4);
         if(d2<1.1) mutHit(e,T,MUT.pounce,6); else floatText(e.x,2.2,e.z,'空振り','#c8c4b8');
-        S.shake=Math.max(S.shake,0.18); puff(e.x,groundH(e.x,e.z)+0.2,e.z,0,0.6,0,0.6,0xd9c8a0,0.6); setState(e,'recover'); e.recT=0.75; }
+        S.shake=Math.max(S.shake,0.18); puff(e.x,groundH(e.x,e.z)+0.2,e.z,0,0.6,0,0.6,0xd9c8a0,0.6);
+        if(e.rage&&d2<MUT.scratchR+0.5&&Math.random()<MUT.ragePounceFollow) setState(e,'scratchWind'); // v0.62：猛り狂うと、着地からそのままひっかく
+        else { setState(e,'recover'); e.recT=MUT.pounceRecT; } }
       break; }
-    case 'recover': e.spd=0; if(e.st>(e.recT||0.6)){ e.recT=0; setState(e,Math.random()<0.6?'retreat':'kite'); e.atkT=1.4+Math.random()*1.4; } break; // 攻撃の後の隙
-    case 'retreat': { const away=Math.atan2(e.x-T.x,e.z-T.z); faceTo(e,away,10,dt); moveDir(e,e.rot,8,dt); e.spd=8;
-      if(e.st>0.8){ setState(e,'kite'); e.atkT=Math.max(e.atkT||0,1.2+Math.random()*1.5); } break; }
+    case 'recover': e.spd=0; if(e.st>(e.recT||MUT.recT)){ e.recT=0; setState(e,Math.random()<0.5?'retreat':'kite'); e.atkT=cd(); } break; // 攻撃の後の隙
+    case 'retreat': { const away=Math.atan2(e.x-T.x,e.z-T.z); faceTo(e,away,10,dt); moveDir(e,e.rot,8*rg,dt); e.spd=8*rg;
+      if(e.st>0.7){ setState(e,'kite'); e.atkT=Math.max(e.atkT||0,cd()); } break; }
+    case 'evade': { const k=Math.min(1,e.st/MUT.evadeT); faceTo(e,face,14,dt); moveDir(e,e.evadeDir,MUT.evadeD/MUT.evadeT,dt); e.airY=Math.sin(Math.PI*k)*0.45; e.spd=0;
+      if(k>=1){ e.airY=0; setState(e,'kite'); e.atkT=Math.min(e.atkT||0,0.35); } break; } // かわした後はすぐ反撃に移る
     case 'flee': { const away=Math.atan2(e.x-P.x,e.z-P.z); faceTo(e,away,8,dt); moveDir(e,e.rot,MUT.fleeSpd,dt); e.spd=MUT.fleeSpd;
       if(e.st>5||dist(e.x,e.z,P.x,P.z)>28){ e.fled=true; if(e.onFlee) e.onFlee(e); else toast('変異したサルは逃げ去った'); removeEnemy(e); } break; }
     default: setState(e,'kite');
@@ -7079,17 +7117,20 @@ function mutantAnimate(e,dt){ const m=e.m, gy=groundH(e.x,e.z), st=e.state;
   if(st==='dead'){ name='fall'; ph=Math.min(1,e.st/1.6); if(e.st>1.9) m.g.position.y=gy-(e.st-1.9)*0.5; }
   else if(st==='scratchWind'){ name='scratch'; ph=0.4*Math.min(1,e.st/0.55); }
   else if(st==='scratch'){ name='scratch'; ph=0.4+0.15*Math.min(1,e.st/0.12); }
-  else if(st==='recover'&&e.lastAtk==='scratch'){ name='scratch'; ph=0.55+0.45*Math.min(1,e.st/(e.recT||0.6)); }
+  else if(st==='scratch2Wind'){ name='scratchL'; ph=0.4*Math.min(1,e.st/MUT.s2Wind); }
+  else if(st==='scratch2'){ name='scratchL'; ph=0.4+0.15*Math.min(1,e.st/0.14); }
+  else if(st==='recover'&&(e.lastAtk==='scratch'||e.lastAtk==='scratchL')){ name=e.lastAtk; ph=0.55+0.45*Math.min(1,e.st/(e.recT||MUT.recT)); }
   else if(st==='pounceWind'){ name='pounce'; ph=0.35*Math.min(1,e.st/0.5); }
   else if(st==='pounce'){ name='pounce'; ph=0.35+0.4*Math.min(1,e.st/(e.jump?e.jump.dur:0.5)); }
-  else if(st==='recover'){ name='pounce'; ph=0.75+0.25*Math.min(1,e.st/(e.recT||0.6)); }
+  else if(st==='recover'){ name='pounce'; ph=0.75+0.25*Math.min(1,e.st/(e.recT||MUT.recT)); }
   else if(st==='wind'){ name='pounce'; ph=0.3*Math.min(1,e.st/0.4); }
   else if(st==='hurt'){ name='flinch'; ph=Math.min(1,e.st/0.35); }
+  else if(st==='evade'){ name='flinch'; ph=0.15+0.7*Math.min(1,e.st/MUT.evadeT); }
   else if(st==='broken'||st==='stun'||st==='trapped'){ name='flinch'; ph=0.5+0.08*Math.sin(S.time*7); }
   else if(sp>0.3){ name=sp<4?'walk':'run'; t=e.gait/(name==='walk'?1.05:2.3); }
-  if(st==='scratchWind'||st==='scratch') e.lastAtk='scratch'; else if(st==='pounceWind'||st==='pounce') e.lastAtk='pounce';
+  if(st==='scratchWind'||st==='scratch') e.lastAtk='scratch'; else if(st==='scratch2Wind'||st==='scratch2') e.lastAtk='scratchL'; else if(st==='pounceWind'||st==='pounce') e.lastAtk='pounce';
   mutantPose(m,name,t,ph);
-  const fl=e.flash>0; for(const mm of m.flashM) mm.emissive.setHex(fl?0x884444:0x000000);
+  const fl=e.flash>0; for(const mm of m.flashM) mm.emissive.setHex(fl?0x884444:e.rage?0x3a0c08:0x000000); // v0.62：猛り狂うと赤みを帯びる
   const stunned=st==='stun'||st==='trapped'; e.stars.visible=stunned; if(stunned){ e.stars.position.set(e.x,gy+2.3,e.z); e.stars.rotation.y+=dt*5; }
 }
 // 呼び出す（形のデータを読んでから）。opts：fleeOnly（初遭遇は逃げ去る）・tgt（狙う相手）・onFlee
@@ -7598,7 +7639,7 @@ function buildScoutTower(){
 }
 
 // ================= クラフト =================
-const RNAME={wood:'木材',food:'食料',hide:'獣素材',fang:'ヌシの牙',straw:'藁',rope:'縄',stone:'石',bamboo:'竹',iron:'屑鉄'};
+const RNAME={wood:'木材',food:'食料',hide:'獣素材',fang:'ヌシの牙',mutScale:'変異した鱗',straw:'藁',rope:'縄',stone:'石',bamboo:'竹',iron:'屑鉄'};
 const RECIPES=[
  {id:'onigiri',name:'おにぎり',cost:{food:2},desc:'塩をきかせて竹の皮で包んだ握り飯。体力+35・満腹+25。手持ちで約30分もつ（生の食料は約20分）。Q または 1 で食べる',give:()=>{foodAdd('onigiri',1);}},
  {id:'bento',name:'精進弁当',cost:{food:3,hide:1},desc:'煮しめと漬物の精進料理。体力+60・満腹+50・30秒間 攻撃力+30%。手持ちで約40分もつ。2 で食べる',give:()=>{foodAdd('bento',1);}},
@@ -7676,7 +7717,7 @@ function renderHuntRecords(){
 function openInv(){ f31Inv(); f34Body(); renderHuntRecords();
   stopBeastVoices51(); S.mode='menu'; keys.clear();
   const g=$('invGrid'); g.innerHTML='';
-  const items=[['木材',inv.wood],['食料',inv.food],['獣素材',inv.hide],['藁',inv.straw],['縄',inv.rope],['石',inv.stone],['竹',inv.bamboo],['屑鉄',inv.iron],['大根の種',inv.seed],['ヌシの牙',inv.fang],['おにぎり',inv.onigiri],['精進弁当',inv.bento],['木柵キット',inv.fenceKit],['トゲ柵キット',inv.spikeKit],['杭柵キット',inv.stakeKit],['くくり罠キット',inv.trapKit],['落とし穴キット',inv.pitKit],['おとり餌場キット',inv.baitKit]];
+  const items=[['木材',inv.wood],['食料',inv.food],['獣素材',inv.hide],['藁',inv.straw],['縄',inv.rope],['石',inv.stone],['竹',inv.bamboo],['屑鉄',inv.iron],['大根の種',inv.seed],['ヌシの牙',inv.fang],['変異した鱗',inv.mutScale],['おにぎり',inv.onigiri],['精進弁当',inv.bento],['木柵キット',inv.fenceKit],['トゲ柵キット',inv.spikeKit],['杭柵キット',inv.stakeKit],['くくり罠キット',inv.trapKit],['落とし穴キット',inv.pitKit],['おとり餌場キット',inv.baitKit]];
   f7Flush(); const fk={'食料':'food','おにぎり':'onigiri','精進弁当':'bento'};
   for(const [n,v] of items){ if(v===0&&(n==='ヌシの牙'||n==='杭柵キット'||n==='大根の種')) continue; const d=document.createElement('div'); const k=fk[n]; let sub='';
     if(k&&v>0&&F7.store){ const w=f7Warn(k,'hand'); sub=`<small class="f7s">${w?`うち傷みかけ ${w}・`:''}最短の残り${f7Min(f7Left(k,'hand'))}</small>`; }
@@ -8450,7 +8491,7 @@ function updateHUD(dt){
   hudPrev.t=Math.max(0,hudPrev.t-dt); $('stats').classList.toggle('compact',hudPrev.t<=0);
   hbRefresh();
   setTxt('buffTxt',(P.buffT>0?`精進の力 攻撃+30%（${Math.ceil(P.buffT)}秒）　`:'')+(P.full<=0?'空腹：自然回復しない':P.full<60||touchMode?'':'満腹：体力が少しずつ回復')); // スマホでは平常時の説明を省く
-  setTxt('rWood',inv.wood); setTxt('rFood',inv.food); setTxt('rHide',inv.hide); setTxt('rFence',inv.fenceKit); setTxt('rTrap',inv.trapKit); setTxt('rSpike',inv.spikeKit); setTxt('rPit',inv.pitKit); setTxt('rStake',inv.stakeKit); setTxt('rFang',inv.fang);
+  setTxt('rWood',inv.wood); setTxt('rFood',inv.food); setTxt('rHide',inv.hide); setTxt('rFence',inv.fenceKit); setTxt('rTrap',inv.trapKit); setTxt('rSpike',inv.spikeKit); setTxt('rPit',inv.pitKit); setTxt('rStake',inv.stakeKit); setTxt('rFang',inv.fang); setTxt('rMutScale',inv.mutScale);
   { // v0.33：0の行は隠す。0→増えた瞬間は一瞬光る
     let anyTop=false;
     for(const [k,v] of [['rWood',inv.wood],['rFood',inv.food],['rHide',inv.hide],['rFence',inv.fenceKit],['rTrap',inv.trapKit],['rSpike',inv.spikeKit],['rPit',inv.pitKit]]){
@@ -8459,9 +8500,9 @@ function updateHUD(dt){
       resPrev[k]=v;
     }
     $('res').querySelector('hr').hidden=!anyTop;
-    $('res').hidden=!(anyTop||inv.fenceKit>0||inv.trapKit>0||(prog.unlockBoss&&inv.stakeKit>0)||inv.fang>0||prog.bossDefeated);
+    $('res').hidden=!(anyTop||inv.fenceKit>0||inv.trapKit>0||(prog.unlockBoss&&inv.stakeKit>0)||inv.fang>0||inv.mutScale>0||prog.bossDefeated);
   }
-  $('rStakeRow').hidden=!prog.unlockBoss; $('rFangRow').hidden=!(inv.fang>0||prog.bossDefeated);
+  $('rStakeRow').hidden=!prog.unlockBoss; $('rFangRow').hidden=!(inv.fang>0||prog.bossDefeated); $('rMutScaleRow').hidden=!(inv.mutScale>0);
   hbRefresh(); // v0.45：手持ちバー（数・傷みかけ印・耐久・選択・番号）はここで一括更新
   const [ot]=objective(); const ql=questLine(); const qt=ql?ql[0]:'';
   if(ot!==objOpen.last||qt!==objOpen.lastQ){ if(objOpen.last!==null) objOpen.t=6; objOpen.last=ot; objOpen.lastQ=qt; }
@@ -8475,6 +8516,10 @@ function updateHUD(dt){
   $('coreBar').hidden=!(ev.kind&&ev.phase==='fight');
   if(ev.kind){ setW('coreFill',ev.coreHp/ev.coreMax); setTxt('coreV',`${Math.ceil(ev.coreHp)} / ${ev.coreMax}`); }
   if(bossActive&&bossE){ setW('bossFill',Math.max(0,bossE.hp)/bossE.maxHp); setW('bossPoise',bossE.state==='broken'?0:(bossE.poise??300)/(bossE.poiseMax||300)); }
+  { // v0.62：強敵の変異したサルと戦っている間は、ヌシと同じ所に名前・体力・体勢を出す（ヌシ戦の間は出さない）
+    const me=bossActive?null:enemies.find(e=>e.type==='mutant'&&!e.removed&&e.state!=='dead'&&e.state!=='flee'&&e.aggro&&dist(e.x,e.z,P.x,P.z)<26);
+    if(me){ mutBar=true; $('bossBar').hidden=false; setTxt('bossName',ET.mutant.name); setW('bossFill',Math.max(0,me.hp)/me.maxHp); setW('bossPoise',me.state==='broken'?0:(me.poise??0)/(me.poiseMax||1)); }
+    else if(mutBar){ mutBar=false; if(!bossActive) $('bossBar').hidden=true; setTxt('bossName','光明寺のヌシ'); } }
   // プロンプト
   curInter=(S.mode==='playing'&&!P.dead)?interactables():null;
   const pr=$('prompt');

@@ -42,19 +42,20 @@ async function p2TestStart(){
  prog.chapter2.progress.openingStarted=true; prog.chapter2.progress.defenseComplete=true;
  prog.level=4; prog.exp=XP.lv[3]||0; P.maxHp=f31MaxHp(4); P.hp=P.maxHp; P.weapon='spear'; P.dur=WEAPONS.spear.maxDur; prog.arms.spear=P.dur;
  for(const [slot,id] of Object.entries({head:'forest_head',chest:'forest_chest',legs:'forest_legs',feet:'forest_feet'})){ if(!prog.gear.owned.includes(id)) prog.gear.owned.push(id); prog.gear.equip[slot]=id; }
- f47ApplyVisual(); updHolster(); refreshWeaponMesh();
+ f47ApplyVisual(); updHolster(); refreshWeaponMesh(); f7Flush(); inv.onigiri=0; inv.bento=0; foodAdd('onigiri',3); foodAdd('bento',2); // v0.62：強敵なので食料を持たせる（防衛戦の測定の C と同じ）
  const ok=await regionTravel('kamishihi',null,{force:true}); if(!ok){ toast('上志比を読み込めませんでした',true); return; }
  const st=(window.KAMISHIHI_MAP.pts.station||[]).find(s=>s[2]==='山王'); if(st){ P.x=st[0]+14; P.z=st[1]+6; P.facing=0; setCam(0); }
- banner('試遊：変異したサル','少しすると変異したサルが来ます（初遭遇：体力が減ると逃げ去る）。上のボタンでも呼べます',5);
+ banner('試遊：変異したサル','少しすると変異したサルが来ます（初遭遇：傷がたまると逃げ去る）。上のボタンで呼ぶ・回復できます',5);
  setTimeout(()=>{ if(S.mode==='playing') p2Spawn(true); },2500); saveGame(); }
 async function p2Spawn(fleeOnly){ const a=P.facing||0, x=P.x+Math.sin(a)*11, z=P.z+Math.cos(a)*11;
  const e=await spawnMutant(x,z,{fleeOnly,aggro:true}); if(e){ setState(e,'alert'); toast(fleeOnly?'変異したサル（初遭遇：逃げ去る）':'変異したサル（通常：倒せる）'); } }
 { const b=document.getElementById('btnP2Start'); if(b) b.addEventListener('click',()=>p2TestStart());
   const bar=document.createElement('div'); bar.id='p2bar'; bar.style.cssText='position:fixed;top:calc(6px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:30;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 16px)';
-  bar.innerHTML='<button id="p2a" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">サルを呼ぶ（初遭遇：逃げ去る）</button><button id="p2b" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">サルを呼ぶ（通常：倒せる）</button>';
+  bar.innerHTML='<button id="p2a" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">サルを呼ぶ（初遭遇：逃げ去る）</button><button id="p2b" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">サルを呼ぶ（通常：倒せる）</button><button id="p2c" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">回復・食料を足す</button>';
   document.body.appendChild(bar); bar.hidden=true;
   document.getElementById('p2a').addEventListener('click',e=>{ e.stopPropagation(); p2Spawn(true); cv.focus(); });
   document.getElementById('p2b').addEventListener('click',e=>{ e.stopPropagation(); p2Spawn(false); cv.focus(); });
+  document.getElementById('p2c').addEventListener('click',e=>{ e.stopPropagation(); if(!P.dead){ P.hp=P.maxHp; foodAdd('onigiri',2); toast('試遊：体力を戻し、おにぎりを2つ足した'); } cv.focus(); });
   setInterval(()=>{ bar.hidden=!(S.mode==='playing'); },300); }
 """
 s = rep(s, '// ================= NPC =================', test_code + '// ================= NPC =================')

@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""v0.61 変異したサルの確認（画面のない Chromium。数分）。
+"""v0.61〜 変異したサルの確認（画面のない Chromium。数分）。v0.62 で強敵の動きと「変異した鱗」を足した。
 
 本編のコードで変異したサルを呼び、敵の更新を一定の刻みで直接回して（描画は時々だけ）、次を確かめる。
 - 形のデータを読んで呼び出せる（骨21本・三角形・テクスチャ）
 - 主人公に向かって戦う：凶暴化した猿と同じ攻撃（突進・噛みつき）と固有の攻撃（前腕のひっかき・飛びかかり）を使い、当たると主人公の体力が減る
-- 初遭遇（fleeOnly）：体力が45%以下になると逃げ去り、倒れない。逃げ切ると消える
-- 通常：体力が0になると倒れて消える
+- v0.62：右のひっかきに続く左の返し（二連撃）を使う。主人公が振りかぶると跳んでかわし、その間は当たらない。体力が半分を切ると猛り狂う
+- 初遭遇（fleeOnly）：決まった量（MUT.fleeDmg）の傷を受けると逃げ去り、倒れない・猛り狂わない。逃げるとき「変異した鱗」を1つ落とす。逃げ切ると消える
+- 通常：体力が0になると倒れて消え、「変異した鱗」を落とす
+- 戦っている間は、ヌシと同じ所に名前と体力を出し、終わると消す
+- 「変異した鱗」は保存され、鱗の項目がない旧セーブは0で読める
 - 呼んで消すのを繰り返しても、形・テクスチャ・場面の物が増え続けない
 - 上志比で呼んだものは、光明寺へ戻ると消える
 - エラーなし
@@ -22,7 +25,8 @@ THREE = open(os.environ.get('THREE_JS', '/home/claude/v010/node_modules/three/bu
 SRC = open(os.path.join(ROOT, 'index.html'), encoding='utf8').read()
 MDATA = open(os.path.join(ROOT, 'data', 'models', 'mutant-monkey.js'), encoding='utf8').read()
 KDATA = open(os.path.join(ROOT, 'data', 'kamishihi', 'kamishihi-map.js'), encoding='utf8').read()
-HOOK = ("window.__t={get enemies(){return enemies},get P(){return P},get S(){return S},get prog(){return prog},renderer,scene,camera,"
+HOOK = ("window.__t={get enemies(){return enemies},get P(){return P},get S(){return S},get prog(){return prog},get inv(){return inv},get drops(){return drops},get MUT(){return MUT},renderer,scene,camera,"
+        "clearDrops:()=>{ for(const d of drops){ scene.remove(d.m); f11Dispose([d.m]); } drops.length=0; },updateHUD:()=>updateHUD(1/60),saveGame:()=>saveGame(),applySave:d=>applySave(d),"
         "spawnMutant:(...a)=>spawnMutant(...a),updateEnemies:(dt)=>updateEnemies(dt),damageEnemy:(...a)=>damageEnemy(...a),regionTravel:(...a)=>regionTravel(...a),"
         "get REG(){return REG},get MUTANT(){return MUTANT}};\n")
 HTML = SRC.replace('function updateNPCs(dt){', HOOK + 'function updateNPCs(dt){', 1)
@@ -82,22 +86,45 @@ async def main():
         check(r['hits'] >= 3, f'主人公に当てる（{r["hits"]} 回）')
         check(('dash' in sn) and ('wind' in sn), '凶暴化した猿と同じ攻撃（突進・噛みつき）を使う')
         check(('scratchWind' in sn) and ('pounceWind' in sn) and ('pounce' in sn), '固有の攻撃（前腕のひっかき・飛びかかり）を使う')
+        check(('scratch2Wind' in sn) and ('scratch2' in sn), 'v0.62：右のひっかきに続けて左の前腕で返す（二連撃）')
+        bar = await pg.evaluate("() => { const T = window.__t; T.updateHUD(); const b = document.getElementById('bossBar'); return {hidden: b.hidden, name: document.getElementById('bossName').textContent}; }")
+        print('体力の帯：', bar)
+        check(not bar['hidden'] and bar['name'] == '変異したサル', '戦っている間は名前と体力を出す')
+        # 跳んでかわす：近くで主人公が強攻撃を振りかぶったとき（確率なので数回試す）
+        ev = await pg.evaluate("""async () => { const T = window.__t, P = T.P; const e = T.enemies.find(e => e.type === 'mutant'); const old = {x: e.x, z: e.z};
+          let evaded = false, hpBefore = 0, hpAfter = 0;
+          for (let i = 0; i < 30 && !evaded; i++) { e.x = P.x + 2.6; e.z = P.z; e.state = 'kite'; e.st = 0; e.atkT = 9; P.atk = {id: 'SH0', t: 0};
+            T.updateEnemies(1 / 60); if (e.state === 'evade') { evaded = true; hpBefore = e.hp; T.damageEnemy(e, 50, 'heavy', 0); hpAfter = e.hp; } }
+          P.atk = null; for (let i = 0; i < 30; i++) T.updateEnemies(1 / 30);
+          return {evaded, hpBefore, hpAfter, state: e.state}; }""")
+        print('かわす：', ev)
+        check(ev['evaded'] and ev['hpAfter'] == ev['hpBefore'], '強攻撃を振りかぶると跳んでかわし、跳んでいる間は当たらない')
         # 初遭遇：体力を減らすと逃げ去る
         fl = await pg.evaluate("""async () => { const T = window.__t; const e = T.enemies.find(e => e.type === 'mutant');
-          for (let i = 0; i < 30 && e.state !== 'flee'; i++) T.damageEnemy(e, 12, 'light', 0);
-          const st = e.state, hp = e.hp, max = e.maxHp; for (let i = 0; i < 10; i++) T.damageEnemy(e, 30, 'heavy', 0);
-          return {st, hp, max, hpAfter: e.hp, dead: e.state === 'dead'}; }""")
+          T.clearDrops(); for (let i = 0; i < 60 && e.state !== 'flee'; i++) T.damageEnemy(e, 12, 'light', 0);
+          const st = e.state, hp = e.hp, max = e.maxHp, rage = !!e.rage; for (let i = 0; i < 80; i++) T.damageEnemy(e, 30, 'heavy', 0);
+          const sc = T.drops.filter(d => d.k === 'mutScale').reduce((a, d) => a + d.n, 0);
+          return {st, hp, max, need: T.MUT.fleeDmg, rage, hpAfter: e.hp, dead: e.state === 'dead', scales: sc}; }""")
         print('初遭遇：', fl)
-        check(fl['st'] == 'flee' and fl['hp'] <= fl['max'] * 0.45 and fl['hpAfter'] >= 1 and not fl['dead'], '初遭遇は体力45%以下で逃げ去り、さらに叩いても倒れない')
+        check(fl['st'] == 'flee' and fl['max'] - fl['hp'] >= fl['need'] and fl['hpAfter'] >= 1 and not fl['dead'], '初遭遇は決まった量の傷で逃げ去り、さらに叩いても倒れない')
+        check(not fl['rage'], '初遭遇は猛り狂わない')
+        check(fl['scales'] >= 1, f'初遭遇は逃げるとき鱗を落とす（{fl["scales"]}）')
         await pg.evaluate(RUN, [240, 1 / 30])
         gone = await pg.evaluate("() => !window.__t.enemies.some(e => e.type === 'mutant')")
         check(gone, '逃げ切ると消える')
         # 通常：倒れる
-        dd = await pg.evaluate("""async () => { const T = window.__t, P = T.P; const e = await T.spawnMutant(P.x + 5, P.z + 5, {fleeOnly: false});
-          for (let i = 0; i < 40 && e.state !== 'dead'; i++) T.damageEnemy(e, 15, 'light', 0); return e.state; }""")
+        dd = await pg.evaluate("""async () => { const T = window.__t, P = T.P; T.clearDrops(); const e = await T.spawnMutant(P.x + 5, P.z + 5, {fleeOnly: false});
+          let rageAt = null; for (let i = 0; i < 200 && e.state !== 'dead'; i++) { T.damageEnemy(e, 15, 'light', 0); T.updateEnemies(1 / 60); if (e.rage && rageAt == null) rageAt = e.hp / e.maxHp; }
+          const sc = T.drops.filter(d => d.k === 'mutScale').reduce((a, d) => a + d.n, 0);
+          return {state: e.state, rageAt, scales: sc, want: T.MUT.killDrop}; }""")
+        print('通常：', dd)
         await pg.evaluate(RUN, [120, 1 / 30])
         gone2 = await pg.evaluate("() => !window.__t.enemies.some(e => e.type === 'mutant')")
-        check(dd == 'dead' and gone2, '通常は体力0で倒れ、少しして消える')
+        bar2 = await pg.evaluate("() => { window.__t.updateHUD(); return {hidden: document.getElementById('bossBar').hidden, name: document.getElementById('bossName').textContent}; }")
+        check(dd['state'] == 'dead' and gone2, '通常は体力0で倒れ、少しして消える')
+        check(dd['rageAt'] is not None and 0.4 < dd['rageAt'] <= 0.5, f'体力が半分を切ると猛り狂う（{dd["rageAt"]}）')
+        check(dd['scales'] == dd['want'], f'倒すと「変異した鱗」を落とす（{dd["scales"]}）')
+        check(bar2['hidden'] and bar2['name'] == '光明寺のヌシ', '戦いが終わると体力の帯を消し、名前を戻す')
         # 繰り返し
         mems = []
         for i in range(4):
@@ -105,7 +132,7 @@ async def main():
             await pg.evaluate("""async () => { const T = window.__t, P = T.P; const e = await T.spawnMutant(P.x + 6, P.z + 6, {fleeOnly: true});
               T.renderer.render(T.scene, T.camera); for (let i = 0; i < 40 && e.state !== 'flee'; i++) T.damageEnemy(e, 20, 'light', 0); }""")
             await pg.evaluate(RUN, [240, 1 / 30])
-            await pg.evaluate("() => window.__t.renderer.render(window.__t.scene, window.__t.camera)")
+            await pg.evaluate("() => { window.__t.clearDrops(); window.__t.renderer.render(window.__t.scene, window.__t.camera); }")  # v0.62：逃げるときも鱗を落とすので、落とし物は数えない
             mems.append(await pg.evaluate(MEM))
         print('繰り返し：', mems)
         check(len({(m['geo'], m['tex'], m['kids']) for m in mems[1:]}) == 1, '呼んで消すのを繰り返しても、形・テクスチャ・場面の物が増え続けない')
@@ -116,6 +143,12 @@ async def main():
           return {inRegion, left: T.enemies.includes(e), removed: e.removed}; }""")
         print('上志比：', kk)
         check(kk['inRegion'] and not kk['left'] and kk['removed'], '上志比で呼んだものは、光明寺へ戻ると消える')
+        # 保存：鱗の数が保存され、鱗の項目がない旧セーブは0で読める
+        sv = await pg.evaluate("""() => { const T = window.__t; T.inv.mutScale = 3; T.saveGame(); const d = JSON.parse(localStorage.getItem('eiheiji_vs_beasts_v010'));
+          const saved = d.inv.mutScale; delete d.inv.mutScale; T.applySave(d); const old = T.inv.mutScale; d.inv.mutScale = 5; T.applySave(d);
+          return {saved, v: d.v, old, again: T.inv.mutScale}; }""")
+        print('保存：', sv)
+        check(sv['saved'] == 3 and sv['v'] == 1 and sv['old'] == 0 and sv['again'] == 5, '鱗の数を保存・読み込みでき、旧セーブは0になる')
         check(not errs, f'エラーなし {errs[:3]}')
         await b.close()
     print('PASS: mutant monkey' if ok else 'FAILED')

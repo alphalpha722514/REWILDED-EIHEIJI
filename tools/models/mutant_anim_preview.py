@@ -14,8 +14,8 @@ HOOK = "window.__m={mutantLoad,makeMutant,mutantPose,makeHuman,makeMonkey};\n"
 HTML = SRC.replace('function updateNPCs(dt){', HOOK + 'function updateNPCs(dt){', 1)
 OUT = sys.argv[1]; os.makedirs(OUT, exist_ok=True)
 ANIMS = (sys.argv[2].split(',') if len(sys.argv) > 2 else ['idle', 'walk', 'run', 'pounce', 'scratch', 'flinch', 'fall'])
-LABEL = {'idle': '待機', 'walk': '歩く', 'run': '四つ足で走る', 'pounce': '飛びかかり', 'scratch': 'ひっかき', 'flinch': 'ひるみ', 'fall': '倒れる'}
-DUR = {'idle': 4.0, 'walk': 2.0, 'run': 1.4, 'pounce': 1.3, 'scratch': 1.0, 'flinch': 0.6, 'fall': 1.6}  # 撮る長さ（秒）。一度きりの動きは ph を 0→1
+LABEL = {'combo': 'ひっかきの二連撃（v0.62）', 'scratchL': '左の返し', 'idle': '待機', 'walk': '歩く', 'run': '四つ足で走る', 'pounce': '飛びかかり', 'scratch': 'ひっかき', 'flinch': 'ひるみ', 'fall': '倒れる'}
+DUR = {'combo': 2.2, 'scratchL': 1.0, 'idle': 4.0, 'walk': 2.0, 'run': 1.4, 'pounce': 1.3, 'scratch': 1.0, 'flinch': 0.6, 'fall': 1.6}  # 撮る長さ（秒）。一度きりの動きは ph を 0→1
 FPS = 24
 JS = r"""async ([anims, dur, fps]) => { const T = THREE, M = window.__m, W = 720, H = 540;
   await M.mutantLoad(); await new Promise(r => setTimeout(r, 300));
@@ -29,7 +29,11 @@ JS = r"""async ([anims, dur, fps]) => { const T = THREE, M = window.__m, W = 720
   const frames = {};
   for (const a of anims) { const n = Math.round(dur[a] * fps), fr = [];
     for (let i = 0; i < n; i++) { const t = i / fps, ph = i / (n - 1);
-      M.mutantPose(m, a, t, ph);
+      // 二連撃：右のひっかき（予備0.55秒＋振り0.12秒）→ 左の返し（予備0.32秒＋振り0.14秒）→ 戻り0.6秒。ゲームの状態の長さと同じ
+      if (a === 'combo') { const T1 = 0.67, T2 = T1 + 0.46; if (t < T1) M.mutantPose(m, 'scratch', t, t < 0.55 ? 0.4 * t / 0.55 : 0.4 + 0.15 * (t - 0.55) / 0.12);
+        else if (t < T2) { const u = t - T1; M.mutantPose(m, 'scratchL', t, u < 0.32 ? 0.4 * u / 0.32 : 0.4 + 0.15 * (u - 0.32) / 0.14); }
+        else M.mutantPose(m, 'scratchL', t, Math.min(1, 0.55 + 0.45 * (t - T2) / 0.6)); }
+      else M.mutantPose(m, a, t, ph);
       // 跳ぶ動きは、AI が体を動かす代わりに、ここで前と上へ動かす（見るため）
       let z = 0, y = 0; if (a === 'pounce') { const k = Math.max(0, Math.min(1, (ph - 0.38) / 0.4)); z = 2.6 * (k * k * (3 - 2 * k)); y = 1.0 * Math.sin(Math.PI * k); }
       if (a === 'walk') z = 2.4 * t; if (a === 'run') z = 6.0 * t;
