@@ -58,7 +58,7 @@ function instrument(html) {
   html = rep(html, 'function inputWorld(){', 'function inputWorld(){ if(window.__bot) return window.__bot.input();');
   html = rep(html, 'function frame(now){\n  requestAnimationFrame(frame);',
     'function frame(now){\n  requestAnimationFrame(frame); if(window.__noRender){ last=now; return; }');
-  const hook = 'window.__g={get P(){return P},get prog(){return prog},get inv(){return inv},get ev(){return ev},' +
+  const hook = 'window.__g={get pm(){return pm},get F60(){return typeof F60_GARMENTS!=="undefined"?F60_GARMENTS:null},get P(){return P},get prog(){return prog},get inv(){return inv},get ev(){return ev},' +
     'get enemies(){return enemies},get GAPS(){return GAPS},get traps(){return traps},get npcGen(){return npcGen},' +
     'get CORE(){return CORE},get S(){return S},get WEAPONS(){return WEAPONS},get XP(){return XP},get stats(){return stats},' +
     'get C2(){return C2_DEFENSE},' +
@@ -264,6 +264,8 @@ async function main() {
   await page.goto('http://game.local/', { waitUntil: 'load', timeout: 240000 });
   await page.waitForFunction(() => window.__g && window.__g.S, null, { timeout: 120000 });
   await page.evaluate(PAGE_CODE);
+  // v0.65：防具の服（着替え）は初めて着たときに作られ、そのとき乱数が進む。測定の乱数の種に影響しないよう、先に全部作っておく
+  await page.evaluate(() => { const g = window.__g, F = g.F60, pm = g.pm; if (!F || !pm || !pm.wardrobe) return; for (const set in F) for (const slot in F[set]) pm.wardrobe.ensure(set + '_' + slot, slot, F[set][slot]); });
 
   const results = {};
   for (const c of conds) {

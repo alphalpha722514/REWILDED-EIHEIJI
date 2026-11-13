@@ -30,7 +30,7 @@ function instrument(html) {
   const rep = (s, a, b) => { const n = s.split(a).length - 1; if (n !== 1) throw new Error(`差し込み位置が ${n} か所: ${a.slice(0, 50)}`); return s.replace(a, b); };
   html = rep(html, 'function inputWorld(){', 'function inputWorld(){ if(window.__bot) return window.__bot.input();');
   html = rep(html, 'function frame(now){\n  requestAnimationFrame(frame);', 'function frame(now){\n  requestAnimationFrame(frame); if(window.__noRender){ last=now; return; }');
-  const hook = 'window.__g={get P(){return P},get prog(){return prog},get inv(){return inv},get enemies(){return enemies},get S(){return S},' +
+  const hook = 'window.__g={get pm(){return pm},get F60(){return typeof F60_GARMENTS!=="undefined"?F60_GARMENTS:null},get P(){return P},get prog(){return prog},get inv(){return inv},get enemies(){return enemies},get S(){return S},' +
     'get WEAPONS(){return WEAPONS},get XP(){return XP},get MUT(){return MUT},get ET(){return ET},get PSPAWN(){return PSPAWN},' +
     'freshState:()=>freshState(),resetWorld:x=>resetWorld(x),hideAllOv:()=>hideAllOv(),chapter2State:(a,b)=>chapter2State(a,b),' +
     'f11Sim:d=>f11Sim(d),tryAttack:(k,a)=>tryAttack(k,a),tryDodge:()=>tryDodge(),eat:k=>eat(k),f31MaxHp:l=>f31MaxHp(l),' +
@@ -115,6 +115,8 @@ async function main() {
   await page.goto('http://game.local/', { waitUntil: 'load', timeout: 240000 });
   await page.waitForFunction(() => window.__g && window.__g.S, null, { timeout: 120000 });
   await page.evaluate(PAGE_CODE);
+  // v0.65：防具の服（着替え）は初めて着たときに作られ、そのとき乱数が進む。測定の乱数の種に影響しないよう、先に全部作っておく
+  await page.evaluate(() => { const g = window.__g, F = g.F60, pm = g.pm; if (!F || !pm || !pm.wardrobe) return; for (const set in F) for (const slot in F[set]) pm.wardrobe.ensure(set + '_' + slot, slot, F[set][slot]); });
   const med = a => { const s = [...a].sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : 0; };
   console.log(`相手：${foe}  場所：${at}  `);
   console.log(`モード：${mode === 'flee' ? '初遭遇（撃退）' : '通常（倒す）'}  上書き MUT=${JSON.stringify(mut)} ET=${JSON.stringify(et)}`);

@@ -162,7 +162,7 @@ async def main():
         check(bl['cut'] == 0.3 and bl['set'] == 'blue', '蒼鱗の4部位で被ダメージ -30%')
         check(all(v and set(v) == {'blue'} for v in bl['vis'].values()), '蒼鱗の形（金属の板と鱗）が頭・胸・脚・足に出る')
         check(bl['em'] >= 15 and bl['motes'] > 0, f'埋め込んだ鱗と継ぎ目から光の粒が出る（吹き出し口 {bl["em"]}）')
-        check(bl['names'][0] == '蒼鱗の鉢金', '名前：蒼鱗（ユーザー決定）')
+        check(bl['names'] == ['蒼鱗の頭部装甲', '蒼鱗の胸部装甲', '蒼鱗の脚部装甲', '蒼鱗の足部装甲'], '名前：蒼鱗の頭部装甲・胸部装甲・脚部装甲・足部装甲（ユーザー決定）')
         mv_front = "() => { const T = window.__t, P = T.P; P.x = 163; P.z = 52.5; P.facing = 0.35; for (let i = 0; i < 40; i++) T.scaleFxUpdate(1 / 30); }"
         await shot('4_blue_front', "const P = T.P, gy = T.groundH(P.x, P.z); for (let i = 0; i < 20; i++) T.scaleFxUpdate(1 / 30); cam.position.set(P.x + Math.sin(P.facing) * 2.9 + 0.5, gy + 1.5, P.z + Math.cos(P.facing) * 2.9); cam.lookAt(P.x, gy + 1.05, P.z);", mv_front)
         await shot('5_blue_back', "const P = T.P, gy = T.groundH(P.x, P.z); for (let i = 0; i < 20; i++) T.scaleFxUpdate(1 / 30); cam.position.set(P.x - Math.sin(P.facing) * 2.9 - 0.5, gy + 1.5, P.z - Math.cos(P.facing) * 2.9); cam.lookAt(P.x, gy + 1.05, P.z);")
@@ -172,7 +172,7 @@ async def main():
           return {before, max: P.maxHp, hp: P.hp, speed: Math.round(T.f47Stats().speed * 100) / 100, name: T.G47.raw_chest.name}; }""")
         print('変異した鱗：', rw)
         check(rw['max'] == round(rw['before'] * 0.7) and rw['hp'] <= rw['max'] and rw['speed'] == 0.3, '変異した鱗の4部位で最大体力0.7倍・移動+30%')
-        check(rw['name'] == '変異した鱗の胴当て', '名前：変異した鱗（ユーザー決定）')
+        check(rw['name'] == '変異した鱗の胸部装甲', '名前：変異した鱗（ユーザー決定）')
         sw = await pg.evaluate("""() => { const T = window.__t, P = T.P; for (const e of [...T.enemies]) T.removeEnemy(e); P.x = 150; P.z = 52;
           const e = T.spawnEnemy('monkey', P.x + 2.2, P.z + 0.4, 'field', {aggro: true}); const hp0 = e.hp; T.SCALE_FX.charge = 0; T.SCALE_FX.smoke.forEach(s => s.visible = false);
           const d = () => Math.hypot(e.x - P.x, e.z - P.z); let maxAuto = 0;

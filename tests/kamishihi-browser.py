@@ -177,7 +177,9 @@ async def main():
         check(same, '3往復しても、当たり判定・場面の物・範囲・地面が元どおり')
         # 光明寺へ戻ったあと、区画の読み込みを待ってから数える（光明寺の物は遅れて作られる物がある）
         # 上志比の物がすべて捨てられたか：光明寺へ戻った直後の数が、上志比へ出る直前（光明寺）の数と同じ
-        check(all(abs(g[1] - d) <= 2 for g, d in zip(geos, departs)) and all(t[1] == d for t, d in zip(texs, tdeparts)),
+        # v0.65：光明寺に戻ったあと遅れて作られる物が数個あり、出る直前の数え方によって 1〜3 ずれる。上志比の物は150以上あるので、
+        # 「ずれは4以内」かつ「2往復目と3往復目で戻った直後の数が同じ（往復のたびに増えない）」で確かめる
+        check(all(abs(g[1] - d) <= 4 for g, d in zip(geos, departs)) and geos[-1][1] == geos[-2][1] and all(t[1] == d for t, d in zip(texs, tdeparts)),
               f'上志比の形・テクスチャが残らない（光明寺を出る直前 {departs}/{tdeparts} → 上志比を出る直前と戻った直後 {geos} {texs}）')
         check(c['saved'] == 'komyoji', '光明寺に戻ると、いる地域が光明寺で保存される')
         # 3) 地図データを読めないとき
