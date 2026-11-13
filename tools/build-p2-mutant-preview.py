@@ -57,10 +57,11 @@ async function p2Spawn(fleeOnly){ const a=P.facing||0, x=P.x+Math.sin(a)*11, z=P
   document.getElementById('p2b').addEventListener('click',e=>{ e.stopPropagation(); p2Spawn(false); cv.focus(); });
   document.getElementById('p2d').addEventListener('click',async e=>{ e.stopPropagation(); cv.focus(); // v0.63：鱗の装備を試す
     Object.assign(inv,{mutScale:(inv.mutScale||0)+30,procScale:(inv.procScale||0)+30,charcoal:(inv.charcoal||0)+10,wood:inv.wood+80,iron:inv.iron+30,stone:inv.stone+30,hide:inv.hide+50,rope:inv.rope+30,straw:inv.straw+10});
+    foodAdd('meat',6); foodAdd('veg',6); foodAdd('rice',6); foodAdd('food',4); // v0.66：かまどの料理を試す食材
     for(const id of ['nata3','axeIron','club']) if(prog.arms[id]==null&&!Object.keys(SCALE_ARMS).some(k=>SCALE_ARMS[k]===id&&prog.arms[k]!=null)) armGain(id,false);
     if(REG.cur!=='komyoji'){ const ok=await regionTravel('komyoji',null,{force:true}); if(!ok){ toast('拠点へ戻れませんでした',true); return; } }
     P.x=158; P.z=69.5; P.facing=Math.PI/2; setCam(P.facing+Math.PI);
-    banner('試遊：鱗の装備','素材を足しました。作業台で、かまど・変換炉・蒼鱗／変異鱗の武器・鱗の飛去来器・鱗の防具を作れます。施設は拠点の南東の隅に建つ',6); saveGame(); });
+    banner('試遊：鱗の装備','素材を足しました。作業台で、かまど・変換炉・鱗の武器と防具を作れます。食材（肉・野菜・米）も足しました。かまどは拠点の南東の隅',6); saveGame(); });
   document.getElementById('p2e').addEventListener('click',e=>{ e.stopPropagation(); let n=0; for(const id of ['conv','kama']){ const c=prog[id]; if(!c||!c.built) continue; c.out+=c.q; n+=c.q; c.q=0; c.t=0; facVis(id); } toast(n?'試遊：かまど・変換炉の作業を終えた（取り出せる）':'試遊：待っている作業がない'); cv.focus(); });
   document.getElementById('p2c').addEventListener('click',e=>{ e.stopPropagation(); if(!P.dead){ P.hp=P.maxHp; foodAdd('onigiri',2); toast('試遊：体力を戻し、おにぎりを2つ足した'); } cv.focus(); });
   setInterval(()=>{ bar.hidden=!(S.mode==='playing'); },300); }

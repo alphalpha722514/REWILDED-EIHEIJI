@@ -100,7 +100,7 @@ async def main():
         check(str(fa['lab']).startswith('かまど'), f'近くで「かまど」を調べられる（{fa["lab"]}）')
         ch = await pg.evaluate("""() => { const T = window.__t, I = T.inv, K = T.prog.kama, C = T.prog.conv; const w0 = I.wood; T.facPut('kama', 2); const used = w0 - I.wood;
           const deny = (T.facPut('conv', 1), C.q);
-          for (let i = 0; i < 29 * 10; i++) T.facUpdate(0.1); const at29 = K.out; for (let i = 0; i < 31 * 10 + 2; i++) T.facUpdate(0.1); const at60 = K.out;
+          for (let i = 0; i < 29 * 10; i++) T.facUpdate(0.1); const at29 = K.out.charcoal || 0; for (let i = 0; i < 31 * 10 + 2; i++) T.facUpdate(0.1); const at60 = K.out.charcoal || 0;
           T.facTake('kama'); const coal = I.charcoal; const s0 = I.mutScale; T.facPut('conv', 2); const cq = C.q, cUsed = {scale: s0 - I.mutScale, coal: coal - I.charcoal};
           for (let i = 0; i < 89 * 10; i++) T.facUpdate(0.1); const c89 = C.out; for (let i = 0; i < 91 * 10 + 2; i++) T.facUpdate(0.1); const c180 = C.out; T.facTake('conv');
           return {used, deny, at29, at60, coal, cq, cUsed, c89, c180, proc: I.procScale}; }""")
@@ -108,8 +108,8 @@ async def main():
         check(ch['used'] == 6 and ch['at29'] == 0 and ch['at60'] == 2 and ch['coal'] == 2, 'かまど：木材3（材料2・燃料1）で、1つ30秒で木炭ができる')
         check(ch['deny'] == 0, '変換炉：木炭がないと動かない')
         check(ch['cq'] == 2 and ch['cUsed'] == {'scale': 2, 'coal': 2} and ch['c89'] == 0 and ch['c180'] == 2 and ch['proc'] == 2, '変換炉：鱗1と木炭1で、1つ90秒で加工した鱗ができる')
-        await shot('1_facilities', "const k = T.FAC.kama.pos; T.prog.kama.q = 2; T.prog.conv.q = 2; T.facUpdate(0.6); cam.position.set(k.x - 3.6, 2.4, k.z - 4.6); cam.lookAt(k.x + 2.2, 0.8, k.z);")
-        await pg.evaluate("() => { const T = window.__t; T.prog.kama.q = 0; T.prog.conv.q = 0; T.prog.kama.t = 0; T.prog.conv.t = 0; }")
+        await shot('1_facilities', "const k = T.FAC.kama.pos; T.prog.kama.q = ['charcoal', 'charcoal']; T.prog.conv.q = 2; T.facUpdate(0.6); cam.position.set(k.x - 3.6, 2.4, k.z - 4.6); cam.lookAt(k.x + 2.2, 0.8, k.z);")
+        await pg.evaluate("() => { const T = window.__t; T.prog.kama.q = []; T.prog.conv.q = 0; T.prog.kama.t = 0; T.prog.conv.t = 0; }")
 
         # ---- 武器 ----
         wp = await pg.evaluate("""() => { const T = window.__t; T.inv.procScale = 60; const res = {};
@@ -191,12 +191,12 @@ async def main():
         await shot('6_raw_front', "const P = T.P, gy = T.groundH(P.x, P.z); T.SCALE_FX.charge = 10; for (let i = 0; i < 40; i++) T.scaleFxUpdate(1 / 30); cam.position.set(P.x + Math.sin(P.facing) * 2.9 + 0.5, gy + 1.5, P.z + Math.cos(P.facing) * 2.9); cam.lookAt(P.x, gy + 1.05, P.z);", mv_front)
 
         # ---- 保存 ----
-        sv = await pg.evaluate("""() => { const T = window.__t; T.prog.conv.q = 2; T.prog.conv.t = 33.3; T.prog.kama.out = 3; T.inv.charcoal = 4; T.saveGame(); const d = JSON.parse(localStorage.getItem('eiheiji_vs_beasts_v010'));
-          T.applySave(JSON.parse(JSON.stringify(d))); const back = {conv: [T.prog.conv.built, T.prog.conv.q, T.prog.conv.t], kama: [T.prog.kama.built, T.prog.kama.out], coal: T.inv.charcoal, boomer: 'boomer' in T.prog.arms, rw: 'rwSpear' in T.prog.arms, raw: T.prog.gear.equip.chest, max: T.P.maxHp};
+        sv = await pg.evaluate("""() => { const T = window.__t; T.prog.conv.q = 2; T.prog.conv.t = 33.3; T.prog.kama.out = {charcoal: 3}; T.inv.charcoal = 4; T.saveGame(); const d = JSON.parse(localStorage.getItem('eiheiji_vs_beasts_v010'));
+          T.applySave(JSON.parse(JSON.stringify(d))); const back = {conv: [T.prog.conv.built, T.prog.conv.q, T.prog.conv.t], kama: [T.prog.kama.built, T.prog.kama.out.charcoal], coal: T.inv.charcoal, boomer: 'boomer' in T.prog.arms, rw: 'rwSpear' in T.prog.arms, raw: T.prog.gear.equip.chest, max: T.P.maxHp};
           const old = JSON.parse(JSON.stringify(d)); delete old.conv; delete old.kama; delete old.inv.procScale; delete old.inv.charcoal; T.applySave(old);
           return {v: d.v, saved: {conv: d.conv, kama: d.kama}, back, old: {conv: T.prog.conv.built, kama: T.prog.kama.built, proc: T.inv.procScale, coal: T.inv.charcoal}}; }""")
         print('保存：', sv)
-        check(sv['v'] == 1 and sv['saved']['conv']['q'] == 2 and sv['saved']['kama']['out'] == 3, '変換炉・かまどの状態を保存する（v:1 のまま）')
+        check(sv['v'] == 1 and sv['saved']['conv']['q'] == 2 and sv['saved']['kama']['out'] == {'charcoal': 3}, '変換炉・かまどの状態を保存する（v:1 のまま）')
         check(sv['back']['conv'][:2] == [1, 2] and abs(sv['back']['conv'][2] - 33.3) < 0.01 and sv['back']['kama'] == [1, 3] and sv['back']['coal'] == 4 and sv['back']['boomer'] and sv['back']['rw'] and sv['back']['raw'] == 'raw_chest' and sv['back']['max'] < 100,
               '読み込むと施設・木炭・飛去来器・変異鱗の武器・防具（体力0.7倍）が戻る')
         check(sv['old'] == {'conv': 0, 'kama': 0, 'proc': 0, 'coal': 0}, '施設・加工した鱗・木炭の項目がない旧セーブは、未建設・0で読める')

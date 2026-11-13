@@ -477,6 +477,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
   <div id="res" class="panel">
     <div class="row"><span>木材</span><b id="rWood">0</b></div>
     <div class="row"><span>食料</span><b id="rFood">0</b></div>
+    <div class="row" id="rRawRow" hidden><span>肉・野菜・米</span><b id="rRaw">0</b></div>
     <div class="row"><span>獣素材</span><b id="rHide">0</b></div>
     <hr>
     <div class="row"><span>木柵キット</span><b id="rFence">0</b></div>
@@ -536,7 +537,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.65 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.66 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -2241,7 +2242,7 @@ function g4Interactables(L){ const g=prog.g4;
     if(g.fences[i]) L.push({d:d+0.5,label:`${f.name}（直した。周りに獣が出にくい）`,act:()=>{}});
     else L.push({d,label:inv.wood>=G4_FENCE_COST?`${f.name}を直す（木材${G4_FENCE_COST}）`:`${f.name}：直すには木材${G4_FENCE_COST}が要る（${inv.wood}）`,act:()=>fixFence(i)}); });
   G4FIELDS.forEach((f,i)=>{ const d=dist(P.x,P.z,f.x,f.z); if(d>3.8) return; const [st,t]=g.fields[i];
-    if(st===0) L.push({d,label:inv.food>=G4_FIELD_COST?`${f.name}を整え直す（食料${G4_FIELD_COST}）`:`${f.name}：整えるには食料${G4_FIELD_COST}が要る（${inv.food}）`,act:()=>tendField(i)});
+    if(st===0) L.push({d,label:rawCount()>=G4_FIELD_COST?`${f.name}を整え直す（食料${G4_FIELD_COST}）`:`${f.name}：整えるには食料${G4_FIELD_COST}が要る（${rawCount()}）`,act:()=>tendField(i)});
     else if(st===1) L.push({d:d+0.5,label:`${f.name}：育っている　あと ${fmtTime(Math.max(0,G4_GROW-t))}`,act:()=>{}});
     else L.push({d,label:`${f.name}の野菜を収穫する（食料+${G4_HARVEST}）`,act:()=>tendField(i)}); });
   CLOSURES.forEach((c,i)=>{ if(prog.f4.closures[i]||prog.g4.closure) return; const d=dist(P.x,P.z,c.x,c.z)-3; if(d<2.5) L.push({d,label:'倒木を調べる',act:()=>examineClosure(c)}); });
@@ -2253,8 +2254,8 @@ function fixFence(i){ const f=G4FENCES[i]; if(prog.g4.fences[i]) return; if(inv.
   for(const s of spawnerState) if(s.calm&&s.e&&!s.e.removed&&s.e.state!=='dead'&&(s.e.state==='idle'||s.e.state==='return')&&dist(P.x,P.z,s.e.x,s.e.z)>25) removeEnemy(s.e);
   toast(`${f.name}を直した。このあたりは獣が出にくくなる`); g4CheckQuests(); saveGame(); }
 function tendField(i){ const f=G4FIELDS[i], s=prog.g4.fields[i];
-  if(s[0]===0){ if(inv.food<G4_FIELD_COST){ sfx('deny'); toast(`食料が${G4_FIELD_COST}つ必要`,true); return; } foodTake('food',G4_FIELD_COST); s[0]=1; s[1]=0; sfx('craft'); toast(`${f.name}を整え直した。しばらくすると野菜が採れる`); floatText(f.x,1.4,f.z,'種をまいた','#cfe8a0'); g4CheckQuests(); }
-  else if(s[0]===2){ foodAdd('food',G4_HARVEST); s[0]=1; s[1]=0; sfx('pickup'); toast(`食料 +${G4_HARVEST}（${f.name}）`); floatText(f.x,1.4,f.z,`食料+${G4_HARVEST}`,'#f0dca0'); }
+  if(s[0]===0){ if(rawFood()<G4_FIELD_COST){ sfx('deny'); toast(`食料が${G4_FIELD_COST}つ必要（肉・野菜・米でもよい）`,true); return; } rawTake(G4_FIELD_COST); s[0]=1; s[1]=0; sfx('craft'); toast(`${f.name}を整え直した。しばらくすると野菜が採れる`); floatText(f.x,1.4,f.z,'種をまいた','#cfe8a0'); g4CheckQuests(); }
+  else if(s[0]===2){ foodAdd('veg',G4_HARVEST); s[0]=1; s[1]=0; sfx('pickup'); toast(`野菜 +${G4_HARVEST}（${f.name}）`); floatText(f.x,1.4,f.z,`野菜+${G4_HARVEST}`,'#f0dca0'); } // v0.66：畑は野菜
   g4Apply(); saveGame(); }
 function examineClosure(c){ queueDialog([[{name:'倒木'},'太い杉が根元から折れて、道を完全にふさいでいる。鉈で根気よく切れば片付けられそうだ（攻撃か「調べる」で切る）。丸太にもなる。']],()=>{ if(!prog.g4.closure){ prog.g4.closure=1; g4CheckQuests(); saveGame(); } }); }
 // 足跡：いちばん近い足跡の列と、その位置での向き
@@ -3181,7 +3182,35 @@ const F6D={raidMul:0.85}; // 襲撃・侵攻で来る獣のHPの倍率
 const FOODS={
   food:{name:'食料',life:1200},onigiri:{name:'おにぎり',life:1800},bento:{name:'精進弁当',life:2400},
   grilledVeg:{name:'焼き野菜',life:1800},herbPorridge:{name:'薬草粥',life:2400},
+  // v0.66（2026-11-13 ユーザー決定）：食材の種類を増やす。食料は残し、どの食材のかわりにもなる。料理はかまどで作る（名前・数値は暫定。docs/kamado-cooking-plan.md）
+  meat:{name:'肉',life:900},veg:{name:'野菜',life:1500},rice:{name:'米',life:3000},
+  katsudon:{name:'ソースカツ丼',life:1800},botan:{name:'ぼたん鍋',life:1800},gomadofu:{name:'胡麻豆腐',life:2400},koroni:{name:'里芋のころ煮',life:2400},kushi:{name:'串焼き',life:1500},
 };
+const RAW_FOODS=['food','meat','veg','rice']; // 生の食材。「食料」が要る所（餌・畑の手入れ・最初の素材集め）は、どれでも足りる
+function rawCount(){ return RAW_FOODS.reduce((a,k)=>a+(inv[k]||0),0); } // 毎フレーム呼ぶ所はこちら（鮮度の計算をしない）
+function rawFood(){ f7Flush(); return rawCount(); }
+function rawTake(n){ for(const k of RAW_FOODS){ if(n<=0) break; const t=Math.min(n,inv[k]||0); if(t>0){ foodTake(k,t); n-=t; } } }
+// かまどの料理（v0.66）。固有のレシピは作らない。鍋に入れた食材の割合（肉・野菜・米）に近い料理ほど出やすい。食料は3つすべてに半分ずつ数える。
+// a：その料理の割合（肉・野菜・米）。割合が0でない食材が鍋に全くないと、その料理は出ない。rich：1＝食材3つで出やすい、0＝2つで出やすい
+// 効果（新しい料理だけ。今ある4つは eat の中のまま）：heal 体力・full 満腹・atk 攻撃+30%の秒数・spd 移動+10%（30秒）・regen 30秒かけて体力40
+const KAMA_DISH={
+  onigiri:{a:[0,0,1],rich:0}, herbPorridge:{a:[0,.25,.75],rich:1}, bento:{a:[0,.5,.5],rich:1}, grilledVeg:{a:[0,1,0],rich:0},
+  gomadofu:{a:[0,1,0],rich:1,heal:20,full:30,spd:1,note:'永平寺の精進料理。体が軽くなる'},
+  koroni:{a:[0,1,0],rich:1,heal:30,full:55,note:'奥越の里芋を甘辛く煮ころがした。腹もちがよい'},
+  kushi:{a:[1,0,0],rich:0,heal:30,full:30,atk:20,note:'獣の肉を串に刺して焼いた'},
+  katsudon:{a:[.5,0,.5],rich:1,heal:55,full:60,atk:40,note:'福井の名物。薄いカツをソースにくぐらせて飯にのせる'},
+  botan:{a:[.5,.5,0],rich:1,heal:50,full:60,regen:1,note:'猪の肉と野菜の鍋。体が芯から温まる'},
+};
+const COOKED=['onigiri','bento','grilledVeg','herbPorridge','gomadofu','koroni','kushi','katsudon','botan'];
+// 鍋の中身 pot={meat,veg,rice,food} から、料理ごとの出やすさ（合計1）を返す
+function kamaOdds(pot){ const f=(pot.food||0)*0.5, e=[(pot.meat||0)+f,(pot.veg||0)+f,(pot.rice||0)+f], tot=e[0]+e[1]+e[2], n=(pot.meat||0)+(pot.veg||0)+(pot.rice||0)+(pot.food||0);
+  const out={}; if(!(tot>0)) return out; const p=e.map(x=>x/tot); let sum=0;
+  for(const id of COOKED){ const d=KAMA_DISH[id]; if(d.a.some((x,i)=>x>0&&e[i]<=0)) continue; const d2=d.a.reduce((q,x,i)=>q+(x-p[i])*(x-p[i]),0);
+    const w=Math.exp(-8*d2)*(n>=3?(d.rich?1.6:0.6):(d.rich?0.5:1.5)); out[id]=w; sum+=w; }
+  for(const id in out) out[id]/=sum; return out; }
+function kamaRoll(pot){ const o=kamaOdds(pot); let r=Math.random(), last=null; for(const id in o){ last=id; r-=o[id]; if(r<=0) return id; } return last; }
+function kamaHint(pot){ const o=Object.entries(kamaOdds(pot)).sort((a,b)=>b[1]-a[1]).filter(a=>a[1]>=0.08).slice(0,4);
+  return o.map(([id,pr])=>(pr>=0.5?'◎':pr>=0.25?'○':'△')+FOODS[id].name).join('　'); }
 const F7K=Object.keys(FOODS);
 const STRAW_MEALS=['grilledVeg','herbPorridge'];
 const MEAL_BUFF_TIME=30, VEG_SPEED_BONUS=0.10, PORRIDGE_HEAL=40;
@@ -3383,8 +3412,8 @@ function f8Care(i){if(!f8CareFx(i))return false;sfx('pickup');floatText(F8PLOTS[
 function f8Harvest(i){const p=prog.f8.plots[i];if(!p||p[0]!==3)return false;f31Harvest(i);
   const rice=f8Crop(p)===1,name=rice?'稲':'大根',food=rice?F8.riceYield:F8.yield;p[0]=1;p[1]=0;p[2]=0;
   if(rice){inv.riceSeed=(inv.riceSeed||0)+1;inv.straw=(inv.straw||0)+F8.riceStraw;}else inv.seed=(inv.seed||0)+1;
-  foodAdd('food',food);f8Apply();sfx('pickup');floatText(F8PLOTS[i].x,1.2,F8PLOTS[i].z,'食料+'+food,'#f0dca0');
-  toast(name+'を収穫した　食料 +'+food+(rice?'・藁 +'+F8.riceStraw+'・稲の種 +1':'・大根の種 +1'));saveGame();return true;}
+  const fk=rice?'rice':'veg';foodAdd(fk,food);f8Apply();sfx('pickup');floatText(F8PLOTS[i].x,1.2,F8PLOTS[i].z,FOODS[fk].name+'+'+food,'#f0dca0'); // v0.66：大根は野菜、稲は米
+  toast(name+'を収穫した　'+FOODS[fk].name+' +'+food+(rice?'・藁 +'+F8.riceStraw+'・稲の種 +1':'・大根の種 +1'));saveGame();return true;}
 function f8Build2(i){ if(!F8.full) return false; const p=prog.f8.plots[i]; if(!p||p[0]!==0||!prog.f8.intro) return false;
   for(const k in F8.cost) if((inv[k]||0)<F8.cost[k]){ sfx('deny'); toast('素材が足りない（木材4・縄1）',true); return false; }
   for(const k in F8.cost) inv[k]-=F8.cost[k]; p[0]=1; p[1]=0; p[2]=0; f8Apply(); sfx('wood'); toast(`共同菜園 ${i+1} の植え床を作った`); saveGame(); return true; }
@@ -3417,7 +3446,7 @@ function f8Load(q){const f=f8Fresh();if(!q||typeof q!=='object'||(q.v!==1&&q.v!=
 // 場所・素材・時間・燃料の量はすべて暫定。データは prog.conv・prog.kama、セーブは conv・kama（docs/save-and-flags.md）。
 const FAC={
   conv:{name:'変換炉',pos:{x:166,z:73.4},W:3.2,D:2.0,build:{mutScale:2,iron:6,stone:8,wood:10},maxQ:6,rec:{from:'mutScale',n:1,to:'procScale',time:90,fuel:{charcoal:1}},verb:'入れる'},
-  kama:{name:'かまど',pos:{x:161.0,z:73.9},W:1.8,D:1.2,build:{stone:8,wood:4,straw:3},maxQ:6,rec:{from:'wood',n:2,to:'charcoal',time:30,fuel:{wood:1}},verb:'焼く'},
+  kama:{name:'かまど',pos:{x:161.0,z:73.9},W:1.8,D:1.2,build:{stone:4,wood:4},maxQ:6,coal:{wood:3,time:30},cook:{fuel:{wood:1},time:45,min:2,max:3}}, // v0.66：最初から築ける（石4・木材4）。木炭（木材3・30秒）と料理（食材2〜3・木材1・45秒）を、入れた順に1つずつ作る
 };
 const FACM={};
 function facFresh(){ return {v:1,built:0,q:0,t:0,out:0}; }
@@ -3458,33 +3487,80 @@ function kamaBuildModel(g){ const F=FAC.kama, M={}, plaster=0xd9cfbd, base=0x5a5
   M.vis=(run)=>{ M.fire.color.setHex(run?0xff7a2a:0x2a2018); };
   M.tick=()=>M.fire.color.setHSL(0.06,1,0.5+0.08*Math.sin(S.time*7.3)+0.04*Math.sin(S.time*13.1));
   return M; }
+// ---- かまど（v0.66）：q は作業の並び（'charcoal' か料理の名前。料理は火にかけたときに決まり、できるまで分からない）、out はできた物の数 ----
+function kamaFresh(){ return {v:1,built:0,q:[],t:0,out:{}}; }
+function kamaSave(){ const c=prog.kama||kamaFresh(); return {v:1,built:c.built?1:0,q:c.q.slice(),t:Math.round(c.t*10)/10,out:Object.assign({},c.out)}; }
+function kamaLoad(q){ const c=kamaFresh(); if(!q||typeof q!=='object'||q.v!==1) return c; c.built=q.built?1:0; if(!c.built) return c;
+  const ok=k=>k==='charcoal'||(FOODS[k]&&COOKED.includes(k));
+  if(Array.isArray(q.q)) c.q=q.q.filter(ok).slice(0,FAC.kama.maxQ); else if(typeof q.q==='number') c.q=Array(num(q.q,0,0,FAC.kama.maxQ)).fill('charcoal'); // v0.64 の形（数だけ）も読む
+  if(q.out&&typeof q.out==='object'){ for(const k in q.out) if(ok(k)){ const n=num(q.out[k],0,0,999); if(n>0) c.out[k]=n; } } else if(typeof q.out==='number'&&q.out>0) c.out.charcoal=num(q.out,0,0,999);
+  c.t=c.q.length&&typeof q.t==='number'&&isFinite(q.t)?clamp(q.t,0,kamaTime(c.q[0])):0; return c; }
+function kamaTime(job){ return job==='charcoal'?FAC.kama.coal.time:FAC.kama.cook.time; }
+function kamaOutN(){ const o=prog.kama.out; let n=0; for(const k in o) n+=o[k]; return n; }
+function kamaOutText(){ const o=prog.kama.out; return Object.keys(o).filter(k=>o[k]>0).map(k=>`${k==='charcoal'?'木炭':FOODS[k].name}${o[k]}`).join('・'); }
+function kamaState(){ const c=prog.kama; if(!c.q.length) return '火は落ちている'; const job=c.q[0], T=kamaTime(job), k=Math.min(3,Math.floor(c.t/T*3));
+  return `${job==='charcoal'?'木炭を焼いている':'料理している'} ${'■'.repeat(k)+'□'.repeat(3-k)} 残り${Math.ceil(T-c.t)}秒${c.q.length>1?`（あと${c.q.length-1}つ待ち）`:''}`; }
+function kamaInteract(L,d){ const c=prog.kama, F=FAC.kama, ch=[], full=c.q.length>=F.maxQ;
+  if(kamaOutN()>0) ch.push({label:`取り出す（${kamaOutText()}）`,act:kamaTake});
+  if(!full) ch.push({label:`料理する（食材を${F.cook.min}〜${F.cook.max}つ・薪に木材${F.cook.fuel.wood}・${F.cook.time}秒）`,act:()=>kamaCookUI({meat:0,veg:0,rice:0,food:0})});
+  if(!full) ch.push({label:`木炭を焼く（木材${F.coal.wood}・${F.coal.time}秒）　所持 木材${inv.wood}`,act:()=>kamaCoal(1)});
+  if(c.q.length<F.maxQ-1) ch.push({label:`木炭を焼けるだけ焼く（最大${F.maxQ-c.q.length}つ）`,act:()=>kamaCoal(F.maxQ)});
+  L.push({d,label:`かまど：${kamaState()}${kamaOutN()?`　できた物 ${kamaOutText()}`:''}`,act:()=>ch.length?chooseDefense('かまど',ch):(sfx('deny'),toast('いっぱい。できあがるまで待つ',true))}); }
+function kamaCoal(n){ const c=prog.kama, F=FAC.kama; let k=0; while(k<n&&c.q.length<F.maxQ&&inv.wood>=F.coal.wood){ inv.wood-=F.coal.wood; c.q.push('charcoal'); k++; }
+  if(!k){ sfx('deny'); toast(c.q.length>=F.maxQ?'いっぱい。できあがるまで待つ':`木材が足りない（木炭1つに${F.coal.wood}）`,true); return 0; }
+  sfx('craft'); toast(`かまどに木材をくべた（木材${F.coal.wood*k}）。木炭${k}つ分、1つ${F.coal.time}秒かかる`); facVis('kama'); saveGame(); return k; }
+// 鍋に食材を1つずつ入れていく（入れるたびに、出やすい料理が変わる）。「火にかける」まで食材は減らない
+function kamaPotText(pot){ const t=RAW_FOODS.filter(k=>pot[k]>0).map(k=>`${FOODS[k].name}${pot[k]}`).join('・'); return t||'空'; }
+function kamaCookUI(pot){ f7Flush(); const F=FAC.kama, n=RAW_FOODS.reduce((a,k)=>a+pot[k],0), ch=[];
+  if(n<F.cook.max) for(const k of ['meat','veg','rice','food']){ const left=(inv[k]||0)-pot[k]; if(left>0) ch.push({label:`${FOODS[k].name}を入れる（残り${left}）`,act:()=>{ const q=Object.assign({},pot); q[k]++; kamaCookUI(q); }}); }
+  if(n>=F.cook.min) ch.push({label:`火にかける（薪に木材${F.cook.fuel.wood}・${F.cook.time}秒）`,act:()=>kamaCook(pot)});
+  if(n>0) ch.push({label:'鍋を空にしてやり直す',act:()=>kamaCookUI({meat:0,veg:0,rice:0,food:0})});
+  if(!ch.length){ sfx('deny'); toast('食材がない（肉・野菜・米・食料のどれかが2つ要る）',true); return; }
+  const hint=n?`　できやすい料理：${kamaHint(pot)||'—'}`:'　食材の組み合わせで、できる料理が変わる（◎出やすい ○ときどき △まれに）';
+  if(ch.length===1) ch.push({label:'やめる',act:()=>{}}); // 選択肢が1つだと、選ぶ画面を出さずに実行されてしまうため
+  chooseDefense(`かまどで料理　鍋：${kamaPotText(pot)}${hint}`,ch); }
+function kamaCook(pot){ f7Flush(); const c=prog.kama, F=FAC.kama, n=RAW_FOODS.reduce((a,k)=>a+pot[k],0);
+  if(c.q.length>=F.maxQ){ sfx('deny'); toast('いっぱい。できあがるまで待つ',true); return null; }
+  if(n<F.cook.min||n>F.cook.max||RAW_FOODS.some(k=>(inv[k]||0)<pot[k])){ sfx('deny'); toast('食材が足りない',true); return null; }
+  if(!canAfford(F.cook.fuel)){ sfx('deny'); toast(`薪が足りない（木材${F.cook.fuel.wood}）`,true); return null; }
+  const dish=kamaRoll(pot); if(!dish){ sfx('deny'); return null; }
+  for(const k of RAW_FOODS) if(pot[k]>0) foodTake(k,pot[k]); for(const k in F.cook.fuel) inv[k]-=F.cook.fuel[k];
+  c.q.push(dish); sfx('craft'); toast(`鍋を火にかけた（${kamaPotText(pot)}）。何ができるかは、できてからのお楽しみ（${F.cook.time}秒）`); facVis('kama'); g4CheckQuests(); saveGame(); return dish; }
+function kamaTake(){ const c=prog.kama, o=c.out, parts=[]; for(const k in o){ const n=o[k]; if(!(n>0)) continue; if(k==='charcoal') inv.charcoal=(inv.charcoal||0)+n; else foodAdd(k,n); parts.push(`${k==='charcoal'?'木炭':FOODS[k].name} +${n}`); }
+  if(!parts.length) return; c.out={}; sfx('pickup'); toast(parts.join('・')); facVis('kama'); saveGame(); }
+function kamaUpdate(dt){ const c=prog.kama; if(!c||!c.built||!c.q.length) return false; c.t+=dt; const job=c.q[0];
+  if(c.t>=kamaTime(job)){ c.t=0; c.q.shift(); c.out[job]=(c.out[job]||0)+1; facVis('kama'); toast(`かまど：${job==='charcoal'?'木炭':FOODS[job].name}ができた`); if(job!=='charcoal') sfx('craft'); }
+  return true; }
+function facBusy(id){ const c=prog[id]; return !!c&&(id==='kama'?c.q.length>0:c.q>0); }
+function facHasOut(id){ const c=prog[id]; return !!c&&(id==='kama'?kamaOutN()>0:c.out>0); }
 const FAC_MODEL={conv:convBuildModel,kama:kamaBuildModel};
 function facApply(){ for(const id in FAC){ const c=prog[id], on=!!(c&&c.built), F=FAC[id];
   if(!FACM[id]){ if(!on) continue; const g=new THREE.Group(); g.position.set(F.pos.x,groundH(F.pos.x,F.pos.z),F.pos.z); const M=FAC_MODEL[id](g); castAll(g); world.add(g); M.g=g; M.smokeT=0;
     M.col=addOBox(F.pos.x,F.pos.z,F.W,F.D,0,'house',{h:id==='conv'?2:1,active:false}); FACM[id]=M; }
   const M=FACM[id]; M.g.visible=on; M.col.active=on; facVis(id); } }
 function convApply(){ facApply(); }
-function facVis(id){ const c=prog[id], M=FACM[id]; if(!M||!c) return; M.tray.visible=c.out>0; M.vis(c.built&&c.q>0); }
+function facVis(id){ const c=prog[id], M=FACM[id]; if(!M||!c) return; M.tray.visible=facHasOut(id); M.vis(!!c.built&&facBusy(id)); }
 function facDist(id){ const F=FAC[id], p=F.pos; return Math.hypot(Math.max(0,Math.abs(P.x-p.x)-F.W/2),Math.max(0,Math.abs(P.z-p.z)-F.D/2)); }
 function facCostText(o,n=1){ return Object.entries(o).map(([k,v])=>`${RNAME[k]}${v*n}`).join('・'); }
 function facState(id){ const c=prog[id], r=FAC[id].rec; if(!c.q) return '止まっている';
   const k=Math.min(3,Math.floor(c.t/r.time*3)); return `${id==='kama'?'焼いている':'変換中'} ${'■'.repeat(k)+'□'.repeat(3-k)} 残り${Math.ceil(r.time-c.t)}秒（あと${c.q}個）`; }
 function facNeed(id){ const r=FAC[id].rec; const o={}; o[r.from]=r.n; for(const k in r.fuel) o[k]=(o[k]||0)+r.fuel[k]; return o; } // 1つに要る物（材料＋燃料）
-function facInteractables(L){ for(const id in FAC){ const c=prog[id]; if(!c||!c.built) continue; const d=facDist(id); if(d>1.5) continue; const F=FAC[id], r=F.rec, ch=[];
+function facInteractables(L){ for(const id in FAC){ const c=prog[id]; if(!c||!c.built) continue; const d=facDist(id); if(d>1.5) continue; if(id==='kama'){ kamaInteract(L,d); continue; } const F=FAC[id], r=F.rec, ch=[];
   if(c.out>0) ch.push({label:`${RNAME[r.to]}を取り出す（${c.out}）`,act:()=>facTake(id)});
   const fuel=Object.keys(r.fuel).length?`・燃料 ${facCostText(r.fuel)}`:'';
   if(c.q<F.maxQ) ch.push({label:`${RNAME[r.from]}を${F.verb}（${RNAME[r.from]}${r.n}${fuel}）→ ${RNAME[r.to]}1`,act:()=>facPut(id,1)});
   if(c.q<F.maxQ-1) ch.push({label:`入れられるだけ${F.verb}（最大${F.maxQ-c.q}個分）`,act:()=>facPut(id,F.maxQ)});
   L.push({d,label:`${F.name}：${facState(id)}${c.out?`　${RNAME[r.to]} ${c.out}`:''}`,act:()=>ch.length?chooseDefense(F.name,ch):(sfx('deny'),toast('いっぱい。できあがるまで待つ',true))}); } }
 function convInteractables(L){ facInteractables(L); }
-function facPut(id,n){ const c=prog[id], F=FAC[id], r=F.rec, need=facNeed(id); let k=0;
+function facPut(id,n){ if(id==='kama') return kamaCoal(n); const c=prog[id], F=FAC[id], r=F.rec, need=facNeed(id); let k=0;
   while(k<n&&c.q<F.maxQ&&canAfford(need)){ for(const m in need) inv[m]-=need[m]; c.q++; k++; }
   if(!k){ sfx('deny'); toast(c.q>=F.maxQ?'いっぱい。できあがるまで待つ':(inv[r.from]||0)<r.n?`${RNAME[r.from]}が足りない（1つに${r.n}）`:`燃料が足りない（1つにつき ${facCostText(r.fuel)}）`,true); return; }
   sfx('craft'); toast(`${F.name}に${RNAME[r.from]}を${F.verb==='焼く'?'くべた':'入れた'}（${facCostText(need,k)}）。${RNAME[r.to]}${k}つ分、1つ${r.time}秒かかる`); facVis(id); saveGame(); }
-function facTake(id){ const c=prog[id], r=FAC[id].rec; if(!c.out) return; const n=c.out; inv[r.to]=(inv[r.to]||0)+n; c.out=0; sfx('pickup'); toast(`${RNAME[r.to]} +${n}`); facVis(id); saveGame(); }
+function facTake(id){ if(id==='kama') return kamaTake(); const c=prog[id], r=FAC[id].rec; if(!c.out) return; const n=c.out; inv[r.to]=(inv[r.to]||0)+n; c.out=0; sfx('pickup'); toast(`${RNAME[r.to]} +${n}`); facVis(id); saveGame(); }
 function convPut(n){ facPut('conv',n); } function convTake(){ facTake('conv'); }
-function facUpdate(dt){ for(const id in FAC){ const c=prog[id]; if(!c||!c.built||c.q<=0) continue; const F=FAC[id], r=F.rec; c.t+=dt;
-  if(c.t>=r.time){ c.t=0; c.q--; c.out++; facVis(id); toast(`${F.name}：${RNAME[r.to]}ができた（取り出せるのは${c.out}）`); }
+function facUpdate(dt){ for(const id in FAC){ const c=prog[id]; if(!c||!c.built) continue; const F=FAC[id];
+  if(id==='kama'){ if(!kamaUpdate(dt)) continue; }
+  else { if(c.q<=0) continue; const r=F.rec; c.t+=dt; if(c.t>=r.time){ c.t=0; c.q--; c.out++; facVis(id); toast(`${F.name}：${RNAME[r.to]}ができた（取り出せるのは${c.out}）`); } }
   const M=FACM[id]; if(M&&M.g.visible){ M.tick(); M.smokeT-=dt;
     if(M.smokeT<=0&&dist(P.x,P.z,F.pos.x,F.pos.z)<80){ M.smokeT=0.5; const g=M.g.position; puff(g.x+M.smoke[0],g.y+M.smoke[1],g.z+M.smoke[2],0.15,0.9,0.05,id==='kama'?0.28:0.35,0xb8b4ac,1.4); } } } }
 function convUpdate(dt){ facUpdate(dt); }
@@ -3648,7 +3724,7 @@ function f9TomeTips(){ const T=[], st=prog.stage;
     if(no.length) T.push(`${no.map(g=>g.name).join('と')}の柵がまだや`); if(br.length) T.push(`${br.map(g=>g.name).join('と')}の柵が壊れとる。直しておくれ`); }
   if(F7.spoil){ const w=F7K.map(k=>[k,f7Warn(k,'hand')]).filter(a=>a[1]>0); // 2 手持ちの傷みかけ
     if(w.length) T.push(`傷みかけの${w.map(([k,n])=>FOODS[k].name+n).join('・')}。先に食べ`+(w.some(a=>a[0]==='food')&&f9Has('C')?'るか、慧心に料理を頼みね':'ね')); }
-  if((st==='explore'||st==='toBoss')&&f7Count('onigiri','hand')+f7Count('bento','hand')===0&&f7Have('food')>=2) T.push(`出る前におにぎりをこしらえときね（${f9Has('C')?'慧心に頼むか、作業台で':'作業台で'}）`); // 3 出かける前の料理
+  if((st==='explore'||st==='toBoss')&&f7Count('onigiri','hand')+f7Count('bento','hand')===0&&rawCount()>=2) T.push(`出る前に食べる物をこしらえときね（${f9Has('C')?'慧心に頼むか、かまどで':'かまどで'}）`); // v0.66：料理はかまどで // 3 出かける前の料理
   if(prog.f8&&prog.f8.intro&&prog.f8.plots.some((p,i)=>i<f8Count()&&p[0]===3)) T.push('菜園の大根が採れるで'); // 4
   if(prog.f7&&prog.f7.spoiled&&(prog.f7.spoiled[0]+prog.f7.spoiled[1])>0) T.push('傷んだ物は、持ち物か食料庫で捨てられるで'); // 5
   if(!T.length){ let o=F9TOBJ[st]; if(st==='explore') o+=`（${prog.clues.filter(Boolean).length}/2）`; if(o) T.push(o); } // 6 今の目的
@@ -6262,8 +6338,8 @@ function chapter2Panel(n,st,bx){
   if(!ev.kind)f9Btn(bx,'npc_chapter2',done?'第二章の防衛戦に再挑戦':'第二章の防衛戦を始める',startChapter2Defense,{pri:1});
 }
 function freshState(){
-  inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,baitKit:0,onigiri:1,bento:0,grilledVeg:0,herbPorridge:0,fang:0,mutScale:0,procScale:0,charcoal:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0};
-  prog={gear:f47Fresh(),stage:'talk',unlockTrap:false,unlockBoss:false,clues:[false,false,false],bossDefeated:false,scoutTower:false,scoutWarned:false,scoutRaidWarned:false,prepT:150,gatherT:0,introSeen:false,lastSaveT:0,townRequests:loadTownRequests(),g4:g4Fresh(),f4:f4Fresh(),level:1,exp:0,mastery:{nata:0,axe:0,club:0,spear:0},xph:0}; prog.f7=f7FromInv(); f7Sync(); prog.f8=f8Fresh(); prog.conv=facFresh(); prog.kama=facFresh(); prog.f9=f9Fresh(); prog.f10=f10Fresh(); prog.chapter2=chapter2State(null,false);
+  inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,baitKit:0,onigiri:1,bento:0,grilledVeg:0,herbPorridge:0,meat:0,veg:0,rice:0,katsudon:0,botan:0,gomadofu:0,koroni:0,kushi:0,fang:0,mutScale:0,procScale:0,charcoal:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0};
+  prog={gear:f47Fresh(),stage:'talk',unlockTrap:false,unlockBoss:false,clues:[false,false,false],bossDefeated:false,scoutTower:false,scoutWarned:false,scoutRaidWarned:false,prepT:150,gatherT:0,introSeen:false,lastSaveT:0,townRequests:loadTownRequests(),g4:g4Fresh(),f4:f4Fresh(),level:1,exp:0,mastery:{nata:0,axe:0,club:0,spear:0},xph:0}; prog.f7=f7FromInv(); f7Sync(); prog.f8=f8Fresh(); prog.conv=facFresh(); prog.kama=kamaFresh(); prog.f9=f9Fresh(); prog.f10=f10Fresh(); prog.chapter2=chapter2State(null,false);
   stats={kills:0,deaths:0,crafts:0,time:0,perfect:0,hunt:loadHuntRecords()};
   P.lvx48=0;P.lvz48=0;
   P.maxHp=100; P.hp=100; P.full=100; P.weapon='nata1'; P.dur=120; prog.arms={nata1:120}; prog.f5=f5Fresh(); P.dead=false; P.atk=null; P.dodge=null; P.buffer=null; P.stagger=0; P.buffT=0; P.vegT=0; P.porridgeT=0; resetCombat();
@@ -6623,6 +6699,7 @@ const dropGeos={};
 function dropGeo(k){ if(dropGeos[k]) return dropGeos[k]; const g=new THREE.Group();
   if(k==='hide'){ const r=mesh(G.cyl,mat(0x8a5a3a),0,0,0,0.2,0.55,0.2); r.rotation.z=Math.PI/2; g.add(r); for(const s of [-1,1]){ const e=mesh(G.cyl,mat(0xc89a70),s*0.28,0,0,0.19,0.02,0.19); e.rotation.z=Math.PI/2; g.add(e); } ad(g,mesh(G.torus,mat(0xd9c38a),0,0,0,0.21,0.21,0.3)).rotation.y=Math.PI/2; }
   else if(k==='food'){ g.add(mesh(lathe([[0,-0.3],[0.09,-0.2],[0.12,0.08],[0.1,0.18],[0,0.2]],10),mat(0xf6f2e8))); for(let i=0;i<3;i++){ const lf=mesh(G.cone6,mat(0x5f9a3a),Math.cos(i*2)*0.04,0.36,Math.sin(i*2)*0.04,0.06,0.3,0.03); lf.rotation.z=(i-1)*0.4; g.add(lf); } }
+  else if(k==='meat'){ g.add(mesh(G.sphM,mat(0xb4533c),0,0,0,0.2,0.14,0.15)); g.add(mesh(G.sphM,mat(0xd98a70),0.02,0.03,0.08,0.12,0.08,0.08)); const bn=mesh(G.cyl8,mat(0xf2eadc),0.2,0.06,0,0.03,0.28,0.03); bn.rotation.z=1.1; g.add(bn); g.add(mesh(G.sphM,mat(0xf2eadc),0.33,0.12,0,0.05,0.05,0.05)); } // v0.66：肉
   else if(k==='mutScale'){ for(const [a,y,z] of [[-0.55,-0.02,-0.05],[0.55,-0.02,-0.05],[0,0.04,0.06]]){ // v0.62：変異した鱗（前腕の青みの鱗。扇に開いた3枚を立てて見せる）
       const t=new THREE.Group(); t.rotation.set(0.95,a,0); t.position.set(Math.sin(a)*0.05,y-0.12,z); g.add(t);
       t.add(mesh(G.sphM,mat(0x3f6a92),0,0,-0.12,0.2,0.05,0.27)); ad(t,mesh(G.cone6,mat(0x35597c),0,0,-0.38,0.12,0.12,0.05)).rotation.x=-Math.PI/2;
@@ -6910,7 +6987,7 @@ function tryDodge(fromBuf){
 }
 function eat(k){
   if(P.dead) return; f7Flush();
-  if(k==='onigiri'){ if(inv.onigiri<=0){ toast('おにぎりがない（作業台で食料2から作れる）',true); sfx('deny'); return; }
+  if(k==='onigiri'){ if(inv.onigiri<=0){ toast('おにぎりがない（かまどで米を炊くとできやすい）',true); sfx('deny'); return; }
     foodTake('onigiri',1); healPlayer(35); P.full=Math.min(100,P.full+25); toast('おにぎりを食べた　体力+35'); }
   else if(k==='bento'){ if(inv.bento<=0){ toast('精進弁当がない',true); sfx('deny'); return; }
     foodTake('bento',1); healPlayer(60); P.full=Math.min(100,P.full+50); P.buffT=30; toast('精進弁当を食べた　体力+60・30秒間 攻撃力+30%'); }
@@ -6925,8 +7002,13 @@ function eat(k){
       toast('薬草粥を食べた　30秒かけて体力が最大40回復する');
     }
   }
-  else { if(inv.food<=0){ toast(prog.f7.spoiled[0]?'食べられる食料がない（傷んだ物は食べられない）':'食料がない',true); sfx('deny'); return; } if(P.full>=99){ toast('おなかいっぱい'); return; }
-    foodTake('food',1); P.full=Math.min(100,P.full+15); healPlayer(4); toast('食料をかじった　満腹+15'); }
+  else if(KAMA_DISH[k]&&KAMA_DISH[k].full){ const d=KAMA_DISH[k]; if(inv[k]<=0){ toast(FOODS[k].name+'がない',true); sfx('deny'); return; } // v0.66：かまどの新しい料理
+    foodTake(k,1); healPlayer(d.heal||0); P.full=Math.min(100,P.full+d.full); const fx=[`体力+${d.heal||0}`,`満腹+${d.full}`];
+    if(d.atk){ P.buffT=Math.max(P.buffT||0,d.atk); fx.push(`${d.atk}秒間 攻撃力+30%`); } if(d.spd){ P.vegT=MEAL_BUFF_TIME; fx.push('30秒間 移動速度+10%'); } if(d.regen){ P.porridgeT=MEAL_BUFF_TIME; fx.push('30秒かけて体力が最大40回復'); }
+    toast(`${FOODS[k].name}を食べた　${fx.join('・')}`); }
+  else if(k==='meat'||k==='rice'){ toast(`${FOODS[k].name}は生では食べられない（かまどで料理する）`,true); sfx('deny'); return; }
+  else { const rk=k==='veg'?'veg':'food', nm=FOODS[rk].name; if(inv[rk]<=0){ toast(prog.f7.spoiled[0]?`食べられる${nm}がない（傷んだ物は食べられない）`:`${nm}がない`,true); sfx('deny'); return; } if(P.full>=99){ toast('おなかいっぱい'); return; }
+    foodTake(rk,1); P.full=Math.min(100,P.full+15); healPlayer(4); toast(`${nm}をかじった　満腹+15`); }
   sfx('eat');
 }
 function healPlayer(n){ const before=P.hp; P.hp=Math.min(P.maxHp,P.hp+n); if(P.hp>before) floatText(P.x,2.2,P.z,`+${Math.round(P.hp-before)}`,'#9fe0a0'); }
@@ -7019,7 +7101,7 @@ function killEnemy(e,trackingBonus=0){
   const n={boar:2,monkey:1,bear:4,deer:2,weasel:1,mutant:3}[e.type]||1;
   spawnDrop('hide',n+(trackingBonus?1:0),e.x,e.z);
   if(e.type==='mutant'&&MUT.killDrop>0&&!e.scaleDropped){ e.scaleDropped=true; spawnDrop('mutScale',MUT.killDrop,e.x,e.z); } // v0.62：貴重な素材「変異した鱗」（数は暫定）
-  if(e.type==='bear'||Math.random()<(e.type==='boar'?0.5:0.35)) spawnDrop('food',e.type==='bear'?2:1,e.x,e.z);
+  if(e.type==='bear'||Math.random()<(e.type==='boar'?0.5:0.35)) spawnDrop('meat',e.type==='bear'?2:1,e.x,e.z);
   if(e.carry){ if(e.carry.n>0){ spawnDrop(e.carry.k,e.carry.n,e.x,e.z,e.carry.b||null); toast('サルが盗んだ物を取り返した'); } e.carry=null; }
   sfx('heavyHit');
 }
@@ -8014,8 +8096,8 @@ function placeTrap(t,type='snare'){
   if(type==='bait'){
     if(t.boss||inv.baitKit<=0)return;
     f7Flush();
-    if(inv.food<2){toast('食料が足りない（必要2）',true);sfx('deny');return;}
-    foodTake('food',2);
+    if(rawFood()<2){toast('食料が足りない（必要2。肉・野菜・米でもよい）',true);sfx('deny');return;}
+    rawTake(2);
     inv.baitKit--;
     activateBait(t);
     return;
@@ -8028,8 +8110,8 @@ function rearmTrap(t){
   if(t.state!=='sprung')return;
   if(t.type==='bait'){
     f7Flush();
-    if(inv.food<1||inv.wood<1){toast('食料1と木材1が必要',true);sfx('deny');return;}
-    foodTake('food',1);
+    if(rawFood()<1||inv.wood<1){toast('食料1（肉・野菜・米でもよい）と木材1が必要',true);sfx('deny');return;}
+    rawTake(1);
     inv.wood--;
     activateBait(t);
     return;
@@ -8046,12 +8128,13 @@ function buildScoutTower(){
 }
 
 // ================= クラフト =================
-const RNAME={wood:'木材',food:'食料',hide:'獣素材',fang:'ヌシの牙',mutScale:'変異した鱗',procScale:'加工した鱗',charcoal:'木炭',straw:'藁',rope:'縄',stone:'石',bamboo:'竹',iron:'屑鉄'};
+const RNAME={meat:'肉',veg:'野菜',rice:'米',wood:'木材',food:'食料',hide:'獣素材',fang:'ヌシの牙',mutScale:'変異した鱗',procScale:'加工した鱗',charcoal:'木炭',straw:'藁',rope:'縄',stone:'石',bamboo:'竹',iron:'屑鉄'};
 const RECIPES=[
- {id:'onigiri',name:'おにぎり',cost:{food:2},desc:'塩をきかせて竹の皮で包んだ握り飯。体力+35・満腹+25。手持ちで約30分もつ（生の食料は約20分）。Q または 1 で食べる',give:()=>{foodAdd('onigiri',1);}},
- {id:'bento',name:'精進弁当',cost:{food:3,hide:1},desc:'煮しめと漬物の精進料理。体力+60・満腹+50・30秒間 攻撃力+30%。手持ちで約40分もつ。2 で食べる',give:()=>{foodAdd('bento',1);}},
- {id:'grilledVeg',name:FOODS.grilledVeg.name,cost:{food:2,straw:1},desc:'藁を燃料に野菜を焼く。満腹+40・体力+15・30秒間 移動速度+10%。',give:()=>{foodAdd('grilledVeg',1);}},
- {id:'herbPorridge',name:FOODS.herbPorridge.name,cost:{food:1,straw:1,rope:1},desc:'藁を燃料に、縄から取った繊維を使って煮込む。30秒かけて体力が最大40回復。',give:()=>{foodAdd('herbPorridge',1);}},
+ // v0.66：料理4つは作業台に出さない（料理はかまどだけ。2026-11-13 ユーザー決定）。この表は、慧心に頼む料理が使う
+ {id:'onigiri',name:'おにぎり',cost:{food:2},show:()=>false,desc:'塩をきかせて竹の皮で包んだ握り飯。体力+35・満腹+25。手持ちで約30分もつ（生の食料は約20分）。Q または 1 で食べる',give:()=>{foodAdd('onigiri',1);}},
+ {id:'bento',name:'精進弁当',cost:{food:3,hide:1},show:()=>false,desc:'煮しめと漬物の精進料理。体力+60・満腹+50・30秒間 攻撃力+30%。手持ちで約40分もつ。2 で食べる',give:()=>{foodAdd('bento',1);}},
+ {id:'grilledVeg',name:FOODS.grilledVeg.name,cost:{food:2,straw:1},show:()=>false,desc:'藁を燃料に野菜を焼く。満腹+40・体力+15・30秒間 移動速度+10%。',give:()=>{foodAdd('grilledVeg',1);}},
+ {id:'herbPorridge',name:FOODS.herbPorridge.name,cost:{food:1,straw:1,rope:1},show:()=>false,desc:'藁を燃料に、縄から取った繊維を使って煮込む。30秒かけて体力が最大40回復。',give:()=>{foodAdd('herbPorridge',1);}},
  {id:'fence',name:'木柵キット',cost:{wood:4},desc:'柵台に設置。獣の侵入を止める（耐久120）。町民はくぐり戸から通れる',give:()=>{inv.fenceKit++;}},
  {id:'trap',name:'くくり罠キット',cost:{wood:2,hide:1},desc:'罠台に設置。イノシシ・クマを3.5秒拘束し22ダメージ。サルには効かない。使用後は木材1で掛け直し',lock:()=>!prog.unlockTrap,lockMsg:'小規模襲撃を退けると解放',give:()=>{inv.trapKit++;}},
  {id:'spikeFence',name:'トゲ柵キット',cost:{wood:4,hide:1},desc:'柵台に設置。耐久90。接触した獣に6ダメージと体勢削り',give:()=>{inv.spikeKit++;}},
@@ -8071,7 +8154,7 @@ const RECIPES=[
  {id:'boomer',name:'鱗の飛去来器',cost:{procScale:3,iron:3,wood:2},desc:'加工した鱗をはめた投げ具。投げると手元に戻る（強攻撃で遠くへ）。飛んでいる間にもう一度攻撃すると、飛去来器の周りに衝撃波が起きて獣を押し出す。当たり18・衝撃波20。耐久10（投げるたびに1減る）',show:()=>prog.arms.boomer==null&&(inv.procScale>0||!!prog.conv?.built),give:()=>{armGain('boomer',false); toast('鱗の飛去来器：持ち替え（R／持ち物）で持つ');}}, // v0.64（暫定）
  {id:'boomerFix',name:'飛去来器の手入れ',cost:{procScale:1},desc:'鱗の飛去来器の耐久を全回復する（加工した鱗1）',show:()=>prog.arms.boomer!=null&&armDur('boomer')<WEAPONS.boomer.maxDur,give:()=>{ setArmDur('boomer',WEAPONS.boomer.maxDur); }}, // v0.64（暫定）
  {id:'convBuild',name:'変換炉を組み立てる',cost:FAC.conv.build,desc:'特殊な素材を、人が使える形に変える炉。拠点の南東の隅に組み立てる。燃料の木炭を入れて動かし、1つずつ時間をかけて変える（変異した鱗→加工した鱗）',show:()=>!prog.conv?.built&&(inv.mutScale>0||inv.procScale>0),give:()=>{ prog.conv.built=1; facApply(); toast('拠点の南東の隅に変換炉を組み立てた'); }}, // v0.63（暫定）
- {id:'kamaBuild',name:'かまどを築く',cost:FAC.kama.build,desc:'石と土で築くかまど。木材を燃やして動き、木材を焼いて木炭を作る（変換炉の燃料）。拠点の南東、変換炉の隣に築く',show:()=>!prog.kama?.built&&(inv.mutScale>0||inv.procScale>0||!!prog.conv?.built),give:()=>{ prog.kama.built=1; facApply(); toast('変換炉の隣にかまどを築いた'); }}, // v0.64（暫定。料理の機能はこれから）
+ {id:'kamaBuild',name:'かまどを築く',cost:FAC.kama.build,desc:'石と土で築くかまど。拠点の南東に築く。肉・野菜・米・食料を2〜3つ鍋に入れて火にかけると、組み合わせに応じた料理ができる（何ができるかは、できるまで分からない）。木材を焼いて木炭も作れる',show:()=>!prog.kama?.built,give:()=>{ prog.kama.built=1; facApply(); toast('拠点の南東にかまどを築いた。調べると料理ができる'); }}, // v0.64・v0.66：最初から築ける（暫定）
  {id:'cart',name:'一輪車',cost:{wood:5},desc:'丸太を3本積んで運べる。舗装した道では担ぐより速いが、田畑や山道では遅い。丸太置き場のそばに置く',show:()=>!prog.f4.hasCart,give:()=>{ prog.f4.hasCart=true; prog.f4.cart={x:F4.yard.x-2.5,z:F4.yard.z+1.5,a:0,push:false,logs:[]}; }},
  {id:'hammerStone',name:'石の槌（簡素な採石道具）',cost:{stone:3,wood:2,rope:1},desc:'硬い川石を柄に縛った槌。採石できる岩を割って石を取る（1回で石1、岩1つを8回）。耐久40。武器ではない（持ち替えに入らない）',show:()=>prog.f5.tools.hammerStone==null,give:()=>{toolGain('hammerStone');}},
  {id:'pickIron',name:'鉄のつるはし（良質な採石道具）',cost:{iron:4,wood:2,rope:1},desc:'屑鉄を打ち直したつるはし。1回で石2、岩1つを4回で割り切る。耐久100。武器ではない',show:()=>prog.f5.tools.pickIron==null,give:()=>{toolGain('pickIron');}},
@@ -8130,12 +8213,12 @@ function renderHuntRecords(){
 function openInv(){ f31Inv(); f34Body(); renderHuntRecords();
   stopBeastVoices51(); S.mode='menu'; keys.clear();
   const g=$('invGrid'); g.innerHTML='';
-  const items=[['木材',inv.wood],['食料',inv.food],['獣素材',inv.hide],['藁',inv.straw],['縄',inv.rope],['石',inv.stone],['竹',inv.bamboo],['屑鉄',inv.iron],['大根の種',inv.seed],['ヌシの牙',inv.fang],['変異した鱗',inv.mutScale],['加工した鱗',inv.procScale],['木炭',inv.charcoal],['おにぎり',inv.onigiri],['精進弁当',inv.bento],['木柵キット',inv.fenceKit],['トゲ柵キット',inv.spikeKit],['杭柵キット',inv.stakeKit],['くくり罠キット',inv.trapKit],['落とし穴キット',inv.pitKit],['おとり餌場キット',inv.baitKit]];
-  f7Flush(); const fk={'食料':'food','おにぎり':'onigiri','精進弁当':'bento'};
-  for(const [n,v] of items){ if(v===0&&(n==='ヌシの牙'||n==='杭柵キット'||n==='大根の種')) continue; const d=document.createElement('div'); const k=fk[n]; let sub='';
+  const items=[['木材',inv.wood],['食料',inv.food],['肉',inv.meat],['野菜',inv.veg],['米',inv.rice],['獣素材',inv.hide],['藁',inv.straw],['縄',inv.rope],['石',inv.stone],['竹',inv.bamboo],['屑鉄',inv.iron],['大根の種',inv.seed],['ヌシの牙',inv.fang],['変異した鱗',inv.mutScale],['加工した鱗',inv.procScale],['木炭',inv.charcoal],['おにぎり',inv.onigiri],['精進弁当',inv.bento],['木柵キット',inv.fenceKit],['トゲ柵キット',inv.spikeKit],['杭柵キット',inv.stakeKit],['くくり罠キット',inv.trapKit],['落とし穴キット',inv.pitKit],['おとり餌場キット',inv.baitKit]];
+  f7Flush(); const fk={'食料':'food','おにぎり':'onigiri','精進弁当':'bento','肉':'meat','野菜':'veg','米':'rice'};
+  for(const [n,v] of items){ if(v===0&&(n==='ヌシの牙'||n==='杭柵キット'||n==='大根の種'||n==='肉'||n==='野菜'||n==='米')) continue; const d=document.createElement('div'); const k=fk[n]; let sub='';
     if(k&&v>0&&F7.store){ const w=f7Warn(k,'hand'); sub=`<small class="f7s">${w?`うち傷みかけ ${w}・`:''}最短の残り${f7Min(f7Left(k,'hand'))}</small>`; }
     d.innerHTML=`<span>${n}${sub}</span><b>${v}</b>`; g.appendChild(d); }
-  for(const k of STRAW_MEALS){
+  for(const k of [...STRAW_MEALS,'gomadofu','koroni','kushi','katsudon','botan']){ // v0.66：かまどの料理も「食べる」で食べられる
     if(inv[k]<=0)continue;
     const row=document.createElement('div'); row.style.gridColumn='1 / -1';
     const warning=f7Warn(k,'hand');
@@ -8332,7 +8415,7 @@ function saveGame(){
     const data={v:1,chapter2:prog.chapter2,inv,weapon:P.weapon,dur:P.dur,full:P.full,arms:prog.arms,f5:f5Save(),
       prog:Object.assign({stage:checkpointStage(),unlockTrap:prog.unlockTrap,unlockBoss:prog.unlockBoss,clues:prog.clues,bossDefeated:prog.bossDefeated,scoutTower:!!prog.scoutTower,scoutWarned:!!prog.scoutWarned,scoutRaidWarned:!!prog.scoutRaidWarned,townRequests:prog.townRequests},f31SaveProg()),
       fences:GAPS.map(g=>g.fence.type?{type:g.fence.type,hp:g.fence.broken?0:g.fence.hp}:null),
-      traps:traps.map(saveTrap),stats,nodes:NODES.map(n=>n.avail?1:0),g4:prog.g4,f4:f4Save(),f7:f7Save(),f8:f8Save(),f9:f9Save(),f10:f10Save(),conv:facSave('conv'),kama:facSave('kama')};
+      traps:traps.map(saveTrap),stats,nodes:NODES.map(n=>n.avail?1:0),g4:prog.g4,f4:f4Save(),f7:f7Save(),f8:f8Save(),f9:f9Save(),f10:f10Save(),conv:facSave('conv'),kama:kamaSave()};
     localStorage.setItem(SAVE_KEY,JSON.stringify(data));
   }catch(e){ storageOK=false; }
 }
@@ -8376,7 +8459,7 @@ function applySave(d){
     prog.f10=f10Load(d.f10); // 古いセーブは「伏線はまだ調べていない」で始める
     prog.f9=f9Load(d.f9); // 古いセーブは「頼んでいない」で始める
     prog.f8=f8Load(d.f8); // 古いセーブは未開始のまま始める
-    prog.conv=facLoad('conv',d.conv); prog.kama=facLoad('kama',d.kama); // v0.63：変換炉・v0.64：かまど（古いセーブは未建設）
+    prog.conv=facLoad('conv',d.conv); prog.kama=kamaLoad(d.kama); // v0.63：変換炉・v0.64：かまど（古いセーブは未建設）
     { const f=f7Load(d.f7); prog.f7=f||f7FromInv(); prog.f7Migrated=!f; f7Sync(); } // 古いセーブは今の個数を新品の束にする（1回だけ）
     const q=d.g4; if(q&&typeof q==='object'){ const g=prog.g4; g.board=!!q.board; g.hint=q.board?1:0; g.track=num(q.track,-1,-1,QUESTS.length-1); g.closure=q.closure?1:0;
       if(Array.isArray(q.fences)) g.fences=[0,1,2].map(i=>q.fences[i]?1:0);
@@ -8854,7 +8937,7 @@ function updateProgress(dt){ f31Tick(dt);
   if(!ev.kind&&!bossActive)updateWeatherState(dt,f10Phase()==='day');
   stats.time+=dt;
   f11PrepCheck(); // v0.29.1：調査の前に手掛かりを2つ調べていても、調査の段階に入れば予兆が来る
-  if(prog.stage==='gather'&&inv.wood>=4&&inv.food>=2){ prog.stage='buildFence'; toast('素材がそろった！ 拠点の作業台へ'); say(npcYone,'ようけ集めたのう。作業台で柵をこしらえてや。'); saveGame(); }
+  if(prog.stage==='gather'&&inv.wood>=4&&rawCount()>=2){ prog.stage='buildFence'; toast('素材がそろった！ 拠点の作業台へ'); say(npcYone,'ようけ集めたのう。作業台で柵をこしらえてや。'); saveGame(); }
   if(prog.stage==='buildFence'&&!ev.kind){prog.gatherT+=dt;if(GAPS.some(g=>g.fence.type)){
     if(prog.scoutTower&&!prog.scoutRaidWarned){prog.scoutRaidWarned=true;toast('見張り台：南門へ向かう獣の気配！',true);}
     prog.raidDelay=(prog.raidDelay||0)+dt;if(prog.raidDelay>2.5)startEvent('raid');} else if(prog.gatherT>300){ toast('柵が間に合わない！ 襲撃が来る',true); startEvent('raid'); } }
@@ -8907,7 +8990,7 @@ function updateHUD(dt){
   hbRefresh();
   setTxt('buffTxt',(P.buffT>0?`精進の力 攻撃+30%（${Math.ceil(P.buffT)}秒）　`:'')+(f47Count('raw')===4?`変異した鱗：衝撃波 ${SCALE_FX.charge>=SCALE_WAVE.charge?(touchMode?'放てる（衝撃）':'放てる（F）'):'あと'+Math.ceil(SCALE_WAVE.charge-SCALE_FX.charge)+'秒'}　`:'')+ // v0.63
     (P.full<=0?'空腹：自然回復しない':P.full<60||touchMode?'':'満腹：体力が少しずつ回復')); // スマホでは平常時の説明を省く
-  setTxt('rWood',inv.wood); setTxt('rFood',inv.food); setTxt('rHide',inv.hide); setTxt('rFence',inv.fenceKit); setTxt('rTrap',inv.trapKit); setTxt('rSpike',inv.spikeKit); setTxt('rPit',inv.pitKit); setTxt('rStake',inv.stakeKit); setTxt('rFang',inv.fang); setTxt('rMutScale',inv.mutScale); setTxt('rProcScale',inv.procScale); setTxt('rCharcoal',inv.charcoal);
+  setTxt('rWood',inv.wood); setTxt('rFood',inv.food); setTxt('rHide',inv.hide); setTxt('rFence',inv.fenceKit); setTxt('rTrap',inv.trapKit); setTxt('rSpike',inv.spikeKit); setTxt('rPit',inv.pitKit); setTxt('rStake',inv.stakeKit); setTxt('rFang',inv.fang); setTxt('rMutScale',inv.mutScale); setTxt('rRaw',`${inv.meat||0}・${inv.veg||0}・${inv.rice||0}`); setTxt('rProcScale',inv.procScale); setTxt('rCharcoal',inv.charcoal);
   { // v0.33：0の行は隠す。0→増えた瞬間は一瞬光る
     let anyTop=false;
     for(const [k,v] of [['rWood',inv.wood],['rFood',inv.food],['rHide',inv.hide],['rFence',inv.fenceKit],['rTrap',inv.trapKit],['rSpike',inv.spikeKit],['rPit',inv.pitKit]]){
@@ -8918,7 +9001,7 @@ function updateHUD(dt){
     $('res').querySelector('hr').hidden=!anyTop;
     $('res').hidden=!(anyTop||inv.fenceKit>0||inv.trapKit>0||(prog.unlockBoss&&inv.stakeKit>0)||inv.fang>0||inv.mutScale>0||inv.procScale>0||inv.charcoal>0||prog.bossDefeated);
   }
-  $('rStakeRow').hidden=!prog.unlockBoss; $('rFangRow').hidden=!(inv.fang>0||prog.bossDefeated); $('rMutScaleRow').hidden=!(inv.mutScale>0); $('rProcScaleRow').hidden=!(inv.procScale>0); $('rCharcoalRow').hidden=!(inv.charcoal>0);
+  $('rStakeRow').hidden=!prog.unlockBoss; $('rFangRow').hidden=!(inv.fang>0||prog.bossDefeated); $('rMutScaleRow').hidden=!(inv.mutScale>0); $('rRawRow').hidden=!((inv.meat||0)+(inv.veg||0)+(inv.rice||0)>0); $('rProcScaleRow').hidden=!(inv.procScale>0); $('rCharcoalRow').hidden=!(inv.charcoal>0);
   hbRefresh(); // v0.45：手持ちバー（数・傷みかけ印・耐久・選択・番号）はここで一括更新
   const [ot]=objective(); const ql=questLine(); const qt=ql?ql[0]:'';
   if(ot!==objOpen.last||qt!==objOpen.lastQ){ if(objOpen.last!==null) objOpen.t=6; objOpen.last=ot; objOpen.lastQ=qt; }
@@ -9373,8 +9456,10 @@ $('btnNew').onclick=()=>{ audioInit(); startNew(); };
 $('btnContinue').onclick=()=>{ audioInit(); continueGame(); };
 
 // ================= v0.45 手持ちバー（固定10スロット）とインベントリ =================
-const HOTNM={nata1:'鉈',nata2:'鍛鉈',nata3:'業鉈',axeStone:'石斧',axeIron:'鉄斧',club:'棍棒',bamboo:'竹槍',spear:'牙槍',fenceKit:'木柵キット',trapKit:'罠キット',stakeKit:'杭柵キット',onigiri:'おにぎり',bento:'精進弁当',food:'食料'};
-const ARMS_ORDER=['nata1','nata2','nata3','axeStone','axeIron','club','bamboo','spear'];
+const HOTNM={nata1:'鉈',nata2:'鍛鉈',nata3:'業鉈',axeStone:'石斧',axeIron:'鉄斧',club:'棍棒',bamboo:'竹槍',spear:'牙槍',fenceKit:'木柵キット',trapKit:'罠キット',stakeKit:'杭柵キット',onigiri:'おにぎり',bento:'精進弁当',food:'食料',scNata:'蒼鱗鉈',scAxe:'蒼鱗斧',scClub:'蒼鱗棍棒',scSpear:'蒼鱗槍',rwNata:'変異鱗鉈',rwAxe:'変異鱗斧',rwClub:'変異鱗棍棒',rwSpear:'変異鱗槍',boomer:'飛去来器',
+  grilledVeg:'焼き野菜',herbPorridge:'薬草粥',gomadofu:'胡麻豆腐',koroni:'里芋のころ煮',kushi:'串焼き',katsudon:'ソースカツ丼',botan:'ぼたん鍋',veg:'野菜'};
+const HB_EXTRA=['grilledVeg','herbPorridge','gomadofu','koroni','kushi','katsudon','botan','veg']; // v0.66：持っているときだけ手持ちバーに出る食べ物
+const ARMS_ORDER=['nata1','nata2','nata3','axeStone','axeIron','club','bamboo','spear','scNata','scAxe','scClub','scSpear','rwNata','rwAxe','rwClub','rwSpear','boomer']; // v0.66：鱗の武器も手持ちバー・持ち物に出す
 const HB={defs:[],els:[]};
 let hbKey=null,tipTimer=null;
 const BP_SVG='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 3.5h7l.9 2.7h1.1a2.6 2.6 0 0 1 2.6 2.6v9.2a2 2 0 0 1-2 2H6.9a2 2 0 0 1-2-2V8.8a2.6 2.6 0 0 1 2.6-2.6h1.1l.9-2.7z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><rect x="7.4" y="12.6" width="9.2" height="4.6" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
@@ -9391,6 +9476,12 @@ function makeIconObj(id){
   if(id==='onigiri'){ S(0xf7f3e6,0.5,0,0.05,0,0.78); B(0x2e4d2e,0.46,0.3,0.1,0,-0.2,0.4); }
   else if(id==='bento'){ B(0x8a5a2e,0.95,0.36,0.68,0,-0.12,0); B(0x5a3c1e,0.99,0.09,0.72,0,0.12,0); B(0xf0e8d4,0.62,0.08,0.34,-0.12,0.2,0); B(0x7a9a3e,0.26,0.08,0.26,0.22,0.2,-0.08); }
   else if(id==='food'){ C(0xf2eee0,0.2,0.16,0.66,0,-0.1,0); S(0xf2eee0,0.2,0,-0.42,0); B(0x6a9a3e,0.08,0.34,0.08,-0.08,0.42,0); B(0x6a9a3e,0.08,0.3,0.08,0.08,0.4,0.15); }
+  else if(id==='meat'){ S(0xb4533c,0.4,0,0,0,0.7); C(0xf2eadc,0.07,0.07,0.9,0.3,0.1,0).rotation.z=0.9; S(0xf2eadc,0.11,0.62,0.42,0); }
+  else if(id==='veg'){ C(0xf2eee0,0.2,0.16,0.66,0,-0.1,0); S(0xf2eee0,0.2,0,-0.42,0); B(0x6a9a3e,0.08,0.34,0.08,-0.08,0.42,0); B(0x6a9a3e,0.08,0.3,0.08,0.08,0.4,0.15); }
+  else if(id==='rice'){ C(0xcdb98a,0.34,0.4,0.7,0,-0.05,0); S(0xf7f3e6,0.33,0,0.3,0,0.45); B(0x8a6a3a,0.72,0.06,0.06,0,0.12,0.38); }
+  else if(FOODS[id]){ const col={grilledVeg:0x7a9a3e,herbPorridge:0xe8e6c8,gomadofu:0xe9dcc0,koroni:0x8a6a48,kushi:0x9a5a30,katsudon:0xb8793a,botan:0xa8503a}[id]||0xd8c8a0; // v0.66：料理は椀に盛った形（色で分ける）
+    if(id==='kushi'){ for(let i=-1;i<=1;i++){ C(0xc8a878,0.03,0.03,1.0,i*0.26,0,0); for(let j=0;j<3;j++) B(col,0.18,0.16,0.14,i*0.26,-0.22+j*0.24,0); } }
+    else { C(0x3a2a22,0.5,0.32,0.36,0,-0.18,0); S(col,0.44,0,0.0,0,0.42); if(id==='katsudon') B(0x6a3a1e,0.5,0.1,0.26,0,0.2,0); if(id==='botan') for(const x of [-0.18,0.16]) B(0x6a9a3e,0.14,0.1,0.2,x,0.18,0.12); if(id==='gomadofu') B(0xf4ecd8,0.36,0.2,0.36,0,0.16,0); } }
   else if(id==='fenceKit'){ B(0x8a6438,0.1,0.72,0.1,-0.3,-0.05,0); B(0x8a6438,0.1,0.72,0.1,0.3,-0.05,0); B(0x9a7448,0.82,0.11,0.09,0,0.22,0); B(0x9a7448,0.82,0.11,0.09,0,-0.08,0); }
   else if(id==='trapKit'){ const t=new THREE.Mesh(new THREE.TorusGeometry(0.34,0.05,8,22),M(0x7a5a38)); t.rotation.x=Math.PI/2; t.position.y=-0.12; g.add(t); C(0x6e4f2e,0.045,0.045,0.8,0.32,0.12,0); }
   else if(id==='stakeKit'){ for(let i=-1;i<=1;i++){ B(0x7a5a38,0.13,0.62,0.13,i*0.26,-0.18,0); const tip=new THREE.Mesh(new THREE.ConeGeometry(0.085,0.26,7),M(0x6a4c30)); tip.position.set(i*0.26,0.24,0); g.add(tip); } B(0x8a6438,0.8,0.09,0.09,0,-0.34,0); }
@@ -9428,7 +9519,9 @@ function tapTip(d){ if(!d.dataset.name) return; showTip(d.dataset.name,d); if(ti
 // ---- 手持ちバー本体（常に10枠・中身は inv/prog.arms を直参照＝複製データなし） ----
 function hbDefs(){ const d=[]; const push=(kind,id)=>{ if(d.length<9) d.push({kind,id}); };
   for(const w of ARMS_ORDER) if(prog.arms[w]!=null) push('arm',w);
-  for(const f of ['onigiri','bento','food']) push('food',f);
+  for(const f of ['onigiri','bento']) push('food',f);
+  for(const f of HB_EXTRA) if((inv[f]||0)>0) push('food',f);
+  push('food','food');
   for(const k of ['fenceKit','trapKit']) push('kit',k);
   if(prog.unlockBoss) push('kit','stakeKit');
   while(d.length<9) d.push({kind:'empty'});
@@ -9486,7 +9579,7 @@ function hotbarWheel(dir){ const ws=[]; for(let i=0;i<HB.defs.length;i++) if(HB.
   if(!swapAllowed()){ sfx('deny'); return; } equipArm(HB.defs[ws[p]].id); }
 function invDefs(){ const d=[];
   for(const w of ARMS_ORDER) if(prog.arms[w]!=null) d.push({kind:'arm',id:w});
-  for(const f of ['onigiri','bento','food']) if((inv[f]||0)>0) d.push({kind:'food',id:f});
+  for(const f of ['onigiri','bento',...HB_EXTRA,'food']) if((inv[f]||0)>0) d.push({kind:'food',id:f});
   for(const k of ['fenceKit','trapKit','stakeKit']) if((inv[k]||0)>0) d.push({kind:'kit',id:k});
   while(d.length<10) d.push({kind:'empty'});
   return d; }

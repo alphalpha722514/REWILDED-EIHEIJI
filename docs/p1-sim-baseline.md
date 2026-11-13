@@ -60,3 +60,7 @@ THREE_JS=/path/to/three.min.js node tools/defense-sim.cjs --runs 10 --cond none,
 - `THREE_JS`：three.js r128 の `three.min.js`。外部に出られない環境のため、ローカルのファイルを渡す。
 - playwright（Chromium 付き）が必要。
 - `SIM_TRACE=1` を付けると、1秒ごとのボットの位置・狙い・スタミナ・やぐらの耐久を表示する。
+
+## v0.65・v0.66 の注意（2026-11-14）
+- 測定の前に、防具の服（v0.65）と落とし物の形（v0.66）を先に作るようにした。どちらも初めて使うときに作られて乱数が進み、測定の乱数の並びがずれるため。
+- このため、上の過去の数値とは乱数の並びが違う。版を比べるときは、同じツールで両方の `index.html` を測る（`SIM_HTML=古いindex.html`）。v0.64→v0.65→v0.66 は、この方法で同じ結果だった。
