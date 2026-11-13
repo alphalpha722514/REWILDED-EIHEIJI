@@ -537,7 +537,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.66 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.66.1 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -3197,9 +3197,9 @@ const KAMA_DISH={
   onigiri:{a:[0,0,1],rich:0}, herbPorridge:{a:[0,.25,.75],rich:1}, bento:{a:[0,.5,.5],rich:1}, grilledVeg:{a:[0,1,0],rich:0},
   gomadofu:{a:[0,1,0],rich:1,heal:20,full:30,spd:1,note:'永平寺の精進料理。体が軽くなる'},
   koroni:{a:[0,1,0],rich:1,heal:30,full:55,note:'奥越の里芋を甘辛く煮ころがした。腹もちがよい'},
-  kushi:{a:[1,0,0],rich:0,heal:30,full:30,atk:20,note:'獣の肉を串に刺して焼いた'},
-  katsudon:{a:[.5,0,.5],rich:1,heal:55,full:60,atk:40,note:'福井の名物。薄いカツをソースにくぐらせて飯にのせる'},
-  botan:{a:[.5,.5,0],rich:1,heal:50,full:60,regen:1,note:'猪の肉と野菜の鍋。体が芯から温まる'},
+  kushi:{a:[1,0,0],rich:0,heal:20,full:25,note:'獣の肉を串に刺して焼いた'},
+  katsudon:{a:[.5,0,.5],rich:1,heal:35,full:45,atk:15,note:'福井の名物。薄いカツをソースにくぐらせて飯にのせる'},
+  botan:{a:[.5,.5,0],rich:1,heal:25,full:45,regen:1,note:'猪の肉と野菜の鍋。体が芯から温まる'},
 };
 const COOKED=['onigiri','bento','grilledVeg','herbPorridge','gomadofu','koroni','kushi','katsudon','botan'];
 // 鍋の中身 pot={meat,veg,rice,food} から、料理ごとの出やすさ（合計1）を返す
@@ -3686,27 +3686,31 @@ function f9InvLine(){ const el=$('invF9'); if(!el) return; if(!(F9.st>='B'&&f9YO
 // ---- 慧心の料理（段階C）----
 // 作業台と同じ材料・同じ処理（f7CraftTake で手持ちと食料庫の古い使える物から取り、できた料理は手持ちに新品で入る）。押したときだけ作る
 const F9E={t:0};
-const F9COOK=['onigiri','bento',...STRAW_MEALS];
-function f9CookHave(k){ return FOODS[k]?f7Have(k):(inv[k]||0); }
-function f9CookN(id,max){ const r=RECIPES.find(x=>x.id===id); if(!r) return 0; f7Flush(); let n=max; for(const k in r.cost) n=Math.min(n,Math.floor(f9CookHave(k)/r.cost[k])); return Math.max(0,n); }
-function f9CookWhy(id){ if(f9YRest()) return '今は柵の修理中（戦いの間は頼めない）'; const r=RECIPES.find(x=>x.id===id); const L=[];
-  for(const k in r.cost){ const need=r.cost[k]-f9CookHave(k); if(need>0) L.push(`${RNAME[k]}が足りない（あと${need}）`); } return L.join('／'); }
+// v0.66.1（2026-11-14 ユーザー決定）：慧心に頼むと、必ず精進料理を作ってくれる（かまどと違い、何ができるか選べる・すぐできる）。
+// 肉は使わない。材料の「精進の食材」は、食料・野菜・米のどれでもよい（食料→野菜→米の順に使う）。素材の数は暫定
+const F9SHOJIN={onigiri:{shojin:2},grilledVeg:{shojin:2,straw:1},herbPorridge:{shojin:1,straw:1,rope:1},gomadofu:{shojin:2,straw:1},koroni:{shojin:3},bento:{shojin:3,hide:1}};
+const F9COOK=Object.keys(F9SHOJIN), SHOJIN_K=['food','veg','rice'];
+const F9DESC={onigiri:'体力+35・満腹+25',grilledVeg:'体力+15・満腹+40・30秒間 移動+10%',herbPorridge:'30秒かけて体力が最大40回復',gomadofu:'体力+20・満腹+30・30秒間 移動+10%',koroni:'体力+30・満腹+55',bento:'体力+60・満腹+50・30秒間 攻撃+30%'};
+function f9CookHave(k){ if(k==='shojin') return SHOJIN_K.reduce((a,q)=>a+f7Have(q),0); return FOODS[k]?f7Have(k):(inv[k]||0); }
+function f9CookN(id,max){ const c=F9SHOJIN[id]; if(!c) return 0; f7Flush(); let n=max; for(const k in c) n=Math.min(n,Math.floor(f9CookHave(k)/c[k])); return Math.max(0,n); }
+function f9CookWhy(id){ if(f9YRest()) return '今は柵の修理中（戦いの間は頼めない）'; const c=F9SHOJIN[id]; const L=[];
+  for(const k in c){ const need=c[k]-f9CookHave(k); if(need>0) L.push(`${k==='shojin'?'精進の食材（食料・野菜・米）':RNAME[k]}が足りない（あと${need}）`); } return L.join('／'); }
 function f9Cook(id,max){ if(f9YRest()){ sfx('deny'); toast('慧心は今、柵の修理中（戦いの間は料理を頼めない）',true); renderNPC(); return 0; }
-  const r=RECIPES.find(x=>x.id===id); if(!r||!F9COOK.includes(id)||(r.lock&&r.lock())) return 0;
+  const c=F9SHOJIN[id]; if(!c) return 0;
   const n=f9CookN(id,max); if(n<1){ sfx('deny'); toast(f9CookWhy(id),true); renderNPC(); return 0; }
-  const used={}; // 材料の取り出しと料理の受け渡しは、この1つの処理で終える
-  for(let j=0;j<n;j++){ for(const k in r.cost){ const u=used[k]||(used[k]={hand:0,store:0});
-      if(FOODS[k]){ const g=f7CraftTake(k,r.cost[k]); u.hand+=g.hand; u.store+=g.store; } else { inv[k]-=r.cost[k]; u.hand+=r.cost[k]; } }
-    r.give(); }
+  const used={}; const note=(k,g)=>{ const u=used[k]||(used[k]={hand:0,store:0}); u.hand+=g.hand; u.store+=g.store; };
+  for(let j=0;j<n;j++){ for(const k in c){
+      if(k==='shojin'){ let need=c[k]; for(const q of SHOJIN_K){ if(need<=0) break; const t=Math.min(need,f7Have(q)); if(t>0){ const g=f7CraftTake(q,t); note(q,g); need-=g.hand+g.store; } } }
+      else if(FOODS[k]) note(k,f7CraftTake(k,c[k])); else { inv[k]-=c[k]; note(k,{hand:c[k],store:0}); } }
+    foodAdd(id,1); }
   const parts=[]; for(const k in used){ const u=used[k]; if(u.store) parts.push(`食料庫から${RNAME[k]}${u.store}`); if(u.hand) parts.push(`手持ちの${RNAME[k]}${u.hand}`); }
-  F9E.t=F9.eCook; sfx('craft'); toast(`慧心が${r.name}を${n}つこしらえた（手持ちへ。${parts.join('・')}を使った）`); g4CheckQuests(); saveGame(); renderNPC(); return n; }
+  F9E.t=F9.eCook; sfx('craft'); toast(`慧心が${FOODS[id].name}を${n}つこしらえた（手持ちへ。${parts.join('・')}を使った）`); g4CheckQuests(); saveGame(); renderNPC(); return n; }
 function f9EshinPanel(st,bx){ const rest=f9YRest();
-  f9El('div','nl',rest?'料理：今は柵の修理中（戦いの間は頼めない）':'料理：頼める。できた料理は手持ちに入る（新品）',st);
-  for(const id of F9COOK){ const r=RECIPES.find(x=>x.id===id); if(!r) continue; const n=f9CookN(id,3);
-    const d=f9El('div','rc f9c',null,bx); f9El('div','nm',r.name,d);
-    if(STRAW_MEALS.includes(id)) f9El('div','ds',r.desc,d);
-    const fh=f7Count('food','hand'), fs=F7.store?f7Count('food','store'):0;
-    f9El('div','cs',`材料：${Object.entries(r.cost).map(([k,v])=>`${RNAME[k]}${v}`).join('・')}　いま使える食料 ${fh+fs}（手持ち ${fh}＋食料庫 ${fs}）${r.cost.hide?`・獣素材 ${inv.hide}`:''}`,d);
+  f9El('div','nl',rest?'料理：今は柵の修理中（戦いの間は頼めない）':'料理：精進料理を頼める（肉は使わない）。できた料理は手持ちに入る（新品）',st);
+  const have=SHOJIN_K.map(q=>[q,f7Count(q,'hand'),F7.store?f7Count(q,'store'):0]);
+  for(const id of F9COOK){ const c=F9SHOJIN[id]; const n=f9CookN(id,3);
+    const d=f9El('div','rc f9c',null,bx); f9El('div','nm',FOODS[id].name,d); f9El('div','ds',F9DESC[id],d);
+    f9El('div','cs',`材料：${Object.entries(c).map(([k,v])=>`${k==='shojin'?'精進の食材':RNAME[k]}${v}`).join('・')}　いまの精進の食材 ${have.map(([q,h,st2])=>`${RNAME[q]}${h+st2}`).join('・')}${c.hide?`・獣素材 ${inv.hide}`:''}`,d);
     const b=f9El('div','stb',null,d);
     f9Btn(b,`npc_cook_${id}_1`,'1つ',()=>f9Cook(id,1),{dis:rest||n<1});
     f9Btn(b,`npc_cook_${id}_3`,n>=2?`3つ（いま${Math.min(3,n)}つ作れる）`:'3つ（作れるだけ）',()=>f9Cook(id,3),{dis:rest||n<2});

@@ -22,7 +22,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 THREE = open(os.environ.get('THREE_JS', '/home/claude/v010/node_modules/three/build/three.min.js')).read()
 SRC = open(os.path.join(ROOT, 'index.html'), encoding='utf8').read()
 HOOK = ("window.__t={get P(){return P},get S(){return S},get prog(){return prog},get inv(){return inv},get enemies(){return enemies},get drops(){return drops},FOODS,FAC,FACM,RECIPES,"
-        "craft:id=>craft(id),kamaOdds:p=>kamaOdds(p),kamaRoll:p=>kamaRoll(p),kamaHint:p=>kamaHint(p),kamaCook:p=>kamaCook(p),kamaCoal:n=>kamaCoal(n),kamaTake:()=>kamaTake(),kamaLoad:q=>kamaLoad(q),"
+        "craft:id=>craft(id),f9Cook:(a,b)=>f9Cook(a,b),F9COOK,kamaOdds:p=>kamaOdds(p),kamaRoll:p=>kamaRoll(p),kamaHint:p=>kamaHint(p),kamaCook:p=>kamaCook(p),kamaCoal:n=>kamaCoal(n),kamaTake:()=>kamaTake(),kamaLoad:q=>kamaLoad(q),"
         "facUpdate:dt=>facUpdate(dt),eat:k=>eat(k),rawFood:()=>rawFood(),rawTake:n=>rawTake(n),foodAdd:(k,n)=>foodAdd(k,n),f7Flush:()=>f7Flush(),interactables:()=>interactables(),"
         "spawnEnemy:(...a)=>spawnEnemy(...a),damageEnemy:(...a)=>damageEnemy(...a),updateEnemies:dt=>updateEnemies(dt),saveGame:()=>saveGame(),applySave:d=>applySave(d),hbDefs:()=>hbDefs(),iconOf:id=>iconOf(id)};\n")
 HTML = SRC.replace('function updateNPCs(dt){', HOOK + 'function updateNPCs(dt){', 1)
@@ -101,9 +101,17 @@ async def main():
           const m0 = I.meat; T.foodAdd('meat', 1); T.f7Flush(); T.eat('meat'); const rawMeat = I.meat; P.full = 50; T.eat('veg'); return {q, mid, coal: I.charcoal, ate, rawMeat, vegLeft: I.veg, full: P.full}; }""")
         print('並び・食べる：', mix)
         check(mix['q'] == ['charcoal', 'kushi'] and mix['mid'] == {'charcoal': 1} and mix['coal'] == 1, '木炭と料理を、入れた順に1つずつ作る')
-        check(mix['ate'] == {'hp': 70, 'full': 50, 'buff': 20, 'left': -1}, '串焼きを食べると 体力+30・満腹+30・20秒間 攻撃力+30%')
+        check(mix['ate'] == {'hp': 60, 'full': 45, 'buff': 0, 'left': -1}, '串焼きを食べると 体力+20・満腹+25（肉の料理は控えめ。v0.66.1）')
         check(mix['rawMeat'] == 1 and mix['vegLeft'] == 1 and mix['full'] == 65, '肉は生では食べられない。野菜はかじれる')
 
+        es = await pg.evaluate("""() => { const T = window.__t, I = T.inv; for (const k of ['food', 'meat', 'veg', 'rice']) { const n = I[k]; if (n > 0) T.rawTake(n); } T.f7Flush();
+          T.foodAdd('meat', 5); T.foodAdd('veg', 1); T.foodAdd('rice', 4); I.straw = 2; T.f7Flush(); const g0 = I.gomadofu, o0 = I.onigiri;
+          const a = T.f9Cook('gomadofu', 1); const b = T.f9Cook('onigiri', 1); const c = T.f9Cook('koroni', 1); T.f7Flush();
+          return {menu: T.F9COOK, a, b, c, gomadofu: I.gomadofu - g0, onigiri: I.onigiri - o0, left: {meat: I.meat, veg: I.veg, rice: I.rice}}; }""")
+        print('慧心：', es)
+        check(not any(k in es['menu'] for k in ('kushi', 'katsudon', 'botan')) and 'gomadofu' in es['menu'] and 'koroni' in es['menu'], '慧心の料理は精進料理だけ（胡麻豆腐・里芋のころ煮も頼める）')
+        check(es['a'] == 1 and es['b'] == 1 and es['gomadofu'] == 1 and es['onigiri'] == 1, '慧心に頼むと、選んだ精進料理が必ずできる（野菜・米を使う）')
+        check(es['c'] == 0 and es['left'] == {'meat': 5, 'veg': 0, 'rice': 1}, '肉は使わない（肉しかないと作れない）')
         src = await pg.evaluate("""() => { const T = window.__t, P = T.P, I = T.inv; for (const d of [...T.drops]) d.n = 0; const n0 = T.drops.length;
           const e = T.spawnEnemy('bear', P.x + 30, P.z - 30, 'field', {}); for (let i = 0; i < 40 && e.state !== 'dead'; i++) T.damageEnemy(e, 30, 'heavy', 0);
           const kinds = T.drops.slice(n0).map(d => d.k); T.f7Flush(); for (const k of ['food', 'meat', 'veg', 'rice']) { const n = I[k]; if (n > 0) T.rawTake(n); } T.f7Flush();
