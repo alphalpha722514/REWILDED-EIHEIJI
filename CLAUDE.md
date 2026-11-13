@@ -49,7 +49,7 @@
 
 ## 作業の進め方
 - main へ入れる前に、作業ブランチで検証する。変更は小さく分ける。
-- テスト：`node tests/chapter2-save.cjs`、`node tests/chapter2-defense.cjs`、`node tests/classic-body.cjs`、`node tests/death-penalty.cjs`、`node tests/combat-aim.cjs`。地域の往復は `python3 tests/region-browser.py`、上志比は `python3 tests/kamishihi-browser.py`（`KAMI_SHOTS=フォルダ` で画面を撮る）、変異したサルは `python3 tests/mutant-browser.py`（どれも画面のない Chromium、各数分）。防衛戦の勝率は `tools/defense-sim.cjs`（`docs/p1-sim-baseline.md`）、変異したサルとの1対1は `tools/mutant-duel-sim.cjs`（`docs/mutant-monkey-ai.md`）。画面の確認は Playwright（SwiftShader）で起動と表示を見る。
+- テスト：`node tests/chapter2-save.cjs`、`node tests/chapter2-defense.cjs`、`node tests/classic-body.cjs`、`node tests/death-penalty.cjs`、`node tests/combat-aim.cjs`。地域の往復は `python3 tests/region-browser.py`、上志比は `python3 tests/kamishihi-browser.py`（`KAMI_SHOTS=フォルダ` で画面を撮る）、変異したサルは `python3 tests/mutant-browser.py`、鱗の装備は `python3 tests/scale-gear-browser.py`（どれも画面のない Chromium、各数分）。防衛戦の勝率は `tools/defense-sim.cjs`（`docs/p1-sim-baseline.md`）、変異したサルとの1対1は `tools/mutant-duel-sim.cjs`（`docs/mutant-monkey-ai.md`）。画面の確認は Playwright（SwiftShader）で起動と表示を見る。
 - 報告では「コードに存在／コミット済み／公開済み／PCで確認／iPhoneで確認」を区別する。実機で確かめていないことを確認済みと書かない。
 - 各フェーズで、変更履歴・使った3Dアセットと版・実装済み／未実装・テスト結果・未解決の不具合・セーブ互換・次の工程を `docs/` に残す。
 
@@ -68,7 +68,7 @@
 | `docs/mutant-monkey-glb-check.md` | 変異したサル（Tripo の GLB）の検査・軽量化の試作・修正方針・確認事項。道具は `tools/models/` |
 | `docs/mutant-monkey-rig.md` | 変異したサルの骨・重み・動き（rig 1）・ゲーム用データ・確認動画の作り方 |
 | `docs/mutant-monkey-ai.md` | 変異したサルの AI（暫定の強さ・攻撃・初遭遇は逃げ去る・v0.62 の強敵化と「変異した鱗」・強さの測定結果）と試遊版 `previews/p2-mutant/` |
-| `docs/mutant-scale-uses.md` | 変異した鱗の使い道（2026-11-13 決定：加工・新しい装備と武器・九頭竜の力の攻撃・特殊な施設）と、作る前に決めること |
+| `docs/mutant-scale-uses.md` | 変異した鱗の使い道（2026-11-13 決定）と v0.63 の実装：変換炉・鱗の武器・青鱗と変異鱗の防具・衝撃波・未定の事項 |
 | `docs/p2-investigation.md` | P2 統合指示書 v3.0 への初期調査（防具の原因・地理データ・スズキ・順序・確認事項） |
 | `docs/p1-sim-baseline.md` | 防衛戦の勝率測定ツールと基準値 |
 | `docs/p1-balance-report.md` | P1 の測定結果・調整（v0.55・v0.56 で反映）・未確認事項 |

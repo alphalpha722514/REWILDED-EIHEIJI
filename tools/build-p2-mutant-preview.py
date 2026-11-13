@@ -51,10 +51,17 @@ async function p2Spawn(fleeOnly){ const a=P.facing||0, x=P.x+Math.sin(a)*11, z=P
  const e=await spawnMutant(x,z,{fleeOnly,aggro:true}); if(e){ setState(e,'alert'); toast(fleeOnly?'変異したサル（初遭遇：逃げ去る）':'変異したサル（通常：倒せる）'); } }
 { const b=document.getElementById('btnP2Start'); if(b) b.addEventListener('click',()=>p2TestStart());
   const bar=document.createElement('div'); bar.id='p2bar'; bar.style.cssText='position:fixed;top:calc(6px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:30;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 16px)';
-  bar.innerHTML='<button id="p2a" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">サルを呼ぶ（初遭遇：逃げ去る）</button><button id="p2b" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">サルを呼ぶ（通常：倒せる）</button><button id="p2c" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">回復・食料を足す</button>';
+  bar.innerHTML='<button id="p2a" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">サルを呼ぶ（初遭遇：逃げ去る）</button><button id="p2b" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">サルを呼ぶ（通常：倒せる）</button><button id="p2c" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">回復・食料を足す</button><button id="p2d" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">鱗の装備を試す（拠点へ）</button><button id="p2e" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">変換炉を早送り</button>';
   document.body.appendChild(bar); bar.hidden=true;
   document.getElementById('p2a').addEventListener('click',e=>{ e.stopPropagation(); p2Spawn(true); cv.focus(); });
   document.getElementById('p2b').addEventListener('click',e=>{ e.stopPropagation(); p2Spawn(false); cv.focus(); });
+  document.getElementById('p2d').addEventListener('click',async e=>{ e.stopPropagation(); cv.focus(); // v0.63：鱗の装備を試す
+    Object.assign(inv,{mutScale:(inv.mutScale||0)+20,procScale:(inv.procScale||0)+20,wood:inv.wood+60,iron:inv.iron+30,stone:inv.stone+30,hide:inv.hide+40,rope:inv.rope+30});
+    for(const id of ['nata3','axeIron','club']) if(prog.arms[id]==null&&!Object.keys(SCALE_ARMS).some(k=>SCALE_ARMS[k]===id&&prog.arms[k]!=null)) armGain(id,false);
+    if(REG.cur!=='komyoji'){ const ok=await regionTravel('komyoji',null,{force:true}); if(!ok){ toast('拠点へ戻れませんでした',true); return; } }
+    P.x=158; P.z=69.5; P.facing=Math.PI/2; setCam(P.facing+Math.PI);
+    banner('試遊：鱗の装備','素材を足しました。作業台で変換炉・鱗の武器・鱗の防具を作れます。変換炉は拠点の南東の隅に建つ',6); saveGame(); });
+  document.getElementById('p2e').addEventListener('click',e=>{ e.stopPropagation(); const c=prog.conv; if(!c||!c.built){ toast('変換炉がまだない',true); return; } c.out+=c.q; c.q=0; c.t=0; convVis(); toast('試遊：変換を終えた（取り出せる）'); cv.focus(); });
   document.getElementById('p2c').addEventListener('click',e=>{ e.stopPropagation(); if(!P.dead){ P.hp=P.maxHp; foodAdd('onigiri',2); toast('試遊：体力を戻し、おにぎりを2つ足した'); } cv.focus(); });
   setInterval(()=>{ bar.hidden=!(S.mode==='playing'); },300); }
 """

@@ -21,6 +21,8 @@ const { chromium } = require('playwright');
 const PRESETS = {
   B: { label: 'B 一部準備', level: 3, weapon: 'nata2', armor: { head: 'basic_head', chest: 'basic_chest' }, food: { onigiri: 3, bento: 0 } },
   C: { label: 'C 十分な準備', level: 4, weapon: 'spear', armor: { head: 'forest_head', chest: 'forest_chest', legs: 'forest_legs', feet: 'forest_feet' }, food: { onigiri: 3, bento: 2 } },
+  D: { label: 'D 青鱗＋鱗の槍', level: 5, weapon: 'scSpear', armor: { head: 'blue_head', chest: 'blue_chest', legs: 'blue_legs', feet: 'blue_feet' }, food: { onigiri: 3, bento: 2 } }, // v0.63
+  E: { label: 'E 変異鱗＋鱗の槍', level: 5, weapon: 'scSpear', armor: { head: 'raw_head', chest: 'raw_chest', legs: 'raw_legs', feet: 'raw_feet' }, food: { onigiri: 3, bento: 2 } }, // v0.63
 };
 function arg(name, def) { const i = process.argv.indexOf('--' + name); return i >= 0 ? process.argv[i + 1] : def; }
 
@@ -50,6 +52,7 @@ async function setup(c, mode, foe, at){
   prog.level = c.level; prog.exp = g.XP.lv[c.level - 1] || 0; P.maxHp = g.f31MaxHp(c.level); P.hp = P.maxHp;
   P.weapon = c.weapon; P.dur = g.WEAPONS[c.weapon].maxDur; prog.arms[c.weapon] = P.dur;
   for (const [slot, id] of Object.entries(c.armor)) { if (!prog.gear.owned.includes(id)) prog.gear.owned.push(id); prog.gear.equip[slot] = id; }
+  P.maxHp = g.f31MaxHp(c.level); P.hp = P.maxHp; // v0.63：防具で最大体力が変わる（変異鱗）
   g.f47ApplyVisual(); g.f7Flush(); inv.onigiri = 0; inv.bento = 0; if (c.food.onigiri) g.foodAdd('onigiri', c.food.onigiri); if (c.food.bento) g.foodAdd('bento', c.food.bento);
   P.x = at[0]; P.z = at[1]; P.facing = 0;
   for (const e of [...g.enemies]) g.removeEnemy(e);

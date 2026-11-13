@@ -480,6 +480,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
     <div class="row" id="rStakeRow" hidden><span>杭柵キット</span><b id="rStake">0</b></div>
     <div class="row" id="rFangRow" hidden><span>ヌシの牙</span><b id="rFang">0</b></div>
     <div class="row" id="rMutScaleRow" hidden><span>変異した鱗</span><b id="rMutScale">0</b></div>
+    <div class="row" id="rProcScaleRow" hidden><span>加工した鱗</span><b id="rProcScale">0</b></div>
   </div>
   <canvas id="mini" width="150" height="196"></canvas>
   <div id="coreBar" class="panel" hidden><div id="coreLbl"><span>火の見やぐら（防衛対象）の耐久</span><span class="num" id="coreV">300 / 300</span></div><div class="bigtrack"><div id="coreFill"></div></div></div>
@@ -527,7 +528,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.62.1 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.63 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -2909,10 +2910,15 @@ function updateObjDir(){ const el=$('objDir'); if(!el) return; const [,tg0]=obje
 // 技はすべてこの表で決める。時間は「速さ1.0」のときの秒。武器の速さで割って使う。
 // kind：light／heavy（威力の基準）。mul：威力の倍率。poise：体勢削り。stam：スタミナ。lunge：踏み込み(m)。
 // chain：次の技へつなげ始める時刻。cancel：回避できるようになる時刻。next／heavy：通常／強攻撃を押したときの派生先。
-const FAM={nata1:'nata',nata2:'nata',nata3:'nata',axeStone:'axe',axeIron:'axe',club:'club',bamboo:'spear',spear:'spear'};
+const FAM={nata1:'nata',nata2:'nata',nata3:'nata',axeStone:'axe',axeIron:'axe',club:'club',bamboo:'spear',spear:'spear',scNata:'nata',scAxe:'axe',scClub:'club',scSpear:'spear'};
 const FAM_NAME={nata:'鉈',axe:'斧',club:'棍棒',spear:'槍'};
-const WSPD={nata1:1,nata2:1,nata3:1.05,axeStone:0.9,axeIron:0.95,club:1,bamboo:1.05,spear:1};
-const WPOISE={nata1:1,nata2:1.1,nata3:1.2,axeStone:1.6,axeIron:1.9,club:1.5,bamboo:0.9,spear:1.1};
+// v0.63：鱗の武器（4つの武器を加工した鱗で強化した上位。キー＝新しい武器、値＝元の武器。2026-11-13 ユーザー決定。名前・数値は暫定。docs/mutant-scale-uses.md）
+const SCALE_ARMS={scNata:'nata3',scAxe:'axeIron',scClub:'club',scSpear:'spear'};
+const SCALE_ARM_COST={scNata:{procScale:3,iron:3,hide:4},scAxe:{procScale:3,iron:4,wood:2},scClub:{procScale:3,wood:4,hide:3},scSpear:{procScale:4,wood:4,hide:4}}; // 暫定
+const SCALE_FX={glow:[],pool:[],tex:null,ring:null,ringT:9,charge:0,v:null}; // 鱗の光（武器の光の材質・漂う光の粒・衝撃波の輪）
+const SCALE_WAVE={charge:10,trigger:4.5,radius:6.5,push:{boss:0.6,bear:2.2},pushDef:4.5}; // 変異鱗の一式：力がたまる秒数・近くに獣がいると放つ距離・届く距離・押し出す距離（すべて暫定）
+const WSPD={nata1:1,nata2:1,nata3:1.05,axeStone:0.9,axeIron:0.95,club:1,bamboo:1.05,spear:1,scNata:1.05,scAxe:0.95,scClub:1,scSpear:1};
+const WPOISE={nata1:1,nata2:1.1,nata3:1.2,axeStone:1.6,axeIron:1.9,club:1.5,bamboo:0.9,spear:1.1,scNata:1.3,scAxe:2.0,scClub:1.7,scSpear:1.25};
 const MV=o=>Object.assign({kind:'light',mul:1,poise:6,stam:0,lunge:0.35,shape:'slash',arc:2.0,cancel:0,chain:null,next:null,heavy:null,anim:'sweepR',name:''},o);
 const MOVES={
   // 鉈：扱いやすい3段。早い段からの派生は速く小さく、遅い段からは広く重い
@@ -2976,7 +2982,7 @@ function updateStRing(){ const sr=$('stRing'); if(!sr) return; const deny=S.time
   const arc=sr.querySelector('.f'); arc.style.strokeDashoffset=String(94.25*(1-P.st/STAM.max));
   sr.className=deny&&Math.floor(S.time*10)%2===0?'deny':P.exh?'exh':''; }
 // ---- 武器の根元と先端（武器の形の中での位置。先端は刃先・穂先） ----
-function f47WeaponScale(id){return id==='spear'||id==='bamboo'?.95:id==='axeStone'||id==='axeIron'?.78:id==='club'?.84:.64;}
+function f47WeaponScale(id){id=SCALE_ARMS[id]||id;return id==='spear'||id==='bamboo'?.95:id==='axeStone'||id==='axeIron'?.78:id==='club'?.84:.64;}
 const WTIP={nata1:[[0,-.35,0],[0,-1.2,.08]],nata2:[[0,-.35,0],[0,-1.28,.08]],nata3:[[0,-.35,0],[0,-1.34,.08]],axeStone:[[0,-.3,0],[0,-.9,.3]],axeIron:[[0,-.35,0],[0,-1.05,.31]],club:[[0,-.4,0],[0,-1.3,0]],bamboo:[[0,-.9,0],[0,-2.12,0]],spear:[[0,-.8,0],[0,-1.95,0]],hammerStone:[[0,-.8,0],[0,-1.1,0]],pickIron:[[0,-.85,0],[0,-1.2,.3]],fist:[[0,-.08,0],[0,-.16,.05]],foot:[[0,-.05,0],[0,-.55,0]]}; // v0.45：素手の当たりは拳／足先の短い区間
 const _wb=new THREE.Vector3(), _wt=new THREE.Vector3();
 function weaponWorld(){ const a=P.atk;const w=WTIP[(a?.chop&&a.toolId)||P.weapon]||WTIP.nata1; weaponMesh.updateWorldMatrix(true,false); _wb.set(...w[0]); _wt.set(...w[1]); weaponMesh.localToWorld(_wb); weaponMesh.localToWorld(_wt); return [_wb,_wt]; }
@@ -3075,7 +3081,7 @@ const TRN=12; const trailGeo=new THREE.BufferGeometry(); trailGeo.setAttribute('
 const trailMat2=new THREE.MeshBasicMaterial({color:0xfff6dc,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}); const trail2=new THREE.Mesh(trailGeo,trailMat2); trail2.frustumCulled=false; scene.add(trail2);
 const trailPts=[]; let trailOn=0;
 function updateTrail(dt,a){ const act=a&&!a.chop&&a.t>=a.a0-0.02&&a.t<=a.a1+0.05;
-  if(act){ const s=swingPts(a,a.t); trailPts.unshift([s[1].x,s[1].y,s[1].z,s[2].x,s[2].y,s[2].z]); if(trailPts.length>TRN) trailPts.pop(); trailOn=1; trailMat2.color.setHex(a.kind==='heavy'?0xffd27a:0xfff6dc); }
+  if(act){ const s=swingPts(a,a.t); trailPts.unshift([s[1].x,s[1].y,s[1].z,s[2].x,s[2].y,s[2].z]); if(trailPts.length>TRN) trailPts.pop(); trailOn=1; trailMat2.color.setHex(WEAPONS[P.weapon]?.scale?(a.kind==='heavy'?0x5fd0ff:0x9fe4ff):(a.kind==='heavy'?0xffd27a:0xfff6dc)); /* v0.63：鱗の武器は青い流線 */ }
   else { trailOn=Math.max(0,trailOn-dt*6); if(trailOn<=0) trailPts.length=0; else if(trailPts.length>2) trailPts.pop(); }
   const pos=trailGeo.attributes.position; const n=trailPts.length; for(let i=0;i<TRN;i++){ const p=trailPts[Math.min(i,n-1)]||[0,-999,0,0,-999,0]; pos.setXYZ(i*2,p[0],p[1],p[2]); pos.setXYZ(i*2+1,p[3],p[4],p[5]); }
   pos.needsUpdate=true; trailGeo.setDrawRange(0,Math.max(0,(n-1)*6)); trailMat2.opacity=n>1?0.55*trailOn:0; }
@@ -3393,6 +3399,55 @@ function f8Load(q){const f=f8Fresh();if(!q||typeof q!=='object'||(q.v!==1&&q.v!=
   if(Array.isArray(q.plots))for(let i=0;i<3;i++){const p=q.plots[i];if(!Array.isArray(p))continue;let st=num(p[0],0,0,3),crop=q.v===2&&p[3]===1?1:0,grow=crop===1?F8.riceGrow:F8.grow;
     const g=typeof p[1]==='number'&&isFinite(p[1])?clamp(p[1],0,grow):0;if(st===2&&g>=grow)st=3;
     f.plots[i]=[st,st===2?g:st===3?grow:0,st===2&&p[2]?1:0,crop];}if(f.intro&&f.plots[0][0]===0)f.plots[0][0]=1;return f;}
+// ================= 変換炉（v0.63。2026-11-13 ユーザー決定：特殊素材を人間が使える形に変える施設） =================
+// 燃料を入れて動かし、1つずつ時間をかけて変える（即時ではない）。時間は遊んでいる間だけ進む（菜園と同じ）。
+// 名前・場所・燃料（いまは木材）・時間・建てる素材はすべて暫定。データは prog.conv、セーブは conv（docs/save-and-flags.md）。
+// rec は変換の表。特殊素材が増えたら行を足す（いまは変異した鱗→加工した鱗の1行だけ）。
+const CONV={pos:{x:166,z:73.4}, W:3.2, D:2.0, build:{mutScale:2,iron:6,stone:8,wood:10}, maxQ:6,
+  rec:{from:'mutScale',to:'procScale',time:90,fuel:{wood:2}}};
+function convFresh(){ return {v:1,built:0,q:0,t:0,out:0}; }
+function convSave(){ const c=prog.conv||convFresh(); return {v:1,built:c.built?1:0,q:c.q,t:Math.round(c.t*10)/10,out:c.out}; }
+function convLoad(q){ const c=convFresh(); if(!q||typeof q!=='object'||q.v!==1) return c; c.built=q.built?1:0;
+  if(c.built){ c.q=num(q.q,0,0,CONV.maxQ); c.t=typeof q.t==='number'&&isFinite(q.t)?clamp(q.t,0,CONV.rec.time):0; c.out=num(q.out,0,0,999); if(!c.q) c.t=0; } return c; }
+const CONVM={g:null,col:null,win:null,fire:null,tray:null,smokeT:0};
+function convBuildModel(){ const {x,z}=CONV.pos, gy=groundH(x,z), g=new THREE.Group(); g.position.set(x,gy,z);
+  const iron=0x4f565c, dark=0x2f3438;
+  g.add(outline(mesh(G.box,mat(0x8a867c),0,0.12,0,CONV.W,0.24,CONV.D),0.03)); // 石の土台
+  g.add(outline(mesh(rbox(2.0,1.3,1.3,0.08),mat(iron),-0.25,0.9,0.1),0.04)); // 鉄の胴
+  for(const sx of [-1.2,0.7]) for(const sy of [0.35,1.45]) g.add(mesh(G.sphLo,mat(0x8a9096),sx,sy,-0.56,0.035,0.035,0.035)); // 鋲
+  g.add(mesh(G.box,mat(dark),-0.25,1.0,-0.55,1.1,0.66,0.05)); // 窓枠
+  CONVM.win=new THREE.MeshBasicMaterial({color:0x22303a}); g.add(mesh(G.box,CONVM.win,-0.25,1.0,-0.58,0.92,0.5,0.03)); // 窓（動いている間は青く光る）
+  g.add(mesh(G.box,mat(0x262626),-0.95,0.45,-0.56,0.42,0.3,0.05)); CONVM.fire=new THREE.MeshBasicMaterial({color:0x3a2a20}); g.add(mesh(G.box,CONVM.fire,-0.95,0.45,-0.59,0.32,0.18,0.03)); // 焚き口
+  const hop=mesh(G.cone6,mat(0x6a7076),0.15,1.85,0.15,0.45,0.5,0.45); hop.rotation.x=Math.PI; g.add(outline(hop,0.04)); // 鱗を入れる口
+  g.add(outline(mesh(G.cyl8,mat(0x3a3e42),0.55,2.3,0.45,0.12,1.7,0.12),0.04)); g.add(mesh(G.cyl8,mat(dark),0.55,3.18,0.45,0.17,0.08,0.17)); // 煙突
+  g.add(outline(mesh(G.cyl8,mat(0x7a5a3c),1.2,0.82,0.25,0.32,1.15,0.32),0.04)); for(const y of [0.45,0.82,1.2]) g.add(mesh(G.cyl8,mat(0x5a4632),1.2,y,0.25,0.335,0.04,0.335)); // 横の釜
+  const pipe=mesh(G.cyl8,mat(0x8a7a5a),0.85,1.1,0.25,0.06,0.5,0.06); pipe.rotation.z=Math.PI/2; g.add(pipe);
+  g.add(mesh(G.box,mat(0x8a8e90),-0.25,0.5,-0.82,0.75,0.08,0.36)); // 受け皿
+  CONVM.tray=new THREE.Group(); for(const [dx,ry] of [[-0.12,-0.4],[0.1,0.35]]){ const sc=mesh(G.sphM,mat(0x5f8fc0),-0.25+dx,0.57,-0.82,0.11,0.025,0.14); sc.rotation.y=ry; CONVM.tray.add(sc); } g.add(CONVM.tray); // できた鱗
+  for(let i=0;i<3;i++){ const lg=mesh(G.cyl8,mat(0x9a7650),-1.45,0.36+i*0.17-(i===2?0.02:0),-0.35+(i===2?0.18:i*0.36),0.08,0.7,0.08); lg.rotation.x=Math.PI/2; g.add(lg); } // 燃料の薪
+  castAll(g); g.visible=false; world.add(g); CONVM.g=g;
+  CONVM.col=addOBox(x,z,CONV.W,CONV.D,0,'house',{h:2,active:false}); }
+function convApply(){ const c=prog.conv, on=!!(c&&c.built); if(!CONVM.g){ if(!on) return; convBuildModel(); } CONVM.g.visible=on; CONVM.col.active=on; convVis(); } // 建てるまでは形も当たり判定も作らない（ほかの計算に影響させない）
+function convVis(){ const c=prog.conv; if(!CONVM.g||!c) return; const run=c.built&&c.q>0; CONVM.tray.visible=c.out>0;
+  CONVM.win.color.setHex(run?0x6fd8ff:0x22303a); CONVM.fire.color.setHex(run?0xff8a3a:0x3a2a20); }
+function convDist(){ const p=CONV.pos; return Math.hypot(Math.max(0,Math.abs(P.x-p.x)-CONV.W/2),Math.max(0,Math.abs(P.z-p.z)-CONV.D/2)); }
+function convFuelText(n=1){ return Object.entries(CONV.rec.fuel).map(([k,v])=>`${RNAME[k]}${v*n}`).join('・'); }
+function convState(){ const c=prog.conv, r=CONV.rec; if(!c.q) return c.out?'止まっている':'止まっている（燃料と鱗を入れると動く）';
+  const k=Math.min(3,Math.floor(c.t/r.time*3)); return `変換中 ${'■'.repeat(k)+'□'.repeat(3-k)} 残り${Math.ceil(r.time-c.t)}秒（あと${c.q}個）`; }
+function convInteractables(L){ const c=prog.conv; if(!c||!c.built) return; const d=convDist(); if(d>1.5) return; const r=CONV.rec, ch=[];
+  if(c.out>0) ch.push({label:`${RNAME[r.to]}を取り出す（${c.out}）`,act:convTake});
+  if(c.q<CONV.maxQ) ch.push({label:`${RNAME[r.from]}を入れる（${RNAME[r.from]}1・燃料 ${convFuelText()}）　所持 ${inv[r.from]||0}`,act:()=>convPut(1)});
+  if(c.q<CONV.maxQ-1&&(inv[r.from]||0)>=2) ch.push({label:`入れられるだけ入れる（最大${CONV.maxQ-c.q}個）`,act:()=>convPut(CONV.maxQ)});
+  L.push({d,label:`変換炉：${convState()}${c.out?`　${RNAME[r.to]} ${c.out}`:''}`,act:()=>ch.length?chooseDefense('変換炉',ch):(sfx('deny'),toast('いっぱい。変換が終わるまで待つ',true))}); }
+function convPut(n){ const c=prog.conv, r=CONV.rec; let k=0;
+  while(k<n&&c.q<CONV.maxQ&&(inv[r.from]||0)>=1&&canAfford(r.fuel)){ inv[r.from]--; for(const f in r.fuel) inv[f]-=r.fuel[f]; c.q++; k++; }
+  if(!k){ sfx('deny'); toast((inv[r.from]||0)<1?`${RNAME[r.from]}がない`:c.q>=CONV.maxQ?'いっぱい。変換が終わるまで待つ':`燃料が足りない（1つにつき ${convFuelText()}）`,true); return; }
+  sfx('craft'); toast(`変換炉に${RNAME[r.from]}を${k}つ入れた（燃料 ${convFuelText(k)}）。1つ${r.time}秒かかる`); convVis(); saveGame(); }
+function convTake(){ const c=prog.conv, r=CONV.rec; if(!c.out) return; const n=c.out; inv[r.to]=(inv[r.to]||0)+n; c.out=0; sfx('pickup'); toast(`${RNAME[r.to]} +${n}`); convVis(); saveGame(); }
+function convUpdate(dt){ const c=prog.conv; if(!c||!c.built||c.q<=0) return; const r=CONV.rec; c.t+=dt;
+  if(c.t>=r.time){ c.t=0; c.q--; c.out++; convVis(); toast(`変換炉：${RNAME[r.to]}ができた（取り出せるのは${c.out}）`); }
+  if(CONVM.g&&CONVM.g.visible){ CONVM.win.color.setHSL(0.54,0.85,0.62+0.12*Math.sin(S.time*3.1)); CONVM.smokeT-=dt;
+    if(CONVM.smokeT<=0&&dist(P.x,P.z,CONV.pos.x,CONV.pos.z)<80){ CONVM.smokeT=0.5; const g=CONVM.g.position; puff(g.x+0.55,g.y+3.25,g.z+0.45,0.15,0.9,0.05,0.35,0xb8b4ac,1.4); } } }
 
 // ================= タイトル画面のカメラ（v0.26.1） =================
 const TITLECAM={p:[161,6.5,31],l:[151,9,160],fov:50};
@@ -4012,7 +4067,9 @@ const F31={on:true};
 // ---- 育成：レベル ----
 const XP={kill:{deer:14,weasel:8,monkey:10,boar:15,bear:40,boss:150,mutant:60},quest:20,harvest:5,clue:15,lv:[0,100,250,450,700],max:5,hpStep:10};
 function f31LvOf(exp){ let lv=1; for(let i=1;i<XP.lv.length;i++) if(exp>=XP.lv[i]) lv=i+1; return Math.min(XP.max,lv); }
-function f31MaxHp(lv){ return 100+XP.hpStep*((lv||1)-1); }
+function f31MaxHp(lv){ return Math.round((100+XP.hpStep*((lv||1)-1))*f47HpMul()); } // v0.63：変異鱗の防具で体力が吸われる
+function f47HpMul(){ const g=typeof prog!=='undefined'&&prog&&prog.gear; if(!g) return 1; let l=0; for(const slot of G47S) l+=G47[g.equip[slot]]?.hpLoss||0; return Math.max(0.1,1-l); }
+function f47Count(set){ const g=prog&&prog.gear; if(!g) return 0; let n=0; for(const slot of G47S) if(G47[g.equip[slot]]?.set===set) n++; return n; }
 function f31Xp(n,why){ if(!(n>0)||!prog) return; const before=prog.level||1; prog.exp=Math.min(XP.lv[XP.max-1],(prog.exp||0)+n); const lv=f31LvOf(prog.exp);
   if(lv>before){ prog.level=lv; const add=f31MaxHp(lv)-P.maxHp; P.maxHp=f31MaxHp(lv); if(add>0) P.hp=Math.min(P.maxHp,P.hp+add);
     floatText(P.x,2.6,P.z,`Lv${lv}`,'#ffe08a'); if(AC&&!S.muted){ tone(784,0.12,'triangle',0.05); tone(1046,0.18,'triangle',0.05,0,0.11); } } else prog.level=lv; }
@@ -5114,6 +5171,7 @@ function weaponFineDetail(w,id){
   }
 }
 function makeWeapon(id){
+  if(SCALE_ARMS[id]){ const g=makeWeapon(SCALE_ARMS[id]); scaleArmDeco(g,id); return g; } // v0.63：元の武器の形に鱗と青い光を足す
   if(id==='axeStone'||id==='axeIron'||id==='club'||id==='bamboo'||id==='hammerStone'||id==='pickIron'){ const g=makeArm(id); weaponFineDetail(g,id);
     if(id==='axeStone'||id==='axeIron'){ // v0.45：斧の刃先を明るく切り出し、柄との締め輪を追加（鉈と明確に別物の見た目へ）
       const iron=id==='axeIron';
@@ -5149,6 +5207,47 @@ function makeWeapon(id){
   }
   castAll(w); optimizeModel(w,charVC,0.02);
   return w;
+}
+// ---- v0.63：鱗の武器の飾り（元の武器に、鱗の板と青い光を足す。光は scaleFxUpdate で脈打つ） ----
+function scaleGlowMat(op){ const m=new THREE.MeshBasicMaterial({color:0x6fd8ff,transparent:true,opacity:op,blending:THREE.AdditiveBlending,depthWrite:false}); m.userData.base=op; SCALE_FX.glow.push(m); return m; }
+function scaleArmDeco(g,id){ const fam=FAM[id], pl=mat(0x3f6a92), hi=mat(0x8fbad8), edge=scaleGlowMat(0.55), haze=scaleGlowMat(0.2);
+  const add=(geo,m,x,y,z,sx,sy,sz,rx=0,ry=0)=>{ const o=mesh(geo,m,x,y,z,sx,sy,sz); o.rotation.set(rx,ry,0); g.add(o); return o; };
+  if(fam==='nata'){ for(let i=0;i<3;i++) for(const sx of [-1,1]){ add(G.sphM,pl,sx*0.03,-0.62-i*0.24,0.0,0.012,0.08,0.09); add(G.sphM,hi,sx*0.036,-0.6-i*0.24,0.0,0.006,0.04,0.045); }
+    add(G.box,edge,0,-0.92,0.27,0.08,1.0,0.06); add(G.box,haze,0,-0.9,0.06,0.09,1.08,0.44); }
+  else if(fam==='axe'){ for(const sx of [-1,1]) for(const z of [0.06,0.2]){ add(G.sphM,pl,sx*0.042,-1.02,z,0.012,0.07,0.065); add(G.sphM,hi,sx*0.048,-1.0,z,0.006,0.035,0.032); }
+    add(G.box,edge,0,-1.02,0.33,0.1,0.34,0.07); add(G.box,haze,0,-1.02,0.13,0.11,0.28,0.42); }
+  else if(fam==='club'){ for(let i=0;i<6;i++) for(const y of [-0.98,-1.18]){ const a=i/6*TAU+(y<-1.1?0.5:0), r=y<-1.1?0.135:0.12; add(G.sphM,pl,Math.sin(a)*r,y,Math.cos(a)*r,0.06,0.07,0.018,0,a); }
+    add(G.sphM,haze,0,-1.08,0,0.2,0.32,0.2); add(G.sphM,edge,0,-1.08,0,0.15,0.26,0.15); }
+  else { for(let i=0;i<5;i++){ const a=i/5*TAU; add(G.sphM,pl,Math.sin(a)*0.07,-1.52,Math.cos(a)*0.07,0.04,0.07,0.014,0,a); }
+    add(G.sphM,edge,0,-2.0,0,0.06,0.32,0.06); add(G.sphM,haze,0,-1.95,0,0.12,0.42,0.12); }
+}
+// ---- v0.63：鱗の光（漂う光の粒）・変異鱗の衝撃波 ----
+function scaleTex(){ if(SCALE_FX.tex) return SCALE_FX.tex; const c=document.createElement('canvas'); c.width=c.height=32; const x=c.getContext('2d'); const gr=x.createRadialGradient(16,16,0,16,16,16);
+  gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.35,'rgba(255,255,255,0.55)'); gr.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=gr; x.fillRect(0,0,32,32); return SCALE_FX.tex=new THREE.CanvasTexture(c); }
+function scaleMote(x,y,z,col,vy,life,size,vx=0,vz=0){ let s=SCALE_FX.pool.find(o=>!o.visible); if(!s){ if(SCALE_FX.pool.length>=48) return; s=new THREE.Sprite(new THREE.SpriteMaterial({map:scaleTex(),color:col,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false})); scene.add(s); SCALE_FX.pool.push(s); }
+  s.visible=true; s.material.color.setHex(col); s.position.set(x,y,z); s.scale.setScalar(size); s.userData.m={vx,vy,vz,life,t:0,size}; }
+function scaleWave(){ SCALE_FX.charge=0; let n=0;
+  for(const e of enemies){ if(e.removed||e.state==='dead') continue; const d=dist(e.x,e.z,P.x,P.z); if(d-e.r>SCALE_WAVE.radius) continue;
+    const a=d>0.01?Math.atan2(e.x-P.x,e.z-P.z):P.facing, D=SCALE_WAVE.push[e.type]??SCALE_WAVE.pushDef; e.pushV={vx:Math.sin(a)*D*6,vz:Math.cos(a)*D*6}; n++; } // 押し出す速さ＝距離×6（毎秒6の割合で弱まるので、ほぼ D だけ動く）
+  if(!SCALE_FX.ring){ const m=new THREE.Mesh(new THREE.RingGeometry(0.82,1,48),new THREE.MeshBasicMaterial({color:0xb070e0,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide})); m.rotation.x=-Math.PI/2; scene.add(m); SCALE_FX.ring=m; }
+  SCALE_FX.ring.position.set(P.x,groundH(P.x,P.z)+0.15,P.z); SCALE_FX.ringT=0; SCALE_FX.ring.visible=true;
+  for(let i=0;i<14;i++){ const a=i/14*TAU; scaleMote(P.x,groundH(P.x,P.z)+0.6,P.z,0xb070e0,0.4,0.6,0.35,Math.sin(a)*7,Math.cos(a)*7); }
+  floatText(P.x,2.5,P.z,'衝撃波','#c9a0ff',true); sfx('stun'); S.shake=Math.max(S.shake,0.35); return n; }
+function scaleFxUpdate(dt){
+  for(const s of SCALE_FX.pool){ if(!s.visible) continue; const u=s.userData.m; u.t+=dt; if(u.t>=u.life){ s.visible=false; continue; }
+    s.position.x+=u.vx*dt; s.position.y+=u.vy*dt; s.position.z+=u.vz*dt; u.vx*=Math.exp(-3*dt); u.vz*=Math.exp(-3*dt); const k=u.t/u.life; s.material.opacity=Math.sin(Math.PI*k)*0.85; s.scale.setScalar(u.size*(1-0.4*k)); }
+  if(SCALE_FX.glow.length){ const pl=0.65+0.35*Math.sin(S.time*4.2); for(const m of SCALE_FX.glow) m.opacity=m.userData.base*pl; }
+  if(SCALE_FX.ring&&SCALE_FX.ring.visible){ SCALE_FX.ringT+=dt; const k=Math.min(1,SCALE_FX.ringT/0.45); SCALE_FX.ring.scale.setScalar(0.6+SCALE_WAVE.radius*k); SCALE_FX.ring.material.opacity=0.85*(1-k); if(k>=1) SCALE_FX.ring.visible=false; }
+  if(S.mode!=='playing'||P.dead){ return; }
+  const gy=groundH(P.x,P.z), w=WEAPONS[P.weapon];
+  // 鱗の武器：刃から青い光の粒が立つ（乱数は鱗の装備があるときだけ使う。防衛戦の測定と同じ結果を保つため）
+  if(w&&w.scale&&weaponMesh&&weaponMesh.visible&&Math.random()<dt*7){ const v=(SCALE_FX.v||(SCALE_FX.v=new THREE.Vector3())); weaponMesh.localToWorld(v.set(0,FAM[P.weapon]==='spear'?-1.9:-0.95,0.12)); scaleMote(v.x,v.y,v.z,0x7fdcff,0.45,0.7,0.12); }
+  const nb=f47Count('blue'), nr=f47Count('raw');
+  if(nb&&Math.random()<dt*nb*3.5){ const a=Math.random()*TAU, r=0.32+Math.random()*0.22; scaleMote(P.x+Math.sin(a)*r,gy+0.15+Math.random()*1.5,P.z+Math.cos(a)*r,0x6fd8ff,0.55,1.1,0.2); }
+  if(nr===4){ SCALE_FX.charge=Math.min(SCALE_WAVE.charge,SCALE_FX.charge+dt); const full=SCALE_FX.charge>=SCALE_WAVE.charge;
+    if(full&&enemies.some(e=>!e.removed&&e.state!=='dead'&&dist(e.x,e.z,P.x,P.z)-e.r<SCALE_WAVE.trigger)) scaleWave(); }
+  else SCALE_FX.charge=0;
+  if(nr&&Math.random()<dt*(nr*1.6+(nr===4?SCALE_FX.charge/SCALE_WAVE.charge*6:0))){ const a=Math.random()*TAU, r=0.3+Math.random()*0.25; scaleMote(P.x+Math.sin(a)*r,gy+0.1+Math.random()*1.2,P.z+Math.cos(a)*r,nr===4&&SCALE_FX.charge>=SCALE_WAVE.charge?0xd070ff:0x8a4aa0,0.7,0.9,0.21); }
 }
 // ---- 獣：一続きの体（爪・鼻先・耳・蹄も体の一部）。人とは逆に、角ばった面で硬く見せる ----
 SDF.cylZ=(px,py,pz,c,r,h,rd)=>{ const dx=Math.hypot(px-c[0],py-c[1])-r+rd, dz=Math.abs(pz-c[2])-h+rd; return Math.min(Math.max(dx,dz),0)+Math.hypot(Math.max(dx,0),Math.max(dz,0))-rd; };
@@ -5666,10 +5765,21 @@ const G47={
  tracker_chest:{slot:'chest',name:'沢追いの軽装上着',set:'tracker',desc:'被ダメージ -2%・スタミナ回復速度 +6%。',cut:.02,regen:.06,cost:{hide:2,rope:2}},
  tracker_legs:{slot:'legs',name:'沢追いの脚衣',set:'tracker',desc:'被ダメージ -2%・通常移動速度 +3%。',cut:.02,speed:.03,cost:{hide:2,straw:2,rope:1}},
  tracker_feet:{slot:'feet',name:'沢追いの足袋靴',set:'tracker',desc:'被ダメージ -1%・回避スタミナ消費 -6%。',cut:.01,dodge:.06,cost:{hide:1,rope:2}},
+ // v0.63：鱗の防具（2026-11-13 ユーザー決定。名前・数値は暫定。docs/mutant-scale-uses.md）
+ // 青鱗：加工した鱗で作る。青いオーラと高い防御力（4部位の軽減の上限を capUp だけ上げる）。ほかの防具より明らかに高い
+ blue_head:{slot:'head',name:'青鱗の頭巾',set:'blue',desc:'被ダメージ -5%。青い光をまとう。',cut:.05,capUp:.0375,cost:{procScale:3,hide:3,rope:2},vis:()=>inv.procScale>0||!!prog.conv?.built},
+ blue_chest:{slot:'chest',name:'青鱗の胴着',set:'blue',desc:'被ダメージ -8%。青い光をまとう。',cut:.08,capUp:.0375,cost:{procScale:4,hide:4,iron:2,rope:2},vis:()=>inv.procScale>0||!!prog.conv?.built},
+ blue_legs:{slot:'legs',name:'青鱗の脚衣',set:'blue',desc:'被ダメージ -6%。青い光をまとう。',cut:.06,capUp:.0375,cost:{procScale:3,hide:3,rope:2},vis:()=>inv.procScale>0||!!prog.conv?.built},
+ blue_feet:{slot:'feet',name:'青鱗の脚絆',set:'blue',desc:'被ダメージ -5%。青い光をまとう。',cut:.05,capUp:.0375,cost:{procScale:2,hide:2,rope:2},vis:()=>inv.procScale>0||!!prog.conv?.built,setNote:'青鱗の4部位がそろうと、4部位の軽減の上限が15%から30%に上がる。'},
+ // 変異鱗：変異した鱗をそのまま使う。体力を吸われる（1部位で最大体力 -7.5%、4部位で0.7倍）が、身のこなしが大きく上がり、4部位そろうと力をためて衝撃波を放つ
+ raw_head:{slot:'head',name:'変異鱗の頭巾',set:'raw',desc:'最大体力 -7.5%・通常移動 +5%・回避消費 -5%。',cut:.02,speed:.05,dodge:.05,hpLoss:.075,cost:{mutScale:2,hide:2,rope:1},vis:()=>inv.mutScale>0},
+ raw_chest:{slot:'chest',name:'変異鱗の胴着',set:'raw',desc:'最大体力 -7.5%・通常移動 +5%・回避消費 -5%。',cut:.02,speed:.05,dodge:.05,hpLoss:.075,cost:{mutScale:3,hide:3,rope:2},vis:()=>inv.mutScale>0},
+ raw_legs:{slot:'legs',name:'変異鱗の脚衣',set:'raw',desc:'最大体力 -7.5%・通常移動 +5%・回避消費 -5%。',cut:.02,speed:.05,dodge:.05,hpLoss:.075,cost:{mutScale:2,hide:2,rope:1},vis:()=>inv.mutScale>0},
+ raw_feet:{slot:'feet',name:'変異鱗の脚絆',set:'raw',desc:'最大体力 -7.5%・通常移動 +5%・回避消費 -5%。',cut:.02,speed:.05,dodge:.05,hpLoss:.075,cost:{mutScale:2,hide:2,rope:1},vis:()=>inv.mutScale>0,setNote:'変異鱗の4部位がそろうと、10秒ごとに力がたまり、近くに獣が来ると衝撃波で周りの獣を吹き飛ばす（ダメージはない）。'},
  legacy1_chest:{slot:'chest',name:'旧式の籠手付き作業着',set:'legacy1',desc:'引き継いだ籠手。被ダメージ -15%。',cut:.15},
  legacy2_chest:{slot:'chest',name:'旧式の鉄籠手付き作業着',set:'legacy2',desc:'引き継いだ鉄籠手。被ダメージ -25%。',cut:.25}
 };
-const G47SETS={forest:'山守',tracker:'沢追い'};
+const G47SETS={forest:'山守',tracker:'沢追い',blue:'青鱗',raw:'変異鱗'};
 const F47_ARMOR_CAP={slots:.15,total:.40}; // 4部位15%、籠手込み40%（暫定）
 const F47_BASE_TINT={chest:0xe0d2ba,legs:0xc6bdaa,feet:0xc0a57c};
 function f47Fresh(){return {owned:['work_chest','work_legs','work_feet'],equip:{head:null,chest:'work_chest',legs:'work_legs',feet:'work_feet'}};}
@@ -5686,18 +5796,24 @@ function f47Stats(){
  const g=prog.gear||f47Fresh(),counts={};for(const slot of G47S){const a=G47[g.equip[slot]];if(a)counts[a.set]=(counts[a.set]||0)+1;}
  const out={cut:0,stam:0,dodge:0,steady:0,knock:0,regen:0,speed:0,stealth:0,set:null};
  for(const slot of G47S){const a=G47[g.equip[slot]];if(!a)continue;const full=!!G47SETS[a.set]&&counts[a.set]===4,k=full?1.5:1;if(full)out.set=a.set;for(const key in out)if(key!=='set')out[key]+=(a[key]||0)*k;}
- out.slotCut=Math.min(F47_ARMOR_CAP.slots,out.cut);
+ let capUp=0;for(const slot of G47S)capUp+=G47[g.equip[slot]]?.capUp||0; // v0.63：青鱗は4部位の上限を上げる
+ out.slotCut=Math.min(F47_ARMOR_CAP.slots+capUp,out.cut);
  out.gloveCut=ARMOR[inv.armor]?.cut||0;
  out.cut=Math.min(F47_ARMOR_CAP.total,out.slotCut+out.gloveCut);
  return out;
 }
+// v0.63：鱗の防具の見た目は仮。形は山守・沢追いを借り、色だけ変える（P2 の防具の作り直しが承認されたら、専用の形にする）
+const F47_VIS={blue:{v:'forest',tint:0x9cc2f0},raw:{v:'tracker',tint:0x9a7c98}};
+function f47Tint(layer,tint){ layer.traverse(o=>{ if(!o.isMesh||!o.material||Array.isArray(o.material)||o.material===outlineMat) return; if(!o.userData.m0) o.userData.m0=o.material; if(!tint){ if(o.material!==o.userData.m0) o.material=o.userData.m0; return; }
+  const k='mt'+tint; if(!o.userData[k]){ const m=o.userData.m0.clone(); if(m.color) m.color.multiply(new THREE.Color(tint)); o.userData[k]=m; } o.material=o.userData[k]; }); }
 function f47ApplyVisual(){
  const g=prog.gear||f47Fresh();
  for(const slot of G47S){
-  const a=G47[g.equip[slot]],variant=a?.set==='basic'?'work':a?.set;
+  const a=G47[g.equip[slot]],variant=a?.set==='basic'?'work':F47_VIS[a?.set]?.v||a?.set, tint=F47_VIS[a?.set]?.tint||0;
   for(const layer of pm.layers[slot]){
    const glove=slot==='chest'&&layer.userData.style==='gloves';
    layer.visible=glove&&inv.armor>0?layer.userData.variant==='work':!!a&&variant===layer.userData.variant;
+   if(layer.userData.variant!=='work') f47Tint(layer,layer.visible?tint:0);
    if(layer.userData.variant==='work'&&layer.material?.color)layer.material.color.setHex(
     glove&&inv.armor>0?(inv.armor===2?0xaebcc4:0x9d8e77):
     a?.set==='basic'&&!glove?(F47_BASE_TINT[slot]||0xffffff):0xffffff);
@@ -5712,10 +5828,10 @@ function f47ApplyVisual(){
 function f47Equip(slot,id){
  if(!G47S.includes(slot)||P.dead||P.atk||P.dodge)return;
  if(id!==null&&(!prog.gear.owned.includes(id)||G47[id]?.slot!==slot))return;
- prog.gear.equip[slot]=id;f47ApplyVisual();saveGame();f34Body();f31Inv();
+ prog.gear.equip[slot]=id;f47ApplyVisual();{const mh=f31MaxHp(prog.level);if(mh!==P.maxHp){P.maxHp=mh;P.hp=Math.min(P.hp,mh);}}saveGame();f34Body();f31Inv(); // v0.63：防具で最大体力が変わる
 }
 function f47UI(){
- const g=prog.gear,st=f47Stats();let h='<section class="gear47"><h3>防具</h3><p>頭・胸・脚・靴を個別に着脱。山守・沢追いの4部位一式は特殊効果1.5倍。初期作業着に効果はありません。</p>';
+ const g=prog.gear,st=f47Stats();let h='<section class="gear47"><h3>防具</h3><p>頭・胸・脚・靴を個別に着脱。山守・沢追い・青鱗・変異鱗の4部位一式は特殊効果1.5倍。初期作業着に効果はありません。</p>';
  h+=`<p>籠手（独立装備）：${ARMOR[inv.armor]?.name||'なし'}（-${Math.round(st.gloveCut*100)}%）</p>`;
  for(const slot of G47S){h+=`<label class="gear47row"><b>${G47N[slot]}</b><select data-gear47="${slot}" aria-label="${G47N[slot]}の防具"><option value="">装備なし</option>`;
  for(const id of g.owned){const a=G47[id];if(a.slot===slot)h+=`<option value="${id}" ${g.equip[slot]===id?'selected':''}>${a.name}</option>`;}
@@ -5723,6 +5839,7 @@ function f47UI(){
  }
  h+=`<p class="gear47total">合計：被ダメージ -${Math.round(st.cut*100)}%（4部位 -${Math.round(st.slotCut*100)}%＋籠手 -${Math.round(st.gloveCut*100)}%）${st.set?' ／ '+G47SETS[st.set]+'一式：特殊効果1.5倍':' ／ 一式ボーナス未発動'}</p>`;
  const effects=[['stam','攻撃消費','-'],['dodge','回避消費','-'],['steady','のけぞり時間','-'],['knock','吹き飛び','-'],['regen','スタミナ回復','+'],['speed','通常移動','+'],['stealth','視認距離','-']];
+ const hm=f47HpMul(); if(hm<1) h+=`<p>最大体力 ×${hm.toFixed(2)}（変異鱗に吸われている）${f47Count('raw')===4?' ／ 変異鱗一式：衝撃波':''}</p>`;
  h+='<p>'+effects.filter(([k])=>st[k]>0).map(([k,n,sg])=>n+sg+Math.round(st[k]*100)+'%').join(' ／ ')+'</p><p>未装備の衣服・防具は所持品に残ります。新しい防具は作業台で製作できます。</p></section>';return h;
 }
 
@@ -5740,6 +5857,11 @@ const WEAPONS={
  axeIron:{name:'鉄の斧',grade:'良質な斧',light:16,heavy:44,range:2.5,maxDur:240,chop:3,wear:0.15},
  club:{name:'木の棍棒',light:11,heavy:32,range:2.6,maxDur:140,chop:0},
  bamboo:{name:'竹槍',light:13,heavy:30,range:3.4,maxDur:80,chop:0},
+ // v0.63：鱗の武器（加工した鱗で強化。青く光る・高い威力。名前・数値は暫定）
+ scNata:{name:'鱗の鉈',light:26,heavy:64,range:2.7,maxDur:260,chop:1,scale:'blue'},
+ scAxe:{name:'鱗の斧',grade:'鱗の斧',light:22,heavy:60,range:2.6,maxDur:300,chop:3.5,wear:0.12,scale:'blue'},
+ scClub:{name:'鱗の棍棒',light:20,heavy:52,range:2.8,maxDur:240,chop:0,scale:'blue'},
+ scSpear:{name:'鱗の槍',light:30,heavy:78,range:3.4,maxDur:360,chop:0,scale:'blue'},
 };
 // 装備武器の参照を一元化。null／不正なIDは素手として扱い、未定義参照を防ぐ。
 function equippedWeapon(){ return P.weapon&&WEAPONS[P.weapon]?WEAPONS[P.weapon]:null; }
@@ -5836,8 +5958,8 @@ function chapter2Panel(n,st,bx){
   if(!ev.kind)f9Btn(bx,'npc_chapter2',done?'第二章の防衛戦に再挑戦':'第二章の防衛戦を始める',startChapter2Defense,{pri:1});
 }
 function freshState(){
-  inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,baitKit:0,onigiri:1,bento:0,grilledVeg:0,herbPorridge:0,fang:0,mutScale:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0};
-  prog={gear:f47Fresh(),stage:'talk',unlockTrap:false,unlockBoss:false,clues:[false,false,false],bossDefeated:false,scoutTower:false,scoutWarned:false,scoutRaidWarned:false,prepT:150,gatherT:0,introSeen:false,lastSaveT:0,townRequests:loadTownRequests(),g4:g4Fresh(),f4:f4Fresh(),level:1,exp:0,mastery:{nata:0,axe:0,club:0,spear:0},xph:0}; prog.f7=f7FromInv(); f7Sync(); prog.f8=f8Fresh(); prog.f9=f9Fresh(); prog.f10=f10Fresh(); prog.chapter2=chapter2State(null,false);
+  inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,baitKit:0,onigiri:1,bento:0,grilledVeg:0,herbPorridge:0,fang:0,mutScale:0,procScale:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0};
+  prog={gear:f47Fresh(),stage:'talk',unlockTrap:false,unlockBoss:false,clues:[false,false,false],bossDefeated:false,scoutTower:false,scoutWarned:false,scoutRaidWarned:false,prepT:150,gatherT:0,introSeen:false,lastSaveT:0,townRequests:loadTownRequests(),g4:g4Fresh(),f4:f4Fresh(),level:1,exp:0,mastery:{nata:0,axe:0,club:0,spear:0},xph:0}; prog.f7=f7FromInv(); f7Sync(); prog.f8=f8Fresh(); prog.conv=convFresh(); prog.f9=f9Fresh(); prog.f10=f10Fresh(); prog.chapter2=chapter2State(null,false);
   stats={kills:0,deaths:0,crafts:0,time:0,perfect:0,hunt:loadHuntRecords()};
   P.lvx48=0;P.lvz48=0;
   P.maxHp=100; P.hp=100; P.full=100; P.weapon='nata1'; P.dur=120; prog.arms={nata1:120}; prog.f5=f5Fresh(); P.dead=false; P.atk=null; P.dodge=null; P.buffer=null; P.stagger=0; P.buffT=0; P.vegT=0; P.porridgeT=0; resetCombat();
@@ -5863,12 +5985,12 @@ function buildHolsters(){
   HOL.hip=new THREE.Group(); HOL.hip.position.set(bp.x+0.26,bp.y-0.05,bp.z+0.02); HOL.hip.rotation.set(-0.5,0,-0.1); pm.body.add(HOL.hip); HOL.hip.position.set(-0.25,-0.08,-0.03); // 左腰、刃を後ろ下
   HOL.back=new THREE.Group(); HOL.back.position.set(bp.x+0.12,bp.y+0.42,bp.z-0.17); HOL.back.rotation.set(-2.45,0,0.3); pm.chest.add(HOL.back); HOL.back.position.set(0.16,-0.10,-0.20); // 背中に頭上へ
   for(const g of [HOL.hip,HOL.back]) g.add(mesh(G.box,mat(0x453626),0.03,-0.3,-0.05,0.09,0.62,0.11)); // 簡素な革と木の鞘
-  for(const id of ['nata1','nata2','nata3','axeIron','axeStone']){ const m=makeWeapon(id); m.scale.setScalar(f47WeaponScale(id)); m.visible=false; HOL.mesh[id]=m; }
+  for(const id of ['nata1','nata2','nata3','axeIron','axeStone','scNata','scAxe']){ const m=makeWeapon(id); m.scale.setScalar(f47WeaponScale(id)); m.visible=false; HOL.mesh[id]=m; }
 }
 function updHolster(){ if(typeof prog==='undefined'||!prog) return; // v0.45：初期化前に呼ばれても無害化
   buildHolsters();
   const fam=l=>l.find(id=>prog.arms[id]!=null);
-  const nata=fam(['nata3','nata2','nata1']), axe=fam(['axeIron','axeStone']); HOL.hip.visible=!!nata;HOL.back.visible=!!axe; // 各系統で一番良い物だけ
+  const nata=fam(['scNata','nata3','nata2','nata1']), axe=fam(['scAxe','axeIron','axeStone']); HOL.hip.visible=!!nata;HOL.back.visible=!!axe; // 各系統で一番良い物だけ
   for(const id in HOL.mesh) HOL.mesh[id].visible=false;
   const put=(g,id)=>{ if(!id||id===P.weapon) return; const m=HOL.mesh[id]; if(m.parent!==g) g.add(m); m.position.set(0,0.06,0.06); m.visible=true; };
   put(HOL.hip,nata); put(HOL.back,axe);
@@ -6566,6 +6688,7 @@ function damageEnemy(e,dmg,kind,fromAng,info=null){
   const crit=mult>1||!!(info&&info.mv&&info.mv.counter);
   floatText(e.x,1.4+e.r*1.2,e.z,String(d),crit?'#f0c34a':'#ffffff',kind==='heavy'||crit);
   spawnParticles(e.x,1,e.z,kind==='heavy'?10:6,(e.type==='monkey'||e.type==='mutant')?0xd0b090:0xc9503c,kind==='heavy'?6:4);
+  if(info&&WEAPONS[info.weapon]?.scale) spawnParticles(e.x,1.1,e.z,kind==='heavy'?10:6,0x7fdcff,kind==='heavy'?6:4); // v0.63：鱗の武器は青い火花
   // 反応
   if(e.mode==='field'&&['idle','return','notice','search','probe','threat'].includes(e.state)){ e.state=e.type==='monkey'?'kite':'chase'; e.st=0; e.f10pose=null; if(e.type==='bear') e.f10fought=true; } // 攻撃されたらすぐ戦闘（F10 の新しい状態からも）
   const fell=c2ClimbFall(e); // v0.59：登っている最中に叩かれたサルは落ちる
@@ -7155,6 +7278,7 @@ function updateEnemies(dt){
     // プレイヤーとの重なり
     const d=dist(e.x,e.z,P.x,P.z), rs=e.r+P.r;
     if(d<rs&&d>0.001&&!P.dodge){ const push=(rs-d); if(e.type==='boss'){ P.x+=(P.x-e.x)/d*push; P.z+=(P.z-e.z)/d*push; resolve(P,false); } else { e.x+=(e.x-P.x)/d*push; e.z+=(e.z-P.z)/d*push; resolve(e,true,e.type==='monkey'); } }
+    if(e.pushV){ const V=e.pushV; e.x+=V.vx*dt; e.z+=V.vz*dt; const f=Math.exp(-6*dt); V.vx*=f; V.vz*=f; resolve(e,true,e.type==='monkey'); if(V.vx*V.vx+V.vz*V.vz<0.09) e.pushV=null; } // v0.63：変異鱗の衝撃波で押し出される
     updateEnemyAnim(e,dt); poiseLean(e); tryTrack(e,dt); // v0.45：移動中の獣が蹄跡を残す
     if(e.h36){ // v0.45：よろけバネ（頭→胴の順に遅れて戻る）。次フレームで anim が絶対値を再設定するため蓄積しない
       const H=e.h36; H.vx+=(-H.x*52-H.vx*7)*dt; H.vz+=(-H.z*52-H.vz*7)*dt; H.x+=H.vx*dt; H.z+=H.vz*dt;
@@ -7509,7 +7633,7 @@ function interactables(){
   for(const n of NPCS){ const d=dist(P.x,P.z,n.x,n.z); if(d<(n.y?3.6:2.3)) L.push({d:d+f9Pen(n),label:f9Label(n),act:()=>f9Interact(n)}); }
   { const d=dist(P.x,P.z,157,66.5); if(d<2.4) L.push({d,label:'作業台（クラフト・修理）',act:openCraft}); }
   if(F7.store){ const d=f7StoreDist(); if(d<1.7) L.push({d,label:f7StoreLabel(),act:openStore}); }
-  f8Interactables(L); f10Interactables(L);
+  f8Interactables(L); f10Interactables(L); convInteractables(L);
   const k36=trk36Nearby();if(k36)L.push({d:dist(P.x,P.z,k36.m.position.x,k36.m.position.z),label:'蹄跡を調べる',act:()=>trk36Inspect(k36)});
   for(const n of NODES){ if(!n.avail) continue; const d=dist(P.x,P.z,n.x,n.z); if(d<2.2) L.push({d,label:n.k==='wood'?'薪を拾う':n.chest?'栗を拾う':'大根を収穫する',act:()=>gatherNode(n)}); }
   for(const c of CLUES){ if(prog.clues[c.id]) continue; const d=dist(P.x,P.z,c.x,c.z); if(d<2.4) L.push({d,label:`調べる：${c.title}`,act:()=>examineClue(c)}); }
@@ -7615,7 +7739,7 @@ function buildScoutTower(){
 }
 
 // ================= クラフト =================
-const RNAME={wood:'木材',food:'食料',hide:'獣素材',fang:'ヌシの牙',mutScale:'変異した鱗',straw:'藁',rope:'縄',stone:'石',bamboo:'竹',iron:'屑鉄'};
+const RNAME={wood:'木材',food:'食料',hide:'獣素材',fang:'ヌシの牙',mutScale:'変異した鱗',procScale:'加工した鱗',straw:'藁',rope:'縄',stone:'石',bamboo:'竹',iron:'屑鉄'};
 const RECIPES=[
  {id:'onigiri',name:'おにぎり',cost:{food:2},desc:'塩をきかせて竹の皮で包んだ握り飯。体力+35・満腹+25。手持ちで約30分もつ（生の食料は約20分）。Q または 1 で食べる',give:()=>{foodAdd('onigiri',1);}},
  {id:'bento',name:'精進弁当',cost:{food:3,hide:1},desc:'煮しめと漬物の精進料理。体力+60・満腹+50・30秒間 攻撃力+30%。手持ちで約40分もつ。2 で食べる',give:()=>{foodAdd('bento',1);}},
@@ -7635,10 +7759,12 @@ const RECIPES=[
  {id:'club',name:'木の棍棒',cost:{wood:3},desc:'太い枝を削った棍棒。間合いが少し長い。木は切れない。耐久70',show:()=>prog.arms.club==null,give:()=>{armGain('club',true);}},
  {id:'bamboo',name:'竹槍',cost:{bamboo:3,rope:1},desc:'竹の先を斜めに削いで尖らせた槍。間合いが長い（3.4）。木は切れない。耐久40',show:()=>prog.arms.bamboo==null,lock:()=>prog.arms.axeStone==null&&prog.arms.axeIron==null,lockMsg:'穂先を削るのに石の手斧が要る',give:()=>{armGain('bamboo',true);}},
  {id:'axeIron',name:'鉄の斧（良質な斧）',cost:{iron:4,wood:2,rope:1},desc:'壊れた家のがれきから集めた屑鉄を打ち直した斧。木を切る力は鉈の3倍（太い杉も4回で倒れる）。武器としても強い。耐久120で減りにくい',show:()=>prog.arms.axeIron==null,lock:()=>prog.arms.axeStone==null,lockMsg:'まず石の手斧を作って、斧の形を覚える',give:()=>{ delete prog.arms.axeStone; if(P.weapon==='axeStone'){ P.weapon='axeIron'; P.dur=WEAPONS.axeIron.maxDur; } prog.arms.axeIron=WEAPONS.axeIron.maxDur; refreshWeaponMesh(); }},
+ ...Object.entries(SCALE_ARMS).map(([id,base])=>({id,name:WEAPONS[id].name,cost:SCALE_ARM_COST[id],desc:`${WEAPONS[base].name}に加工した鱗を打ち込んで鍛え直す。通常${WEAPONS[id].light}／強${WEAPONS[id].heavy}・リーチ${WEAPONS[id].range}・耐久${WEAPONS[id].maxDur}。青い光をまとう。${WEAPONS[base].name}はこの武器に変わる`,show:()=>prog.arms[base]!=null&&(inv.procScale>0||!!prog.conv?.built),give:()=>{armUpgrade(base,id);}})), // v0.63：鱗の武器（暫定）
+ {id:'convBuild',name:'変換炉を組み立てる',cost:CONV.build,desc:'特殊な素材を、人が使える形に変える炉。拠点の南東の隅に組み立てる。燃料の木材を入れて動かし、1つずつ時間をかけて変える（変異した鱗→加工した鱗）',show:()=>!prog.conv?.built&&(inv.mutScale>0||inv.procScale>0),give:()=>{ prog.conv.built=1; convApply(); toast('拠点の南東の隅に変換炉を組み立てた'); }}, // v0.63（暫定）
  {id:'cart',name:'一輪車',cost:{wood:5},desc:'丸太を3本積んで運べる。舗装した道では担ぐより速いが、田畑や山道では遅い。丸太置き場のそばに置く',show:()=>!prog.f4.hasCart,give:()=>{ prog.f4.hasCart=true; prog.f4.cart={x:F4.yard.x-2.5,z:F4.yard.z+1.5,a:0,push:false,logs:[]}; }},
  {id:'hammerStone',name:'石の槌（簡素な採石道具）',cost:{stone:3,wood:2,rope:1},desc:'硬い川石を柄に縛った槌。採石できる岩を割って石を取る（1回で石1、岩1つを8回）。耐久40。武器ではない（持ち替えに入らない）',show:()=>prog.f5.tools.hammerStone==null,give:()=>{toolGain('hammerStone');}},
  {id:'pickIron',name:'鉄のつるはし（良質な採石道具）',cost:{iron:4,wood:2,rope:1},desc:'屑鉄を打ち直したつるはし。1回で石2、岩1つを4回で割り切る。耐久100。武器ではない',show:()=>prog.f5.tools.pickIron==null,give:()=>{toolGain('pickIron');}},
- ...Object.entries(G47).filter(([id,a])=>a.cost).map(([id,a])=>({id:'gear_'+id,name:a.name,cost:a.cost,desc:a.desc+(a.set==='basic'?' 基礎防具。4部位の合計軽減は最大15%。':' '+G47SETS[a.set]+'系統。4部位一式で特殊効果が1.5倍。')+' 持ち物で着脱。',show:()=>!prog.gear.owned.includes(id),give:()=>{prog.gear.owned.push(id);}})),
+ ...Object.entries(G47).filter(([id,a])=>a.cost).map(([id,a])=>({id:'gear_'+id,name:a.name,cost:a.cost,desc:a.desc+(a.set==='basic'?' 基礎防具。4部位の合計軽減は最大15%。':' '+G47SETS[a.set]+'系統。4部位一式で特殊効果が1.5倍。')+(a.setNote?' '+a.setNote:'')+' 持ち物で着脱。',show:()=>!prog.gear.owned.includes(id)&&(!a.vis||a.vis()),give:()=>{prog.gear.owned.push(id);}})),
  {id:'fenceFix',name:'柵の修理（全か所）',cost:{wood:3},desc:'傷んだ・壊れた木柵を全て完全修理する。襲撃の準備では武器の手入れと木材を取り合う──守りを厚くするか、足元を整えるか',show:()=>GAPS.some(g=>g.fence.type&&(g.fence.broken||g.fence.hp<g.fence.max)),give:()=>{ let n=0; for(const g2 of GAPS){ const f=g2.fence; if(f.type&&(f.broken||f.hp<f.max)){ if(f.broken){ f.broken=false; f.hp=f.max; g2.col.active=true; } else f.hp=f.max; fenceVisual(g2); n++; } } if(n) toast(`柵を${n}か所修理した`); }},
  {id:'toolRepair',name:'採集道具の手入れ',cost:{wood:1},desc:'石の槌・鉄のつるはしの耐久を全回復する',show:()=>Object.keys(prog.f5.tools).some(k=>TOOLS[k]&&prog.f5.tools[k]<TOOLS[k].maxDur),give:()=>{ for(const k in prog.f5.tools) if(TOOLS[k]) prog.f5.tools[k]=TOOLS[k].maxDur; }},
  {id:'repair',name:'武器の手入れ',cost:{wood:1},desc:'武器の耐久を全回復する',show:()=>!!equippedWeapon(),give:()=>{ const w=equippedWeapon(); if(w) P.dur=w.maxDur; }}, // v0.45：素手では非表示
@@ -7652,7 +7778,7 @@ function craft(id){
   f7Flush(); if(!canAfford(r.cost)){ sfx('deny'); toast('素材が足りない',true); renderCraft(); return; }
   let fromStore=[]; for(const k in r.cost){ if(FOODS[k]){ const u=f7CraftTake(k,r.cost[k]); if(u.store>0) fromStore.push(`${FOODS[k].name}${u.store}`); } else inv[k]-=r.cost[k]; }
   r.give(); stats.crafts++; g4CheckQuests(); sfx('craft'); toast(`${r.name}を作った`+(fromStore.length?`（食料庫から${fromStore.join('・')}を使った）`:''));
-  if(r.id==='nata2'||r.id==='nata3'||r.id==='spear'||r.id==='axeStone'||r.id==='axeIron'||r.id==='club'||r.id==='bamboo') banner(WEAPONS[r.id]?WEAPONS[r.id].name:(equippedWeapon()?.name||'素手'),r.id==='axeStone'||r.id==='axeIron'?'木を切る力 ×'+WEAPONS[r.id].chop+'　持ち替えは R ／ 持ち物':'新しい武器を手に入れた　持ち替えは R ／ 持ち物',2.2);
+  if(r.id==='nata2'||r.id==='nata3'||r.id==='spear'||r.id==='axeStone'||r.id==='axeIron'||r.id==='club'||r.id==='bamboo'||SCALE_ARMS[r.id]) banner(WEAPONS[r.id]?WEAPONS[r.id].name:(equippedWeapon()?.name||'素手'),r.id==='axeStone'||r.id==='axeIron'?'木を切る力 ×'+WEAPONS[r.id].chop+'　持ち替えは R ／ 持ち物':'新しい武器を手に入れた　持ち替えは R ／ 持ち物',2.2);
   saveGame(); renderCraft();
 }
 // 縄をまとめて作る：作れる分だけ（最大5本）。材料の効率は1本と同じ。消費と加算は1回の処理で行う
@@ -7660,7 +7786,7 @@ function craftRope(max){ const n=Math.min(max,Math.floor((inv.straw||0)/3)); if(
 function renderCraft(){
   const list=$('craftList'); list.innerHTML='';
   const equipped=equippedWeapon();
-  f7Flush(); $('craftHave').textContent=`所持：木材 ${inv.wood}／食料 ${inv.food}${F7.store&&f7Count('food','store')?`（食料庫 ${f7Count('food','store')}）`:''}／獣素材 ${inv.hide}／藁 ${inv.straw}／縄 ${inv.rope}／石 ${inv.stone}／竹 ${inv.bamboo}／屑鉄 ${inv.iron}${inv.fang?`／ヌシの牙 ${inv.fang}`:''}　｜　武器：${equipped?`${equipped.name}（耐久 ${Math.ceil(P.dur)}/${equipped.maxDur}）`:'素手'} `;
+  f7Flush(); $('craftHave').textContent=`所持：木材 ${inv.wood}／食料 ${inv.food}${F7.store&&f7Count('food','store')?`（食料庫 ${f7Count('food','store')}）`:''}／獣素材 ${inv.hide}／藁 ${inv.straw}／縄 ${inv.rope}／石 ${inv.stone}／竹 ${inv.bamboo}／屑鉄 ${inv.iron}${inv.fang?`／ヌシの牙 ${inv.fang}`:''}${inv.mutScale?`／変異した鱗 ${inv.mutScale}`:''}${inv.procScale?`／加工した鱗 ${inv.procScale}`:''}　｜　武器：${equipped?`${equipped.name}（耐久 ${Math.ceil(P.dur)}/${equipped.maxDur}）`:'素手'} `;
   for(const r of RECIPES){
     if(r.show&&!r.show()) continue;
     const locked=r.lock&&r.lock();
@@ -7693,7 +7819,7 @@ function renderHuntRecords(){
 function openInv(){ f31Inv(); f34Body(); renderHuntRecords();
   stopBeastVoices51(); S.mode='menu'; keys.clear();
   const g=$('invGrid'); g.innerHTML='';
-  const items=[['木材',inv.wood],['食料',inv.food],['獣素材',inv.hide],['藁',inv.straw],['縄',inv.rope],['石',inv.stone],['竹',inv.bamboo],['屑鉄',inv.iron],['大根の種',inv.seed],['ヌシの牙',inv.fang],['変異した鱗',inv.mutScale],['おにぎり',inv.onigiri],['精進弁当',inv.bento],['木柵キット',inv.fenceKit],['トゲ柵キット',inv.spikeKit],['杭柵キット',inv.stakeKit],['くくり罠キット',inv.trapKit],['落とし穴キット',inv.pitKit],['おとり餌場キット',inv.baitKit]];
+  const items=[['木材',inv.wood],['食料',inv.food],['獣素材',inv.hide],['藁',inv.straw],['縄',inv.rope],['石',inv.stone],['竹',inv.bamboo],['屑鉄',inv.iron],['大根の種',inv.seed],['ヌシの牙',inv.fang],['変異した鱗',inv.mutScale],['加工した鱗',inv.procScale],['おにぎり',inv.onigiri],['精進弁当',inv.bento],['木柵キット',inv.fenceKit],['トゲ柵キット',inv.spikeKit],['杭柵キット',inv.stakeKit],['くくり罠キット',inv.trapKit],['落とし穴キット',inv.pitKit],['おとり餌場キット',inv.baitKit]];
   f7Flush(); const fk={'食料':'food','おにぎり':'onigiri','精進弁当':'bento'};
   for(const [n,v] of items){ if(v===0&&(n==='ヌシの牙'||n==='杭柵キット'||n==='大根の種')) continue; const d=document.createElement('div'); const k=fk[n]; let sub='';
     if(k&&v>0&&F7.store){ const w=f7Warn(k,'hand'); sub=`<small class="f7s">${w?`うち傷みかけ ${w}・`:''}最短の残り${f7Min(f7Left(k,'hand'))}</small>`; }
@@ -7895,7 +8021,7 @@ function saveGame(){
     const data={v:1,chapter2:prog.chapter2,inv,weapon:P.weapon,dur:P.dur,full:P.full,arms:prog.arms,f5:f5Save(),
       prog:Object.assign({stage:checkpointStage(),unlockTrap:prog.unlockTrap,unlockBoss:prog.unlockBoss,clues:prog.clues,bossDefeated:prog.bossDefeated,scoutTower:!!prog.scoutTower,scoutWarned:!!prog.scoutWarned,scoutRaidWarned:!!prog.scoutRaidWarned,townRequests:prog.townRequests},f31SaveProg()),
       fences:GAPS.map(g=>g.fence.type?{type:g.fence.type,hp:g.fence.broken?0:g.fence.hp}:null),
-      traps:traps.map(saveTrap),stats,nodes:NODES.map(n=>n.avail?1:0),g4:prog.g4,f4:f4Save(),f7:f7Save(),f8:f8Save(),f9:f9Save(),f10:f10Save()};
+      traps:traps.map(saveTrap),stats,nodes:NODES.map(n=>n.avail?1:0),g4:prog.g4,f4:f4Save(),f7:f7Save(),f8:f8Save(),f9:f9Save(),f10:f10Save(),conv:convSave()};
     localStorage.setItem(SAVE_KEY,JSON.stringify(data));
   }catch(e){ storageOK=false; }
 }
@@ -7939,6 +8065,7 @@ function applySave(d){
     prog.f10=f10Load(d.f10); // 古いセーブは「伏線はまだ調べていない」で始める
     prog.f9=f9Load(d.f9); // 古いセーブは「頼んでいない」で始める
     prog.f8=f8Load(d.f8); // 古いセーブは未開始のまま始める
+    prog.conv=convLoad(d.conv); // v0.63：変換炉（古いセーブは未建設）
     { const f=f7Load(d.f7); prog.f7=f||f7FromInv(); prog.f7Migrated=!f; f7Sync(); } // 古いセーブは今の個数を新品の束にする（1回だけ）
     const q=d.g4; if(q&&typeof q==='object'){ const g=prog.g4; g.board=!!q.board; g.hint=q.board?1:0; g.track=num(q.track,-1,-1,QUESTS.length-1); g.closure=q.closure?1:0;
       if(Array.isArray(q.fences)) g.fences=[0,1,2].map(i=>q.fences[i]?1:0);
@@ -7961,7 +8088,7 @@ function resetWorld(extra){
   for(const k of TRK36)scene.remove(k.m);
   TRK36.length=0;
   trk36Reset();
-  trackSpawns.length=0; trackShow=null; g4Apply(); f4Apply(); f5Apply(); f7Apply(); f8Apply(); f9Reset(); f10Apply();
+  trackSpawns.length=0; trackShow=null; g4Apply(); f4Apply(); f5Apply(); f7Apply(); f8Apply(); convApply(); f9Reset(); f10Apply();
   spawnFieldEnemies();
   GAPS.forEach((g,i)=>{ const f=extra&&extra.fences[i]; if(f&&(f.type==='wood'||f.type==='stake'||f.type==='spike')) setFence(g,f.type,num(f.hp,0,0,999)); else setFence(g,null); });
   traps.forEach((t,i)=>restoreTrap(t,extra&&extra.traps[i]));
@@ -8428,7 +8555,7 @@ function updateProgress(dt){ f31Tick(dt);
   }
   if(prog.stage==='toBoss'&&!bossActive&&bossE&&!prog.bossDefeated&&dist(P.x,P.z,ARENA.x,ARENA.z)<ARENA.r-3) startBoss();
   // 自動セーブ（イベント外のみ）
-  g4Update(dt); f8Update(dt); f10Clock(dt); f10TrUpdate(); // 共同菜園の成長も同じゲームの時間で進む。F10：昼と夜・痕跡
+  g4Update(dt); f8Update(dt); convUpdate(dt); scaleFxUpdate(dt); f10Clock(dt); f10TrUpdate(); // 共同菜園の成長も同じゲームの時間で進む。F10：昼と夜・痕跡
   prog.lastSaveT+=dt; if(prog.lastSaveT>30&&!ev.kind&&!bossActive){ prog.lastSaveT=0; saveGame(); }
 }
 function objective(){
@@ -8466,8 +8593,9 @@ function updateHUD(dt){
   if(P.full!==hudPrev.full){ hudPrev.t=4; hudPrev.full=P.full; } // v0.45：満腹の変化でだけ展開（耐久は手持ちバーの下へ移した）
   hudPrev.t=Math.max(0,hudPrev.t-dt); $('stats').classList.toggle('compact',hudPrev.t<=0);
   hbRefresh();
-  setTxt('buffTxt',(P.buffT>0?`精進の力 攻撃+30%（${Math.ceil(P.buffT)}秒）　`:'')+(P.full<=0?'空腹：自然回復しない':P.full<60||touchMode?'':'満腹：体力が少しずつ回復')); // スマホでは平常時の説明を省く
-  setTxt('rWood',inv.wood); setTxt('rFood',inv.food); setTxt('rHide',inv.hide); setTxt('rFence',inv.fenceKit); setTxt('rTrap',inv.trapKit); setTxt('rSpike',inv.spikeKit); setTxt('rPit',inv.pitKit); setTxt('rStake',inv.stakeKit); setTxt('rFang',inv.fang); setTxt('rMutScale',inv.mutScale);
+  setTxt('buffTxt',(P.buffT>0?`精進の力 攻撃+30%（${Math.ceil(P.buffT)}秒）　`:'')+(f47Count('raw')===4?`変異鱗：衝撃波 ${SCALE_FX.charge>=SCALE_WAVE.charge?'たまった':'あと'+Math.ceil(SCALE_WAVE.charge-SCALE_FX.charge)+'秒'}　`:'')+ // v0.63
+    (P.full<=0?'空腹：自然回復しない':P.full<60||touchMode?'':'満腹：体力が少しずつ回復')); // スマホでは平常時の説明を省く
+  setTxt('rWood',inv.wood); setTxt('rFood',inv.food); setTxt('rHide',inv.hide); setTxt('rFence',inv.fenceKit); setTxt('rTrap',inv.trapKit); setTxt('rSpike',inv.spikeKit); setTxt('rPit',inv.pitKit); setTxt('rStake',inv.stakeKit); setTxt('rFang',inv.fang); setTxt('rMutScale',inv.mutScale); setTxt('rProcScale',inv.procScale);
   { // v0.33：0の行は隠す。0→増えた瞬間は一瞬光る
     let anyTop=false;
     for(const [k,v] of [['rWood',inv.wood],['rFood',inv.food],['rHide',inv.hide],['rFence',inv.fenceKit],['rTrap',inv.trapKit],['rSpike',inv.spikeKit],['rPit',inv.pitKit]]){
@@ -8476,9 +8604,9 @@ function updateHUD(dt){
       resPrev[k]=v;
     }
     $('res').querySelector('hr').hidden=!anyTop;
-    $('res').hidden=!(anyTop||inv.fenceKit>0||inv.trapKit>0||(prog.unlockBoss&&inv.stakeKit>0)||inv.fang>0||inv.mutScale>0||prog.bossDefeated);
+    $('res').hidden=!(anyTop||inv.fenceKit>0||inv.trapKit>0||(prog.unlockBoss&&inv.stakeKit>0)||inv.fang>0||inv.mutScale>0||inv.procScale>0||prog.bossDefeated);
   }
-  $('rStakeRow').hidden=!prog.unlockBoss; $('rFangRow').hidden=!(inv.fang>0||prog.bossDefeated); $('rMutScaleRow').hidden=!(inv.mutScale>0);
+  $('rStakeRow').hidden=!prog.unlockBoss; $('rFangRow').hidden=!(inv.fang>0||prog.bossDefeated); $('rMutScaleRow').hidden=!(inv.mutScale>0); $('rProcScaleRow').hidden=!(inv.procScale>0);
   hbRefresh(); // v0.45：手持ちバー（数・傷みかけ印・耐久・選択・番号）はここで一括更新
   const [ot]=objective(); const ql=questLine(); const qt=ql?ql[0]:'';
   if(ot!==objOpen.last||qt!==objOpen.lastQ){ if(objOpen.last!==null) objOpen.t=6; objOpen.last=ot; objOpen.lastQ=qt; }
