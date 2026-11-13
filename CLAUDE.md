@@ -68,6 +68,7 @@
 | `docs/mutant-monkey-glb-check.md` | 変異したサル（Tripo の GLB）の検査・軽量化の試作・修正方針・確認事項。道具は `tools/models/` |
 | `docs/mutant-monkey-rig.md` | 変異したサルの骨・重み・動き（rig 1）・ゲーム用データ・確認動画の作り方 |
 | `docs/mutant-monkey-ai.md` | 変異したサルの AI（暫定の強さ・攻撃・初遭遇は逃げ去る・v0.62 の強敵化と「変異した鱗」・強さの測定結果）と試遊版 `previews/p2-mutant/` |
+| `docs/mutant-scale-uses.md` | 変異した鱗の使い道（2026-11-13 決定：加工・新しい装備と武器・九頭竜の力の攻撃・特殊な施設）と、作る前に決めること |
 | `docs/p2-investigation.md` | P2 統合指示書 v3.0 への初期調査（防具の原因・地理データ・スズキ・順序・確認事項） |
 | `docs/p1-sim-baseline.md` | 防衛戦の勝率測定ツールと基準値 |
 | `docs/p1-balance-report.md` | P1 の測定結果・調整（v0.55・v0.56 で反映）・未確認事項 |
