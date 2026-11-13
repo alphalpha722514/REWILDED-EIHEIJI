@@ -49,7 +49,7 @@
 
 ## 作業の進め方
 - main へ入れる前に、作業ブランチで検証する。変更は小さく分ける。
-- テスト：`node tests/chapter2-save.cjs`、`node tests/chapter2-defense.cjs`、`node tests/classic-body.cjs`、`node tests/death-penalty.cjs`、`node tests/combat-aim.cjs`。地域の往復は `python3 tests/region-browser.py`、上志比は `python3 tests/kamishihi-browser.py`（画面のない Chromium、各数分。`KAMI_SHOTS=フォルダ` で画面を撮る）。防衛戦の勝率は `tools/defense-sim.cjs`（`docs/p1-sim-baseline.md`）。画面の確認は Playwright（SwiftShader）で起動と表示を見る。
+- テスト：`node tests/chapter2-save.cjs`、`node tests/chapter2-defense.cjs`、`node tests/classic-body.cjs`、`node tests/death-penalty.cjs`、`node tests/combat-aim.cjs`。地域の往復は `python3 tests/region-browser.py`、上志比は `python3 tests/kamishihi-browser.py`（`KAMI_SHOTS=フォルダ` で画面を撮る）、変異したサルは `python3 tests/mutant-browser.py`（どれも画面のない Chromium、各数分）。防衛戦の勝率は `tools/defense-sim.cjs`（`docs/p1-sim-baseline.md`）。画面の確認は Playwright（SwiftShader）で起動と表示を見る。
 - 報告では「コードに存在／コミット済み／公開済み／PCで確認／iPhoneで確認」を区別する。実機で確かめていないことを確認済みと書かない。
 - 各フェーズで、変更履歴・使った3Dアセットと版・実装済み／未実装・テスト結果・未解決の不具合・セーブ互換・次の工程を `docs/` に残す。
 
@@ -67,6 +67,7 @@
 | `docs/p2-kamishihi-map.md` | 上志比の地図（出典・利用条件・座標と縮尺・広さ・作り直し方・ゲーム内の作り・確認・未実装） |
 | `docs/mutant-monkey-glb-check.md` | 変異したサル（Tripo の GLB）の検査・軽量化の試作・修正方針・確認事項。道具は `tools/models/` |
 | `docs/mutant-monkey-rig.md` | 変異したサルの骨・重み・動き（rig 1）・ゲーム用データ・確認動画の作り方 |
+| `docs/mutant-monkey-ai.md` | 変異したサルの AI（暫定の強さ・攻撃・初遭遇は逃げ去る）と試遊版 `previews/p2-mutant/` |
 | `docs/p2-investigation.md` | P2 統合指示書 v3.0 への初期調査（防具の原因・地理データ・スズキ・順序・確認事項） |
 | `docs/p1-sim-baseline.md` | 防衛戦の勝率測定ツールと基準値 |
 | `docs/p1-balance-report.md` | P1 の測定結果・調整（v0.55・v0.56 で反映）・未確認事項 |
@@ -74,4 +75,4 @@
 | `docs/combat-aim.md` | 攻撃の向きと当たり判定（v0.58） |
 
 - キャラクターの確認画像：`python3 tools/char-studio.py 出力.png player suzuki gen`（`player@forest` で防具の組を着せる。`STUDIO_POSE=1` で動きの姿勢。`STUDIO_HTML` で別の index.html）。
-- 試遊版の作り方：`python3 tools/build-p1-preview.py`（本編をコピーし、A／B／C ボタンと試遊用の保存キーを足して `previews/p1-balance/` を作る）。本編を変えたら作り直す。
+- 試遊版の作り方：`python3 tools/build-p1-preview.py`（防衛戦。A／B／C ボタン。`previews/p1-balance/`）と `python3 tools/build-p2-mutant-preview.py`（変異したサル。`previews/p2-mutant/`）。どちらも本編をコピーして試遊用の保存キーを足す。本編を変えたら作り直す。

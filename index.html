@@ -526,7 +526,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.60.1 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.61 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -3102,8 +3102,8 @@ Object.assign(MOVES,{
 const FAMC={nata:'NC',axe:'AC',club:'CC',spear:'SC'}, FAMS={nata:'NS',axe:'AS',club:'CS',spear:'SS'};
 const CTR={win:1.2, perfectT:0.18}; const SWAP={win:0.25, use:0.6, cd:1.5};
 // 体勢（HPと別。保存しない）
-const POISE={deer:{max:40,t:1.4,fl:1.0},weasel:{max:15,t:.9,fl:.7},monkey:{max:20,t:1.2,fl:0.8},boar:{max:50,t:1.6,fl:1.2},bear:{max:120,t:2.0,fl:0},boss:{max:300,t:2.5,fl:0}};
-const WIND_ST=['wind','goreWind','stompWind','chargeWind','dash','tusk'], REC_ST=['recover','strike','goreRec','chargeRec','retreat','tuskRec'];
+const POISE={deer:{max:40,t:1.4,fl:1.0},weasel:{max:15,t:.9,fl:.7},monkey:{max:20,t:1.2,fl:0.8},boar:{max:50,t:1.6,fl:1.2},bear:{max:120,t:2.0,fl:0},boss:{max:300,t:2.5,fl:0},mutant:{max:60,t:1.4,fl:1.0}};
+const WIND_ST=['wind','goreWind','stompWind','chargeWind','dash','tusk','scratchWind','pounceWind'], REC_ST=['recover','strike','goreRec','chargeRec','retreat','tuskRec'];
 function initPoise(e){ const p=POISE[e.type]||POISE.boar; e.poise=p.max; e.poiseMax=p.max; e.poiseHitT=-9; e.poiseLowT=-9; e.flinchT=-9; e.brokenT=0; }
 function poiseDamage(e,info){ if(!info||!info.mv) return 0; const mv=info.mv;
   if(['stun','trapped','broken','dead'].includes(e.state)) return 0; // 拘束・気絶・崩れの間は削らない
@@ -3120,6 +3120,7 @@ function applyPoise(e,info){ const p=poiseDamage(e,info); if(p<=0) return false;
   floatText(e.x,2.2+e.r,e.z,'体勢崩し！','#f0c34a',true); sfx('stun'); S.shake=Math.max(S.shake,0.3); return true; }
 function canFlinch(e,kind,info){ const p=POISE[e.type]; if(!p||!p.fl) return false; if(S.time-e.flinchT<p.fl) return false;
   if(e.type==='monkey') return !['dead','stun','broken'].includes(e.state);
+  if(e.type==='mutant') return !['dead','stun','broken','flee','pounce','scratch'].includes(e.state)&&(kind==='heavy'||!!(info&&info.mv&&info.mv.counter)||['idle','alert','kite','retreat','recover'].includes(e.state)); // v0.61：強い一撃か、攻撃していない間だけひるむ
   const strong=kind==='heavy'||(info&&info.mv&&(info.mv.counter||famOf(info.weapon)==='club'));
   return strong&&(['idle','chase','recover','return','alert'].includes(e.state)||(kind==='heavy'&&e.state==='wind')); }
 function updatePoise(e,dt){ if(e.poise==null) initPoise(e);
@@ -3147,7 +3148,7 @@ function onSwap(){ const a=P.atk; let open=false;
   if(open&&S.time>=(P.swCD||0)) P.swT=S.time+SWAP.use; }
 function nearestFoe(maxD){ let best=null,bd=maxD; for(const e of enemies){ if(e.state==='dead'||e.removed) continue; const d=dist(P.x,P.z,e.x,e.z)-e.r; if(d<bd){ bd=d; best=e; } } return best; }
 // ================= F6-D：獣の調整（同時に攻撃に入るのは2頭まで） =================
-const ATK_ST=['wind','charge','tusk','dash','strike','goreWind','stompWind','chargeWind'];
+const ATK_ST=['wind','charge','tusk','dash','strike','goreWind','stompWind','chargeWind','scratchWind','scratch','pounceWind','pounce'];
 function attackSlotFree(e){ let n=0; for(const o of enemies){ if(o===e||o.state==='dead'||o.removed) continue; if(ATK_ST.includes(o.state)&&!(o.mode==='raid'&&!o.aggro)) n++; } return n<2; }
 function orbitPlayer(e,dt,spd){ // 順番待ち：4〜5mで回りながら待つ
   const away=f10OrbitAway(e); const pd=dist(e.x,e.z,P.x,P.z); const r=4.5; const a=away+(e.side||1)*0.5;
@@ -4008,7 +4009,7 @@ function f11WeakArms(){ return !Object.keys(prog.arms).some(k=>k!=='nata1'&&k!==
 // どれも保存は任意項目（無ければ安全な初期値）。設定だけは別の localStorage キーに置き、セーブ形式は変えない
 const F31={on:true};
 // ---- 育成：レベル ----
-const XP={kill:{deer:14,weasel:8,monkey:10,boar:15,bear:40,boss:150},quest:20,harvest:5,clue:15,lv:[0,100,250,450,700],max:5,hpStep:10};
+const XP={kill:{deer:14,weasel:8,monkey:10,boar:15,bear:40,boss:150,mutant:25},quest:20,harvest:5,clue:15,lv:[0,100,250,450,700],max:5,hpStep:10};
 function f31LvOf(exp){ let lv=1; for(let i=1;i<XP.lv.length;i++) if(exp>=XP.lv[i]) lv=i+1; return Math.min(XP.max,lv); }
 function f31MaxHp(lv){ return 100+XP.hpStep*((lv||1)-1); }
 function f31Xp(n,why){ if(!(n>0)||!prog) return; const before=prog.level||1; prog.exp=Math.min(XP.lv[XP.max-1],(prog.exp||0)+n); const lv=f31LvOf(prog.exp);
@@ -5209,11 +5210,12 @@ function mutantAssets(){ if(MUTANT) return MUTANT; const D=window.MUTANT_MONKEY_
 function makeMutant(){ const A=mutantAssets(); if(!A) return null;
   const g=new THREE.Group(), B={}, abs={};
   for(const [name,parent,p] of A.D.bones){ const b=new THREE.Bone(); b.name=name; abs[name]=p; const pa=parent?abs[parent]:[0,0,0]; b.position.set(p[0]-pa[0],p[1]-pa[1],p[2]-pa[2]); (parent?B[parent]:g).add(b); B[name]=b; }
-  const skin=keep(new THREE.SkinnedMesh(A.geo,A.mat)); skin.castShadow=true; g.add(skin);
+  const mat=A.mat.clone(); mat.emissive=new THREE.Color(0); // 当たったときの光りは1体ごと（テクスチャは共有）
+  const skin=keep(new THREE.SkinnedMesh(A.geo,mat)); skin.castShadow=true; g.add(skin);
   g.updateMatrixWorld(true); const sk=new THREE.Skeleton(A.D.bones.map(b=>B[b[0]])); skin.bind(sk);
   const ol=keep(new THREE.SkinnedMesh(A.hull,A.ol)); g.add(ol); ol.bind(sk,skin.bindMatrix); ol.userData.isOutline=true; ol.raycast=()=>{};
   const rest={}; for(const k in B) rest[k]=B[k].position.clone();
-  return {g,B,rest,skin,ol,kind:'mutant'}; }
+  return {g,B,rest,skin,ol,kind:'mutant',head:B.head,flashM:[mat],eyeM:new THREE.MeshBasicMaterial(),legs:[],dispose(){ sk.dispose(); }}; }
 // 動き：name = idle（待機）／walk（歩く）／run（四つ足で走る）／pounce（飛びかかり）／scratch（ひっかき）／flinch（ひるみ）／fall（倒れる）
 // t は経過秒、ph は一度きりの動き（pounce・scratch・flinch・fall）の進み 0〜1。骨は休みの形（回転なし）からの回転で決める。
 // 回転の向き：x 回りの正は「下へ垂れた手足を後ろへ」「前を向いた頭を下へ」。体の左は +x。
@@ -6144,6 +6146,7 @@ const ET={
  monkey:{hp:34,r:0.45,speed:6.6,detect:12,name:'サル'},
  bear:{hp:210,r:1.05,speed:3.0,detect:11,name:'ツキノワグマ'},
  boss:{hp:720,r:1.9,speed:3.6,detect:40,name:'光明寺のヌシ'},
+ mutant:{hp:150,r:0.72,speed:6.4,detect:16,name:'変異したサル'}, // v0.61（強さは暫定）
 };
 let eid=0;
 function spawnEnemy(type,x,z,mode,extra={}){
@@ -6151,6 +6154,7 @@ function spawnEnemy(type,x,z,mode,extra={}){
   if(type==='boar') m=makeStudyBeast51('boar');
   else if(type==='boss') m=makeStudyBeast51('nushi');
   else if(type==='monkey') m=makeMonkey();
+  else if(type==='mutant') m=makeMutant(); // v0.61：spawnMutant から（形のデータを読んだ後）
   else if(type==='deer'||type==='weasel') m=f47NewBeast(type);
   else m=makeBear();
   scene.add(m.g);
@@ -6172,7 +6176,7 @@ function removeEnemy(e){
   scene.remove(e.m.g); scene.remove(e.ind); scene.remove(e.stars);
   if(e.sector) scene.remove(e.sector);
   if(e.ringM) scene.remove(e.ringM);
-  e.m.flashM.forEach(m=>m.dispose()); e.m.eyeM.dispose(); e.m.g.traverse(o=>{ if(o.geometry&&o.geometry.userData.own) o.geometry.dispose(); });
+  e.m.flashM.forEach(m=>m.dispose()); e.m.eyeM.dispose(); e.m.g.traverse(o=>{ if(o.geometry&&o.geometry.userData.own) o.geometry.dispose(); }); if(e.m.dispose) e.m.dispose();
   if(f11Has('B')) f11Dispose([e.m.g,e.ind,e.stars,e.sector,e.ringM]); // F11：この獣だけの形・材質・画像を外す
   const i=enemies.indexOf(e); if(i>=0) enemies.splice(i,1);
 }
@@ -6549,12 +6553,13 @@ function damageEnemy(e,dmg,kind,fromAng,info=null){
   }
   const crit=mult>1||!!(info&&info.mv&&info.mv.counter);
   floatText(e.x,1.4+e.r*1.2,e.z,String(d),crit?'#f0c34a':'#ffffff',kind==='heavy'||crit);
-  spawnParticles(e.x,1,e.z,kind==='heavy'?10:6,e.type==='monkey'?0xd0b090:0xc9503c,kind==='heavy'?6:4);
+  spawnParticles(e.x,1,e.z,kind==='heavy'?10:6,(e.type==='monkey'||e.type==='mutant')?0xd0b090:0xc9503c,kind==='heavy'?6:4);
   // 反応
   if(e.mode==='field'&&['idle','return','notice','search','probe','threat'].includes(e.state)){ e.state=e.type==='monkey'?'kite':'chase'; e.st=0; e.f10pose=null; if(e.type==='bear') e.f10fought=true; } // 攻撃されたらすぐ戦闘（F10 の新しい状態からも）
   const fell=c2ClimbFall(e); // v0.59：登っている最中に叩かれたサルは落ちる
   if(e.mode==='raid'&&!fell) e.aggro=true;
-  const kb=e.type==='boss'?0:e.type==='bear'?(kind==='heavy'?0.6:0):kind==='heavy'?1.6:0.6;
+  if(e.type==='mutant'){ e.aggro=true; if(e.fleeOnly&&(e.state==='flee'||e.hp<=e.maxHp*MUT.fleeAt)){ e.hp=Math.max(1,e.hp); mutantFlee(e); return; } if(e.state==='idle'||e.state==='alert') setState(e,'kite'); } // v0.61：初遭遇は体力が減ると逃げ去る（倒れない）
+  const kb=e.type==='boss'?0:e.type==='bear'?(kind==='heavy'?0.6:0):e.type==='mutant'?(kind==='heavy'?0.9:0.25):kind==='heavy'?1.6:0.6;
   if(kb){ e.x+=Math.sin(fromAng)*kb; e.z+=Math.cos(fromAng)*kb; resolve(e,true,e.type==='monkey'); }
   // 体勢とひるみ（ひるみはサル0.8秒・イノシシ1.2秒に1回まで。クマとヌシはひるまない）
   const broke=e.hp-0>0&&applyPoise(e,info);
@@ -6569,7 +6574,7 @@ function killEnemy(e,trackingBonus=0){
   stats.kills++; f31Kill(e); // v0.31 経験値
   recordHuntKill(e.type);
   if(e.type==='boss'){ bossDefeated(e); return; }
-  const n={boar:2,monkey:1,bear:4,deer:2,weasel:1}[e.type]||1;
+  const n={boar:2,monkey:1,bear:4,deer:2,weasel:1,mutant:3}[e.type]||1;
   spawnDrop('hide',n+(trackingBonus?1:0),e.x,e.z);
   if(e.type==='bear'||Math.random()<(e.type==='boar'?0.5:0.35)) spawnDrop('food',e.type==='bear'?2:1,e.x,e.z);
   if(e.carry){ if(e.carry.n>0){ spawnDrop(e.carry.k,e.carry.n,e.x,e.z,e.carry.b||null); toast('サルが盗んだ物を取り返した'); } e.carry=null; }
@@ -6897,6 +6902,7 @@ function updateBoss(e,dt){
   }
 }
 function updateEnemyAnim(e,dt){
+  if(e.type==='mutant'){mutantAnimate(e,dt);return;}
   if(e.m.study51){animateStudyBeast51(e,dt);return;}
   if(e.type==='deer'||e.type==='weasel'){f47BeastAnim(e,dt);return;}
   const m=e.m; const gy=groundH(e.x,e.z); const t=S.time; const st=e.state;
@@ -6978,6 +6984,96 @@ function updateEnemyAnim(e,dt){
 }
 // v0.45.1：たとえ遠距離でも必ず毎フレーム進める状態（予備動作・攻撃・突進。見た目と判定の一致を優先）
 const AILOD_SKIP=['wind','chargeWind','goreWind','stompWind','charge','dash','strike','tusk','gore','stomp','trapped','stun'];
+// ---- 変異したサルの AI（v0.61。強さはすべて暫定。docs/mutant-monkey-ai.md） ----
+// 凶暴化した猿と同じ一撃離脱（回り込み→突進→噛みつき→離れる）に、固有の「前腕のひっかき（広い扇・強い）」と「飛びかかり（離れた所から跳ぶ）」を足す。
+// e.fleeOnly（初遭遇）なら、体力が減ると逃げ去る（倒れない）。そうでなければ倒れる。狙う相手は e.tgt（無ければ主人公。スズキ用に差し替えられる）
+const MUT={bite:13, scratch:18, pounce:16, scratchR:2.5, scratchArc:2.5, pounceMin:5.5, pounceMax:10, fleeAt:0.45, fleeSpd:9.5};
+function mutTarget(e){ const t=e.tgt; if(t&&!t.dead&&t.x!=null) return t; return P; }
+function mutantFlee(e){ if(e.state==='flee'||e.state==='dead') return; e.ind.visible=false; hideSector(e); e.airY=0; setState(e,'flee'); e.fleeing=true;
+  floatText(e.x,2.4,e.z,'キィィッ！','#e0b070',true); sfx('alert'); }
+function updateMutant(e,dt){
+  const T=mutTarget(e), pd=dist(e.x,e.z,T.x,T.z), face=Math.atan2(T.x-e.x,T.z-e.z), sp=ET.mutant.speed;
+  const near=()=>pd-e.r-(T.r||0.4);
+  switch(e.state){
+    case 'idle': wanderUpdate(e,dt,1.6); if(canSee(e)||e.aggro){ e.aggro=true; setState(e,'alert'); alertMark(e); sfx('alert'); } break;
+    case 'alert': e.spd=0; faceTo(e,face,8,dt); if(e.st>0.6){ setState(e,'kite'); e.atkT=1.0+Math.random(); } break;
+    case 'hurt': e.spd=0; if(e.st>0.35) setState(e,Math.random()<0.5?'retreat':'kite'); break;
+    case 'stun': case 'trapped': e.spd=0; e.stunT-=dt; if(e.stunT<=0) setState(e,'kite'); break;
+    case 'kite': {
+      e.atkT-=dt; const away=Math.atan2(e.x-T.x,e.z-T.z), want=6.5;
+      let ang; if(pd<want-1.2) ang=away; else if(pd>want+2) ang=away+Math.PI; else ang=away+(e.side||1)*Math.PI/2;
+      if(e.st>1.6){ e.side=Math.random()<0.5?-1:1; e.st=0; }
+      faceTo(e,ang,8,dt); moveDir(e,e.rot,sp*0.7,dt); e.spd=sp*0.7;
+      if(e.atkT<=0&&attackSlotFree(e)){
+        if(pd>MUT.pounceMin&&pd<MUT.pounceMax&&Math.random()<0.45) setState(e,'pounceWind'); // 固有：飛びかかり
+        else setState(e,'dash'); }
+      break; }
+    case 'dash': // 凶暴化した猿と同じ突進。近づいたら、噛みつき（同じ）か前腕のひっかき（固有）
+      faceTo(e,face,12,dt); moveDir(e,e.rot,10.5,dt); e.spd=10.5;
+      if(near()<1.2){ setState(e,Math.random()<0.5?'scratchWind':'wind'); }
+      else if(e.st>1.4) setState(e,'retreat');
+      break;
+    case 'wind': { // 噛みつき（凶暴化した猿と同じ）
+      e.spd=0; faceTo(e,face,6,dt); showSector(e,1.9,1.8,e.st/0.4);
+      if(e.st>0.4){ hideSector(e); const a=Math.abs(angDiff(e.rot,face));
+        if(near()<1.4&&a<1.0) mutHit(e,T,MUT.bite,4); else floatText(e.x,2.2,e.z,'空振り','#c8c4b8');
+        setState(e,'retreat'); }
+      break; }
+    case 'scratchWind': { // 固有：大きな前腕を振りかぶる（広い扇）
+      e.spd=0; if(e.st<0.35) faceTo(e,face,7,dt); showSector(e,MUT.scratchR,MUT.scratchArc,e.st/0.55);
+      if(e.st>0.55){ hideSector(e); const a=Math.abs(angDiff(e.rot,face));
+        if(near()<MUT.scratchR&&a<MUT.scratchArc/2+0.15){ mutHit(e,T,MUT.scratch,7); S.shake=Math.max(S.shake,0.25); } else floatText(e.x,2.2,e.z,'空振り','#c8c4b8');
+        sfx('heavyHit'); setState(e,'scratch'); }
+      break; }
+    case 'scratch': e.spd=0; if(e.st>0.12) setState(e,'recover'); break; // 振り下ろし
+    case 'pounceWind': { // 固有：かがんで跳ぶ先を決める（線で予告）
+      e.spd=0; faceTo(e,face,9,dt); const L=Math.min(MUT.pounceMax,pd);
+      e.ind.visible=true; e.ind.position.set(e.x,groundH(e.x,e.z)+0.12,e.z); e.ind.rotation.y=e.rot; e.ind.scale.set(1.3,1,L);
+      if(e.st>0.5){ e.ind.visible=false; e.jump={x0:e.x,z0:e.z,x1:e.x+Math.sin(e.rot)*L,z1:e.z+Math.cos(e.rot)*L,t:0,dur:0.32+L*0.035}; setState(e,'pounce'); sfx('alert'); }
+      break; }
+    case 'pounce': { const J=e.jump, k=Math.min(1,e.st/J.dur);
+      e.x=lerp(J.x0,J.x1,k); e.z=lerp(J.z0,J.z1,k); resolve(e,true,false); e.airY=Math.sin(Math.PI*k)*(0.6+dist(J.x0,J.z0,J.x1,J.z1)*0.06); e.spd=0;
+      if(k>=1){ e.airY=0; const d2=dist(e.x,e.z,T.x,T.z)-e.r-(T.r||0.4);
+        if(d2<1.1) mutHit(e,T,MUT.pounce,6); else floatText(e.x,2.2,e.z,'空振り','#c8c4b8');
+        S.shake=Math.max(S.shake,0.18); puff(e.x,groundH(e.x,e.z)+0.2,e.z,0,0.6,0,0.6,0xd9c8a0,0.6); setState(e,'recover'); e.recT=0.75; }
+      break; }
+    case 'recover': e.spd=0; if(e.st>(e.recT||0.6)){ e.recT=0; setState(e,Math.random()<0.6?'retreat':'kite'); e.atkT=1.4+Math.random()*1.4; } break; // 攻撃の後の隙
+    case 'retreat': { const away=Math.atan2(e.x-T.x,e.z-T.z); faceTo(e,away,10,dt); moveDir(e,e.rot,8,dt); e.spd=8;
+      if(e.st>0.8){ setState(e,'kite'); e.atkT=Math.max(e.atkT||0,1.2+Math.random()*1.5); } break; }
+    case 'flee': { const away=Math.atan2(e.x-P.x,e.z-P.z); faceTo(e,away,8,dt); moveDir(e,e.rot,MUT.fleeSpd,dt); e.spd=MUT.fleeSpd;
+      if(e.st>5||dist(e.x,e.z,P.x,P.z)>28){ e.fled=true; if(e.onFlee) e.onFlee(e); else toast('変異したサルは逃げ去った'); removeEnemy(e); } break; }
+    default: setState(e,'kite');
+  }
+}
+// 当てる：主人公なら hurtPlayer。ほかの相手（スズキなど）は相手の hurt を呼ぶ
+function mutHit(e,T,dmg,knock){ if(T===P) hurtPlayer(dmg,e.x,e.z,knock,e); else if(T.hurt) T.hurt(dmg,e); }
+// 見た目：状態ごとに mutantPose の動きを選ぶ
+function mutantAnimate(e,dt){ const m=e.m, gy=groundH(e.x,e.z), st=e.state;
+  m.g.visible=dist(e.x,e.z,camera.position.x,camera.position.z)<160;
+  m.g.position.set(e.x,gy+(e.airY||0),e.z); m.g.rotation.y=e.rot;
+  const sp=e.spd||0; e.gait=(e.gait||0)+dt*(sp<4?sp/2.4:sp/6.2);
+  let name='idle', t=S.time, ph=0;
+  if(st==='dead'){ name='fall'; ph=Math.min(1,e.st/1.6); if(e.st>1.9) m.g.position.y=gy-(e.st-1.9)*0.5; }
+  else if(st==='scratchWind'){ name='scratch'; ph=0.4*Math.min(1,e.st/0.55); }
+  else if(st==='scratch'){ name='scratch'; ph=0.4+0.15*Math.min(1,e.st/0.12); }
+  else if(st==='recover'&&e.lastAtk==='scratch'){ name='scratch'; ph=0.55+0.45*Math.min(1,e.st/(e.recT||0.6)); }
+  else if(st==='pounceWind'){ name='pounce'; ph=0.35*Math.min(1,e.st/0.5); }
+  else if(st==='pounce'){ name='pounce'; ph=0.35+0.4*Math.min(1,e.st/(e.jump?e.jump.dur:0.5)); }
+  else if(st==='recover'){ name='pounce'; ph=0.75+0.25*Math.min(1,e.st/(e.recT||0.6)); }
+  else if(st==='wind'){ name='pounce'; ph=0.3*Math.min(1,e.st/0.4); }
+  else if(st==='hurt'){ name='flinch'; ph=Math.min(1,e.st/0.35); }
+  else if(st==='broken'||st==='stun'||st==='trapped'){ name='flinch'; ph=0.5+0.08*Math.sin(S.time*7); }
+  else if(sp>0.3){ name=sp<4?'walk':'run'; t=e.gait/(name==='walk'?1.05:2.3); }
+  if(st==='scratchWind'||st==='scratch') e.lastAtk='scratch'; else if(st==='pounceWind'||st==='pounce') e.lastAtk='pounce';
+  mutantPose(m,name,t,ph);
+  const fl=e.flash>0; for(const mm of m.flashM) mm.emissive.setHex(fl?0x884444:0x000000);
+  const stunned=st==='stun'||st==='trapped'; e.stars.visible=stunned; if(stunned){ e.stars.position.set(e.x,gy+2.3,e.z); e.stars.rotation.y+=dt*5; }
+}
+// 呼び出す（形のデータを読んでから）。opts：fleeOnly（初遭遇は逃げ去る）・tgt（狙う相手）・onFlee
+async function spawnMutant(x,z,opts={}){ await mutantLoad(); if(!mutantAssets()) return null;
+  const e=spawnEnemy('mutant',x,z,'mutant',Object.assign({aggro:false,airY:0},opts)); e.rot=Math.atan2(P.x-x,P.z-z);
+  if(x>REGION_X0&&REG.live) REG.live.enemies.push(e); // ほかの地域で出したものは、その地域を出るときに消す
+  return e; }
 function updateEnemies(dt){
   for(const t of traps){
     if(t.type!=='bait'||t.state!=='armed')continue;
@@ -7006,6 +7102,7 @@ function updateEnemies(dt){
     else if(e.type==='boar') updateBoar(e,dt);
     else if(e.type==='monkey') updateMonkey(e,dt);
     else if(e.type==='bear') updateBear(e,dt);
+    else if(e.type==='mutant') updateMutant(e,dt);
     else updateBoss(e,dt);
     f10Post(e,prev); }
     if(e.removed) continue;
@@ -8564,7 +8661,7 @@ function regionCtx(id){ const group=new THREE.Group(); group.name='region:'+id; 
   return ctx; }
 function regionDispose(ctx){ if(!ctx) return;
   for(const o of ctx.colliders) gridRemove(o); ctx.colliders.length=0;
-  for(const e of ctx.enemies){ const i=enemies.indexOf(e); if(i>=0) enemies.splice(i,1); for(const k of ['m','ind','stars','sector','ringM']){ const v=e[k]; const ob=v&&(v.g||v); if(ob&&ob.parent) ob.parent.remove(ob); } }
+  for(const e of [...ctx.enemies]) removeEnemy(e); // v0.61：形・骨の画像も外す（removeEnemy）
   ctx.enemies.length=0;
   if(ctx.onDispose) try{ ctx.onDispose(); }catch(e){ console.error(e); }
   scene.remove(ctx.group); disposeOwned(ctx.group); }
