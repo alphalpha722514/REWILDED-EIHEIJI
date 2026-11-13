@@ -33,7 +33,7 @@ const P={weapon:'nata1',dur:83,full:75};
 const inv={wood:9},stats={kills:3},GAPS=[],traps=[],NODES=[];
 const checkpointStage=()=>prog.stage; const saveTrap=x=>x;
 const f31SaveProg=()=>({level:2});
-const f5Save=()=>({}),f4Save=f5Save,f7Save=f5Save,f8Save=f5Save,f9Save=f5Save,f10Save=f5Save,convSave=()=>({v:1,built:0}); // v0.63：変換炉
+const f5Save=()=>({}),f4Save=f5Save,f7Save=f5Save,f8Save=f5Save,f9Save=f5Save,f10Save=f5Save,facSave=id=>({v:1,built:0,id}); // v0.63：変換炉・v0.64：かまど
 ${save}
 saveGame();
 `,ctx);
@@ -41,7 +41,7 @@ let saved=JSON.parse(vm.runInContext('stored.value',ctx));
 assert.equal(vm.runInContext('stored.key',ctx),'eiheiji_vs_beasts_v010');
 assert.equal(saved.v,1);
 assert.equal(saved.inv.wood,9);
-assert.deepEqual(saved.conv,{v:1,built:0}); // v0.63：変換炉は新しいキー conv
+assert.deepEqual(saved.conv,{v:1,built:0,id:'conv'}); assert.deepEqual(saved.kama,{v:1,built:0,id:'kama'}); // v0.63：変換炉 conv・v0.64：かまど kama は新しいキー
 assert.equal(saved.arms.nata1,83);
 assert.equal(saved.chapter2.unlocked,false);
 vm.runInContext("prog.bossDefeated=true;prog.stage='cleared';saveGame();",ctx);

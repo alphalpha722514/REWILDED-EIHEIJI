@@ -68,12 +68,12 @@
 | `docs/mutant-monkey-glb-check.md` | 変異したサル（Tripo の GLB）の検査・軽量化の試作・修正方針・確認事項。道具は `tools/models/` |
 | `docs/mutant-monkey-rig.md` | 変異したサルの骨・重み・動き（rig 1）・ゲーム用データ・確認動画の作り方 |
 | `docs/mutant-monkey-ai.md` | 変異したサルの AI（暫定の強さ・攻撃・初遭遇は逃げ去る・v0.62 の強敵化と「変異した鱗」・強さの測定結果）と試遊版 `previews/p2-mutant/` |
-| `docs/mutant-scale-uses.md` | 変異した鱗の使い道（2026-11-13 決定）と v0.63 の実装：変換炉・鱗の武器・青鱗と変異鱗の防具・衝撃波・未定の事項 |
+| `docs/mutant-scale-uses.md` | 変異した鱗の使い道（2026-11-13 決定）と v0.63〜v0.64 の実装：かまど・変換炉・蒼鱗／変異鱗の武器・鱗の飛去来器・蒼鱗／変異した鱗の防具・衝撃波・未定の事項 |
 | `docs/p2-investigation.md` | P2 統合指示書 v3.0 への初期調査（防具の原因・地理データ・スズキ・順序・確認事項） |
 | `docs/p1-sim-baseline.md` | 防衛戦の勝率測定ツールと基準値 |
 | `docs/p1-balance-report.md` | P1 の測定結果・調整（v0.55・v0.56 で反映）・未確認事項 |
 | `docs/death-penalty.md` | 倒れたときの代償（v0.56） |
 | `docs/combat-aim.md` | 攻撃の向きと当たり判定（v0.58） |
 
-- キャラクターの確認画像：`python3 tools/char-studio.py 出力.png player suzuki gen`（`player@forest` で防具の組を着せる。`STUDIO_POSE=1` で動きの姿勢。`STUDIO_HTML` で別の index.html）。
+- キャラクターの確認画像：`python3 tools/char-studio.py 出力.png player suzuki gen`（`player@forest` で防具の組を着せる。`STUDIO_POSE=1` で動きの姿勢。`STUDIO_HTML` で別の index.html）。鱗の防具（蒼鱗・変異した鱗）は `python3 tools/scale-armor-studio.py 出力.png`。
 - 試遊版の作り方：`python3 tools/build-p1-preview.py`（防衛戦。A／B／C ボタン。`previews/p1-balance/`）と `python3 tools/build-p2-mutant-preview.py`（変異したサル。`previews/p2-mutant/`）。どちらも本編をコピーして試遊用の保存キーを足す。本編を変えたら作り直す。
