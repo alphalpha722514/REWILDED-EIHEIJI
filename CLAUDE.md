@@ -62,7 +62,7 @@
 | `docs/chapter2-progress.md` | 第2章の実装状況 |
 | `docs/chapter2-map-plan.md` | 上志比マップの調査と計画 |
 | `docs/phase-p1-status.md` | P1 の現状整理 |
-| `docs/phase-p2-status.md` | P2 の現状整理（上志比マップと移動） |
+| `docs/phase-p2-status.md` | P2 の現状整理（2026-11-14 更新：作業A〜F と追加分の実装状況・確定仕様・決めてほしい質問13個・依存関係・推奨順序） |
 | `docs/p2-region.md` | 地域の仕組み（光明寺は常駐・ほかは一時、座標のずらし、移動・失敗時の復旧・セーブ） |
 | `docs/p2-kamishihi-map.md` | 上志比の地図（出典・利用条件・座標と縮尺・広さ・作り直し方・ゲーム内の作り・確認・未実装） |
 | `docs/mutant-monkey-glb-check.md` | 変異したサル（Tripo の GLB）の検査・軽量化の試作・修正方針・確認事項。道具は `tools/models/` |
