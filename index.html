@@ -5276,7 +5276,7 @@ const CLASSIC_PLAYER_OPTS={scale:0.9,tall:1.22,legLen:1.8,armLen:1.55,girth:0.8,
     bottom:{col:0x4a4e44,col2:0x3e4238,top:0.47,kneePad:0x2c2e30,cargo:true,t:0.028},shoes:{kind:'boots',col:0x5a3e2c,col2:0x7a5a40},
     belt:{col:0x2a2420,pouch:0x5a5a48,buckle:true,y:0.405},hair:{style:'short',col:0x2a1e16},band:{col:0xf4f1e8,pat:0x2f5f9a},wardrobe:true}};
 // v0.60（P2・試作）スズキ：主人公と同年代の陸上部。顔が大きめ・センター分け・濃い青の眼鏡・上半身は裸・緑のジャージ・裸足・背中に自作の大きな棍棒。
-// 体型・色・棍棒の形は暫定（ユーザーの確認待ち）。蹴りで戦うので脚を長めに。
+// 見た目は 2026-11-15 ユーザー承認（ズボンを濃い緑にして）。ゲームにはまだ出ない（作業E・F で出す）。蹴りで戦うので脚を長めに。
 function suzukiClub({chest,body,T}){
   body.add(mesh(G.sphLo,mat(0xc99a7a),0,T(0.52),0.168,0.016,0.022,0.01)); // へそ（上半身が裸だと分かるように）
   const c=new THREE.Group(); c.position.set(0.02,T(0.8)-T(0.62),-0.28); c.rotation.set(0.12,0,-0.62); c.scale.setScalar(1.3); chest.add(c);
@@ -5290,7 +5290,7 @@ function suzukiClub({chest,body,T}){
   return c;
 }
 const SUZUKI_OPTS={scale:0.79,tall:1.2,legLen:1.95,armLen:1.5,girth:0.84,waist:0.82,neck:0.86,headR:0.45,limb:0.8,legGap:1.25,step:0.024,muscle:1,
-  outfit:{bottom:{col:0x1f6a38,col2:0x165029,top:0.48,stripe:0xf2c41c,waistBand:true,t:0.026}, // 横の線は黄色（2026-11-12 ユーザー指定）
+  outfit:{bottom:{col:0x154a28,col2:0x0e3519,top:0.48,stripe:0xf2c41c,waistBand:true,t:0.026}, // 横の線は黄色（2026-11-12 ユーザー指定）。ズボンは濃い緑（2026-11-15 見た目を承認）
     kesa:{col:0x5a4430,col2:0x46341f}, // 棍棒を背負うひも
     hair:{style:'center',col:0x1c1814},glasses:{col:0x101a33,size:1.22},armband:false}, // 眼鏡：黒に近い青・顔に対して大きく（2026-11-12 ユーザー指定）
   extra:suzukiClub};
