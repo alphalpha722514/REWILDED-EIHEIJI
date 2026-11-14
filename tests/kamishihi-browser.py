@@ -30,7 +30,7 @@ HTML = SRC.replace('function updateNPCs(dt){', HOOK + 'function updateNPCs(dt){'
 
 SNAP = """() => { const R = window.__r; let cells = 0; for (const a of R.cgrid.values()) cells += a.length;
   return {cur: R.REG.cur, geo: R.renderer.info.memory.geometries, tex: R.renderer.info.memory.textures, boxes: R.boxes.length, circles: R.circles.length,
-    oboxes: R.oboxes.length, cells, kids: R.scene.children.length, bounds: JSON.stringify(R.BOUNDS), h: R.groundH(158, 22),
+    oboxes: R.oboxes.length, barri: R.oboxes.filter(o => o.barri).length, cells, kids: R.scene.children.length, bounds: JSON.stringify(R.BOUNDS), h: R.groundH(158, 22),
     px: R.P.x, pz: R.P.z, ph: R.groundH(R.P.x, R.P.z), mode: R.S.mode, busy: R.REG.busy,
     tris: R.renderer.info.render.triangles, calls: R.renderer.info.render.calls,
     saved: (JSON.parse(localStorage.getItem('eiheiji_vs_beasts_v010') || '{}').chapter2 || {}).currentRegion}; }"""
@@ -120,7 +120,7 @@ async def main():
                 print('着いた所：', K)
                 check(cur == 'kamishihi' and a['px'] > 5000 and a['mode'] == 'playing', '東の出口から上志比へ移った')
                 check(K['road'] < 12, f'国道416号の近くに着いた（{K["road"]:.1f}）')
-                check(a['oboxes'] - base['oboxes'] == K['bld'] and a['circles'] > base['circles'] + 1000, f'建物 {K["bld"]} 軒と木 {a["circles"] - base["circles"]} 本の当たり判定')
+                check(a['oboxes'] - base['oboxes'] - a['barri'] == K['bld'] and a['circles'] > base['circles'] + 1000, f'建物 {K["bld"]} 軒と木 {a["circles"] - base["circles"]} 本の当たり判定')
                 check(abs(a['ph']) < 300 and a['bounds'] != base['bounds'], '上志比の地面の高さと範囲')
                 W = await pg.evaluate("""async () => { const R = window.__r, K = R.KAMI, D = K.D; let wx = null, wz = null;
                   for (let k = 40; k < K.ny - 40 && wx === null; k += 3) for (let i = 40; i < K.nx - 40; i += 3) if (K.C[k * K.nx + i] === 2 && K.C[k * K.nx + i - 6] === 2 && K.C[(k + 6) * K.nx + i] === 2) { wx = K.X0 + i * K.GS; wz = K.Z0 + k * K.GS; break; }

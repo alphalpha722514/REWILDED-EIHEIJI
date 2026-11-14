@@ -9,6 +9,8 @@
   ・獣と採集の場所を地図に出す（G の全体地図に点で出す）
   ・時間を5分進める（倒した獣・取った物が戻るのを確かめる）
   ・回復・食料を足す
+  ・v0.68：物資の回収を試す（要塞・小拠点B の物資置き場から仮の中身を持ち出せる。本編では持ち出せない。中身の数は未承認）
+  ・v0.68：占拠区域へ移る（押すたびに 要塞の正面 → 要塞の裏（東の田んぼ）→ 要塞の南（家の隙間）→ 見張り場 → 物資置き場 の前へ）
 本編を更新したら、このスクリプトを実行し直して作り直す。
 使い方：python3 tools/build-p2-kami-preview.py
 """
@@ -52,12 +54,16 @@ async function kTestStart(){
 { const b=document.getElementById('btnKStart'); if(b) b.addEventListener('click',()=>kTestStart());
   const bar=document.createElement('div'); bar.id='p2kbar'; bar.style.cssText='position:fixed;top:calc(6px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:30;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 16px)';
   const B=(id,t)=>`<button id="${id}" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">${t}</button>`;
-  bar.innerHTML=B('kta','変異したサルを解禁：切')+B('ktb','場所を地図に出す：切')+B('ktc','時間を5分進める')+B('ktd','回復・食料を足す');
+  bar.innerHTML=B('kta','変異したサルを解禁：切')+B('ktb','場所を地図に出す：切')+B('ktc','時間を5分進める')+B('ktd','回復・食料を足す')+B('kte','物資の回収を試す：切')+B('ktf','占拠区域へ移る');
   document.body.appendChild(bar); bar.hidden=true;
-  const sync=()=>{ document.getElementById('kta').textContent='変異したサルを解禁：'+(KW_TEST.mutant?'入':'切'); document.getElementById('ktb').textContent='場所を地図に出す：'+(KW_TEST.marks?'入':'切'); };
+  const sync=()=>{ document.getElementById('kta').textContent='変異したサルを解禁：'+(KW_TEST.mutant?'入':'切'); document.getElementById('ktb').textContent='場所を地図に出す：'+(KW_TEST.marks?'入':'切'); document.getElementById('kte').textContent='物資の回収を試す：'+(KW_TEST.loot?'入':'切'); };
   document.getElementById('kta').addEventListener('click',e=>{ e.stopPropagation(); KW_TEST.mutant=!KW_TEST.mutant; sync(); toast(KW_TEST.mutant?'試遊：変異したサルを解禁（町の群れに加わる。保存しない）':'試遊：解禁を戻した（出ている変異したサルはそのまま）'); cv.focus(); });
   document.getElementById('ktb').addEventListener('click',e=>{ e.stopPropagation(); KW_TEST.marks=!KW_TEST.marks; sync(); toast(KW_TEST.marks?'試遊：G の地図に、獣（茶・橙・黄・白・赤）・群れ（桃）・採集（水色・灰）を出す':'試遊：地図の点を消した'); cv.focus(); });
   document.getElementById('ktc').addEventListener('click',e=>{ e.stopPropagation(); stats.time+=300; toast('試遊：遊んだ時間を5分進めた（倒した獣・取った物の戻りを確かめる）'); cv.focus(); });
+  document.getElementById('kte').addEventListener('click',e=>{ e.stopPropagation(); KW_TEST.loot=!KW_TEST.loot; sync(); toast(KW_TEST.loot?'試遊：物資置き場から仮の中身を持ち出せる（本編では持ち出せない。中身の数は相談中）':'試遊：物資の回収を戻した'); cv.focus(); });
+  { const SPOTS=[['要塞の正面（国道416号の門）',7226,1033,7250,1038.5],['要塞の裏（東の田んぼ）',7360,1080,7340,1061],['要塞の南（家と家の隙間）',7292,1128,7291.6,1110],['国道416号の見張り場',6962,1010,6962,1031],['越前竹原の物資置き場',6745,1300,6768,1312]]; let i=0;
+    document.getElementById('ktf').addEventListener('click',e=>{ e.stopPropagation(); if(REG.cur!=='kamishihi'||P.dead){ toast('上志比にいるときだけ使える',true); return; } const s=SPOTS[i++%SPOTS.length];
+      P.x=s[1]; P.z=s[2]; P.facing=Math.atan2(s[3]-s[1],s[4]-s[2]); setCam(P.facing); toast('試遊：'+s[0]+'の前へ移った'); cv.focus(); }); }
   document.getElementById('ktd').addEventListener('click',e=>{ e.stopPropagation(); if(!P.dead){ P.hp=P.maxHp; foodAdd('onigiri',2); toast('試遊：体力を戻し、おにぎりを2つ足した'); } cv.focus(); });
   setInterval(()=>{ bar.hidden=!(S.mode==='playing'); },300); }
 """
