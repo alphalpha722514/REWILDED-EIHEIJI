@@ -33,7 +33,7 @@ const P={weapon:'nata1',dur:83,full:75};
 const inv={wood:9},stats={kills:3},GAPS=[],traps=[],NODES=[];
 const checkpointStage=()=>prog.stage; const saveTrap=x=>x;
 const f31SaveProg=()=>({level:2});
-const f5Save=()=>({}),f4Save=f5Save,f7Save=f5Save,f8Save=f5Save,f9Save=f5Save,f10Save=f5Save,facSave=id=>({v:1,built:0,id}),kamaSave=()=>({v:1,built:0,q:[],t:0,out:{}}); // v0.63：変換炉・v0.64：かまど（v0.66 で形を変えた）
+const f5Save=()=>({}),f4Save=f5Save,f7Save=f5Save,f8Save=f5Save,f9Save=f5Save,f10Save=f5Save,facSave=id=>({v:1,built:0,id}),kamaSave=()=>({v:1,built:0,q:[],t:0,out:{}}),kamiSave=()=>({v:1,n:{},r:{},sc:[],f:[],sp:{},g:{}}); // v0.63：変換炉・v0.64：かまど（v0.66 で形を変えた）・v0.67：上志比
 ${save}
 saveGame();
 `,ctx);
@@ -42,6 +42,7 @@ assert.equal(vm.runInContext('stored.key',ctx),'eiheiji_vs_beasts_v010');
 assert.equal(saved.v,1);
 assert.equal(saved.inv.wood,9);
 assert.deepEqual(saved.conv,{v:1,built:0,id:'conv'}); assert.deepEqual(saved.kama,{v:1,built:0,q:[],t:0,out:{}}); // v0.63：変換炉 conv・v0.64：かまど kama は新しいキー
+assert.deepEqual(saved.kami,{v:1,n:{},r:{},sc:[],f:[],sp:{},g:{}}); // v0.67：上志比の採集・伐採・獣は新しいキー kami
 assert.equal(saved.arms.nata1,83);
 assert.equal(saved.chapter2.unlocked,false);
 vm.runInContext("prog.bossDefeated=true;prog.stage='cleared';saveGame();",ctx);
@@ -51,4 +52,16 @@ assert.equal(saved.prog.stage,'cleared');
 assert.deepEqual(state(saved.chapter2,saved.prog.bossDefeated),saved.chapter2);
 assert.match(html,/prog\.chapter2=chapter2State\(d\.chapter2,prog\.bossDefeated\)/);
 assert.match(html,/prog\.chapter2=chapter2State\(null,false\)/);
-console.log('PASS: inline script syntax; legacy/malformed defaults; boss unlock; save round trip; existing key, version, inventory and durability');
+// v0.67：上志比の状態 kami（古いセーブ・不正な値・往復）
+{ const kc=vm.createContext({clamp:(v,a,b)=>Math.min(b,Math.max(a,v)),ROCK_MAX:8,stats:{time:1000},prog:{}});
+  vm.runInContext(html.slice(html.indexOf('const KW={beasts:'),html.indexOf('// ---- 場所を決める ----')),kc);
+  const L=q=>JSON.parse(JSON.stringify(vm.runInContext('kamiLoad('+JSON.stringify(q)+')',kc)));
+  const fresh={v:1,n:{},r:{},sc:[],f:[],sp:{},g:{}};
+  for(const bad of [null,42,'x',[],{v:2,n:{s0:5}}]) assert.deepEqual(L(bad),fresh,'malformed: fresh');
+  assert.deepEqual(L(null),fresh,'old save: nothing taken');
+  const q=L({v:1,n:{s0:1200,zz:5,b1:'x',o3:-5},r:{r1:3,r2:99,s0:1},sc:[1,2,'a',-1],f:['k1_2_3','bad','f1_1_1'],sp:{a0:1500,b:1},g:{g0:{d:[1,0,1,1],w:2000},x:{d:[1]}}});
+  assert.deepEqual(q.n,{s0:1200,o3:0}); assert.deepEqual(q.r,{r1:3,r2:8}); assert.deepEqual(q.sc,[1,2]); assert.deepEqual(q.f,['k1_2_3']); assert.deepEqual(q.sp,{a0:1500}); assert.deepEqual(q.g,{g0:{d:[1,0,1],w:2000}});
+  vm.runInContext('prog.kami=kamiLoad('+JSON.stringify({v:1,n:{s0:1200},r:{r1:0},sc:[4],f:['k0_0_1'],sp:{a0:900,a1:1500},g:{g0:{d:[1,1,0],w:0},g1:{d:[0,0,0],w:500}}})+')',kc);
+  const s2=JSON.parse(JSON.stringify(vm.runInContext('kamiSave()',kc)));
+  assert.deepEqual(s2,{v:1,n:{s0:1200},r:{r1:0},sc:[4],f:['k0_0_1'],sp:{a1:1500},g:{g0:{d:[1,1,0],w:0}}},'round trip keeps pending times only'); }
+console.log('PASS: inline script syntax; legacy/malformed defaults; boss unlock; save round trip; existing key, version, inventory and durability; v0.67 kami state');

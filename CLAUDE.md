@@ -49,7 +49,7 @@
 
 ## 作業の進め方
 - main へ入れる前に、作業ブランチで検証する。変更は小さく分ける。
-- テスト：`node tests/chapter2-save.cjs`、`node tests/chapter2-defense.cjs`、`node tests/classic-body.cjs`、`node tests/death-penalty.cjs`、`node tests/combat-aim.cjs`。地域の往復は `python3 tests/region-browser.py`、上志比は `python3 tests/kamishihi-browser.py`（`KAMI_SHOTS=フォルダ` で画面を撮る）、変異したサルは `python3 tests/mutant-browser.py`、主人公の着替え（初期の服の見た目が変わっていないか）は `python3 tests/wardrobe-browser.py`、鱗の装備は `python3 tests/scale-gear-browser.py`、かまどの料理は `python3 tests/kamado-browser.py`（どれも画面のない Chromium、各数分）。防衛戦の勝率は `tools/defense-sim.cjs`（`docs/p1-sim-baseline.md`）、変異したサルとの1対1は `tools/mutant-duel-sim.cjs`（`docs/mutant-monkey-ai.md`）。画面の確認は Playwright（SwiftShader）で起動と表示を見る。
+- テスト：`node tests/chapter2-save.cjs`、`node tests/chapter2-defense.cjs`、`node tests/classic-body.cjs`、`node tests/death-penalty.cjs`、`node tests/combat-aim.cjs`。地域の往復は `python3 tests/region-browser.py`、上志比は `python3 tests/kamishihi-browser.py`（`KAMI_SHOTS=フォルダ` で画面を撮る）、変異したサルは `python3 tests/mutant-browser.py`、主人公の着替え（初期の服の見た目が変わっていないか）は `python3 tests/wardrobe-browser.py`、鱗の装備は `python3 tests/scale-gear-browser.py`、かまどの料理は `python3 tests/kamado-browser.py`、上志比の獣・採集・伐採は `python3 tests/kami-wild-browser.py`（どれも画面のない Chromium、各数分）。防衛戦の勝率は `tools/defense-sim.cjs`（`docs/p1-sim-baseline.md`）、変異したサルとの1対1は `tools/mutant-duel-sim.cjs`（`docs/mutant-monkey-ai.md`）。画面の確認は Playwright（SwiftShader）で起動と表示を見る。
 - 報告では「コードに存在／コミット済み／公開済み／PCで確認／iPhoneで確認」を区別する。実機で確かめていないことを確認済みと書かない。
 - 各フェーズで、変更履歴・使った3Dアセットと版・実装済み／未実装・テスト結果・未解決の不具合・セーブ互換・次の工程を `docs/` に残す。
 
@@ -70,6 +70,7 @@
 | `docs/mutant-monkey-ai.md` | 変異したサルの AI（暫定の強さ・攻撃・初遭遇は逃げ去る・v0.62 の強敵化と「変異した鱗」・強さの測定結果）と試遊版 `previews/p2-mutant/` |
 | `docs/mutant-scale-uses.md` | 変異した鱗の使い道（2026-11-13 決定）と v0.63〜v0.64 の実装：かまど・変換炉・蒼鱗／変異鱗の武器・鱗の飛去来器・蒼鱗／変異した鱗の防具・衝撃波・未定の事項 |
 | `docs/kamado-cooking-plan.md` | かまどの料理と食材の種類（v0.66）：ユーザー決定・食材・料理の決まり方・未定の事項 |
+| `docs/p2-kami-wild.md` | 上志比の獣・採集・伐採（v0.67、P2 指示の第1段階）：決まったこと・照合の食い違い・数（暫定）・作り・セーブ `kami`・試遊版のテストモード・未実装（第2・第3段階） |
 | `docs/p2-investigation.md` | P2 統合指示書 v3.0 への初期調査（防具の原因・地理データ・スズキ・順序・確認事項） |
 | `docs/p1-sim-baseline.md` | 防衛戦の勝率測定ツールと基準値 |
 | `docs/p1-balance-report.md` | P1 の測定結果・調整（v0.55・v0.56 で反映）・未確認事項 |
@@ -77,4 +78,4 @@
 | `docs/combat-aim.md` | 攻撃の向きと当たり判定（v0.58） |
 
 - キャラクターの確認画像：`python3 tools/char-studio.py 出力.png player suzuki gen`（`player@forest` で防具の組を着せる。`STUDIO_POSE=1` で動きの姿勢。`STUDIO_HTML` で別の index.html）。鱗の防具（蒼鱗・変異した鱗）は `python3 tools/scale-armor-studio.py 出力.png`。
-- 試遊版の作り方：`python3 tools/build-p1-preview.py`（防衛戦。A／B／C ボタン。`previews/p1-balance/`）と `python3 tools/build-p2-mutant-preview.py`（変異したサル。`previews/p2-mutant/`）。どちらも本編をコピーして試遊用の保存キーを足す。本編を変えたら作り直す。
+- 試遊版の作り方：`python3 tools/build-p1-preview.py`（防衛戦。A／B／C ボタン。`previews/p1-balance/`）と `python3 tools/build-p2-mutant-preview.py`（変異したサル。`previews/p2-mutant/`）と `python3 tools/build-p2-kami-preview.py`（上志比の獣・採集。開発用テストモードはここだけ。`previews/p2-kami/`）。どちらも本編をコピーして試遊用の保存キーを足す。本編を変えたら作り直す。
