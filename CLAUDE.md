@@ -49,7 +49,7 @@
 
 ## 作業の進め方
 - main へ入れる前に、作業ブランチで検証する。変更は小さく分ける。
-- テスト：`node tests/chapter2-save.cjs`、`node tests/chapter2-defense.cjs`、`node tests/classic-body.cjs`、`node tests/death-penalty.cjs`、`node tests/combat-aim.cjs`。地域の往復は `python3 tests/region-browser.py`、上志比は `python3 tests/kamishihi-browser.py`（`KAMI_SHOTS=フォルダ` で画面を撮る）、変異したサルは `python3 tests/mutant-browser.py`、主人公の着替え（初期の服の見た目が変わっていないか）は `python3 tests/wardrobe-browser.py`、鱗の装備は `python3 tests/scale-gear-browser.py`、かまどの料理は `python3 tests/kamado-browser.py`、上志比の獣・採集・伐採は `python3 tests/kami-wild-browser.py`、サルの要塞と侵入経路は `python3 tests/kami-fort-browser.py`（どれも画面のない Chromium、各数分）。防衛戦の勝率は `tools/defense-sim.cjs`（`docs/p1-sim-baseline.md`）、変異したサルとの1対1は `tools/mutant-duel-sim.cjs`（`docs/mutant-monkey-ai.md`）。画面の確認は Playwright（SwiftShader）で起動と表示を見る。
+- テスト：`node tests/chapter2-save.cjs`、`node tests/chapter2-defense.cjs`、`node tests/classic-body.cjs`、`node tests/death-penalty.cjs`、`node tests/combat-aim.cjs`。地域の往復は `python3 tests/region-browser.py`、上志比は `python3 tests/kamishihi-browser.py`（`KAMI_SHOTS=フォルダ` で画面を撮る）、変異したサルは `python3 tests/mutant-browser.py`、主人公の着替え（初期の服の見た目が変わっていないか）は `python3 tests/wardrobe-browser.py`、鱗の装備は `python3 tests/scale-gear-browser.py`、かまどの料理は `python3 tests/kamado-browser.py`、上志比の獣・採集・伐採は `python3 tests/kami-wild-browser.py`、サルの要塞と侵入経路は `python3 tests/kami-fort-browser.py`、要塞のサルの見張り・巡回・通報と物資の再補充は `python3 tests/kami-watch-browser.py`（どれも画面のない Chromium、各数分）。防衛戦の勝率は `tools/defense-sim.cjs`（`docs/p1-sim-baseline.md`）、変異したサルとの1対1は `tools/mutant-duel-sim.cjs`（`docs/mutant-monkey-ai.md`）。画面の確認は Playwright（SwiftShader）で起動と表示を見る。
 - 報告では「コードに存在／コミット済み／公開済み／PCで確認／iPhoneで確認」を区別する。実機で確かめていないことを確認済みと書かない。
 - 各フェーズで、変更履歴・使った3Dアセットと版・実装済み／未実装・テスト結果・未解決の不具合・セーブ互換・次の工程を `docs/` に残す。
 
@@ -72,6 +72,7 @@
 | `docs/kamado-cooking-plan.md` | かまどの料理と食材の種類（v0.66）：ユーザー決定・食材・料理の決まり方・未定の事項 |
 | `docs/p2-kami-wild.md` | 上志比の獣・採集・伐採（v0.67、P2 指示の第1段階）：決まったこと・照合の食い違い・数（暫定）・作り・セーブ `kami`・試遊版のテストモード・未実装（第2・第3段階） |
 | `docs/p2-kami-fort.md` | サルの占拠区域（v0.68、P2 指示の第2段階）：中心要塞・小拠点2か所の場所と形・侵入経路3つ・見張り台・物資置き場（本編では持ち出せない）・確認・報酬の数の案・未実装（第3段階） |
+| `docs/p2-kami-watch.md` | 要塞・小拠点のサルと警戒 AI（v0.69、P2 指示の第3段階）：顔ぶれ・見張り（18m・視線・遮り）・巡回・通報と増援・見失った後の探索・倒された守りの戻り・遠くのサルの簡略化・物資の回収と再補充（60分）・確認 |
 | `docs/p2-investigation.md` | P2 統合指示書 v3.0 への初期調査（防具の原因・地理データ・スズキ・順序・確認事項） |
 | `docs/p1-sim-baseline.md` | 防衛戦の勝率測定ツールと基準値 |
 | `docs/p1-balance-report.md` | P1 の測定結果・調整（v0.55・v0.56 で反映）・未確認事項 |

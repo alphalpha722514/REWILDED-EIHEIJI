@@ -537,7 +537,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.68 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.69 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -3864,14 +3864,14 @@ function f10HouseBlock(ax,az,bx,bz){ const L=gridQuery(Math.min(ax,bx),Math.max(
     for(let k=0;k<2;k++){ if(Math.abs(d[k])<1e-9){ if(Math.abs(A[k])>h[k]){ ok=false; break; } continue; } let u=(-h[k]-A[k])/d[k], v=(h[k]-A[k])/d[k]; if(u>v){ const w=u; u=v; v=w; } t0=Math.max(t0,u); t1=Math.min(t1,v); if(t0>t1){ ok=false; break; } }
     if(ok) return true; } return false; }
 // 見えるか：距離（種類ごと）・後ろ側は半分・安全地帯の相手は見えない・家の陰
-function f10Sees(e){ if(P.dead) return false; if(inSafe(P.x,P.z,1)) return false;
+function f10Sees(e){ if(e.kf) return kfSees(e); /* v0.69：要塞・小拠点のサル */ if(P.dead) return false; if(inSafe(P.x,P.z,1)) return false;
   const d=dist(e.x,e.z,P.x,P.z); let R=ET[e.type].detect*(1-f47Stats().stealth); if(Math.abs(angDiff(e.rot,Math.atan2(P.x-e.x,P.z-e.z)))>F10A.backAng) R*=F10A.backK; if(d>=R) return false;
   if(d<F10A.losR){ if(S.time-(e.losAt||-9)>F10A.losT){ e.losAt=S.time; e.losOK=!f10HouseBlock(e.x,e.z,P.x,P.z); } if(!e.losOK) return false; }
   return true; }
 function f10Alert(e){ setState(e,'alert'); e.nz=0; alertMark(e); sfx(e.type==='bear'?'roar':'alert'); e.f10pose=null; }
 function f10Rand(a){ return a[0]+Math.random()*(a[1]-a[0]); }
 // 種類ごとの更新の前に呼ぶ。新しい状態を扱ったら true（種類ごとの更新は飛ばす）
-function f10Pre(e,dt){ if(!f10Wild(e)) return false; const st=e.state, pd=dist(e.x,e.z,P.x,P.z);
+function f10Pre(e,dt){ if(!f10Wild(e)) return false; if(e.kf){ const r=kfPre(e,dt); if(r!==undefined) return r; } /* v0.69 */ const st=e.state, pd=dist(e.x,e.z,P.x,P.z);
   if(st==='idle'||st==='return'){
     if(f10Sees(e)&&(st==='idle'||dist(e.x,e.z,e.home.x,e.home.z)<16)){ /* 戻る途中は、縄張りの近く（16m）に戻ってから気づく（今と同じ） */ if(pd<F10A.close){ f10Alert(e); return true; } setState(e,'notice'); e.nz=e.f10quick?0.7:0; e.f10quick=false; e.f10pose=null; return true; }
     if(st==='idle'){ const I=F10IDLE[e.type]; if(!I) return false; if(!e.f10i) e.f10i={m:'walk',t:f10Rand(I.walk)*Math.random()};
@@ -7072,6 +7072,7 @@ function c2ClimbFall(e){
 }
 function damageEnemy(e,dmg,kind,fromAng,info=null){
   if(e.state==='dead') return;
+  if(e.kfY>1) return; // v0.69：見張り台の上のサルには届かない（見つかると飛び降りてくる）
   if(e.type==='mutant'&&e.state==='evade'&&e.st<MUT.evadeT*0.8){ floatText(e.x,2.2,e.z,'かわした','#c8c4b8'); return; } // v0.62：跳んでかわしている間は当たらない
   f31Hit(info); if(kind==='heavy') f10Noise(e.x,e.z,12,'impact'); // 強い衝撃の音
   let mult=1; if(e.state==='broken') mult=1.3; // 体勢が崩れている間は受けるダメージ×1.3
@@ -7189,7 +7190,7 @@ function wanderUpdate(e,dt,spd){
   if(!e.wander||e.st>e.wanderT){ const a=Math.random()*TAU, r=Math.random()*5; e.wander={x:e.home.x+Math.cos(a)*r,z:e.home.z+Math.sin(a)*r}; e.wanderT=2+Math.random()*3; e.st=0; }
   if(dist(e.x,e.z,e.wander.x,e.wander.z)>0.6) steer(e,e.wander.x,e.wander.z,spd,dt,4); else e.spd=0;
 }
-function leashBroken(e){ return e.mode==='field'&&(dist(e.x,e.z,e.home.x,e.home.z)>24||inSafe(P.x,P.z,1)||inSafe(e.x,e.z,0)); }
+function leashBroken(e){ return e.mode==='field'&&(dist(e.x,e.z,e.home.x,e.home.z)>(e.kf?KFA.leash:24)||inSafe(P.x,P.z,1)||inSafe(e.x,e.z,0)); }
 function chargeHit(e,hit,dmgP,dmgF,dmgC,stunT){
   // 突進中の衝突処理。止まったらtrue
   if(!hit) return false;
@@ -7539,6 +7540,7 @@ function mutantFlee(e){ if(e.state==='flee'||e.state==='dead') return; e.ind.vis
   if(MUT.fleeDrop>0&&!e.scaleDropped){ e.scaleDropped=true; spawnDrop('mutScale',MUT.fleeDrop,e.x,e.z); } } // v0.62：初遭遇でも鱗が1枚はがれ落ちる（暫定）
 function mutantRage(e){ if(e.rage||e.fleeOnly) return; e.rage=true; floatText(e.x,2.6,e.z,'猛り狂った！','#ff7a5a',true); sfx('roar'); S.shake=Math.max(S.shake,0.3); }
 function updateMutant(e,dt){
+  if(e.kfw&&kfMutPre(e,dt)) return; // v0.69：普段の出現の分（見張り・巡回・見失ったら探して戻る）。初遭遇の変異したサルは通らない
   const T=mutTarget(e), pd=dist(e.x,e.z,T.x,T.z), face=Math.atan2(T.x-e.x,T.z-e.z), rg=e.rage?MUT.rageSpd:1, sp=ET.mutant.speed*rg;
   const near=()=>pd-e.r-(T.r||0.4), cd=()=>(MUT.cd0+Math.random()*MUT.cd1)*(e.rage?MUT.rageCD:1);
   if(!e.rage&&!e.fleeOnly&&e.hp<=e.maxHp*MUT.rageAt&&e.state!=='dead') mutantRage(e);
@@ -7651,7 +7653,7 @@ function updateEnemies(dt){
     e.st+=dt; e.flash=Math.max(0,e.flash-dt);
     if(e.state==='dead'){ updateEnemyAnim(e,dt); if(e.st>2.6) removeEnemy(e); continue; }
     // v0.45.1：AIのLOD。90m先の野性獣は思考を0.25秒間隔に間引く（新規オブジェクトは作らない。raid・ボス・攻撃中は対象外）
-    if(e.mode==='field'&&e.type!=='boss'&&!AILOD_SKIP.includes(e.state)&&dist(e.x,e.z,P.x,P.z)>90){
+    if((e.mode==='field'||(e.kfw&&KF_CALM.includes(e.state)))&&e.type!=='boss'&&!AILOD_SKIP.includes(e.state)&&dist(e.x,e.z,P.x,P.z)>90){ // v0.69：普段の変異したサルも、落ち着いていれば間引く
       e.lodT=(e.lodT||0)+dt;
       if(e.lodT>=0.25){ const ldt=e.lodT; e.lodT=0;
         if(!updatePoise(e,ldt)){ const prev=e.state;
@@ -7660,7 +7662,9 @@ function updateEnemies(dt){
           else if(e.type==='boar') updateBoar(e,ldt);
           else if(e.type==='monkey') updateMonkey(e,ldt);
           else if(e.type==='bear') updateBear(e,ldt);
-          f10Post(e,prev); } }
+          else if(e.type==='mutant') updateMutant(e,ldt);
+          f10Post(e,prev); if(e.kf) kfPost(e,prev); } }
+      if((e.kf||e.kfw)&&e.m&&e.m.g){ e.m.g.position.set(e.x,groundH(e.x,e.z)+(e.kfY||0),e.z); e.m.g.rotation.y=e.rot; } // v0.69：遠くでも形の位置だけは合わせる（近づいたときに飛ばない）
       continue; }
     if(!updatePoise(e,dt)){ const prev=e.state;
     if(f10Pre(e,dt)){}
@@ -7670,7 +7674,7 @@ function updateEnemies(dt){
     else if(e.type==='bear') updateBear(e,dt);
     else if(e.type==='mutant') updateMutant(e,dt);
     else updateBoss(e,dt);
-    f10Post(e,prev); }
+    f10Post(e,prev); if(e.kf) kfPost(e,prev); }
     if(e.removed) continue;
     if(e.state!=='wind'&&e.state!=='chargeWind') e.ind.visible=false;
     if(!['wind','goreWind','tusk'].includes(e.state)&&!(ev.kind==='chapter2'&&e.state==='raid'&&e.c2CoreT>0)) hideSector(e);
@@ -7680,9 +7684,9 @@ function updateEnemies(dt){
     }
     // プレイヤーとの重なり
     const d=dist(e.x,e.z,P.x,P.z), rs=e.r+P.r;
-    if(d<rs&&d>0.001&&!P.dodge){ const push=(rs-d); if(e.type==='boss'){ P.x+=(P.x-e.x)/d*push; P.z+=(P.z-e.z)/d*push; resolve(P,false); } else { e.x+=(e.x-P.x)/d*push; e.z+=(e.z-P.z)/d*push; resolve(e,true,e.type==='monkey'); } }
+    if(d<rs&&d>0.001&&!P.dodge&&!(e.kfY>1)){ const push=(rs-d); if(e.type==='boss'){ P.x+=(P.x-e.x)/d*push; P.z+=(P.z-e.z)/d*push; resolve(P,false); } else { e.x+=(e.x-P.x)/d*push; e.z+=(e.z-P.z)/d*push; resolve(e,true,e.type==='monkey'); } }
     if(e.pushV){ const V=e.pushV; e.x+=V.vx*dt; e.z+=V.vz*dt; const f=Math.exp(-6*dt); V.vx*=f; V.vz*=f; resolve(e,true,e.type==='monkey'); if(V.vx*V.vx+V.vz*V.vz<0.09) e.pushV=null; } // v0.63：変異鱗の衝撃波で押し出される
-    updateEnemyAnim(e,dt); poiseLean(e); tryTrack(e,dt); // v0.45：移動中の獣が蹄跡を残す
+    updateEnemyAnim(e,dt); if(e.kfY>0&&e.m&&e.m.g) e.m.g.position.y+=e.kfY; poiseLean(e); tryTrack(e,dt); // v0.45：移動中の獣が蹄跡を残す
     if(e.h36){ // v0.45：よろけバネ（頭→胴の順に遅れて戻る）。次フレームで anim が絶対値を再設定するため蓄積しない
       const H=e.h36; H.vx+=(-H.x*52-H.vx*7)*dt; H.vz+=(-H.z*52-H.vz*7)*dt; H.x+=H.vx*dt; H.z+=H.vz*dt;
       e.stagK=Math.max(0,(e.stagK||0)-dt*0.8);
@@ -7695,7 +7699,7 @@ function updateEnemies(dt){
   }
   // 敵同士の押し合い
   for(let i=0;i<enemies.length;i++) for(let j=i+1;j<enemies.length;j++){
-    const a=enemies[i],b=enemies[j]; if(a.state==='dead'||b.state==='dead') continue;
+    const a=enemies[i],b=enemies[j]; if(a.state==='dead'||b.state==='dead'||a.kfY>1||b.kfY>1) continue;
     const dx=b.x-a.x,dz=b.z-a.z,d=Math.sqrt(dx*dx+dz*dz),rs=a.r+b.r;
     if(d<rs&&d>0.001){ const p=(rs-d)/2; a.x-=dx/d*p; a.z-=dz/d*p; b.x+=dx/d*p; b.z+=dz/d*p; }
   }
@@ -9467,18 +9471,19 @@ function kamishihiBuild(ctx){
 // 数はすべて暫定（試遊のあと直す）。場所は地図データから決まった乱数で選ぶ（毎回同じ）。docs/p2-kami-wild.md
 const KW={beasts:{bear:4,boar:8,deer:3,weasel:2,monkey:3},groups:4,groupRespawn:300,near:170,far:240,minSpawnD:32,
   nodes:{stone:12,bamboo:6,rock:6,straw:8,wood:10,food:6,chest:2,scrap:20},felledMax:400,show:150,maxLogs:60};
-const KW_TEST={mutant:false,marks:false,loot:false}; // 開発用：試遊版のボタンだけが書き換える（保存しない。本編では常に false）
+const KW_TEST={mutant:false,marks:false}; // 開発用：試遊版のボタンだけが書き換える（保存しない。本編では常に false）
 const KW_CALM=['idle','return','notice'];
 function kamiMutantOK(){ return KW_TEST.mutant||!!(prog.chapter2&&prog.chapter2.progress&&prog.chapter2.progress.mutantMet); }
 // ---- 保存（セーブのキー kami、v:1。時刻はすべて遊んだ時間 stats.time） ----
 // n：取った場所が戻る時刻／r：岩の残り／sc：探ったがれき／f：切った木／sp：獣が戻る時刻／g：群れ（d 倒れた仲間・w 全滅から戻る時刻）
-function kamiFresh(){ return {v:1,n:{},r:{},sc:[],f:[],sp:{},g:{},st:{}}; } // st：物資置き場（v0.68。n 持ち出した回数・t 最後に持ち出した時刻）
+function kamiFresh(){ return {v:1,n:{},r:{},sc:[],f:[],sp:{},g:{},st:{},fm:{}}; } // st：物資置き場（v0.68。n 持ち出した回数・t 最後に持ち出した時刻）
 function kamiSave(){ const k=prog.kami, T=stats.time, n={}, sp={}, g={};
   for(const a in k.n) n[a]=Math.ceil(k.n[a]); // 戻る時刻を過ぎても、近くにいて戻っていない物があるので、そのまま残す
   for(const a in k.sp) if(k.sp[a]>T) sp[a]=Math.ceil(k.sp[a]);
   for(const a in k.g){ const q=k.g[a]; if(q.w>T||q.d.some(Boolean)) g[a]={d:q.d.map(v=>v?1:0),w:Math.ceil(q.w||0)}; }
   const st={}; for(const a in (k.st||{})){ const q=k.st[a]; if(q&&q.n>0) st[a]={n:q.n,t:Math.ceil(q.t||0)}; }
-  return {v:1,n,r:Object.assign({},k.r),sc:k.sc.slice(-200),f:k.f.slice(-KW.felledMax),sp,g,st}; }
+  const fm={}; for(const a in (k.fm||{})) if(k.fm[a]>T) fm[a]=Math.ceil(k.fm[a]); // v0.69：倒された守りのサルが戻る時刻
+  return {v:1,n,r:Object.assign({},k.r),sc:k.sc.slice(-200),f:k.f.slice(-KW.felledMax),sp,g,st,fm}; }
 function kamiLoad(q){ const k=kamiFresh(); if(!q||typeof q!=='object'||q.v!==1) return k; const N=v=>typeof v==='number'&&isFinite(v);
   if(q.n&&typeof q.n==='object') for(const a in q.n) if(/^[sbrwpo]\d+$/.test(a)&&N(q.n[a])) k.n[a]=clamp(q.n[a],0,1e7);
   if(q.r&&typeof q.r==='object') for(const a in q.r) if(/^r\d+$/.test(a)&&N(q.r[a])) k.r[a]=clamp(Math.floor(q.r[a]),0,ROCK_MAX);
@@ -9486,6 +9491,7 @@ function kamiLoad(q){ const k=kamiFresh(); if(!q||typeof q!=='object'||q.v!==1) 
   if(Array.isArray(q.f)) k.f=q.f.filter(v=>typeof v==='string'&&/^k\d+_\d+_\d+$/.test(v)).slice(-KW.felledMax);
   if(q.sp&&typeof q.sp==='object') for(const a in q.sp) if(/^a\d+$/.test(a)&&N(q.sp[a])) k.sp[a]=clamp(q.sp[a],0,1e7);
   if(q.g&&typeof q.g==='object') for(const a in q.g){ const v=q.g[a]; if(/^g\d+$/.test(a)&&v&&Array.isArray(v.d)) k.g[a]={d:[0,1,2].map(i=>v.d[i]?1:0),w:N(v.w)?clamp(v.w,0,1e7):0}; }
+  if(q.fm&&typeof q.fm==='object') for(const a in q.fm) if(/^[fab]\d$/.test(a)&&N(q.fm[a])) k.fm[a]=clamp(q.fm[a],0,1e7);
   if(q.st&&typeof q.st==='object') for(const a in q.st){ const v=q.st[a]; if(/^(fort|outB)$/.test(a)&&v&&N(v.n)&&v.n>0) k.st[a]={n:clamp(Math.floor(v.n),0,9999),t:N(v.t)?clamp(v.t,0,1e7):0}; }
   return k; }
 // ---- 場所を決める ----
@@ -9623,7 +9629,7 @@ function kamiInteractables(ctx,L){ const kw=ctx.kw; if(!kw) return; const k=prog
     const nm=n.k==='stone'?'河原の石を拾う（割れやすい石）':n.k==='straw'?`荒らされた田の稲を束ねる（藁+${STRAW_GOT}＝縄1本ぶん）`:n.k==='bamboo'?'竹を切る':n.k==='wood'?'薪を拾う':n.chest?'栗を拾う':'大根を収穫する';
     L.push({d,label:nm,act:()=>kamiGather(n)}); } }
 // ---- 獣 ----
-function kamiSpawnBeast(ctx,type,x,z){ if(type==='mutant') return spawnMutant(x,z,{aggro:false}); // 形のデータを読んでから出る（Promise）。地域の獣として登録される
+function kamiSpawnBeast(ctx,type,x,z){ if(type==='mutant') return spawnMutant(x,z,{aggro:false,kfw:true}); // 形のデータを読んでから出る（Promise）。地域の獣として登録される。kfw：v0.69 見失ったら探して戻る
   const e=spawnEnemy(type,x,z,'field'); ctx.enemies.push(e); return e; }
 function kamiDrop(ctx,e){ if(e&&!e.removed) removeEnemy(e); const i=ctx.enemies.indexOf(e); if(i>=0) ctx.enemies.splice(i,1); }
 function kamiCalm(e){ return KW_CALM.includes(e.state)&&!(e.type==='mutant'&&e.aggro); }
@@ -9654,7 +9660,7 @@ function kamiGroupAlert(g){ for(const m of g.m){ const o=m.e; if(!o||o.removed||
     if(o.type==='mutant'){ o.aggro=true; continue; }
     if(o.state==='idle'||o.state==='notice'||o.state==='return'){ if(f10Has('C')) f10Alert(o); else { setState(o,'alert'); alertMark(o); } } } }
 function kamiTick(ctx,dt){ const kw=ctx.kw; if(!kw||S.mode!=='playing'||REG.busy) return; kw.t-=dt; if(kw.t>0) return; kw.t=0.25; const T=stats.time;
-  kamiSpawners(ctx,T); kamiGroups(ctx,T);
+  kamiSpawners(ctx,T); kamiGroups(ctx,T); kfGarrisonTick(ctx,T); kfQueueTick(ctx); // v0.69：要塞・小拠点の守り
   kw.vt-=0.25; if(kw.vt<=0){ kw.vt=0.5; kamiNodesUpdate(ctx,T); }
   if(--kw.prune<=0){ kw.prune=40; for(let i=ctx.enemies.length-1;i>=0;i--) if(ctx.enemies[i].removed) ctx.enemies.splice(i,1); } }
 // ================= v0.68（P2 第2段階）サルの占拠区域：中心要塞と小拠点2か所 =================
@@ -9663,7 +9669,7 @@ function kamiTick(ctx,dt){ const kw=ctx.kw; if(!kw||S.mode!=='playing'||REG.busy
 // ・要塞：道路と広場（交差点・田）を取り込み、四辺の線上の家はそのまま壁にして、家の間を廃材・木材・家具のバリケードでつなぐ。高所の見張り台3つ
 // ・侵入経路3つ（どれも本当に通れる）：正面（国道416号の門）・建物の隙間（南の家と家の間）・裏道（東の田んぼの畦から壁の破れ目へ）
 // ・小拠点A：国道416号沿いの見張り場（見張り台1つ）／小拠点B：資源の集積場所（物資の山）
-// ・物資置き場：要塞の奥と小拠点B。報酬の数は未承認（Q53）なので、本編では持ち出せない。試遊版のテストだけ仮の中身で回収を試せる
+// ・物資置き場：要塞の奥と小拠点B（回収と再補充は v0.69）
 // 見張り・巡回・通報（第3段階）はまだ。場所・形はすべて暫定。docs/p2-kami-fort.md
 const KF={sites:[
   {id:'fort',name:'サルの要塞',loop:[[7250,1034],[7340,1034],[7340,1110],[7250,1110]],
@@ -9672,7 +9678,7 @@ const KF={sites:[
    reeds:[[7343.5,1057.5],[7344,1064.5],[7346,1061]], zone:{x0:7240,x1:7350,z0:1024,z1:1120}},
   {id:'outA',name:'サルの見張り場',arc:{x:6962,z:1031,r:6.5,a0:-0.35,a1:Math.PI+0.35},towers:[[6962,1032]],zone:{x:6962,z:1029,r:22}},
   {id:'outB',name:'サルの物資置き場',arc:{x:6768,z:1312,r:8.5,a0:0,a1:TAU},gaps:[{k:'w',x:6759.5,z:1312,w:2.6},{k:'n',x:6768,z:1303.5,w:2.6}],stash:{x:6769,z:1314,rot:0},zone:{x:6768,z:1312,r:24}}],
-  loot:{fort:{wood:8,stone:6,iron:3,rope:2,mutScale:1},outB:{wood:5,stone:4,iron:1}}}; // loot は開発用の仮の中身（Q53 未承認。本編では使わない）
+  }; // 物資の中身は v0.69 の KF_LOOT（2026-11-15 ユーザー承認）
 function kamiInZone(x,z,m=0){ for(const s of KF.sites){ const Z=s.zone; if(Z.r!=null){ if(dist(x,z,Z.x,Z.z)<Z.r+m) return true; } else if(x>Z.x0-m&&x<Z.x1+m&&z>Z.z0-m&&z<Z.z1+m) return true; } return false; }
 // 形の部品（世界座標で直接。gb は frame(0,0,0,0) のまま使う）
 function kfBox(gb,cx,cy,cz,sx,sy,sz,yaw,col,rx=0,rz=0){ // 好きな向きの箱：yaw（上から見た向き）・rx（長い方の軸まわりの傾き）・rz（前後の傾き）
@@ -9751,7 +9757,7 @@ function kfWall(ctx,gb,site,pts,closed){ const runs=[], N=pts.length, M=closed?N
     ctx.obox(mx,mz,len,0.9,yaw,'house',{h:groundH(mx,mz)+2.4,barri:site.id});
     let t=t0; while(t<t1-0.05){ const l=Math.min(t1-t,1.5+hash2(t*1.7+mx,mz)*1.1), m=t+l/2; kfModule(gb,r.a[0]+r.ux*m,r.a[1]+r.uz*m,yaw,l,r.out,t+r.a[0]); t+=l; }
     (ctx.kf.walls=ctx.kf.walls||[]).push([r.a[0]+r.ux*t0,r.a[1]+r.uz*t0,r.a[0]+r.ux*t1,r.a[1]+r.uz*t1,site.id]); } }
-function kamiFortBuild(ctx){ const kf=ctx.kf={walls:[],towers:[],stashes:[],sites:KF.sites}; const gb=new GB(); gb.jit=0.08;
+function kamiFortBuild(ctx){ const kf=ctx.kf={walls:[],towers:[],stashes:[],sites:KF.sites,run:{},mem:new Map(),queue:[]}; const gb=new GB(); gb.jit=0.08; // run・mem・queue：v0.69 の守りのサル
   for(const s of KF.sites){
     if(s.loop) kfWall(ctx,gb,s,s.loop,true);
     if(s.arc){ const A=s.arc, n=Math.max(8,Math.round((A.a1-A.a0)*A.r/1.2)), pts=[]; for(let i=0;i<=n;i++){ const t=A.a0+(A.a1-A.a0)*i/n; pts.push([A.x+Math.cos(t)*A.r,A.z+Math.sin(t)*A.r]); }
@@ -9768,20 +9774,151 @@ function kamiFortBuild(ctx){ const kf=ctx.kf={walls:[],towers:[],stashes:[],site
   if(!gb.i.length) return;
   const m=new THREE.Mesh(ctx.own(gb.geo()),vcMat); m.castShadow=true; m.receiveShadow=true; ctx.add(m);
   const ink=new THREE.Mesh(ctx.own(inkGeo(m.geometry,0.05)),inkMat); ink.raycast=()=>{}; ctx.add(ink); kf.mesh=m; }
-// 物資置き場（回収の仕組み。中身の数は未承認なので、本編では持ち出せない）
-function kfStashState(id){ const k=prog.kami; if(!k.st) k.st={}; return k.st[id]||(k.st[id]={n:0,t:0}); }
-function kfStashTake(st){ const loot=KF.loot[st.id]; const S=kfStashState(st.id);
-  if(!KW_TEST.loot){ toast('サルが集めた物資の山。中身の量はまだ相談中のため、この版では持ち出せません',true); return; }
-  if(S.n>0){ toast('試遊：もう持ち出した（また貯まる仕組みは第3段階で作る）',true); return; }
-  const got=[]; for(const [k,v] of Object.entries(loot)){ inv[k]=(inv[k]||0)+v; got.push(`${(F5_MATS&&F5_MATS[k])||({wood:'木材',mutScale:'変異した鱗',rope:'縄'})[k]||k}+${v}`); }
-  S.n++; S.t=stats.time; sfx('pickup'); toast(`試遊（仮の中身）：物資を持ち出した　${got.join('・')}`); floatText(st.x,1.6,st.z,'物資','#f0dca0'); g4CheckQuests(); saveGame(); }
-function kfInteractables(ctx,L){ const kf=ctx.kf; if(!kf) return; for(const st of kf.stashes){ const d=dist(P.x,P.z,st.x,st.z)-1.7; if(d>1.8) continue;
-    const S=kfStashState(st.id); L.push({d,label:KW_TEST.loot?(S.n>0?'物資の山：もう持ち出した（試遊）':'サルが集めた物資を持ち出す（試遊：仮の中身）'):'サルが集めた物資の山（木箱・樽・袋）',act:()=>kfStashTake(st)}); } }
 function kamiDrawFort(ctx,c2,X,Z){ const kf=ctx.kf; if(!kf) return; c2.save(); c2.lineCap='round';
   for(const w of kf.walls){ c2.strokeStyle='#2a1a10'; c2.lineWidth=4; c2.beginPath(); c2.moveTo(X(w[0]),Z(w[1])); c2.lineTo(X(w[2]),Z(w[3])); c2.stroke(); c2.strokeStyle='#b07a44'; c2.lineWidth=2; c2.stroke(); }
   for(const t of kf.towers){ c2.fillStyle='#b07a44'; c2.strokeStyle='#2a1a10'; c2.lineWidth=1.5; c2.fillRect(X(t.x)-3,Z(t.z)-3,6,6); c2.strokeRect(X(t.x)-3,Z(t.z)-3,6,6); }
   for(const s of kf.sites){ if(s.id!=='fort') continue; const Zn=s.zone; c2.font='bold 12px sans-serif'; c2.fillStyle='#ffd8b0'; c2.strokeStyle='#000'; c2.lineWidth=3; const tx=X((Zn.x0+Zn.x1)/2)-30, tz=Z(Zn.z0)-6; c2.strokeText(s.name,tx,tz); c2.fillText(s.name,tx,tz); }
   c2.restore(); }
+// ================= v0.69（P2 第3段階）見張り・巡回・通報・増援・見失った後の探索・物資の再補充 =================
+// 指示書 Q24〜Q26・Q28・Q29・Q34〜Q36・Q38・Q42〜Q46・Q48・Q49、2026-11-15 ユーザー回答：報酬の数は案どおり／ゲーム内3日＝遊んだ時間60分／要塞の中の細かい配置は任せる。
+// ・要塞10体（凶暴化7・変異3＝3割）：見張り台3・単独の巡回1・2体の巡回（凶暴化＋変異）・3体の巡回（凶暴化2＋変異）・物資の見張り（変異）
+// ・見張り場3体（見張り台1＋2体の巡回）、物資置き場3体（3体の巡回）。初遭遇の前は変異したサルの枠を出さない（第1段階の群れと同じ決まり）
+// ・見張り台の見張り：18m（正面±60度。横・後ろは3分の1）・家とバリケードの陰は見えない（高い所からはバリケードの上を見通せる）。見つけると鳴いて知らせ、少しして飛び降りて戦う
+// ・知らせを受けると、近くの仲間2〜3体が1.2秒おきに順に集まる（見張りが見つけたときは3体、ほかは2体）
+// ・見失うと、最後に見た場所のまわりを約12秒探してから持ち場へ戻る（変異したサルも、普段の出現の分は同じ。初遭遇の動きは変えない）
+// ・倒されたサルは、遊んだ時間で10分たち、主人公が拠点から100m 以上離れているときに戻る（暫定）
+// ・遠く（90m 先）のサルは0.25秒に1回だけ考え、形の位置だけは毎回合わせる。拠点から320m 離れると、落ち着いているサルは片付け、位置を覚えて次に近づいたときにそこから出す
+// 数はすべて暫定。docs/p2-kami-watch.md
+const KFA={watchR:18,watchCone:1.05,sideK:0.34,lose:12,reinfGap:1.2,alarmR:45,alarmCD:10,leash:40,near:230,far:320,respawn:600,respawnAway:100,refill:3600,towerY:4.3,callT:2.2,walk:1.8};
+const KF_LOOT={fort:{first:{wood:20,stone:12,iron:6,rope:4,straw:6,mutScale:3},again:{wood:6,stone:4,iron:2,mutScale:1}},
+  outB:{first:{wood:10,stone:6,iron:3,straw:4,mutScale:1},again:{wood:4,stone:2,iron:1}}}; // 2026-11-15 ユーザー承認
+const KF_ROUTES={ // 巡回の道すじ（loop：輪。ほかは行って戻る）
+  r1:{loop:true,p:[[7256,1052],[7256,1104],[7276,1104],[7276,1056]]},
+  r2:{loop:false,p:[[7286,1060],[7286,1091],[7300,1093],[7312,1094.5],[7320,1094.5],[7329,1092],[7330,1052]]},
+  r3:{loop:true,p:[[7329,1048],[7337,1048],[7337.5,1092],[7329,1092]]},
+  ra:{loop:false,p:[[6942,1046],[6984,1046]]},
+  rb:{loop:true,p:[0,1,2,3,4,5,6,7].map(i=>[6768+Math.cos(i*Math.PI/4)*12.5,1312+Math.sin(i*Math.PI/4)*12.5])}};
+const KF_GARRISON={ // t：m 凶暴化したサル・M 変異したサル
+  fort:[{k:'f0',t:'m',role:'watch',tower:0,look:-Math.PI/2},{k:'f1',t:'m',role:'watch',tower:1,look:0},{k:'f2',t:'m',role:'watch',tower:2,look:Math.PI/2}, // look：見張りが見回す中心の向き（西・南・東。0＝南）
+    {k:'f3',t:'m',role:'patrol',route:'r1'},
+    {k:'f4',t:'m',role:'patrol',route:'r2'},{k:'f5',t:'M',role:'patrol',route:'r2',follow:'f4',side:1},
+    {k:'f6',t:'m',role:'patrol',route:'r3'},{k:'f7',t:'m',role:'patrol',route:'r3',follow:'f6',side:-1},{k:'f8',t:'M',role:'patrol',route:'r3',follow:'f6',side:1},
+    {k:'f9',t:'M',role:'guard',at:[7331.5,1086]}],
+  outA:[{k:'a0',t:'m',role:'watch',tower:0,look:Math.PI},{k:'a1',t:'m',role:'patrol',route:'ra'},{k:'a2',t:'M',role:'patrol',route:'ra',follow:'a1',side:1}],
+  outB:[{k:'b0',t:'m',role:'patrol',route:'rb'},{k:'b1',t:'m',role:'patrol',route:'rb',follow:'b0',side:-1},{k:'b2',t:'M',role:'patrol',route:'rb',follow:'b0',side:1}]};
+const KF_CALM=['idle','notice','return','search','probe','kfsearch','kfreturn'], KF_FIGHT=['call','kfcall','alert','kite','dash','wind','chase','retreat','scratchWind','pounceWind'];
+function kfCenter(s){ const Z=s.zone; return Z.r!=null?{x:Z.x,z:Z.z}:{x:(Z.x0+Z.x1)/2,z:(Z.z0+Z.z1)/2}; }
+// 視線：家は必ず遮る。バリケード（barri）は、その場所の視線の高さがバリケードの上より低いときだけ遮る
+function kfLOS(ax,az,ay,bx,bz,by){ const L=gridQuery(Math.min(ax,bx),Math.max(ax,bx),Math.min(az,bz),Math.max(az,bz));
+  for(let i=0;i<L.length;i++){ const o=L[i]; if(o.k!=='o'||o.tag!=='house'||!o.active) continue;
+    const toL=(x,z)=>{ const rx=x-o.x, rz=z-o.z; return [rx*o.c+rz*o.s,-rx*o.s+rz*o.c]; }; const A=toL(ax,az), B=toL(bx,bz);
+    let t0=0,t1=1, ok=true; const d=[B[0]-A[0],B[1]-A[1]], h=[o.hx,o.hz];
+    for(let k=0;k<2;k++){ if(Math.abs(d[k])<1e-9){ if(Math.abs(A[k])>h[k]){ ok=false; break; } continue; } let u=(-h[k]-A[k])/d[k], v=(h[k]-A[k])/d[k]; if(u>v){ const w=u; u=v; v=w; } t0=Math.max(t0,u); t1=Math.min(t1,v); if(t0>t1){ ok=false; break; } }
+    if(!ok) continue; if(!o.barri) return false;
+    const yIn=ay+(by-ay)*t0, yOut=ay+(by-ay)*t1; if(Math.min(yIn,yOut)<(o.h||0)) return false; }
+  return true; }
+function kfSees(e){ if(P.dead||inSafe(P.x,P.z,1)) return false; const d=dist(e.x,e.z,P.x,P.z), watch=e.kf&&e.kf.role==='watch'&&e.kfY>1;
+  let R=(watch?KFA.watchR:ET[e.type].detect)*(1-f47Stats().stealth); const off=Math.abs(angDiff(e.rot,Math.atan2(P.x-e.x,P.z-e.z)));
+  if(watch){ if(off>KFA.watchCone) R*=KFA.sideK; } else if(off>F10A.backAng) R*=F10A.backK;
+  if(d>=R) return false;
+  if(S.time-(e.kfLosAt||-9)>0.25||e.kfLosP!==Math.round(P.x*2)+Math.round(P.z*2)*7919){ e.kfLosAt=S.time; e.kfLosP=Math.round(P.x*2)+Math.round(P.z*2)*7919;
+    e.kfLos=kfLOS(e.x,e.z,groundH(e.x,e.z)+(e.kfY||0)+0.9,P.x,P.z,groundH(P.x,P.z)+1.2); }
+  return e.kfLos; }
+// 見張り台の上に留める／下りる
+function kfTowerOf(e){ const L=REG.live; if(!L||!L.kf) return null; return L.kf.towers.filter(t=>t.site===e.kf.site)[e.kf.tower]||null; }
+function kfPin(e){ const t=kfTowerOf(e); if(!t) return; e.x=t.x; e.z=t.z; e.kfY=KFA.towerY; }
+function kfLadder(t){ return {x:t.x-Math.cos(t.yaw)*2.4, z:t.z-Math.sin(t.yaw)*2.4}; }
+function kfDescend(e){ if(!(e.kfY>0)) return; const t=kfTowerOf(e); e.kfY=0; if(t){ const f=kfLadder(t); e.x=f.x; e.z=f.z; resolve(e,true,true); } spawnParticles(e.x,0.2,e.z,6,0x8a7a5a,3); }
+// 落ち着いているときの動き（見張り・物資の見張り・巡回）
+function kfCalm(e,dt){ const k=e.kf;
+  if(k.role==='watch'){ const t=kfTowerOf(e); if(!t) return;
+    if(!(e.kfY>0)){ const f=kfLadder(t); if(dist(e.x,e.z,f.x,f.z)>1.0){ steer(e,f.x,f.z,KFA.walk*1.3,dt,5); e.spd=KFA.walk*1.3; return; } kfPin(e); }
+    kfPin(e); e.spd=0; e.rot=(k.look||0)+Math.sin(S.time*0.42+e.id*1.7)*1.25; return; } // 外を向いて、ゆっくり見回す（±72度）
+  if(k.role==='guard'){ const a=k.at; if(dist(e.x,e.z,a[0],a[1])>1.0){ steer(e,a[0],a[1],KFA.walk,dt,5); e.spd=KFA.walk; } else { e.spd=0; e.rot+=Math.sin(S.time*0.6+e.id)*dt*0.9; } e.home={x:a[0],z:a[1]}; return; }
+  // 巡回：ついて行く相手が落ち着いていれば、その斜め後ろを歩く
+  if(k.follow){ const L=REG.live&&REG.live.kf, lead=L&&L.mem&&L.mem.get(k.follow);
+    if(lead&&!lead.removed&&lead.state!=='dead'&&KF_CALM.includes(lead.state)){ const b=lead.rot+Math.PI, sd=(k.side||1);
+      const tx=lead.x+Math.sin(b)*1.8+Math.sin(b+sd*Math.PI/2)*1.4, tz=lead.z+Math.cos(b)*1.8+Math.cos(b+sd*Math.PI/2)*1.4;
+      if(dist(e.x,e.z,tx,tz)>0.8){ const sp=Math.min(KFA.walk*1.6,(lead.spd||0)+dist(e.x,e.z,tx,tz)*0.6); steer(e,tx,tz,sp,dt,6); e.spd=sp; } else { e.spd=0; faceTo(e,lead.rot,3,dt); }
+      e.home={x:lead.x,z:lead.z}; return; } }
+  const R=KF_ROUTES[k.route]; if(!R) return; if(k.ri==null){ k.ri=0; k.dir=1; k.pause=0; }
+  const p=R.p[k.ri]; e.home={x:p[0],z:p[1]};
+  if(k.pause>0){ k.pause-=dt; e.spd=0; e.rot+=Math.sin(S.time*1.6+e.id)*dt*1.2; return; }
+  if(dist(e.x,e.z,p[0],p[1])>0.8){ steer(e,p[0],p[1],KFA.walk,dt,5); e.spd=KFA.walk; return; }
+  k.pause=1.5+hash2(e.id,k.ri)*1.5; // 曲がり角で少し止まって見回す
+  if(R.loop) k.ri=(k.ri+1)%R.p.length; else { if(k.ri+k.dir<0||k.ri+k.dir>=R.p.length) k.dir=-k.dir; k.ri+=k.dir; } }
+// 見失った後：最後に見た場所へ行き、まわりを約12秒探してから戻る
+function kfSearch(e,dt,spd,onDone){ const t=e.kfT||e.f10t; if(!t){ onDone(); return; }
+  if(e.kfLook==null){ if(dist(e.x,e.z,t.x,t.z)>1.5&&e.st<14) { steer(e,t.x,t.z,spd,dt,6); e.spd=spd; } else { e.kfLook=0; e.kfW=null; } return; }
+  e.kfLook+=dt; if(!e.kfW||dist(e.x,e.z,e.kfW.x,e.kfW.z)<0.8||e.kfWt>3){ for(let i=0;i<6;i++){ const a=Math.random()*TAU, r=2+Math.random()*5, x=t.x+Math.cos(a)*r, z=t.z+Math.sin(a)*r; if(f4Free(x,z,0.5)){ e.kfW={x,z}; break; } } e.kfWt=0; }
+  e.kfWt=(e.kfWt||0)+dt; if(e.kfW){ steer(e,e.kfW.x,e.kfW.z,KFA.walk*1.2,dt,5); e.spd=KFA.walk*1.2; }
+  if(e.kfLook>KFA.lose){ e.kfLook=null; e.kfW=null; e.kfT=null; onDone(); } }
+// 凶暴化したサル（野の獣の仕組み F10 の前に呼ぶ）。扱ったら true／false、任せるときは undefined
+function kfPre(e,dt){ const k=e.kf, st=e.state;
+  if(k.role==='watch'&&e.kfY>0){
+    if(st==='call'||st==='alert'){ setState(e,'kfcall'); floatText(e.x,KFA.towerY+2.2,e.z,'キキッ！','#f2e2a6'); sfx('alert'); kfAlarm(e); }
+    if(e.state==='kfcall'){ e.spd=0; kfPin(e); faceTo(e,Math.atan2(P.x-e.x,P.z-e.z),6,dt); if(e.st>KFA.callT){ kfDescend(e); f10Alert(e); } return true; }
+    if(st==='notice'){ kfPin(e); return undefined; }
+    if(st!=='idle'){ kfDescend(e); return undefined; } }
+  if(st==='idle'){ if(kfSees(e)){ if(dist(e.x,e.z,P.x,P.z)<F10A.close&&!(e.kfY>0)){ f10Alert(e); return true; } setState(e,'notice'); e.nz=0; e.f10pose=null; return true; }
+    kfCalm(e,dt); return true; }
+  if(st==='search'){ if(kfSees(e)){ setState(e,'notice'); e.nz=0.8; return true; } kfSearch(e,dt,ET.monkey.speed*0.6,()=>{ e.f10t=null; setState(e,'return'); }); return true; }
+  if(st==='return'&&dist(e.x,e.z,e.home.x,e.home.z)<2){ setState(e,'idle'); e.f10i=null; return true; }
+  return undefined; }
+// 変異したサル（普段の出現の分。updateMutant の前に呼ぶ）
+function kfMutPre(e,dt){ const st=e.state;
+  if(st==='idle'){ if(kfSees(e)||e.aggro){ e.aggro=true; setState(e,'alert'); alertMark(e); sfx('alert'); e.kfLast={x:P.x,z:P.z}; e.kfLost=0; return true; }
+    if(e.kf) kfCalm(e,dt); else wanderUpdate(e,dt,1.6); return true; }
+  if(st==='kfsearch'){ if(kfSees(e)){ e.aggro=true; setState(e,'alert'); alertMark(e); e.kfLast={x:P.x,z:P.z}; e.kfLost=0; return true; } kfSearch(e,dt,ET.mutant.speed*0.55,()=>setState(e,'kfreturn')); return true; }
+  if(st==='kfreturn'){ if(kfSees(e)){ e.aggro=true; setState(e,'alert'); alertMark(e); e.kfLast={x:P.x,z:P.z}; e.kfLost=0; return true; }
+    if(dist(e.x,e.z,e.home.x,e.home.z)>1.2&&e.st<30){ steer(e,e.home.x,e.home.z,KFA.walk*1.6,dt,5); e.spd=KFA.walk*1.6; } else { e.spd=0; e.aggro=false; setState(e,'idle'); } return true; }
+  if(['kite','retreat','alert'].includes(st)){ if(kfSees(e)){ e.kfLast={x:P.x,z:P.z}; e.kfLost=0; } else { e.kfLost=(e.kfLost||0)+dt;
+      if(e.kfLost>1.5&&e.kfLast){ e.aggro=false; e.kfT=e.kfLast; e.kfLook=null; setState(e,'kfsearch'); return true; } }
+    if(dist(e.x,e.z,e.home.x,e.home.z)>KFA.leash+10){ e.aggro=false; e.kfT=e.kfLast||{x:e.x,z:e.z}; e.kfLook=null; setState(e,'kfsearch'); return true; } }
+  return false; }
+// 見つけたら知らせる：同じ拠点の近くの仲間を、少しずつ順に呼ぶ（見張り台からは3体、ほかは2体）
+function kfAlarm(src){ const L=REG.live; if(!L||!L.kf||!src.kf) return; const sid=src.kf.site, SR=L.kf.run[sid]; if(!SR||S.time-(SR.alarmAt||-99)<KFA.alarmCD) return; SR.alarmAt=S.time;
+  const n=src.kf.role==='watch'?3:2, at={x:P.x,z:P.z}; const cands=[];
+  for(const e of L.kf.mem.values()){ if(e===src||e.removed||e.state==='dead'||e.kf.site!==sid||e.kf.role==='watch') continue; if(!KF_CALM.includes(e.state)) continue; const d=dist(e.x,e.z,at.x,at.z); if(d>KFA.alarmR) continue; cands.push([d,e]); }
+  cands.sort((a,b)=>a[0]-b[0]); cands.slice(0,n).forEach(([d,e],i)=>L.kf.queue.push({e,t:S.time+KFA.reinfGap*(i+1),x:at.x,z:at.z}));
+  L.kf.alarms=(L.kf.alarms||0)+1; }
+function kfQueueTick(ctx){ const kf=ctx.kf; if(!kf||!kf.queue.length) return;
+  for(let i=kf.queue.length-1;i>=0;i--){ const q=kf.queue[i]; if(S.time<q.t) continue; kf.queue.splice(i,1); const e=q.e; if(e.removed||e.state==='dead'||!KF_CALM.includes(e.state)) continue;
+    e.kfJoin=S.time; if(e.type==='mutant'){ e.kfT={x:q.x,z:q.z}; e.kfLook=null; setState(e,'kfsearch'); } else { if(e.kfY>0) kfDescend(e); setState(e,'search'); e.f10t={x:q.x,z:q.z}; e.kfT=null; e.kfLook=null; e.nz=0; }
+    floatText(e.x,1.9,e.z,'キッ','#f2e2a6'); } }
+// 守りのサルを出す・片付ける・戻す
+function kfMutantSlotOK(sl){ return sl.t!=='M'||kamiMutantOK(); }
+function kfGarrisonTick(ctx,T){ const kf=ctx.kf; if(!kf) return; const k=prog.kami; if(!k.fm) k.fm={};
+  for(const s of KF.sites){ const G=KF_GARRISON[s.id]; if(!G) continue; const SR=kf.run[s.id]||(kf.run[s.id]={active:false,slots:{}}), c=kfCenter(s), d=dist(P.x,P.z,c.x,c.z);
+    for(const sl of G){ const R=SR.slots[sl.k]||(SR.slots[sl.k]={e:null,pending:false,pos:null,ri:null,dir:1}); const e=R.e;
+      if(e&&(e.removed||e.state==='dead')){ k.fm[sl.k]=T+KFA.respawn; kf.mem.delete(sl.k); R.e=null; R.pos=null; R.ri=null; } }
+    if(!SR.active&&d<KFA.near&&!P.dead){ SR.active=true; SR.first=true; }
+    if(SR.active&&d>KFA.far){ SR.active=false; for(const sl of G){ const R=SR.slots[sl.k], e=R.e; if(!e) continue; if(!KF_CALM.includes(e.state)||e.state==='search'||e.state==='kfsearch') continue;
+        R.pos={x:e.x,z:e.z}; R.ri=e.kf.ri; R.dir=e.kf.dir; kamiDrop(ctx,e); kf.mem.delete(sl.k); R.e=null; } } // 落ち着いているサルは位置を覚えて片付ける
+    if(!SR.active) continue;
+    for(const sl of G){ const R=SR.slots[sl.k]; if(R.e||R.pending||!kfMutantSlotOK(sl)) continue;
+      const dead=k.fm[sl.k]!=null; if(dead){ if(k.fm[sl.k]>T||d<KFA.respawnAway) continue; delete k.fm[sl.k]; }
+      else if(!SR.first&&d<KFA.respawnAway&&!R.pos) continue; // 初遭遇のあとで加わる変異したサルも、離れているときに出す
+      kfSpawn(ctx,s,sl,R); }
+    SR.first=false; } }
+function kfSpawn(ctx,s,sl,R){ let x, z; const tw=sl.role==='watch'?ctx.kf.towers.filter(t=>t.site===s.id)[sl.tower]:null;
+  if(R.pos){ x=R.pos.x; z=R.pos.z; } else if(tw){ x=tw.x; z=tw.z; } else if(sl.role==='guard'){ x=sl.at[0]; z=sl.at[1]; }
+  else { const Rt=KF_ROUTES[sl.route], p=Rt.p[0]; x=p[0]; z=p[1]; if(sl.follow){ x+=(sl.side||1)*1.6; z+=1.6; } }
+  const kfd={site:s.id,key:sl.k,role:sl.role,tower:sl.tower,look:sl.look,route:sl.route,follow:sl.follow,side:sl.side,at:sl.at,ri:R.ri,dir:R.dir||1,pause:0};
+  const done=e=>{ e.kf=kfd; e.kfw=e.type==='mutant'; e.home={x,z}; if(tw&&dist(x,z,tw.x,tw.z)<1.5){ kfPin(e); e.rot=sl.look||0; } ctx.kf.mem.set(sl.k,e); R.e=e; R.pos=null; };
+  if(sl.t==='M'){ R.pending=true; spawnMutant(x,z,{aggro:false,kfw:true}).then(e=>{ R.pending=false; if(!e) return; if(REG.live!==ctx||!ctx.kf){ removeEnemy(e); return; } done(e); }).catch(()=>{ R.pending=false; }); }
+  else { const e=spawnEnemy('monkey',x,z,'field'); ctx.enemies.push(e); done(e); } }
+function kfPost(e,prev){ if(!e.kf||e.removed) return; if(KF_CALM.includes(prev)&&KF_FIGHT.includes(e.state)) kfAlarm(e); }
+// 物資置き場（1回目は大量・あとは60分ごとに少し）
+function kfStashState(id){ const k=prog.kami; if(!k.st) k.st={}; return k.st[id]||(k.st[id]={n:0,t:0}); }
+function kfStashReady(id){ const S2=kfStashState(id); return S2.n===0||stats.time>=S2.t+KFA.refill; }
+const KF_NAMES={wood:'木材',stone:'石',iron:'屑鉄',rope:'縄',straw:'藁',mutScale:'変異した鱗'};
+function kfStashTake(st){ const S2=kfStashState(st.id), L0=KF_LOOT[st.id]; if(!L0) return;
+  if(!kfStashReady(st.id)){ toast(`物資の山：もう持ち出した。また貯まるまで あと${fmtTime(S2.t+KFA.refill-stats.time)}（遊んだ時間）`,true); return; }
+  const loot=S2.n===0?L0.first:L0.again, got=[]; for(const [k2,v] of Object.entries(loot)){ inv[k2]=(inv[k2]||0)+v; got.push(`${KF_NAMES[k2]||k2}+${v}`); }
+  S2.n++; S2.t=stats.time; sfx('pickup'); toast(`${S2.n===1?'サルが集めた物資を持ち出した':'また貯まっていた物資を持ち出した'}：${got.join('・')}`); floatText(st.x,1.6,st.z,'物資','#f0dca0'); g4CheckQuests(); saveGame(); }
+function kfInteractables(ctx,L){ const kf=ctx.kf; if(!kf) return; for(const st of kf.stashes){ const d=dist(P.x,P.z,st.x,st.z)-1.7; if(d>1.8) continue; const S2=kfStashState(st.id);
+    L.push({d,label:kfStashReady(st.id)?`サルが集めた物資を持ち出す（木箱・樽・袋${S2.n?'・また貯まった分':''}）`:`物資の山：また貯まるまで あと${fmtTime(S2.t+KFA.refill-stats.time)}`,act:()=>kfStashTake(st)}); } }
 function kamiDrawMarks(ctx,c2,X,Z){ const kw=ctx.kw, dot=(x,z,col,r)=>{ c2.fillStyle=col; c2.beginPath(); c2.arc(X(x),Z(z),r,0,TAU); c2.fill(); c2.strokeStyle='#000'; c2.lineWidth=1; c2.stroke(); };
   const CL={bear:'#4a2a1a',boar:'#c0703a',deer:'#e8c070',weasel:'#f4f0d8',monkey:'#e0533c'};
   for(const n of kw.nodes) dot(n.x,n.z,n.k==='scrap'?'#9aa4ac':n.k==='rock'?'#d8d4cc':'#7ad0ff',2.6);

@@ -8,7 +8,7 @@
   3つとも塞ぐと着けない（＝ほかに抜け道がない）。主人公の大きさ（半径0.5m）で、0.5m 刻みの格子を探す
 - 見つけた道を、本物の当たり判定（resolve）で主人公に歩かせても、押し戻されずに着く
 - 小拠点B の物資置き場にも外から着ける。主要な道（要塞の外を回る道）は通れる
-- 物資置き場：本編では持ち出せない（中身の数が未承認）。試遊のテストでは仮の中身を持ち出せ、記録が保存・読み込みされる
+- 物資置き場：要塞・小拠点B から物資を持ち出せる（v0.69。数と再補充は kami-watch-browser.py）
 - 光明寺に戻ると当たり判定が元どおり／エラーなし
 KAMI_SHOTS=フォルダ で、地図と要塞の画面を撮る。
 
@@ -27,7 +27,7 @@ SRC = open(os.environ.get('KW_HTML', os.path.join(ROOT, 'index.html')), encoding
 KDATA = open(os.path.join(ROOT, 'data', 'kamishihi', 'kamishihi-map.js'), encoding='utf8').read()
 SHOTS = os.environ.get('KAMI_SHOTS')
 HOOK = ("window.__k={get REG(){return REG},get P(){return P},get S(){return S},get prog(){return prog},get inv(){return inv},get stats(){return stats},"
-        "circles,oboxes,cgrid,scene,camera,get KW_TEST(){return KW_TEST},get KF(){return KF},regionTravel,saveGame,readSave,applySave,resolve,addOBox,gridRemove,f4Free,kamiReach,kamiInZone,"
+        "circles,oboxes,cgrid,scene,camera,get KF(){return KF},regionTravel,saveGame,readSave,applySave,resolve,addOBox,gridRemove,f4Free,kamiReach,kamiInZone,"
         "allInter:()=>{ const L=[]; g4Interactables(L); return L; },openMap:()=>{ if(S.mode==='playing') openMap(); }};\n")
 HTML = SRC.replace('function updateNPCs(dt){', HOOK + 'function updateNPCs(dt){', 1)
 
@@ -131,17 +131,11 @@ async def main():
         ra = await pg.evaluate(BFS, [6935, 1019, 7000, 1020, 6900, 7040, 990, 1060])
         check(ra['ok'], '小拠点A（見張り場）の前の国道416号は通れる')
 
-        # ---- 物資置き場 ----
-        S = await pg.evaluate("""() => { const K = window.__k, st = K.REG.live.kf.stashes[0]; K.P.x = st.fx; K.P.z = st.fz; const w0 = K.inv.wood;
-          const L1 = K.allInter().filter(o => /物資/.test(o.label)); const lab1 = L1[0] && L1[0].label; if (L1[0]) L1[0].act(); const took1 = K.inv.wood - w0;
-          K.KW_TEST.loot = true; const L2 = K.allInter().filter(o => /物資/.test(o.label)); const lab2 = L2[0] && L2[0].label; if (L2[0]) L2[0].act(); const took2 = K.inv.wood - w0, sc = K.inv.mutScale || 0;
-          const L3 = K.allInter().filter(o => /物資/.test(o.label)); const lab3 = L3[0] && L3[0].label; if (L3[0]) L3[0].act(); const took3 = K.inv.wood - w0; K.KW_TEST.loot = false;
-          K.saveGame(); const saved = JSON.parse(localStorage.getItem('eiheiji_vs_beasts_v010')).kami.st; K.applySave(K.readSave());
-          return {lab1, took1, lab2, took2, sc, lab3, took3, saved, loaded: K.prog.kami.st}; }""")
+        # ---- 物資置き場（v0.69 から本編でも持ち出せる。細かい確かめは kami-watch-browser.py） ----
+        S = await pg.evaluate("""() => { const K = window.__k, out = {}; for (const st of K.REG.live.kf.stashes) { K.P.x = st.fx; K.P.z = st.fz; const w0 = K.inv.wood;
+            const L1 = K.allInter().filter(o => /物資/.test(o.label)); if (L1[0]) L1[0].act(); out[st.id] = {lab: L1[0] && L1[0].label, wood: K.inv.wood - w0}; } return out; }""")
         print('物資置き場：', S)
-        check(S['lab1'] == 'サルが集めた物資の山（木箱・樽・袋）' and S['took1'] == 0, '本編では物資を持ち出せない（中身の数が未承認）')
-        check(S['took2'] == 8 and S['sc'] == 1 and S['took3'] == 8 and 'もう持ち出した' in (S['lab3'] or ''), '試遊のテストでは仮の中身を1回持ち出せる')
-        check(S['saved'].get('fort', {}).get('n') == 1 and S['loaded'].get('fort', {}).get('n') == 1, '持ち出した記録が保存・読み込みされる（キー kami.st）')
+        check(S['fort']['wood'] == 20 and S['outB']['wood'] == 10 and '持ち出す' in (S['fort']['lab'] or ''), '要塞・小拠点B の物資置き場から、外から歩いて行って物資を持ち出せる（敵を倒さなくてもよい）')
 
         if SHOTS:
             os.makedirs(SHOTS, exist_ok=True)
