@@ -538,7 +538,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.71 スズキの仲間 AI テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.72 スズキの仲間 AI テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -5303,12 +5303,14 @@ const SZK={low:{dmg:18,cd:1.0,range:1.4,arc:0.87,dur:0.45,hit:0.18,kb:[0,0,0,0],
   spin:{dmg:45,cd:2.5,range:1.8,arc:1.31,dur:0.8,hit:0.42,kb:[1.0,0.4,0.55,0],poise:18,kind:'heavy'},
   jump:{dmg:40,cd:3.5,range:1.3,arc:1.6,dur:1.1,hit:0.7,air:[0.2,0.7],min:4,max:8,leap:7,kb:[2.2,0.9,1.2,0],poise:16,kind:'heavy'},gap:0.25};
 // 戦いの決まり：追う範囲（主人公から8m）・気づかれる距離（主人公の7割）・体力が少ないとき（54以下で4〜7m 離れる）・戦闘の終わり（15m に敵がいない状態が8秒）・臭い（毎秒6・1回2秒・最大10秒）・受けるダメージ2割減
-const SZF={chase:8,seeK:0.7,low:54,keep:[4,7],endR:15,endT:8,swT:2,guard:0.2,smell:{dps:6,add:2,max:10}};
+const SZF={chase:8,seeK:0.7,low:54,keep:[4,7],endR:15,endT:8,swT:2,guard:0.2,smell:{dps:6,add:2,max:10},regen:3,reviveHp:90,rescueR:2.5,rescueT:3,upT:0.7}; // 第3段階：戦いの後は毎秒3回復・助け起こす（2.5m 以内・3秒長押し・90で起きる）
+// 助け起こしている途中（長押し）
+const SZR={on:false,t:0};
 // 敵の相手がスズキのとき、敵が考える間だけ P にスズキを見せる（敵の AI の中身は変えない）。そのあいだ hurtPlayer はスズキへの傷になる
 const TGV={on:false,s:{x:0,z:0,r:0,dead:false,atk:null,stagger:0,dodge:null,iframe:false}};
 const SZ={joined:false,order:'follow',region:'komyoji',x:0,z:0,wx:0,wz:0,hp:180,maxHp:180,down:false, // 保存する分（セーブは第4段階）
   r:SZA.r,m:null,rot:0,spd:0,phase:0,pose:null,look:0,roam:null,still:0,crumbs:[],ci:-1,los:true,losAt:-9,crumbT:0,
-  kick:null,tgt:null,cd:{low:0,spin:0,jump:0},gapT:0,pref:'low',near2:0,fight:false,calmT:0,hitBy:null,hitAt:-9,kx:0,kz:0,stagger:0,downT:0,
+  kick:null,tgt:null,cd:{low:0,spin:0,jump:0},gapT:0,pref:'low',near2:0,fight:false,calmT:0,hitBy:null,hitAt:-9,kx:0,kz:0,stagger:0,downT:0,upT:0,hk:0,
   stk:{t:0,x:0,z:0,n:0,side:1,sideT:0},_px:null,_pz:null};
 function makeHuman(o={}){
   const player=!!o.player47;
@@ -6466,7 +6468,7 @@ async function sTestStart(where){
   const b2=document.getElementById('btnSStartU'); if(b2) b2.addEventListener('click',()=>sTestStart('kamishihi'));
   const bar=document.createElement('div'); bar.id='p2sbar'; bar.style.cssText='position:fixed;top:calc(6px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:30;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 16px)';
   const B=(id,t)=>`<button id="${id}" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">${t}</button>`;
-  bar.innerHTML=B('sta','スズキを呼ぶ')+B('stb','上志比へ／光明寺へ')+B('stc','回復・食料を足す')+B('std','スズキの状態')+B('ste','獣を近くに出す')+B('stf','スズキの体力を50に');
+  bar.innerHTML=B('sta','スズキを呼ぶ')+B('stb','上志比へ／光明寺へ')+B('stc','回復・食料を足す')+B('std','スズキの状態')+B('ste','獣を近くに出す')+B('stf','スズキの体力を50に')+B('stg','スズキを倒れさせる');
   document.body.appendChild(bar); bar.hidden=true;
   const on=(id,f)=>document.getElementById(id).addEventListener('click',e=>{ e.stopPropagation(); f(); cv.focus(); });
   on('sta',()=>{ if(P.dead) return; if(!SZ.joined||SZ.region!==REG.cur){ szJoin(); } else { SZ.down=false; SZ.hp=Math.max(SZ.hp,1); szCombatReset(); szPlaceBehind(); } SZ.order='follow'; toast('試遊：スズキを呼んだ（ついて来る）'); });
@@ -6480,6 +6482,7 @@ async function sTestStart(where){
       if(!e){ toast('試遊：'+(ET[type]?ET[type].name:type)+'が近くにいない（別の地域で試す）',true); return; }
       e.x=x; e.z=z; e.home={x,z}; e.hp=e.maxHp; e.rot=Math.atan2(P.x-x,P.z-z); setState(e,type==='monkey'||type==='mutant'?'kite':'chase'); e.hitP=S.time; toast('試遊：'+ET[type].name+'を主人公の前 10m に出した'); }); }
   on('stf',()=>{ if(SZ.joined&&!SZ.down){ SZ.hp=50; toast('試遊：スズキの体力を50にした（54以下は敵から離れて戦う）'); } });
+  on('stg',()=>{ if(szHere()&&!SZ.down){ szDown(); } });
   setInterval(()=>{ bar.hidden=!(S.mode==='playing'); },300); }
 // ================= NPC =================
 const NPCS=[]; const TOMIO_SCALE=1.035;
@@ -6900,7 +6903,7 @@ const AIM={mode:(function(){ try{ const m=localStorage.getItem('eiheiji_aimMode'
 function saveAimMode(){ try{ localStorage.setItem('eiheiji_aimMode',AIM.mode); }catch(e){} }
 function updateAimBtns(){ for(const id of ['btnAim','btnAimTitle']){ const b=$(id); if(b) b.textContent='攻撃方向：'+(AIM.mode==='facing'?'プレイヤーの向き':'カーソル'); } }
 function applyAimMode(m){ if(AIM.mode===m) return; AIM.mode=m; saveAimMode(); updateAimBtns(); toast(m==='facing'?'攻撃方向：プレイヤーの向き（体の向いた方向に攻撃）':'攻撃方向：カーソル（カーソルの地点に攻撃）'); }
-let touchMode=false; const joy={id:null,ox:0,oy:0,x:0,y:0}; const held={atk:false};
+let touchMode=false; const joy={id:null,ox:0,oy:0,x:0,y:0}; const held={atk:false,act:false};
 function enableTouch(){ if(touchMode) return; touchMode=true; document.body.classList.add('touchmode'); mouse.active=false; try{ if(!localStorage.getItem('eiheiji_aimMode')) AIM.mode='facing'; }catch(e){} } // v0.45：スマホはカーソルがないため、保存がなければプレイヤーの向きを既定にする
 window.addEventListener('touchstart',enableTouch,{passive:true,capture:true});
 
@@ -6954,7 +6957,7 @@ function tbtn(id,down,up){ const b=$(id); b.addEventListener('pointerdown',e=>{ 
 tbtn('tbAtk',()=>{ held.atk=true; tryAttack('light'); },()=>{ held.atk=false; });
 tbtn('tbHeavy',()=>tryAttack('heavy')); tbtn('tbSwap',()=>cycleArm());
 tbtn('tbDodge',()=>tryDodge()); tbtn('tbWave',()=>scaleWaveBtn()); // v0.64
-tbtn('tbAct',()=>interact());
+tbtn('tbAct',()=>{ held.act=true; interact(); },()=>{ held.act=false; }); // v0.72：押している間（スズキを助け起こす長押し）
 tbtn('tbMap',()=>openMap()); // v0.45：持ち物ボタンは廃止（手持ちバー端の🎒とTabで開く）
 tbtn('tbPause',()=>openPause());
 // 画面右側をなぞるとカメラが回る
@@ -7084,6 +7087,7 @@ function hurtPlayer(dmg,fx,fz,knock=6,src=null){
   floatText(P.x,2.3,P.z,`-${Math.round(dmg)}`,'#ff8a70',true);
   S.shake=Math.min(0.6,S.shake+dmg/45); S.hitstop=0.06; sfx('hurt');
   $('vignette').style.boxShadow='inset 0 0 160px rgba(200,40,30,.65)'; setTimeout(()=>$('vignette').style.boxShadow='inset 0 0 160px rgba(200,40,30,0)',180);
+  if(SZR.on) szRescueCancel(); // v0.72：攻撃を受けると助け起こすのが止まり、はじめからになる
   if(P.hp<=0) playerDie('hp');
   return true;
 }
@@ -8342,6 +8346,7 @@ function retryFromBase(){
   setupBoss(); $('bossBar').hidden=true; setBarrier(!(prog.stage==='toBoss'||prog.stage==='cleared'));
   P.x=PSPAWN.x; P.z=PSPAWN.z; P.facing=0; if(typeof REG!=='undefined'&&REG.cur!=='komyoji'&&REG.live){ const a=REG.live.respawn||REG.live.arrival; P.x=a.x; P.z=a.z; P.facing=a.facing||0; } /* v0.60 ほかの地域で倒れたら、その地域の着いた場所で起きる（2026-11-12 ユーザー決定：上志比は西の端） */ setCam(P.facing); resetCombat(); P.hp=Math.ceil(P.maxHp*0.5); P.full=Math.max(15,P.full-25); /* v0.56：体力は半分、満腹は25減る */ if(P.weapon&&WEAPONS[P.weapon]){ P.dur=Math.max(0,P.dur-WEAPONS[P.weapon].maxDur*0.25); prog.arms[P.weapon]=P.dur; } /* v0.56：手に持っていた武器の耐久 -25% */ P.dead=false; P.atk=null; P.dodge=null; P.stagger=0; P.buffer=null; heavyRing.visible=false;
   // 拠点付近の野生の敵を初期位置へ
+  szAfterRetry(); // v0.72：ついて来ているスズキは起きた場所の近くへ（倒れているスズキはその場に残る）
   for(const e of enemies) if(e.mode==='field'&&e.state!=='dead'){ e.x=e.home.x; e.z=e.home.z; e.hp=e.maxHp; setState(e,'idle'); } // v0.56：野の獣も傷が癒える（倒れながら削る戦い方を防ぐ）
   hideAllOv(); S.mode='playing'; S.slowmo=0; S.hitstop=0;
   toast('拠点で態勢を立て直した（体力半分・満腹 −25・武器が傷んだ）'); saveGame();
@@ -8601,7 +8606,7 @@ function updatePlayer(dt){
   const w=equippedWeapon(); // null は素手。以降の移動・攻撃処理では武器情報を直接参照しない。
   P.dodgeCD=Math.max(0,P.dodgeCD-dt); P.perfectT=Math.max(0,P.perfectT-dt); P.buffT=Math.max(0,P.buffT-dt);
   updateStamina(dt); updateF6C(dt); if(P.dbuf){ if(S.time-P.dbuf>0.25) P.dbuf=0; else if(!P.dodge&&P.stagger<=0) tryDodge(true); }
-  const inp=inputWorld(); const mx=inp.x, mz=inp.z, ml=inp.mag>0?1:0, mag=inp.mag||1;
+  const inp=SZR.on?{x:0,z:0,mag:0}:inputWorld(); const mx=inp.x, mz=inp.z, ml=inp.mag>0?1:0, mag=inp.mag||1; // v0.72：スズキを助け起こしている間は動けない
   P.moveMag=inp.mag; if(inp.mag>0) P.moveAng=Math.atan2(mx,mz);
   if(held.atk&&!P.atk&&!P.dodge&&P.stagger<=0) tryAttack('light');
   P.iframe=false;
@@ -9986,7 +9991,7 @@ function kamiDrawMarks(ctx,c2,X,Z){ const kw=ctx.kw, dot=(x,z,col,r)=>{ c2.fillS
 // 第1段階：ついて来る（主人公の少し後ろ・遅れたら走る・止まった主人公のまわりを歩く）・障害物（当たり判定・歩いた跡をたどる・横へずれる）・
 //          25m より離れたら主人公から見えない所へ移す・指示（ついて来い／ここで待て／拠点で過ごせ）・地域の移動についてくる。
 // SZA・SZ（数と状態）は、早く使われる（freshState）ので SUZUKI_OPTS の後ろに置いた
-function szFresh(){ Object.assign(SZ,{joined:false,order:'follow',region:'komyoji',wx:0,wz:0,hp:SZ.maxHp,down:false,roam:null,still:0,ci:-1,crumbT:0,pose:null}); szCombatReset();
+function szFresh(){ Object.assign(SZ,{joined:false,order:'follow',region:'komyoji',wx:0,wz:0,hp:SZ.maxHp,down:false,upT:0,roam:null,still:0,ci:-1,crumbT:0,pose:null}); szCombatReset(); szRescueCancel();
   SZ.crumbs.length=0; if(SZ.m) SZ.m.g.visible=false; }
 function szHere(){ return SZ.joined&&SZ.region===REG.cur&&!REG.busy; }
 function szModel(){ if(!SZ.m){ SZ.m=makeHuman(SUZUKI_OPTS); SZ.m.g.visible=false; scene.add(SZ.m.g); } return SZ.m; }
@@ -10074,12 +10079,32 @@ function szOrder(k){ SZ.order=k; SZ.roam=null; SZ.ci=-1; SZ.stk.n=0; if(k==='wai
 // 話しかけると、柵や罠と同じ選ぶ画面で指示を選ぶ（「拠点で過ごせ」は光明寺にいるときだけ）
 function szTalk(){ const now=k=>SZ.order===k?'（いまの指示）':''; const C=[{label:'ついて来い'+now('follow'),act:()=>szOrder('follow')},{label:'ここで待て'+now('wait'),act:()=>szOrder('wait')}];
   if(REG.cur==='komyoji') C.push({label:'拠点で過ごせ'+now('base'),act:()=>szOrder('base')}); chooseDefense('スズキへの指示',C); }
-function szInteractables(L){ if(!szHere()||SZ.down) return; const d=dist(P.x,P.z,SZ.x,SZ.z); if(d<SZA.talkR) L.push({d:d+0.3,label:'スズキに指示する',act:szTalk}); }
+function szInteractables(L){ if(!szHere()) return; const d=dist(P.x,P.z,SZ.x,SZ.z);
+  if(SZ.down){ if(d<SZF.rescueR) L.push({d:d-0.5,label:touchMode?'スズキを助け起こす（行動ボタンを長押し）':'スズキを助け起こす（E を長押し）',act:szRescueStart}); return; } // v0.72：倒れたスズキは長押しで助け起こす
+  if(SZ.upT>0) return; if(d<SZA.talkR) L.push({d:d+0.3,label:'スズキに指示する',act:szTalk}); }
 // 仲間になる（作業F の初遭遇の後に呼ぶ。今は試遊版のボタンだけが呼ぶ）
 function szJoin(){ szModel(); SZ.joined=true; SZ.order='follow'; SZ.region=REG.cur; SZ.down=false; SZ.hp=SZ.maxHp; SZ.crumbs.length=0; szPlaceBehind(); }
 // 地域を移ったとき：ついて来ているスズキは一緒に移る。待っている・拠点にいる・倒れているときは、その地域に残る
-function szAfterTravel(from,to){ if(!SZ.joined) return; szCombatReset(); if(SZ.region===from&&SZ.order==='follow'&&!SZ.down){ SZ.region=to; SZ.crumbs.length=0; szPlaceBehind(); }
+function szAfterTravel(from,to){ if(!SZ.joined) return; szCombatReset(); szRescueCancel(); if(SZ.region===from&&SZ.order==='follow'&&!SZ.down){ SZ.region=to; SZ.crumbs.length=0; szPlaceBehind(); }
   if(SZ.m) SZ.m.g.visible=false; }
+// ---- 第3段階：倒れる・助け起こす・戦いの後の回復・主人公が倒れたとき ----
+// 助け起こす：倒れたスズキの2.5m 以内で E（iPhone は行動ボタン）を3秒長押し。離す・離れる・攻撃を受けると止まり、はじめから。動けない。90で起きる
+function szRescueStart(){ if(!SZ.down||!szHere()||SZR.on) return; SZR.on=true; SZR.t=0; szRescueUI(); }
+function szRescueCancel(){ if(!SZR.on) return; SZR.on=false; SZR.t=0; szRescueUI(); }
+function szRescueTick(dt){ if(!SZR.on) return;
+  const d=dist(P.x,P.z,SZ.x,SZ.z), hold=keys.has('e')||held.act;
+  if(!SZ.down||!hold||P.dead||d>SZF.rescueR+0.3||P.atk||P.dodge){ szRescueCancel(); return; }
+  P.facing+=clamp(angDiff(P.facing,Math.atan2(SZ.x-P.x,SZ.z-P.z)),-8*dt,8*dt);
+  SZR.t+=dt; szRescueUI();
+  if(SZR.t>=SZF.rescueT){ SZR.on=false; SZR.t=0; szRescueUI(); SZ.down=false; SZ.hp=SZF.reviveHp; SZ.upT=SZF.upT; SZ.downT=0; szCombatReset(); toast('スズキが起き上がった'); sfx('pickup'); } }
+let szRescueEl=null;
+function szRescueUI(){ if(!szRescueEl){ const d=document.createElement('div'); d.id='szRescue';
+    d.style.cssText='position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:20;display:none;pointer-events:none;text-align:center;font:600 15px system-ui,sans-serif;color:#fff;text-shadow:0 1px 3px #000';
+    d.innerHTML='<div>スズキを助け起こす</div><div style="margin:6px auto 0;width:200px;height:10px;border-radius:5px;background:#0008;border:1px solid #fff8;overflow:hidden"><div style="height:100%;width:0;background:#f0c34a"></div></div>';
+    document.body.appendChild(d); szRescueEl=d; }
+  szRescueEl.style.display=SZR.on?'block':'none'; if(SZR.on) szRescueEl.lastChild.firstChild.style.width=Math.min(100,SZR.t/SZF.rescueT*100).toFixed(1)+'%'; }
+// 主人公が倒れて起きたとき：ついて来ているスズキは近くへ。体力はそのまま。倒れているスズキは勝手に起こさず、その場に残す
+function szAfterRetry(){ if(!SZ.joined) return; szRescueCancel(); szCombatReset(); if(SZ.region===REG.cur&&SZ.order==='follow'&&!SZ.down){ SZ.crumbs.length=0; szPlaceBehind(); } }
 // ---- 第2段階：戦い（敵の相手・蹴り3種・足の臭い・体力が少ないとき・要塞の見張りとの連携） ----
 function szCombatReset(){ SZ.kick=null; SZ.tgt=null; SZ.fight=false; SZ.calmT=0; SZ.stagger=0; SZ.kx=0; SZ.kz=0; SZ.hitBy=null; }
 function szSeeK(){ return TGV.on?SZF.seeK:(1-f47Stats().stealth); } // スズキは防具の忍びの効き目なし・主人公の7割の距離で気づかれる
@@ -10102,7 +10127,7 @@ function szHurt(dmg,fx,fz,knock,src){ if(SZ.down||!szHere()) return false; dmg=f
   const a=Math.atan2(SZ.x-fx,SZ.z-fz); SZ.kx=Math.sin(a)*knock*0.6; SZ.kz=Math.cos(a)*knock*0.6; SZ.stagger=0.25; if(SZ.kick&&(SZ.kick.id!=='jump'||SZ.kick.t>SZK.jump.hit)&&d>=15) SZ.kick=null;
   if(SZ.hp<=0) szDown(); return true; }
 SZ.hurt=(d,e)=>szHurt(d,e.x,e.z,5,e); // 変異したサルの e.tgt から直接あてるとき（mutHit）
-function szDown(){ SZ.hp=0; SZ.down=true; SZ.downT=0; SZ.kick=null; SZ.tgt=null; SZ.stagger=0; toast('スズキが倒れた！',true); }
+function szDown(){ SZ.hp=0; SZ.down=true; SZ.downT=0; SZ.upT=0; SZ.kick=null; SZ.tgt=null; SZ.stagger=0; SZ.fight=false; toast('スズキが倒れた！ 近くで長押しすると助け起こせる',true); }
 // 戦う範囲の中心：ついて来るときは主人公、待つときは待つ所、拠点では自分（自衛だけ）
 function szAnchor(){ return SZ.order==='wait'?{x:SZ.wx,z:SZ.wz}:SZ.order==='base'?{x:SZ.x,z:SZ.z}:{x:P.x,z:P.z}; }
 // 戦う相手になるか（近くにいるだけでは戦わない。主人公かスズキを見つけた・たたいた獣だけ）
@@ -10184,7 +10209,7 @@ function szCombatClock(dt){ if(SZ.tgt){ SZ.calmT=0; SZ.fight=true; return; } let
   if(near){ SZ.calmT=0; return; } SZ.calmT+=dt; if(SZ.calmT>=SZF.endT) SZ.fight=false; }
 // 敵と重ならない（スズキがよける。見張り台の上・倒れた獣は除く）
 function szPushOut(){ for(const e of enemies){ if(e.removed||e.state==='dead'||e.kfY>1) continue; const d=dist(SZ.x,SZ.z,e.x,e.z), rs=SZ.r+e.r; if(d<rs&&d>1e-3){ SZ.x+=(SZ.x-e.x)/d*(rs-d); SZ.z+=(SZ.z-e.z)/d*(rs-d); } } }
-const SZP={wait:{L:[-0.32,1.2,0],R:[-0.32,-1.2,0],elbow:1.7}}; // 姿勢（腕の回し方 YXZ・ひじの曲げ）。暫定
+const SZP={wait:{L:[-0.32,1.2,0],R:[-0.32,-1.2,0],elbow:1.7},down:{arm:-0.35,spread:2.35,leg:0.12,lift:0.13,head:0.45}}; // 姿勢（腕の回し方 YXZ・ひじの曲げ）。待つ・倒れる
 const szLerp=(a,b,t)=>a+(b-a)*clamp(t,0,1), szSeg=(t,a,b)=>clamp((t-a)/(b-a),0,1);
 // 蹴りの姿勢（脚・腕の回し方。暫定。確認画像で見てもらう）。脚は x が負で前へ上がる
 const SZP2={leg:-1}; // 脚を前へ上げる向き（-1）。確認画像で合わせる
@@ -10204,18 +10229,25 @@ function szKickPose(m,k){ const t=k.t, F=SZP2.leg; let el=1.5, kn=0.1, ka=[0,0],
 function szAnimate(dt){ const m=SZ.m, v=SZ.spd, walking=v>0.3&&!SZ.kick, run=v>4.5, gy=groundH(SZ.x,SZ.z);
   m.g.rotation.order='YXZ'; m.g.rotation.set(0,SZ.rot,0); m.g.position.set(SZ.x,gy,SZ.z);
   m.armL.rotation.order='YXZ'; m.armR.rotation.order='YXZ'; m.body.scale.set(1,1,1); m.root.position.y=0; m.head.rotation.y=0;
-  let el=0.35, kn=0.08, ka=[0,0];
-  if(SZ.down){ // 倒れる：あお向けに倒れる（助け起こすのは第3段階）
-    const k=Math.min(1,SZ.downT/0.4); m.g.rotation.x=-Math.PI/2*k; m.g.position.y=gy+0.14*k; m.legs[0].rotation.x=0.1; m.legs[1].rotation.x=-0.1; m.armL.rotation.set(-0.3,0,0); m.armR.rotation.set(-0.3,0,0); m.body.rotation.x=0; el=0.5; }
+  let el=0.35, kn=0.08, ka=[0,0]; m.legs[0].rotation.z=0; m.legs[1].rotation.z=0;
+  if(SZ.down||SZ.upT>0){ // 倒れる：うつ伏せに、両手を頭の方へ放り出して、べたーっと倒れる（2026-11-15 ユーザー指定）。起きるときは逆にたどる
+    const k=SZ.down?Math.min(1,SZ.downT/0.45):Math.min(1,SZ.upT/SZF.upT), f=SZ.down?k*k:k, a=Math.min(1,k*1.3), P2=SZP.down;
+    m.g.rotation.x=Math.PI/2*f; m.g.position.y=gy+P2.lift*f; m.body.rotation.x=0; m.head.rotation.y=P2.head*a;
+    m.armL.rotation.set(P2.arm*a,0,P2.spread*a); m.armR.rotation.set(P2.arm*a,0,-P2.spread*a); el=0.05;
+    m.legs[0].rotation.x=0; m.legs[1].rotation.x=0; m.legs[0].rotation.z=P2.leg*a; m.legs[1].rotation.z=-P2.leg*a; kn=0.04;
+    if(SZ.down&&SZR.on) m.armR.rotation.x+=Math.sin(S.time*9)*0.08; } // 助け起こされている間は少し動く
   else if(SZ.kick){ const q=szKickPose(m,SZ.kick); el=q.el; kn=q.kn; ka=q.ka; m.g.rotation.y=SZ.rot+q.yaw; m.root.position.y=q.lift; }
   else {
     SZ.phase+=dt*(walking?5+v*1.25:0); const sw=walking?Math.sin(SZ.phase):0, amp=run?0.85:0.5;
     m.root.position.y=walking?Math.abs(sw)*(run?0.09:0.05):0;
     m.legs[0].rotation.x=sw*amp; m.legs[1].rotation.x=-sw*amp;
     if(SZ.pose==='wait'&&!walking){ const W=SZP.wait; m.armL.rotation.set(...W.L); m.armR.rotation.set(...W.R); el=W.elbow; } // 待つ：腕を組む（2026-11-15 承認）
-    else if(SZ.fight&&!walking){ m.armL.rotation.set(-0.8,0,0); m.armR.rotation.set(-0.6,0,0); el=1.5; } // 戦いの間は構える
+    else if(SZ.fight&&!walking){ // 戦いの間は、陸上部らしく腿上げをし続ける（2026-11-15 ユーザー指定）
+      SZ.hk+=dt*TAU*1.6; const u=Math.sin(SZ.hk), F=SZP2.leg, up0=Math.max(0,u), up1=Math.max(0,-u);
+      m.legs[0].rotation.x=F*1.3*up0; m.legs[1].rotation.x=F*1.3*up1; ka=[1.5*up0,1.5*up1];
+      m.armL.rotation.set(0.75*u,0,0.08); m.armR.rotation.set(-0.75*u,0,-0.08); el=1.45; m.root.position.y=0.05*Math.abs(u); }
     else { m.armL.rotation.set(-sw*amp*0.9,0,0.1); m.armR.rotation.set(sw*amp*0.9,0,-0.1); el=run?0.95:0.35; }
-    m.body.rotation.x=walking?(run?0.22:0.08):0; m.head.rotation.y=walking?0:SZ.look; if(walking) SZ.look=0; kn=run?0.22:0.08;
+    m.body.rotation.x=walking?(run?0.22:0.08):SZ.fight?0.06:0; m.head.rotation.y=walking?0:SZ.look; if(walking) SZ.look=0; kn=run?0.22:0.08;
     if(SZ.stagger>0) m.body.rotation.x=-0.3*Math.min(1,SZ.stagger/0.25); }
   softPose(m,dt,{elbow:el,knee:kn,kneeAdd:ka});
   m.g.visible=dist(SZ.x,SZ.z,camera.position.x,camera.position.z)>2.3; } // カメラにくっつくほど近いときは描かない（村人と同じ 2.3m）
@@ -10223,10 +10255,13 @@ function updateSuzuki(dt){
   szSmellTick(dt); // 臭いは敵に付いているので、スズキが倒れていても続く
   if(!szHere()){ if(SZ.m&&SZ.m.g.visible) SZ.m.g.visible=false; return; }
   szModel(); SZ.pose=null; szCrumb();
-  if(SZ.down){ SZ.spd=0; SZ.downT+=dt; szAnimate(dt); return; } // 倒れている（助け起こすのは第3段階）
+  szRescueTick(dt);
+  if(SZ.down){ SZ.spd=0; SZ.downT+=dt; szAnimate(dt); return; } // 倒れている：動かず、攻撃せず、敵にも狙われない。時間では起きない
+  if(SZ.upT>0){ SZ.upT-=dt; SZ.spd=0; szAnimate(dt); return; } // 起き上がる途中
   if(SZ.stagger>0){ SZ.stagger-=dt; SZ._px=SZ.x; SZ._pz=SZ.z; SZ.x+=SZ.kx*dt; SZ.z+=SZ.kz*dt; const f=Math.pow(0.02,dt); SZ.kx*=f; SZ.kz*=f; resolve(SZ,false); if(!szWalkable(SZ.x,SZ.z)){ SZ.x=SZ._px; SZ.z=SZ._pz; } SZ.spd=0; } // 押される
   else if(!szCombat(dt)){ SZ.tgt=null; if(SZ.order==='follow') szFollow(dt); else if(SZ.order==='wait') szWait(dt); else szBase(dt); }
   szCombatClock(dt);
+  if(!SZ.fight&&SZ.hp<SZ.maxHp) SZ.hp=Math.min(SZ.maxHp,SZ.hp+SZF.regen*dt); // 戦いの後は毎秒3回復（戦いの間は回復しない）
   const d=dist(SZ.x,SZ.z,P.x,P.z), rs=SZ.r+P.r; if(d<rs&&d>1e-3){ SZ.x+=(SZ.x-P.x)/d*(rs-d); SZ.z+=(SZ.z-P.z)/d*(rs-d); } // 主人公と重ならない（スズキがよける）
   szPushOut(); resolve(SZ,false);
   szAnimate(dt); }

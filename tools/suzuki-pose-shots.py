@@ -9,8 +9,8 @@
   low   … ローキック（当たる瞬間）
   spin  … 後ろ回し蹴り（当たる瞬間。背中側へ脚を伸ばす）
   jump  … 飛び蹴り（跳んでいる途中）
-  guard … 戦いの間の構え
-  down  … 倒れる（あお向け）
+  guard … 戦いの間の腿上げ（片ひざが上がったところ）
+  down  … 倒れる（うつ伏せで両手を頭の方へ放り出す）
   smell … 足の臭い（蹴られたサルから茶色の煙）
 第3段階で助け起こすを足す。
 
@@ -32,12 +32,12 @@ HOOK = ("window.__w={get SZ(){return SZ},get SZK(){return SZK},get SZP(){return 
         "szJoin:()=>szJoin(),szFree:(...a)=>szFree(...a),szWalkable:(...a)=>szWalkable(...a),szAnimate:dt=>szAnimate(dt),szSmellTick:dt=>szSmellTick(dt),animatePlayer:(a,b)=>animatePlayer(a,b),updateCamera:dt=>updateCamera(dt),groundH:(x,z)=>groundH(x,z),THREE};\n")
 HTML = SRC.replace('function updateNPCs(dt){', HOOK + 'function updateNPCs(dt){', 1)
 NAMES = {'wait': '待つ（腕を組む）', 'walk': '歩く', 'run': '走る', 'look': '立ち止まって見回す', 'low': 'ローキック（当たる瞬間）', 'spin': '後ろ回し蹴り（当たる瞬間）',
-         'jump': '飛び蹴り（跳んでいる途中）', 'guard': '戦いの間の構え', 'down': '倒れる', 'smell': '足の臭い（茶色の煙）'}
+         'jump': '飛び蹴り（跳んでいる途中）', 'guard': '戦いの間の腿上げ', 'down': '倒れる（うつ伏せ）', 'smell': '足の臭い（茶色の煙）'}
 
 SHOT = """([pose, view]) => { const W = window.__w, SZ = W.SZ, P = W.P, T = W.THREE;
   if (!window.__spot) { for (let zz = 60; zz < 200 && !window.__spot; zz += 4) for (let xx = 120; xx < 220; xx += 4) if (W.szFree(xx, zz, 7) && W.szWalkable(xx, zz)) { window.__spot = [xx, zz]; break; } }
   const [x, z] = window.__spot || [150, 60]; if (view === 'side') { P.x = x; P.z = z - 1.9; P.facing = 0; } else { P.x = x - 1.6; P.z = z; P.facing = 0; } SZ.x = x; SZ.z = z; SZ.rot = 0;
-  SZ.pose = pose === 'wait' ? 'wait' : null; SZ.look = 0; SZ.kick = null; SZ.down = false; SZ.fight = pose === 'guard'; SZ.stagger = 0;
+  SZ.pose = pose === 'wait' ? 'wait' : null; SZ.look = 0; SZ.kick = null; SZ.down = false; SZ.fight = pose === 'guard'; SZ.stagger = 0; SZ.upT = 0; if (pose === 'guard') SZ.hk = Math.PI / 2;
   if (pose === 'low' || pose === 'spin' || pose === 'jump') { const K = W.SZK[pose]; SZ.kick = {id: pose, K, t: pose === 'jump' ? 0.45 : K.hit, atk: {}}; }
   if (pose === 'down') { SZ.down = true; SZ.downT = 2; }
   if (window.__boar) { window.__boar.x += 3000; window.__boar.smellT = 0; }
@@ -48,6 +48,7 @@ SHOT = """([pose, view]) => { const W = window.__w, SZ = W.SZ, P = W.P, T = W.TH
   SZ.spd = v; W.szAnimate(0); W.animatePlayer(0, 0);
   const gy = W.groundH(x, z); const c = W.camera; const yaw = view === 'side' ? Math.PI / 2 + 0.12 : 0.25;
   W.cam.override = {p: new T.Vector3(x + Math.sin(yaw) * 4.2, gy + 1.5, z + Math.cos(yaw) * 4.2), l: new T.Vector3(x - 0.5, gy + 0.85, z), fov: 40};
+  if (pose === 'down') W.cam.override = view === 'side' ? {p: new T.Vector3(x + 4.6, gy + 2.6, z + 1.0), l: new T.Vector3(x, gy + 0.2, z + 1.0), fov: 42} : {p: new T.Vector3(x + 0.6, gy + 4.4, z - 3.0), l: new T.Vector3(x, gy, z + 0.7), fov: 42}; // 前からの代わりに斜め上（足の側）から
   if (pose === 'smell') W.cam.override = view === 'side' ? {p: new T.Vector3(x + 0.8, gy + 1.8, z - 5.2), l: new T.Vector3(x + 0.8, gy + 1.0, z), fov: 42} : {p: new T.Vector3(x + 0.6, gy + 1.9, z + 5.4), l: new T.Vector3(x + 0.7, gy + 1.0, z), fov: 42};
   W.updateCamera(0.016); c.position.copy(W.cam.override.p); c.lookAt(W.cam.override.l); c.fov = 40; c.updateProjectionMatrix();
   W.renderer.render(W.scene, c); const url = W.renderer.domElement.toDataURL('image/png'); SZ.kick = null; SZ.down = false; SZ.fight = false; return url; }"""
@@ -102,7 +103,7 @@ async def main():
         r, c = i // 2, i % 2
         sheet.paste(im.resize((tw, th)), (c * tw, r * (th + 34) + 34))
         if c == 0:
-            d.text((10, r * (th + 34) + 5), NAMES.get(pose, pose) + '（左：前から・右：横から）', fill=(40, 40, 40), font=f)
+            d.text((10, r * (th + 34) + 5), NAMES.get(pose, pose) + ('（左：斜め上から・右：横から）' if pose == 'down' else '（左：前から・右：横から）'), fill=(40, 40, 40), font=f)
     sheet.save(out)
     print('wrote', out)
 

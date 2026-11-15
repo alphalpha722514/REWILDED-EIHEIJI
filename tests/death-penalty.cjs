@@ -20,12 +20,14 @@ const PSPAWN={x:100,z:100}, S={mode:'dead'}, heavyRing={visible:true};
 let bossActive=false;
 const f9Reset=()=>{}, clearRaidEnemies=()=>{}, setNight=()=>{}, setDusk=()=>{}, fenceVisual=()=>{}, setupBoss=()=>{}, setBarrier=()=>{},
   setCam=()=>{}, resetCombat=()=>{}, setState=(e,s)=>{e.state=s}, hideAllOv=()=>{}, toast=t=>toasts.push(t), saveGame=()=>{saves++};
+let szRetries=0; const szAfterRetry=()=>{szRetries++}; // v0.72：スズキの扱い（tests/suzuki-rescue-browser.py で確かめる）
 const $=()=>({hidden:false});
 ${html.slice(start, end)}
 `, ctx);
 const run = s => vm.runInContext(s, ctx);
 run('retryFromBase()');
 assert.equal(run('P.hp'), 60, 'B: HP is half');
+assert.equal(run('szRetries'), 1, 'v0.72: Suzuki is handled on retry (follows to the wake point / stays down)');
 assert.equal(run('P.full'), 25, 'B: fullness -25');
 run('P.full=20; retryFromBase()');
 assert.equal(run('P.full'), 15, 'B: fullness floor 15');
