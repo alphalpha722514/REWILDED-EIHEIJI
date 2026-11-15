@@ -10,6 +10,8 @@
   ・上志比へ／光明寺へ（地域を移る。ついて来ているスズキも移る）
   ・回復・食料を足す
   ・スズキの今の状態を出す（指示・いる地域・体力・主人公との距離）
+  ・v0.71：獣を近くに出す（押すたびに イノシシ → サル → クマ → 変異したサル。主人公の前 10m に、主人公に気づいた状態で）
+  ・v0.71：スズキの体力を50にする（体力が少ないときの戦い方を見る）
 本編を更新したら、このスクリプトを実行し直して作り直す。
 使い方：python3 tools/build-p2-suzuki-preview.py
 """
@@ -56,13 +58,20 @@ async function sTestStart(where){
   const b2=document.getElementById('btnSStartU'); if(b2) b2.addEventListener('click',()=>sTestStart('kamishihi'));
   const bar=document.createElement('div'); bar.id='p2sbar'; bar.style.cssText='position:fixed;top:calc(6px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:30;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 16px)';
   const B=(id,t)=>`<button id="${id}" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.85">${t}</button>`;
-  bar.innerHTML=B('sta','スズキを呼ぶ')+B('stb','上志比へ／光明寺へ')+B('stc','回復・食料を足す')+B('std','スズキの状態');
+  bar.innerHTML=B('sta','スズキを呼ぶ')+B('stb','上志比へ／光明寺へ')+B('stc','回復・食料を足す')+B('std','スズキの状態')+B('ste','獣を近くに出す')+B('stf','スズキの体力を50に');
   document.body.appendChild(bar); bar.hidden=true;
   const on=(id,f)=>document.getElementById(id).addEventListener('click',e=>{ e.stopPropagation(); f(); cv.focus(); });
-  on('sta',()=>{ if(P.dead) return; if(!SZ.joined||SZ.region!==REG.cur){ szJoin(); } else { SZ.down=false; szPlaceBehind(); } SZ.order='follow'; toast('試遊：スズキを呼んだ（ついて来る）'); });
+  on('sta',()=>{ if(P.dead) return; if(!SZ.joined||SZ.region!==REG.cur){ szJoin(); } else { SZ.down=false; SZ.hp=Math.max(SZ.hp,1); szCombatReset(); szPlaceBehind(); } SZ.order='follow'; toast('試遊：スズキを呼んだ（ついて来る）'); });
   on('stb',async()=>{ if(P.dead||REG.busy) return; const to=REG.cur==='komyoji'?'kamishihi':'komyoji'; await regionTravel(to,null,{force:true}); });
   on('stc',()=>{ if(!P.dead){ P.hp=P.maxHp; foodAdd('onigiri',2); toast('試遊：体力を戻し、おにぎりを2つ足した'); } });
   on('std',()=>{ const O={follow:'ついて来る',wait:'ここで待つ',base:'拠点で過ごす'}; toast(SZ.joined?`スズキ：${O[SZ.order]}・${regionName(SZ.region)}・体力 ${Math.ceil(SZ.hp)}/${SZ.maxHp}${SZ.region===REG.cur?'・主人公から '+dist(SZ.x,SZ.z,P.x,P.z).toFixed(1)+'m':''}`:'スズキはまだ仲間でない（「スズキを呼ぶ」で仲間にする）'); });
+  { const TYPES=['boar','monkey','bear','mutant']; let ti=0;
+    on('ste',async()=>{ if(P.dead) return; const type=TYPES[ti++%TYPES.length], f=P.facing, x=P.x+Math.sin(f)*10, z=P.z+Math.cos(f)*10;
+      let e=enemies.find(o=>!o.removed&&o.state!=='dead'&&o.type===type&&o.mode==='field'&&!o.kf);
+      if(!e&&type==='mutant'){ try{ e=await spawnMutant(x,z); }catch(err){ e=null; } }
+      if(!e){ toast('試遊：'+(ET[type]?ET[type].name:type)+'が近くにいない（別の地域で試す）',true); return; }
+      e.x=x; e.z=z; e.home={x,z}; e.hp=e.maxHp; e.rot=Math.atan2(P.x-x,P.z-z); setState(e,type==='monkey'||type==='mutant'?'kite':'chase'); e.hitP=S.time; toast('試遊：'+ET[type].name+'を主人公の前 10m に出した'); }); }
+  on('stf',()=>{ if(SZ.joined&&!SZ.down){ SZ.hp=50; toast('試遊：スズキの体力を50にした（54以下は敵から離れて戦う）'); } });
   setInterval(()=>{ bar.hidden=!(S.mode==='playing'); },300); }
 """
 s = rep(s, '// ================= NPC =================', test_code + '// ================= NPC =================')

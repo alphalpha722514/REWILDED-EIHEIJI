@@ -538,7 +538,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.70 上志比の獣・採集 テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.71 上志比の獣・採集 テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -3134,7 +3134,7 @@ function initPoise(e){ const p=POISE[e.type]||POISE.boar; e.poise=p.max; e.poise
 function poiseDamage(e,info){ if(!info||!info.mv) return 0; const mv=info.mv;
   if(['stun','trapped','broken','dead'].includes(e.state)) return 0; // 拘束・気絶・崩れの間は削らない
   if(e.type==='boss'&&e.state==='charge') return 0;
-  let p=info.source==='spike'?mv.poise:(mv.counter?e.poiseMax*0.5:mv.poise*(WPOISE[info.weapon]||1)*f31PoiseMul(info.weapon)); // v0.31 熟練で体勢削り+10%
+  let p=info.source==='spike'||info.source==='sz'?mv.poise:(mv.counter?e.poiseMax*0.5:mv.poise*(WPOISE[info.weapon]||1)*f31PoiseMul(info.weapon)); // v0.31 熟練で体勢削り+10%
   if(!mv.counter){ if(WIND_ST.includes(e.state)) p*=1.5; else if(REC_ST.includes(e.state)) p*=1.2;
     if(mv.vsCharge&&e.type==='boar'&&e.state==='charge') p*=mv.vsCharge; }
   if(S.time<e.poiseLowT) p*=0.25; // 崩れた後4秒は削れにくい
@@ -3176,7 +3176,7 @@ function onSwap(){ const a=P.atk; let open=false;
 function nearestFoe(maxD){ let best=null,bd=maxD; for(const e of enemies){ if(e.state==='dead'||e.removed) continue; const d=dist(P.x,P.z,e.x,e.z)-e.r; if(d<bd){ bd=d; best=e; } } return best; }
 // ================= F6-D：獣の調整（同時に攻撃に入るのは2頭まで） =================
 const ATK_ST=['wind','charge','tusk','dash','strike','goreWind','stompWind','chargeWind','scratchWind','scratch','scratch2Wind','scratch2','pounceWind','pounce'];
-function attackSlotFree(e){ let n=0; for(const o of enemies){ if(o===e||o.state==='dead'||o.removed) continue; if(ATK_ST.includes(o.state)&&!(o.mode==='raid'&&!o.aggro)) n++; } return n<2; }
+function attackSlotFree(e){ let n=0; for(const o of enemies){ if(o===e||o.state==='dead'||o.removed) continue; if(ATK_ST.includes(o.state)&&!(o.mode==='raid'&&!o.aggro)&&!!o.szT===!!e.szT) n++; } return n<2; } // v0.70：相手ごとに2体まで（主人公に2体・スズキに2体。2026-11-15 ユーザー決定）
 function orbitPlayer(e,dt,spd){ // 順番待ち：4〜5mで回りながら待つ
   const away=f10OrbitAway(e); const pd=dist(e.x,e.z,P.x,P.z); const r=4.5; const a=away+(e.side||1)*0.5;
   const tx=P.x+Math.sin(a)*r, tz=P.z+Math.cos(a)*r; if(pd<3.8||Math.abs(pd-r)>0.4) steer(e,tx,tz,spd,dt); else { e.spd=0; faceTo(e,Math.atan2(P.x-e.x,P.z-e.z),5,dt); }
@@ -3866,7 +3866,7 @@ function f10HouseBlock(ax,az,bx,bz){ const L=gridQuery(Math.min(ax,bx),Math.max(
     if(ok) return true; } return false; }
 // 見えるか：距離（種類ごと）・後ろ側は半分・安全地帯の相手は見えない・家の陰
 function f10Sees(e){ if(e.kf) return kfSees(e); /* v0.69：要塞・小拠点のサル */ if(P.dead) return false; if(inSafe(P.x,P.z,1)) return false;
-  const d=dist(e.x,e.z,P.x,P.z); let R=ET[e.type].detect*(1-f47Stats().stealth); if(Math.abs(angDiff(e.rot,Math.atan2(P.x-e.x,P.z-e.z)))>F10A.backAng) R*=F10A.backK; if(d>=R) return false;
+  const d=dist(e.x,e.z,P.x,P.z); let R=ET[e.type].detect*szSeeK(); if(Math.abs(angDiff(e.rot,Math.atan2(P.x-e.x,P.z-e.z)))>F10A.backAng) R*=F10A.backK; if(d>=R) return false;
   if(d<F10A.losR){ if(S.time-(e.losAt||-9)>F10A.losT){ e.losAt=S.time; e.losOK=!f10HouseBlock(e.x,e.z,P.x,P.z); } if(!e.losOK) return false; }
   return true; }
 function f10Alert(e){ setState(e,'alert'); e.nz=0; alertMark(e); sfx(e.type==='bear'?'roar':'alert'); e.f10pose=null; }
@@ -5298,8 +5298,17 @@ const SUZUKI_OPTS={scale:0.79,tall:1.2,legLen:1.95,armLen:1.5,girth:0.84,waist:0
 // v0.70（P2 作業E）スズキの仲間 AI の数と状態（使い方は「v0.70 スズキの仲間 AI」の節）
 const SZA={back:2.6,side:2.4,runD:7,speed:6.2,catch:8.0,walk:1.6,roamR:6,still:2.0,roamWait:[2,4],baseWait:[4,10],warp:25,fightR:15,
   r:0.42,talkR:2.3,crumb:0.6,crumbN:100,losT:0.25,stuckT:0.8,stuckD:0.35,sideT:0.55,turn:10}; // すべて暫定
+// 第2段階（戦い）。蹴りの威力・間隔は指示書で確定、間合い・動きの長さ・押し返し（[ふつう,クマ,変異したサル,ヌシ]）・体勢崩しは暫定（2026-11-15 ユーザー了承）
+const SZK={low:{dmg:18,cd:1.0,range:1.4,arc:0.87,dur:0.45,hit:0.18,kb:[0,0,0,0],poise:6,kind:'light'},
+  spin:{dmg:45,cd:2.5,range:1.8,arc:1.31,dur:0.8,hit:0.42,kb:[1.0,0.4,0.55,0],poise:18,kind:'heavy'},
+  jump:{dmg:40,cd:3.5,range:1.3,arc:1.6,dur:1.1,hit:0.7,air:[0.2,0.7],min:4,max:8,leap:7,kb:[2.2,0.9,1.2,0],poise:16,kind:'heavy'},gap:0.25};
+// 戦いの決まり：追う範囲（主人公から8m）・気づかれる距離（主人公の7割）・体力が少ないとき（54以下で4〜7m 離れる）・戦闘の終わり（15m に敵がいない状態が8秒）・臭い（毎秒6・1回2秒・最大10秒）・受けるダメージ2割減
+const SZF={chase:8,seeK:0.7,low:54,keep:[4,7],endR:15,endT:8,swT:2,guard:0.2,smell:{dps:6,add:2,max:10}};
+// 敵の相手がスズキのとき、敵が考える間だけ P にスズキを見せる（敵の AI の中身は変えない）。そのあいだ hurtPlayer はスズキへの傷になる
+const TGV={on:false,s:{x:0,z:0,r:0,dead:false,atk:null,stagger:0,dodge:null,iframe:false}};
 const SZ={joined:false,order:'follow',region:'komyoji',x:0,z:0,wx:0,wz:0,hp:180,maxHp:180,down:false, // 保存する分（セーブは第4段階）
   r:SZA.r,m:null,rot:0,spd:0,phase:0,pose:null,look:0,roam:null,still:0,crumbs:[],ci:-1,los:true,losAt:-9,crumbT:0,
+  kick:null,tgt:null,cd:{low:0,spin:0,jump:0},gapT:0,pref:'low',near2:0,fight:false,calmT:0,hitBy:null,hitAt:-9,kx:0,kz:0,stagger:0,downT:0,
   stk:{t:0,x:0,z:0,n:0,side:1,sideT:0},_px:null,_pz:null};
 function makeHuman(o={}){
   const player=!!o.player47;
@@ -7061,6 +7070,7 @@ function eat(k){
 }
 function healPlayer(n){ const before=P.hp; P.hp=Math.min(P.maxHp,P.hp+n); if(P.hp>before) floatText(P.x,2.2,P.z,`+${Math.round(P.hp-before)}`,'#9fe0a0'); }
 function hurtPlayer(dmg,fx,fz,knock=6,src=null){
+  if(TGV.on) return szHurt(dmg,fx,fz,knock,src); // v0.70：スズキを相手にしている敵の攻撃
   if(P.dead) return false; dmg=f11InvDmg(dmg,src); // v0.30：侵攻の獣だけ
   if(P.iframe){ if(perfectOK(src)) perfectDodge(src); return false; } // 見切りは回避の最初の0.18秒だけ
   dmg=f31Armor(dmg); P.hp=Math.max(0,P.hp-dmg); P.lastHurt=S.time; // v0.31 防具は最後（基礎値→侵攻×1.1→回避で無効→防具） f4DropAll('hurt');
@@ -7107,8 +7117,13 @@ function c2ClimbFall(e){
 function damageEnemy(e,dmg,kind,fromAng,info=null){
   if(e.state==='dead') return;
   if(e.kfY>1) return; // v0.69：見張り台の上のサルには届かない（見つかると飛び降りてくる）
+  if(info&&info.dot){ // v0.70：スズキの足の臭い。ひるまない・押し返さない・かわされない（2026-11-15 指示書）
+    const d=Math.round(dmg); e.hp-=d; e.flash=0.06; floatText(e.x,1.2+e.r*1.2,e.z,String(d),'#c09a5a');
+    if(e.type==='mutant'&&e.fleeOnly&&(e.state==='flee'||e.maxHp-e.hp>=MUT.fleeDmg)){ e.hp=Math.max(1,e.hp); mutantFlee(e); return true; }
+    if(e.hp<=0) killEnemy(e,trk36BonusFor(e)); return true; }
   if(e.type==='mutant'&&e.state==='evade'&&e.st<MUT.evadeT*0.8){ floatText(e.x,2.2,e.z,'かわした','#c8c4b8'); return; } // v0.62：跳んでかわしている間は当たらない
   f31Hit(info); if(kind==='heavy') f10Noise(e.x,e.z,12,'impact'); // 強い衝撃の音
+  if(info&&info.sz) e.hitS=S.time; else if(kind!=='trap') e.hitP=S.time; // v0.70：誰が最後にたたいたか（敵が相手を選ぶ・スズキが戦う相手を選ぶ）
   let mult=1; if(e.state==='broken') mult=1.3; // 体勢が崩れている間は受けるダメージ×1.3
   if(e.type==='boss'&&e.state==='stun') mult=1.6;
   if(e.state==='stun'&&e.type!=='boss') mult=1.25;
@@ -7131,8 +7146,8 @@ function damageEnemy(e,dmg,kind,fromAng,info=null){
   if(e.mode==='field'&&['idle','return','notice','search','probe','threat'].includes(e.state)){ e.state=e.type==='monkey'?'kite':'chase'; e.st=0; e.f10pose=null; if(e.type==='bear') e.f10fought=true; } // 攻撃されたらすぐ戦闘（F10 の新しい状態からも）
   const fell=c2ClimbFall(e); // v0.59：登っている最中に叩かれたサルは落ちる
   if(e.mode==='raid'&&!fell) e.aggro=true;
-  if(e.type==='mutant'){ e.aggro=true; if(e.fleeOnly&&(e.state==='flee'||e.maxHp-e.hp>=MUT.fleeDmg)){ e.hp=Math.max(1,e.hp); mutantFlee(e); return; } if(e.state==='idle'||e.state==='alert') setState(e,'kite'); } // v0.61：初遭遇は体力が減ると逃げ去る（倒れない）
-  const kb=e.type==='boss'?0:e.type==='bear'?(kind==='heavy'?0.6:0):e.type==='mutant'?(kind==='heavy'?0.9:0.25):kind==='heavy'?1.6:0.6;
+  if(e.type==='mutant'){ e.aggro=true; if(e.fleeOnly&&(e.state==='flee'||e.maxHp-e.hp>=MUT.fleeDmg)){ e.hp=Math.max(1,e.hp); mutantFlee(e); return true; } if(e.state==='idle'||e.state==='alert') setState(e,'kite'); } // v0.61：初遭遇は体力が減ると逃げ去る（倒れない）
+  const kb=info&&info.kb!=null?info.kb:e.type==='boss'?0:e.type==='bear'?(kind==='heavy'?0.6:0):e.type==='mutant'?(kind==='heavy'?0.9:0.25):kind==='heavy'?1.6:0.6; // v0.70：スズキの蹴りは技ごとの押し返し
   if(kb){ e.x+=Math.sin(fromAng)*kb; e.z+=Math.cos(fromAng)*kb; resolve(e,true,e.type==='monkey'); }
   // 体勢とひるみ（ひるみはサル0.8秒・イノシシ1.2秒に1回まで。クマとヌシはひるまない）
   const broke=e.hp-0>0&&applyPoise(e,info);
@@ -7140,6 +7155,7 @@ function damageEnemy(e,dmg,kind,fromAng,info=null){
   else if(!broke&&canFlinch(e,kind,info)){ e.flinchT=S.time; setState(e,'hurt'); e.ind.visible=false; if(e.sector) e.sector.visible=false; }
   if(e.hp<=0) killEnemy(e,trk36BonusFor(e));
   else if(e.type==='boss'&&e.phase===1&&e.hp<e.maxHp*0.5){ e.phase=2; banner('ヌシが怒り狂った！','突進が連続し、地響きの踏みつけを使ってくる',2.4); sfx('roar'); S.shake=0.5; }
+  return true; // v0.70：当たった（スズキの臭いを付けるかに使う）
 }
 function killEnemy(e,trackingBonus=0){
   if(e.state==='dead') return;
@@ -7209,7 +7225,7 @@ function canSee(e){
   const d=dist(e.x,e.z,P.x,P.z);
   if(f10Wild(e)) return f10Sees(e); // 野生の獣：後ろ側は半分の距離・家の陰は見えない（F10）
   if(e.mode==='field'&&inSafe(P.x,P.z,1)) return false; // 安全地帯（拠点・境内）にいる相手は見失う
-  return d<ET[e.type].detect;
+  return d<ET[e.type].detect*(TGV.on?SZF.seeK:1);
 }
 function setState(e,s){ const previous=e.state; e.state=s; if(previous!==s&&e.m&&e.m.study51) voiceState51(e,s); e.st=0; e.sn=(e.sn||0)+1; if(s==='wind') e.windRoared=false; if(s==='wind') e.lockDir=null; } // sn：攻撃ごとの番号（見切りは同じ攻撃から1回だけ）。v0.45：予備動作の入りで初期化
 function wanderUpdate(e,dt,spd){
@@ -7690,17 +7706,17 @@ function updateEnemies(dt){
     if((e.mode==='field'||(e.kfw&&KF_CALM.includes(e.state)))&&e.type!=='boss'&&!AILOD_SKIP.includes(e.state)&&dist(e.x,e.z,P.x,P.z)>90){ // v0.69：普段の変異したサルも、落ち着いていれば間引く
       e.lodT=(e.lodT||0)+dt;
       if(e.lodT>=0.25){ const ldt=e.lodT; e.lodT=0;
-        if(!updatePoise(e,ldt)){ const prev=e.state;
+        if(!updatePoise(e,ldt)){ const prev=e.state, sw=szPick(e); if(sw) tgvBegin(); try{ // v0.70：相手がスズキなら、考える間だけスズキを見せる
           if(f10Pre(e,ldt)){}
           else if(e.type==='deer'||e.type==='weasel') updateSmallBeast(e,ldt);
           else if(e.type==='boar') updateBoar(e,ldt);
           else if(e.type==='monkey') updateMonkey(e,ldt);
           else if(e.type==='bear') updateBear(e,ldt);
           else if(e.type==='mutant') updateMutant(e,ldt);
-          f10Post(e,prev); if(e.kf) kfPost(e,prev); } }
+          f10Post(e,prev); if(e.kf) kfPost(e,prev); } finally{ if(sw) tgvEnd(); } } }
       if((e.kf||e.kfw)&&e.m&&e.m.g){ e.m.g.position.set(e.x,groundH(e.x,e.z)+(e.kfY||0),e.z); e.m.g.rotation.y=e.rot; } // v0.69：遠くでも形の位置だけは合わせる（近づいたときに飛ばない）
       continue; }
-    if(!updatePoise(e,dt)){ const prev=e.state;
+    if(!updatePoise(e,dt)){ const prev=e.state, sw=szPick(e); if(sw) tgvBegin(); try{ // v0.70：相手がスズキなら、考える間だけスズキを見せる
     if(f10Pre(e,dt)){}
     else if(e.type==='deer'||e.type==='weasel') updateSmallBeast(e,dt);
     else if(e.type==='boar') updateBoar(e,dt);
@@ -7708,7 +7724,7 @@ function updateEnemies(dt){
     else if(e.type==='bear') updateBear(e,dt);
     else if(e.type==='mutant') updateMutant(e,dt);
     else updateBoss(e,dt);
-    f10Post(e,prev); if(e.kf) kfPost(e,prev); }
+    f10Post(e,prev); if(e.kf) kfPost(e,prev); } finally{ if(sw) tgvEnd(); } }
     if(e.removed) continue;
     if(e.state!=='wind'&&e.state!=='chargeWind') e.ind.visible=false;
     if(!['wind','goreWind','tusk'].includes(e.state)&&!(ev.kind==='chapter2'&&e.state==='raid'&&e.c2CoreT>0)) hideSector(e);
@@ -9852,7 +9868,7 @@ function kfLOS(ax,az,ay,bx,bz,by){ const L=gridQuery(Math.min(ax,bx),Math.max(ax
     const yIn=ay+(by-ay)*t0, yOut=ay+(by-ay)*t1; if(Math.min(yIn,yOut)<(o.h||0)) return false; }
   return true; }
 function kfSees(e){ if(P.dead||inSafe(P.x,P.z,1)) return false; const d=dist(e.x,e.z,P.x,P.z), watch=e.kf&&e.kf.role==='watch'&&e.kfY>1;
-  let R=(watch?KFA.watchR:ET[e.type].detect)*(1-f47Stats().stealth); const off=Math.abs(angDiff(e.rot,Math.atan2(P.x-e.x,P.z-e.z)));
+  let R=(watch?KFA.watchR:ET[e.type].detect)*szSeeK(); /* v0.70：スズキは主人公の7割（12.6m） */ const off=Math.abs(angDiff(e.rot,Math.atan2(P.x-e.x,P.z-e.z)));
   if(watch){ if(off>KFA.watchCone) R*=KFA.sideK; } else if(off>F10A.backAng) R*=F10A.backK;
   if(d>=R) return false;
   if(S.time-(e.kfLosAt||-9)>0.25||e.kfLosP!==Math.round(P.x*2)+Math.round(P.z*2)*7919){ e.kfLosAt=S.time; e.kfLosP=Math.round(P.x*2)+Math.round(P.z*2)*7919;
@@ -9965,7 +9981,7 @@ function kamiDrawMarks(ctx,c2,X,Z){ const kw=ctx.kw, dot=(x,z,col,r)=>{ c2.fillS
 // 第1段階：ついて来る（主人公の少し後ろ・遅れたら走る・止まった主人公のまわりを歩く）・障害物（当たり判定・歩いた跡をたどる・横へずれる）・
 //          25m より離れたら主人公から見えない所へ移す・指示（ついて来い／ここで待て／拠点で過ごせ）・地域の移動についてくる。
 // SZA・SZ（数と状態）は、早く使われる（freshState）ので SUZUKI_OPTS の後ろに置いた
-function szFresh(){ Object.assign(SZ,{joined:false,order:'follow',region:'komyoji',wx:0,wz:0,hp:SZ.maxHp,down:false,roam:null,still:0,ci:-1,crumbT:0,pose:null});
+function szFresh(){ Object.assign(SZ,{joined:false,order:'follow',region:'komyoji',wx:0,wz:0,hp:SZ.maxHp,down:false,roam:null,still:0,ci:-1,crumbT:0,pose:null}); szCombatReset();
   SZ.crumbs.length=0; if(SZ.m) SZ.m.g.visible=false; }
 function szHere(){ return SZ.joined&&SZ.region===REG.cur&&!REG.busy; }
 function szModel(){ if(!SZ.m){ SZ.m=makeHuman(SUZUKI_OPTS); SZ.m.g.visible=false; scene.add(SZ.m.g); } return SZ.m; }
@@ -9982,7 +9998,7 @@ function szLine(ax,az,bx,bz){ const d=dist(ax,az,bx,bz), n=Math.ceil(d/0.5); for
 function szSpotOK(x,z,minEnemy=6){ if(!szFree(x,z,SZA.r+0.08)||!szWalkable(x,z)) return false; if(Math.abs(groundH(x,z)-groundH(P.x,P.z))>2.5) return false;
   for(const e of enemies){ if(e.removed||e.state==='dead') continue; if(dist(x,z,e.x,e.z)<minEnemy) return false; } return true; }
 // 戦っているか：まわり15m に、落ち着いていない獣がいる（第2段階で、スズキか主人公を狙っている獣に絞る）
-const SZ_CALM=['idle','return','sleep','dead','flee','flee2','steal','kfwatch','kfpatrol','kfreturn','kfsearch','search','probe','notice'];
+const SZ_CALM=['idle','return','sleep','dead','flee','flee2','steal','kfreturn','kfsearch','search','probe','notice']; // 落ち着いている・見失った（まだ見つけていない）獣の状態
 function szFighting(){ for(const e of enemies){ if(e.removed||e.state==='dead'||SZ_CALM.includes(e.state)) continue; if(dist(SZ.x,SZ.z,e.x,e.z)<SZA.fightR||dist(P.x,P.z,e.x,e.z)<SZA.fightR) return true; } return false; }
 // 画面に映っているか（今のカメラで調べる）
 const _szFr=new THREE.Frustum(), _szMx=new THREE.Matrix4(), _szV=new THREE.Vector3();
@@ -10013,8 +10029,8 @@ function szMoveTo(tx,tz,spd,dt){ let a=Math.atan2(tx-SZ.x,tz-SZ.z); const s=SZ.s
 function szCrumbTarget(){ const cr=SZ.crumbs; if(!cr.length) return null; let i=SZ.ci;
   if(i<0||i>=cr.length||dist(SZ.x,SZ.z,cr[i].x,cr[i].z)>4){ let bd=1e9; i=0; for(let k=0;k<cr.length;k++){ const d=dist(SZ.x,SZ.z,cr[k].x,cr[k].z); if(d<=bd){ bd=d; i=k; } } }
   while(i<cr.length-1&&dist(SZ.x,SZ.z,cr[i].x,cr[i].z)<0.8) i++; SZ.ci=i; return cr[i]; }
+function szCrumb(){ const cr=SZ.crumbs, last=cr[cr.length-1]; if(!last||dist(last.x,last.z,P.x,P.z)>SZA.crumb){ cr.push({x:P.x,z:P.z}); if(cr.length>SZA.crumbN){ cr.shift(); if(SZ.ci>0) SZ.ci--; } } }
 function szFollow(dt){
-  const cr=SZ.crumbs, last=cr[cr.length-1]; if(!last||dist(last.x,last.z,P.x,P.z)>SZA.crumb){ cr.push({x:P.x,z:P.z}); if(cr.length>SZA.crumbN){ cr.shift(); if(SZ.ci>0) SZ.ci--; } }
   const pd=dist(SZ.x,SZ.z,P.x,P.z);
   if(pd>SZA.warp&&!szFighting()&&szWarp()) return;
   const pv=Math.hypot(P.lvx48||0,P.lvz48||0); SZ.still=pv<0.3&&!P.dodge&&!P.atk?SZ.still+dt:0;
@@ -10057,25 +10073,157 @@ function szInteractables(L){ if(!szHere()||SZ.down) return; const d=dist(P.x,P.z
 // 仲間になる（作業F の初遭遇の後に呼ぶ。今は試遊版のボタンだけが呼ぶ）
 function szJoin(){ szModel(); SZ.joined=true; SZ.order='follow'; SZ.region=REG.cur; SZ.down=false; SZ.hp=SZ.maxHp; SZ.crumbs.length=0; szPlaceBehind(); }
 // 地域を移ったとき：ついて来ているスズキは一緒に移る。待っている・拠点にいる・倒れているときは、その地域に残る
-function szAfterTravel(from,to){ if(!SZ.joined) return; if(SZ.region===from&&SZ.order==='follow'&&!SZ.down){ SZ.region=to; SZ.crumbs.length=0; szPlaceBehind(); }
+function szAfterTravel(from,to){ if(!SZ.joined) return; szCombatReset(); if(SZ.region===from&&SZ.order==='follow'&&!SZ.down){ SZ.region=to; SZ.crumbs.length=0; szPlaceBehind(); }
   if(SZ.m) SZ.m.g.visible=false; }
+// ---- 第2段階：戦い（敵の相手・蹴り3種・足の臭い・体力が少ないとき・要塞の見張りとの連携） ----
+function szCombatReset(){ SZ.kick=null; SZ.tgt=null; SZ.fight=false; SZ.calmT=0; SZ.stagger=0; SZ.kx=0; SZ.kz=0; SZ.hitBy=null; }
+function szSeeK(){ return TGV.on?SZF.seeK:(1-f47Stats().stealth); } // スズキは防具の忍びの効き目なし・主人公の7割の距離で気づかれる
+function tgvBegin(){ const s=TGV.s; s.x=P.x; s.z=P.z; s.r=P.r; s.dead=P.dead; s.atk=P.atk; s.stagger=P.stagger; s.dodge=P.dodge; s.iframe=P.iframe;
+  P.x=SZ.x; P.z=SZ.z; P.r=SZ.r; P.dead=false; P.atk=SZ.kick?SZ.kick.atk:null; P.stagger=SZ.stagger; P.dodge=null; P.iframe=false; TGV.on=true; }
+function tgvEnd(){ const s=TGV.s; P.x=s.x; P.z=s.z; P.r=s.r; P.dead=s.dead; P.atk=s.atk; P.stagger=s.stagger; P.dodge=s.dodge; P.iframe=s.iframe; TGV.on=false; }
+// 敵が相手を選ぶ：近さと、最後にたたいてきた相手。2秒に1回まで、攻撃の途中は切り替えない。倒れたスズキは選ばない。
+// まだ見つけていない獣は、スズキを7割の距離で見る（スズキの距離を 1/0.7 倍して比べる）
+function szPick(e){
+  if(!szHere()||SZ.down||e.state==='dead'||e.tgt){ e.szT=false; return false; } // e.tgt：変異したサルが自分で相手を持つとき（作業F の追いかけ用）
+  if(ATK_ST.includes(e.state)||S.time-(e.szSw||-9)<SZF.swT) return !!e.szT;
+  const calm=SZ_CALM.includes(e.state)||(e.mode==='raid'&&!e.aggro);
+  let sp=P.dead?1e9:dist(e.x,e.z,P.x,P.z), ss=dist(e.x,e.z,SZ.x,SZ.z);
+  if(calm) ss/=SZF.seeK; else { if(S.time-(e.hitP||-99)<5) sp-=6; if(S.time-(e.hitS||-99)<5) ss-=6; }
+  if(e.szT) ss-=2; else sp-=2;
+  const want=ss<sp; if(want!==!!e.szT){ e.szT=want; e.szSw=S.time; } return want; }
+// 敵の攻撃を受ける：2割減。重い一撃は蹴りを止める。体力0で倒れる（助け起こすのは第3段階）
+function szHurt(dmg,fx,fz,knock,src){ if(SZ.down||!szHere()) return false; dmg=f11InvDmg(dmg,src); const d=Math.max(1,Math.round(dmg*(1-SZF.guard)));
+  SZ.hp=Math.max(0,SZ.hp-d); floatText(SZ.x,2.0,SZ.z,`-${d}`,'#ffb080'); SZ.hitBy=src; SZ.hitAt=S.time; SZ.fight=true; SZ.calmT=0;
+  const a=Math.atan2(SZ.x-fx,SZ.z-fz); SZ.kx=Math.sin(a)*knock*0.6; SZ.kz=Math.cos(a)*knock*0.6; SZ.stagger=0.25; if(SZ.kick&&(SZ.kick.id!=='jump'||SZ.kick.t>SZK.jump.hit)&&d>=15) SZ.kick=null;
+  if(SZ.hp<=0) szDown(); return true; }
+SZ.hurt=(d,e)=>szHurt(d,e.x,e.z,5,e); // 変異したサルの e.tgt から直接あてるとき（mutHit）
+function szDown(){ SZ.hp=0; SZ.down=true; SZ.downT=0; SZ.kick=null; SZ.tgt=null; SZ.stagger=0; toast('スズキが倒れた！',true); }
+// 戦う範囲の中心：ついて来るときは主人公、待つときは待つ所、拠点では自分（自衛だけ）
+function szAnchor(){ return SZ.order==='wait'?{x:SZ.wx,z:SZ.wz}:SZ.order==='base'?{x:SZ.x,z:SZ.z}:{x:P.x,z:P.z}; }
+// 戦う相手になるか（近くにいるだけでは戦わない。主人公かスズキを見つけた・たたいた獣だけ）
+function szIsThreat(e,A){ if(e.removed||e.state==='dead'||e.fled||e.kfY>1) return false;
+  const busy=!SZ_CALM.includes(e.state)&&!(e.mode==='raid'&&e.state==='raid'&&!e.aggro);
+  if(e.szT&&busy&&dist(e.x,e.z,SZ.x,SZ.z)<6) return true; // スズキを襲っている（どの指示でも反撃する）
+  if(SZ.order==='base') return false;
+  if(dist(e.x,e.z,A.x,A.z)>SZF.chase) return false; // 追うのは主人公（待つときは待つ所）から8m まで
+  if(SZ.order==='wait') return busy&&dist(e.x,e.z,SZ.x,SZ.z)<4;
+  if(e.mode==='raid') return e.aggro||!!ev.kind; // 防衛戦：主人公の近くの獣と戦う（最大8m）
+  if(S.time-(e.hitP||-99)<8||S.time-(e.hitS||-99)<8) return true;
+  return busy; }
+function szKb(e,a){ return e.type==='boss'?a[3]:e.type==='bear'?a[1]:e.type==='mutant'?a[2]:a[0]; }
+// 戦う。動きを受け持ったら true
+function szCombat(dt){
+  if(SZ.kick){ szKickTick(dt); return true; }
+  const A=szAnchor(); let best=null, bs=1e9, n2=0;
+  for(const e of enemies){ if(!szIsThreat(e,A)) continue; const dS=dist(SZ.x,SZ.z,e.x,e.z);
+    let sc=SZ.order==='follow'?Math.min(dS,dist(P.x,P.z,e.x,e.z)):dS; // 主人公やスズキを脅かす近くの敵から
+    if(ATK_ST.includes(e.state)) sc-=3; if(e.szT) sc-=1.5; if(e===SZ.tgt) sc-=2; if(e===SZ.hitBy&&S.time-SZ.hitAt<4) sc-=3;
+    if(sc<bs){ bs=sc; best=e; } if(dS<2.6+e.r) n2++; }
+  SZ.tgt=best; SZ.near2=n2; if(!best) return false;
+  SZ.fight=true; SZ.calmT=0;
+  const e=best, dE=dist(SZ.x,SZ.z,e.x,e.z)-SZ.r-e.r, face=Math.atan2(e.x-SZ.x,e.z-SZ.z), off=Math.abs(angDiff(SZ.rot,face));
+  const ready=k=>S.time>=SZ.cd[k]&&S.time>=SZ.gapT;
+  if(SZ.hp<=SZF.low){ // 体力が少ない：4〜7m 離れ、近づいた敵と攻撃の後の隙だけローキックで返す。飛び蹴りはしない
+    if((dE<2||REC_ST.includes(e.state))&&dE<=SZK.low.range&&ready('low')&&off<0.6){ szKickStart('low',e); return true; }
+    if(dE<SZF.keep[0]){ const a=Math.atan2(SZ.x-e.x,SZ.z-e.z), s=SZ.stk; szGo(a+(s.sideT>0?s.side*Math.PI/2:0),SZA.speed,dt); szStuck(dt,true); SZ.rot=face; }
+    else if(dE>SZF.keep[1]){ szMoveTo(e.x,e.z,SZA.walk*2,dt); szStuck(dt,true); }
+    else { SZ.spd=0; szStuck(dt,false); SZ.rot+=clamp(angDiff(SZ.rot,face),-8*dt,8*dt); }
+    return true; }
+  if(ready('jump')&&dE>=SZK.jump.min&&dE<=SZK.jump.max&&!(e.kfY>0)&&szLine(SZ.x,SZ.z,e.x,e.z)){ szKickStart('jump',e); return true; }
+  const canSpin=dE<=SZK.spin.range&&ready('spin')&&off<0.9, canLow=dE<=SZK.low.range&&ready('low')&&off<0.6;
+  if(canSpin&&(SZ.pref==='spin'||!canLow&&!ready('low'))){ szKickStart('spin',e); return true; }
+  if(canLow){ szKickStart('low',e); return true; }
+  if(dE>1.1){ szMoveTo(e.x,e.z,dE>4?SZA.catch:SZA.speed,dt); szStuck(dt,true); } // 近づく
+  else { SZ.spd=0; szStuck(dt,false); SZ.rot+=clamp(angDiff(SZ.rot,face),-12*dt,12*dt); } // 間合いで向きを合わせる
+  return true; }
+function szKickStart(id,e){ const K=SZK[id]; SZ.cd[id]=S.time+K.cd; SZ.kick={id,K,e,t:0,hit:false,atk:{id:'sz_'+id,t:0,a1:K.hit+0.05,kind:K.kind},sx:SZ.x,sz:SZ.z}; SZ.stk.n=0;
+  if(id==='jump'){ const a=Math.atan2(e.x-SZ.x,e.z-SZ.z), L=Math.min(K.leap,Math.max(0,dist(SZ.x,SZ.z,e.x,e.z)-SZ.r-e.r-0.4)); SZ.kick.tx=SZ.x+Math.sin(a)*L; SZ.kick.tz=SZ.z+Math.cos(a)*L; SZ.rot=a; }
+  sfx(id==='low'?'swing':'heavySwing'); szBark(id); }
+function szKickTick(dt){ const k=SZ.kick, K=k.K, e=k.e; k.t+=dt; k.atk.t=k.t; SZ.spd=0;
+  const alive=e&&!e.removed&&e.state!=='dead';
+  if(alive&&k.t<K.hit*0.85&&k.id!=='jump') SZ.rot+=clamp(angDiff(SZ.rot,Math.atan2(e.x-SZ.x,e.z-SZ.z)),-12*dt,12*dt);
+  if(k.id==='jump'){ const a0=K.air[0], a1=K.air[1]; if(k.t>a0&&k.t-dt<a1){ const f=Math.min(k.t,a1)-Math.max(k.t-dt,a0), r=f/(a1-a0), ox=SZ.x, oz=SZ.z; SZ._px=ox; SZ._pz=oz;
+      SZ.x+=(k.tx-k.sx)*r; SZ.z+=(k.tz-k.sz)*r; resolve(SZ,false); if(!szWalkable(SZ.x,SZ.z)){ SZ.x=ox; SZ.z=oz; } SZ.spd=dist(ox,oz,SZ.x,SZ.z)/Math.max(dt,1e-4); } }
+  if(!k.hit&&k.t>=K.hit){ k.hit=true; if(alive) szKickHit(k); }
+  if(k.t>=K.dur){ SZ.kick=null; SZ.gapT=S.time+SZK.gap; SZ.pref=Math.random()<(SZ.near2>=2?0.85:0.5)?'spin':'low'; } }
+// 当てる：単体だけ。外れたら臭いは付かない
+function szKickHit(k){ const K=k.K, e=k.e, dE=dist(SZ.x,SZ.z,e.x,e.z)-SZ.r-e.r, from=Math.atan2(e.x-SZ.x,e.z-SZ.z);
+  if(dE>K.range+0.25||Math.abs(angDiff(SZ.rot,from))>K.arc){ floatText(SZ.x,2.1,SZ.z,'空振り','#c8c4b8'); return false; }
+  const ok=damageEnemy(e,K.dmg,K.kind,from,{sz:1,source:'sz',mv:{poise:K.poise,kind:K.kind},kb:szKb(e,K.kb)});
+  if(!ok) return false; // かわされた・届かない
+  const hx=(SZ.x+e.x)/2, hz=(SZ.z+e.z)/2, hy=groundH(hx,hz)+(k.id==='low'?0.45:0.95);
+  if(k.id==='low'){ spawnParticles(hx,hy,hz,4,0xf3ead2,2.2); sfx('hit'); } // ローキック：小さな打撃の印
+  else { spawnParticles(hx,hy,hz,k.id==='jump'?10:8,0xf3ead2,k.id==='jump'?5:4); sfx('heavyHit'); S.shake=Math.max(S.shake,k.id==='jump'?0.3:0.22); }
+  if(e.type!=='boss'&&e.state!=='dead'){ e.smellT=Math.min(SZF.smell.max,Math.max(0,e.smellT||0)+SZF.smell.add); if(!(e.smellAcc>0)) e.smellAcc=0; } // 足の臭い：当たるたびに2秒足す（最大10秒）。ボスには付かない
+  return true; }
+// 足の臭い：毎秒6。威力は重ねず、時間だけのびる。茶色の煙（使い回しの粒28個。iPhone 向けに数を絞る）
+function szSmellTick(dt){ for(const e of enemies){ if(!(e.smellT>0)) continue; if(e.removed||e.state==='dead'){ e.smellT=0; continue; }
+    e.smellT-=dt; e.smellAcc+=dt; while(e.smellAcc>=0.999&&e.state!=='dead'){ e.smellAcc-=1; damageEnemy(e,SZF.smell.dps,'smell',0,{sz:1,dot:1}); }
+    if(e.smellT<=0){ e.smellT=0; e.smellAcc=0; } else szSmokeEmit(e,dt); }
+  szSmokeTick(dt); }
+const SZ_SMOKE=[];
+function szSmokeInit(){ if(SZ_SMOKE.length) return; const c=document.createElement('canvas'); c.width=c.height=32; const g=c.getContext('2d'), gr=g.createRadialGradient(16,16,2,16,16,16);
+  gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.45,'rgba(255,255,255,0.85)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,32,32); const tex=new THREE.CanvasTexture(c);
+  for(let i=0;i<28;i++){ const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,color:0x6e4c28,transparent:true,opacity:0,depthWrite:false})); sp.visible=false; scene.add(sp); SZ_SMOKE.push({sp,t:0,life:1,vx:0,vz:0}); } }
+function szSmokeEmit(e,dt){ e.smokeT=(e.smokeT||0)-dt; if(e.smokeT>0) return; e.smokeT=0.22; szSmokeInit();
+  let p=SZ_SMOKE.find(q=>!q.sp.visible); if(!p){ p=SZ_SMOKE[0]; for(const q of SZ_SMOKE) if(q.t/q.life>p.t/p.life) p=q; }
+  const a=Math.random()*TAU, r=e.r*rr(0.3,1.1); p.sp.position.set(e.x+Math.sin(a)*r,groundH(e.x,e.z)+(e.kfY||0)+e.r*rr(1.6,2.4),e.z+Math.cos(a)*r); /* 背の上から立ちのぼる（体の中に隠れない） */ p.t=0; p.life=rr(0.9,1.3); p.vx=rr(-0.2,0.2); p.vz=rr(-0.2,0.2); p.sp.visible=true; }
+function szSmokeTick(dt){ for(const p of SZ_SMOKE){ if(!p.sp.visible) continue; p.t+=dt; const k=p.t/p.life; if(k>=1){ p.sp.visible=false; continue; }
+    p.sp.position.y+=dt*0.75; p.sp.position.x+=p.vx*dt; p.sp.position.z+=p.vz*dt; const s=0.55+k*1.0; p.sp.scale.set(s,s,1); p.sp.material.opacity=0.9*(1-k)*Math.min(1,k*6); } }
+// 戦闘中の掛け声：鳴らす仕組みだけ。文面は未承認なので空（ユーザーと ChatGPT で決める。Claude は創作しない）
+const SZ_BARKS={};
+function szBark(kind){ const L=SZ_BARKS[kind]; if(!L||!L.length||S.time-(SZ.barkAt||-9)<4) return; SZ.barkAt=S.time; floatText(SZ.x,2.3,SZ.z,L[Math.floor(Math.random()*L.length)],'#f0e6c8'); }
+// 戦闘の終わり：まわり15m に落ち着いていない敵がいない状態が8秒続いたら終わり（回復は第3段階）
+function szCombatClock(dt){ if(SZ.tgt){ SZ.calmT=0; SZ.fight=true; return; } let near=false;
+  for(const e of enemies){ if(e.removed||e.state==='dead'||SZ_CALM.includes(e.state)||e.kfY>1) continue; if(dist(SZ.x,SZ.z,e.x,e.z)<SZF.endR){ near=true; break; } }
+  if(near){ SZ.calmT=0; return; } SZ.calmT+=dt; if(SZ.calmT>=SZF.endT) SZ.fight=false; }
+// 敵と重ならない（スズキがよける。見張り台の上・倒れた獣は除く）
+function szPushOut(){ for(const e of enemies){ if(e.removed||e.state==='dead'||e.kfY>1) continue; const d=dist(SZ.x,SZ.z,e.x,e.z), rs=SZ.r+e.r; if(d<rs&&d>1e-3){ SZ.x+=(SZ.x-e.x)/d*(rs-d); SZ.z+=(SZ.z-e.z)/d*(rs-d); } } }
 const SZP={wait:{L:[-0.32,1.2,0],R:[-0.32,-1.2,0],elbow:1.7}}; // 姿勢（腕の回し方 YXZ・ひじの曲げ）。暫定
-function szAnimate(dt){ const m=SZ.m, v=SZ.spd, walking=v>0.3, run=v>4.5;
-  m.g.position.set(SZ.x,groundH(SZ.x,SZ.z),SZ.z); m.g.rotation.y=SZ.rot;
-  SZ.phase+=dt*(walking?5+v*1.25:0); const sw=walking?Math.sin(SZ.phase):0, amp=run?0.85:0.5;
-  m.root.position.y=walking?Math.abs(sw)*(run?0.09:0.05):0;
-  m.legs[0].rotation.x=sw*amp; m.legs[1].rotation.x=-sw*amp; m.body.scale.set(1,1,1);
-  m.armL.rotation.order='YXZ'; m.armR.rotation.order='YXZ';
-  if(SZ.pose==='wait'&&!walking){ const W=SZP.wait; m.armL.rotation.set(...W.L); m.armR.rotation.set(...W.R); } // 待つ：腕を組む（暫定。確認画像で承認を受ける）
-  else { m.armL.rotation.set(-sw*amp*0.9,0,0.1); m.armR.rotation.set(sw*amp*0.9,0,-0.1); }
-  m.body.rotation.x=walking?(run?0.22:0.08):0; m.head.rotation.y=walking?0:SZ.look; if(walking) SZ.look=0;
-  softPose(m,dt,{elbow:SZ.pose==='wait'&&!walking?SZP.wait.elbow:run?0.95:0.35,knee:run?0.22:0.08});
+const szLerp=(a,b,t)=>a+(b-a)*clamp(t,0,1), szSeg=(t,a,b)=>clamp((t-a)/(b-a),0,1);
+// 蹴りの姿勢（脚・腕の回し方。暫定。確認画像で見てもらう）。脚は x が負で前へ上がる
+const SZP2={leg:-1}; // 脚を前へ上げる向き（-1）。確認画像で合わせる
+function szKickPose(m,k){ const t=k.t, F=SZP2.leg; let el=1.5, kn=0.1, ka=[0,0], yaw=0, lift=0;
+  m.armL.rotation.set(-0.8,0,0); m.armR.rotation.set(-0.6,0,0); // 構え（両腕を前で曲げる）
+  if(k.id==='low'){ // ローキック：右足を一度引いて、低く前へ蹴り出す
+    const x=t<0.12?szLerp(0,-0.45*F,t/0.12):t<0.26?szLerp(-0.45*F,0.8*F,(t-0.12)/0.06):szLerp(0.8*F,0,(t-0.26)/0.19);
+    m.legs[1].rotation.x=x; m.legs[0].rotation.x=-0.12*F; ka=[0.12,t>0.12&&t<0.3?-0.25:0.1]; m.body.rotation.x=t>0.12&&t<0.3?-0.12:0.06; }
+  else if(k.id==='spin'){ // 後ろ回し蹴り：体を1回転させ、背中側へ脚を高く伸ばして当てる
+    yaw=TAU*clamp((t-0.08)/0.68,0,1); const up=t<0.25?szSeg(t,0.12,0.25):t<0.6?1:1-szSeg(t,0.6,0.76);
+    m.legs[1].rotation.x=-1.3*F*up; m.legs[0].rotation.x=0.1*F*up; ka=[0.25*up,-0.15*up]; m.body.rotation.x=0.38*up; m.armL.rotation.set(-1.2,0,0); m.armR.rotation.set(-1.0,0,0); el=1.2; }
+  else { // 飛び蹴り：しゃがんで跳び、片足を前へ伸ばして着地で当てる
+    const A=k.K.air; if(t<A[0]){ const c=t/A[0]; lift=-0.12*c; ka=[0.7*c,0.7*c]; m.body.rotation.x=0.25*c; }
+    else if(t<A[1]){ const p2=(t-A[0])/(A[1]-A[0]); lift=Math.sin(Math.PI*p2)*0.95; m.legs[1].rotation.x=1.35*F; m.legs[0].rotation.x=-0.6*F; ka=[1.2,-0.2]; m.body.rotation.x=-0.2; m.armL.rotation.set(0.5,0,0); m.armR.rotation.set(0.4,0,0); el=0.6; }
+    else { const q=szSeg(t,A[1],k.K.dur); lift=-0.1*(1-q); ka=[0.6*(1-q),0.6*(1-q)]; m.body.rotation.x=0.2*(1-q); } }
+  return {el,kn,ka,yaw,lift}; }
+function szAnimate(dt){ const m=SZ.m, v=SZ.spd, walking=v>0.3&&!SZ.kick, run=v>4.5, gy=groundH(SZ.x,SZ.z);
+  m.g.rotation.order='YXZ'; m.g.rotation.set(0,SZ.rot,0); m.g.position.set(SZ.x,gy,SZ.z);
+  m.armL.rotation.order='YXZ'; m.armR.rotation.order='YXZ'; m.body.scale.set(1,1,1); m.root.position.y=0; m.head.rotation.y=0;
+  let el=0.35, kn=0.08, ka=[0,0];
+  if(SZ.down){ // 倒れる：あお向けに倒れる（助け起こすのは第3段階）
+    const k=Math.min(1,SZ.downT/0.4); m.g.rotation.x=-Math.PI/2*k; m.g.position.y=gy+0.14*k; m.legs[0].rotation.x=0.1; m.legs[1].rotation.x=-0.1; m.armL.rotation.set(-0.3,0,0); m.armR.rotation.set(-0.3,0,0); m.body.rotation.x=0; el=0.5; }
+  else if(SZ.kick){ const q=szKickPose(m,SZ.kick); el=q.el; kn=q.kn; ka=q.ka; m.g.rotation.y=SZ.rot+q.yaw; m.root.position.y=q.lift; }
+  else {
+    SZ.phase+=dt*(walking?5+v*1.25:0); const sw=walking?Math.sin(SZ.phase):0, amp=run?0.85:0.5;
+    m.root.position.y=walking?Math.abs(sw)*(run?0.09:0.05):0;
+    m.legs[0].rotation.x=sw*amp; m.legs[1].rotation.x=-sw*amp;
+    if(SZ.pose==='wait'&&!walking){ const W=SZP.wait; m.armL.rotation.set(...W.L); m.armR.rotation.set(...W.R); el=W.elbow; } // 待つ：腕を組む（2026-11-15 承認）
+    else if(SZ.fight&&!walking){ m.armL.rotation.set(-0.8,0,0); m.armR.rotation.set(-0.6,0,0); el=1.5; } // 戦いの間は構える
+    else { m.armL.rotation.set(-sw*amp*0.9,0,0.1); m.armR.rotation.set(sw*amp*0.9,0,-0.1); el=run?0.95:0.35; }
+    m.body.rotation.x=walking?(run?0.22:0.08):0; m.head.rotation.y=walking?0:SZ.look; if(walking) SZ.look=0; kn=run?0.22:0.08;
+    if(SZ.stagger>0) m.body.rotation.x=-0.3*Math.min(1,SZ.stagger/0.25); }
+  softPose(m,dt,{elbow:el,knee:kn,kneeAdd:ka});
   m.g.visible=dist(SZ.x,SZ.z,camera.position.x,camera.position.z)>2.3; } // カメラにくっつくほど近いときは描かない（村人と同じ 2.3m）
 function updateSuzuki(dt){
+  szSmellTick(dt); // 臭いは敵に付いているので、スズキが倒れていても続く
   if(!szHere()){ if(SZ.m&&SZ.m.g.visible) SZ.m.g.visible=false; return; }
-  szModel(); SZ.pose=null;
-  if(SZ.order==='follow') szFollow(dt); else if(SZ.order==='wait') szWait(dt); else szBase(dt);
-  const d=dist(SZ.x,SZ.z,P.x,P.z), rs=SZ.r+P.r; if(d<rs&&d>1e-3){ SZ.x+=(SZ.x-P.x)/d*(rs-d); SZ.z+=(SZ.z-P.z)/d*(rs-d); resolve(SZ,false); } // 主人公と重ならない（スズキがよける）
+  szModel(); SZ.pose=null; szCrumb();
+  if(SZ.down){ SZ.spd=0; SZ.downT+=dt; szAnimate(dt); return; } // 倒れている（助け起こすのは第3段階）
+  if(SZ.stagger>0){ SZ.stagger-=dt; SZ._px=SZ.x; SZ._pz=SZ.z; SZ.x+=SZ.kx*dt; SZ.z+=SZ.kz*dt; const f=Math.pow(0.02,dt); SZ.kx*=f; SZ.kz*=f; resolve(SZ,false); if(!szWalkable(SZ.x,SZ.z)){ SZ.x=SZ._px; SZ.z=SZ._pz; } SZ.spd=0; } // 押される
+  else if(!szCombat(dt)){ SZ.tgt=null; if(SZ.order==='follow') szFollow(dt); else if(SZ.order==='wait') szWait(dt); else szBase(dt); }
+  szCombatClock(dt);
+  const d=dist(SZ.x,SZ.z,P.x,P.z), rs=SZ.r+P.r; if(d<rs&&d>1e-3){ SZ.x+=(SZ.x-P.x)/d*(rs-d); SZ.z+=(SZ.z-P.z)/d*(rs-d); } // 主人公と重ならない（スズキがよける）
+  szPushOut(); resolve(SZ,false);
   szAnimate(dt); }
 
 // ================= 初期化 =================

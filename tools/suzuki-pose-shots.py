@@ -6,7 +6,13 @@
   walk  … 歩く（ついて来る）
   run   … 走る（遅れて追いつく）
   look  … 止まった主人公のまわりで立ち止まり、あたりを見る
-第2段階以降で蹴り・倒れる・助け起こすを足す。
+  low   … ローキック（当たる瞬間）
+  spin  … 後ろ回し蹴り（当たる瞬間。背中側へ脚を伸ばす）
+  jump  … 飛び蹴り（跳んでいる途中）
+  guard … 戦いの間の構え
+  down  … 倒れる（あお向け）
+  smell … 足の臭い（蹴られたサルから茶色の煙）
+第3段階で助け起こすを足す。
 
 使い方：THREE_JS=…/three.min.js python3 tools/suzuki-pose-shots.py 出力.png [姿勢 …]
 """
@@ -22,22 +28,29 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 THREE = open(os.environ.get('THREE_JS', '/home/claude/v010/node_modules/three/build/three.min.js')).read()
 SRC = open(os.environ.get('SZ_HTML', os.path.join(ROOT, 'index.html')), encoding='utf8').read()
-HOOK = ("window.__w={get SZ(){return SZ},get SZP(){return SZP},get P(){return P},get S(){return S},get cam(){return cam},get prog(){return prog},get enemies(){return enemies},camera,renderer,scene,"
-        "szJoin:()=>szJoin(),szFree:(...a)=>szFree(...a),szWalkable:(...a)=>szWalkable(...a),szAnimate:dt=>szAnimate(dt),animatePlayer:(a,b)=>animatePlayer(a,b),updateCamera:dt=>updateCamera(dt),groundH:(x,z)=>groundH(x,z),THREE};\n")
+HOOK = ("window.__w={get SZ(){return SZ},get SZK(){return SZK},get SZP(){return SZP},get P(){return P},get S(){return S},get cam(){return cam},get prog(){return prog},get enemies(){return enemies},camera,renderer,scene,"
+        "szJoin:()=>szJoin(),szFree:(...a)=>szFree(...a),szWalkable:(...a)=>szWalkable(...a),szAnimate:dt=>szAnimate(dt),szSmellTick:dt=>szSmellTick(dt),animatePlayer:(a,b)=>animatePlayer(a,b),updateCamera:dt=>updateCamera(dt),groundH:(x,z)=>groundH(x,z),THREE};\n")
 HTML = SRC.replace('function updateNPCs(dt){', HOOK + 'function updateNPCs(dt){', 1)
-NAMES = {'wait': '待つ（腕を組む）', 'walk': '歩く', 'run': '走る', 'look': '立ち止まって見回す'}
+NAMES = {'wait': '待つ（腕を組む）', 'walk': '歩く', 'run': '走る', 'look': '立ち止まって見回す', 'low': 'ローキック（当たる瞬間）', 'spin': '後ろ回し蹴り（当たる瞬間）',
+         'jump': '飛び蹴り（跳んでいる途中）', 'guard': '戦いの間の構え', 'down': '倒れる', 'smell': '足の臭い（茶色の煙）'}
 
 SHOT = """([pose, view]) => { const W = window.__w, SZ = W.SZ, P = W.P, T = W.THREE;
   if (!window.__spot) { for (let zz = 60; zz < 200 && !window.__spot; zz += 4) for (let xx = 120; xx < 220; xx += 4) if (W.szFree(xx, zz, 7) && W.szWalkable(xx, zz)) { window.__spot = [xx, zz]; break; } }
   const [x, z] = window.__spot || [150, 60]; if (view === 'side') { P.x = x; P.z = z - 1.9; P.facing = 0; } else { P.x = x - 1.6; P.z = z; P.facing = 0; } SZ.x = x; SZ.z = z; SZ.rot = 0;
-  SZ.pose = pose === 'wait' ? 'wait' : null; SZ.look = 0;
+  SZ.pose = pose === 'wait' ? 'wait' : null; SZ.look = 0; SZ.kick = null; SZ.down = false; SZ.fight = pose === 'guard'; SZ.stagger = 0;
+  if (pose === 'low' || pose === 'spin' || pose === 'jump') { const K = W.SZK[pose]; SZ.kick = {id: pose, K, t: pose === 'jump' ? 0.45 : K.hit, atk: {}}; }
+  if (pose === 'down') { SZ.down = true; SZ.downT = 2; }
+  if (window.__boar) { window.__boar.x += 3000; window.__boar.smellT = 0; }
+  if (pose === 'smell') { const b = window.__boar || (window.__boar = W.enemies.find(o => o.type === 'monkey' && !o.removed)); if (b) { b.x = x + 1.5; b.z = z - 0.2; b.rot = -Math.PI / 2; b.smellT = 10; b.smellAcc = -99; b.m.g.position.set(b.x, W.groundH(b.x, b.z), b.z); b.m.g.rotation.y = b.rot; for (let i = 0; i < 12; i++) W.szSmellTick(0.1); }
+    SZ.kick = {id: 'low', K: W.SZK.low, t: 0.2, atk: {}}; SZ.rot = Math.PI / 2; }
   const v = pose === 'walk' ? 2.2 : pose === 'run' ? 7.5 : 0; SZ.spd = v; SZ.phase = pose === 'walk' ? 1.3 : pose === 'run' ? 1.2 : 0;
   for (let k = 0; k < 40; k++) { if (pose === 'look') SZ.look = 0.55; W.szAnimate(0); }
   SZ.spd = v; W.szAnimate(0); W.animatePlayer(0, 0);
   const gy = W.groundH(x, z); const c = W.camera; const yaw = view === 'side' ? Math.PI / 2 + 0.12 : 0.25;
   W.cam.override = {p: new T.Vector3(x + Math.sin(yaw) * 4.2, gy + 1.5, z + Math.cos(yaw) * 4.2), l: new T.Vector3(x - 0.5, gy + 0.85, z), fov: 40};
+  if (pose === 'smell') W.cam.override = view === 'side' ? {p: new T.Vector3(x + 0.8, gy + 1.8, z - 5.2), l: new T.Vector3(x + 0.8, gy + 1.0, z), fov: 42} : {p: new T.Vector3(x + 0.6, gy + 1.9, z + 5.4), l: new T.Vector3(x + 0.7, gy + 1.0, z), fov: 42};
   W.updateCamera(0.016); c.position.copy(W.cam.override.p); c.lookAt(W.cam.override.l); c.fov = 40; c.updateProjectionMatrix();
-  W.renderer.render(W.scene, c); return W.renderer.domElement.toDataURL('image/png'); }"""
+  W.renderer.render(W.scene, c); const url = W.renderer.domElement.toDataURL('image/png'); SZ.kick = null; SZ.down = false; SZ.fight = false; return url; }"""
 
 
 async def main():
