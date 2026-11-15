@@ -170,7 +170,8 @@ async def main():
         r7 = await pg.evaluate("""async () => { const W = window.__w, SZ = W.SZ, P = W.P; SZ.order = 'follow'; SZ.down = false; SZ.upT = 0; SZ.hp = 123; SZ.x = 100; SZ.z = 0; P.x = 98; P.z = 2; W.S.mode = 'playing';
           W.playerDie('hp'); await new Promise(r => setTimeout(r, 200)); document.getElementById('btnRetry').click(); await new Promise(r => setTimeout(r, 400));
           return {d: Math.round(Math.hypot(SZ.x - P.x, SZ.z - P.z) * 10) / 10, hp: Math.round(SZ.hp), mode: W.S.mode}; }""")
-        check(r7['d'] < 6 and r7['hp'] == 123, f'主人公が倒れて起きると、ついて来ているスズキは近くへ来る。体力はそのまま {r7}')
+        check(r7['d'] < 6 and 123 <= r7['hp'] <= 128, # 起きた後の数コマ（戦いの外なので毎秒3回復）で少し増えることがある
+               f'主人公が倒れて起きると、ついて来ているスズキは近くへ来る。体力はそのまま {r7}')
         r8 = await pg.evaluate("""async () => { const W = window.__w, SZ = W.SZ, P = W.P; W.S.mode = 'paused'; SZ.hp = 1; SZ.hurt(10, {x: SZ.x + 1, z: SZ.z, mode: 'field'}); SZ.x = 120; SZ.z = 10; const x = SZ.x, z = SZ.z; W.S.mode = 'playing';
           W.playerDie('hp'); await new Promise(r => setTimeout(r, 200)); document.getElementById('btnRetry').click(); await new Promise(r => setTimeout(r, 400));
           return {down: SZ.down, moved: Math.hypot(SZ.x - x, SZ.z - z), hp: SZ.hp}; }""")

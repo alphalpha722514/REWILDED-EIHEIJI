@@ -538,7 +538,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.72 スズキの仲間 AI テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.73 スズキの仲間 AI テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -8493,7 +8493,7 @@ function saveGame(){
     const data={v:1,chapter2:prog.chapter2,inv,weapon:P.weapon,dur:P.dur,full:P.full,arms:prog.arms,f5:f5Save(),
       prog:Object.assign({stage:checkpointStage(),unlockTrap:prog.unlockTrap,unlockBoss:prog.unlockBoss,clues:prog.clues,bossDefeated:prog.bossDefeated,scoutTower:!!prog.scoutTower,scoutWarned:!!prog.scoutWarned,scoutRaidWarned:!!prog.scoutRaidWarned,townRequests:prog.townRequests},f31SaveProg()),
       fences:GAPS.map(g=>g.fence.type?{type:g.fence.type,hp:g.fence.broken?0:g.fence.hp}:null),
-      traps:traps.map(saveTrap),stats,nodes:NODES.map(n=>n.avail?1:0),g4:prog.g4,f4:f4Save(),f7:f7Save(),f8:f8Save(),f9:f9Save(),f10:f10Save(),conv:facSave('conv'),kama:kamaSave(),kami:kamiSave()};
+      traps:traps.map(saveTrap),stats,nodes:NODES.map(n=>n.avail?1:0),g4:prog.g4,f4:f4Save(),f7:f7Save(),f8:f8Save(),f9:f9Save(),f10:f10Save(),conv:facSave('conv'),kama:kamaSave(),kami:kamiSave(),suzuki:szSave()}; // v0.73：スズキ（新しいキー suzuki）
     localStorage.setItem(SAVE_KEY,JSON.stringify(data));
   }catch(e){ storageOK=false; }
 }
@@ -8537,7 +8537,7 @@ function applySave(d){
     prog.f10=f10Load(d.f10); // 古いセーブは「伏線はまだ調べていない」で始める
     prog.f9=f9Load(d.f9); // 古いセーブは「頼んでいない」で始める
     prog.f8=f8Load(d.f8); // 古いセーブは未開始のまま始める
-    prog.conv=facLoad('conv',d.conv); prog.kama=kamaLoad(d.kama); prog.kami=kamiLoad(d.kami); // v0.67：上志比の採集・伐採・獣（古いセーブは何も取っていない状態） // v0.63：変換炉・v0.64：かまど（古いセーブは未建設）
+    prog.conv=facLoad('conv',d.conv); prog.kama=kamaLoad(d.kama); prog.kami=kamiLoad(d.kami); szApplyLoad(d.suzuki); // v0.73：スズキ（古いセーブは「まだ仲間でない」） // v0.67：上志比の採集・伐採・獣（古いセーブは何も取っていない状態） // v0.63：変換炉・v0.64：かまど（古いセーブは未建設）
     { const f=f7Load(d.f7); prog.f7=f||f7FromInv(); prog.f7Migrated=!f; f7Sync(); } // 古いセーブは今の個数を新品の束にする（1回だけ）
     const q=d.g4; if(q&&typeof q==='object'){ const g=prog.g4; g.board=!!q.board; g.hint=q.board?1:0; g.track=num(q.track,-1,-1,QUESTS.length-1); g.closure=q.closure?1:0;
       if(Array.isArray(q.fences)) g.fences=[0,1,2].map(i=>q.fences[i]?1:0);
@@ -9991,7 +9991,7 @@ function kamiDrawMarks(ctx,c2,X,Z){ const kw=ctx.kw, dot=(x,z,col,r)=>{ c2.fillS
 // 第1段階：ついて来る（主人公の少し後ろ・遅れたら走る・止まった主人公のまわりを歩く）・障害物（当たり判定・歩いた跡をたどる・横へずれる）・
 //          25m より離れたら主人公から見えない所へ移す・指示（ついて来い／ここで待て／拠点で過ごせ）・地域の移動についてくる。
 // SZA・SZ（数と状態）は、早く使われる（freshState）ので SUZUKI_OPTS の後ろに置いた
-function szFresh(){ Object.assign(SZ,{joined:false,order:'follow',region:'komyoji',wx:0,wz:0,hp:SZ.maxHp,down:false,upT:0,roam:null,still:0,ci:-1,crumbT:0,pose:null}); szCombatReset(); szRescueCancel();
+function szFresh(){ Object.assign(SZ,{joined:false,order:'follow',region:'komyoji',wx:0,wz:0,hp:SZ.maxHp,down:false,upT:0,roam:null,still:0,ci:-1,crumbT:0,pose:null,place:false}); szCombatReset(); szRescueCancel();
   SZ.crumbs.length=0; if(SZ.m) SZ.m.g.visible=false; }
 function szHere(){ return SZ.joined&&SZ.region===REG.cur&&!REG.busy; }
 function szModel(){ if(!SZ.m){ SZ.m=makeHuman(SUZUKI_OPTS); SZ.m.g.visible=false; scene.add(SZ.m.g); } return SZ.m; }
@@ -10087,6 +10087,28 @@ function szJoin(){ szModel(); SZ.joined=true; SZ.order='follow'; SZ.region=REG.c
 // 地域を移ったとき：ついて来ているスズキは一緒に移る。待っている・拠点にいる・倒れているときは、その地域に残る
 function szAfterTravel(from,to){ if(!SZ.joined) return; szCombatReset(); szRescueCancel(); if(SZ.region===from&&SZ.order==='follow'&&!SZ.down){ SZ.region=to; SZ.crumbs.length=0; szPlaceBehind(); }
   if(SZ.m) SZ.m.g.visible=false; }
+// ---- 第4段階：セーブ（新しいキー suzuki・v:1）。古いセーブ・不正な値は「まだ仲間でない」。docs/save-and-flags.md ----
+const SZ_ORDERS=['follow','wait','base'], SZ_REGIONS=['komyoji','kamishihi'];
+function szSave(){ if(!SZ.joined) return {v:1,joined:false}; const r=v=>Math.round(v*100)/100;
+  return {v:1,joined:true,order:SZ.order,region:SZ.region,x:r(SZ.x),z:r(SZ.z),wx:r(SZ.wx),wz:r(SZ.wz),hp:SZ.down?0:Math.max(1,Math.round(SZ.hp)),down:!!SZ.down}; }
+// 読み込んだ値を確かめる（ゲームの状態には触れない）
+function szLoadState(q,maxHp){ const N=v=>typeof v==='number'&&isFinite(v);
+  const o={joined:false,order:'follow',region:'komyoji',x:null,z:null,wx:null,wz:null,hp:maxHp,down:false};
+  if(!q||typeof q!=='object'||Array.isArray(q)||q.v!==1||q.joined!==true) return o;
+  o.joined=true; if(SZ_ORDERS.includes(q.order)) o.order=q.order; if(SZ_REGIONS.includes(q.region)) o.region=q.region;
+  if(N(q.x)&&N(q.z)){ o.x=q.x; o.z=q.z; } if(N(q.wx)&&N(q.wz)){ o.wx=q.wx; o.wz=q.wz; }
+  o.down=q.down===true; o.hp=o.down?0:N(q.hp)?Math.min(maxHp,Math.max(1,Math.round(q.hp))):maxHp;
+  if(o.order==='wait'&&o.wx==null){ if(o.x!=null){ o.wx=o.x; o.wz=o.z; } else o.order='follow'; } // 待つ所が分からなければ、いた所で待つ（それも分からなければ、ついて来る）
+  if(o.order==='base'&&o.region!=='komyoji') o.order='follow'; // 拠点で過ごすのは光明寺だけ
+  return o; }
+// 読み込む：ついて来ているスズキと、位置の分からないスズキは、主人公がその地域にいるときに主人公の近くへ出す（倒れているかどうか・体力はそのまま）
+function szApplyLoad(q){ szFresh(); const o=szLoadState(q,SZ.maxHp); if(!o.joined) return;
+  if(o.region==='kamishihi'&&!kamishihiOpen()){ o.region='komyoji'; o.x=null; if(o.order==='wait') o.order='follow'; } // 上志比がまだ開いていない（ふつうは起きない）
+  Object.assign(SZ,{joined:true,order:o.order,region:o.region,hp:o.hp,down:o.down,downT:o.down?9:0,upT:0});
+  if(o.wx!=null){ SZ.wx=o.wx; SZ.wz=o.wz; }
+  if(o.x!=null){ SZ.x=o.x; SZ.z=o.z; SZ._px=o.x; SZ._pz=o.z; }
+  SZ.place=(o.order==='follow'&&!o.down)||o.x==null; }
+function szPlaceTick(){ if(!SZ.place||!SZ.joined||REG.busy) return; if(SZ.order==='follow'&&!SZ.down) SZ.region=REG.cur; if(SZ.region===REG.cur){ szPlaceBehind(); SZ.place=false; } }
 // ---- 第3段階：倒れる・助け起こす・戦いの後の回復・主人公が倒れたとき ----
 // 助け起こす：倒れたスズキの2.5m 以内で E（iPhone は行動ボタン）を3秒長押し。離す・離れる・攻撃を受けると止まり、はじめから。動けない。90で起きる
 function szRescueStart(){ if(!SZ.down||!szHere()||SZR.on) return; SZR.on=true; SZR.t=0; szRescueUI(); }
@@ -10253,6 +10275,7 @@ function szAnimate(dt){ const m=SZ.m, v=SZ.spd, walking=v>0.3&&!SZ.kick, run=v>4
   m.g.visible=dist(SZ.x,SZ.z,camera.position.x,camera.position.z)>2.3; } // カメラにくっつくほど近いときは描かない（村人と同じ 2.3m）
 function updateSuzuki(dt){
   szSmellTick(dt); // 臭いは敵に付いているので、スズキが倒れていても続く
+  szPlaceTick(); // 読み込んだ直後：主人公の近くへ出す
   if(!szHere()){ if(SZ.m&&SZ.m.g.visible) SZ.m.g.visible=false; return; }
   szModel(); SZ.pose=null; szCrumb();
   szRescueTick(dt);

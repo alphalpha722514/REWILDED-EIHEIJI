@@ -33,7 +33,7 @@ const P={weapon:'nata1',dur:83,full:75};
 const inv={wood:9},stats={kills:3},GAPS=[],traps=[],NODES=[];
 const checkpointStage=()=>prog.stage; const saveTrap=x=>x;
 const f31SaveProg=()=>({level:2});
-const f5Save=()=>({}),f4Save=f5Save,f7Save=f5Save,f8Save=f5Save,f9Save=f5Save,f10Save=f5Save,facSave=id=>({v:1,built:0,id}),kamaSave=()=>({v:1,built:0,q:[],t:0,out:{}}),kamiSave=()=>({v:1,n:{},r:{},sc:[],f:[],sp:{},g:{},st:{},fm:{}}); // v0.63：変換炉・v0.64：かまど（v0.66 で形を変えた）・v0.67：上志比
+const f5Save=()=>({}),f4Save=f5Save,f7Save=f5Save,f8Save=f5Save,f9Save=f5Save,f10Save=f5Save,facSave=id=>({v:1,built:0,id}),kamaSave=()=>({v:1,built:0,q:[],t:0,out:{}}),kamiSave=()=>({v:1,n:{},r:{},sc:[],f:[],sp:{},g:{},st:{},fm:{}}),szSave=()=>({v:1,joined:false}); // v0.63：変換炉・v0.64：かまど（v0.66 で形を変えた）・v0.67：上志比・v0.73：スズキ
 ${save}
 saveGame();
 `,ctx);
@@ -43,6 +43,7 @@ assert.equal(saved.v,1);
 assert.equal(saved.inv.wood,9);
 assert.deepEqual(saved.conv,{v:1,built:0,id:'conv'}); assert.deepEqual(saved.kama,{v:1,built:0,q:[],t:0,out:{}}); // v0.63：変換炉 conv・v0.64：かまど kama は新しいキー
 assert.deepEqual(saved.kami,{v:1,n:{},r:{},sc:[],f:[],sp:{},g:{},st:{},fm:{}}); // v0.67：上志比の採集・伐採・獣は新しいキー kami
+assert.deepEqual(saved.suzuki,{v:1,joined:false}); // v0.73：スズキは新しいキー suzuki
 assert.equal(saved.arms.nata1,83);
 assert.equal(saved.chapter2.unlocked,false);
 vm.runInContext("prog.bossDefeated=true;prog.stage='cleared';saveGame();",ctx);
@@ -64,4 +65,18 @@ assert.match(html,/prog\.chapter2=chapter2State\(null,false\)/);
   vm.runInContext('prog.kami=kamiLoad('+JSON.stringify({v:1,n:{s0:1200},r:{r1:0},sc:[4],f:['k0_0_1'],sp:{a0:900,a1:1500},g:{g0:{d:[1,1,0],w:0},g1:{d:[0,0,0],w:500}},st:{outB:{n:1,t:950}},fm:{f1:1600,b0:200}})+')',kc);
   const s2=JSON.parse(JSON.stringify(vm.runInContext('kamiSave()',kc)));
   assert.deepEqual(s2,{v:1,n:{s0:1200},r:{r1:0},sc:[4],f:['k0_0_1'],sp:{a1:1500},g:{g0:{d:[1,1,0],w:0}},st:{outB:{n:1,t:950}},fm:{f1:1600}},'round trip keeps pending times only'); }
-console.log('PASS: inline script syntax; legacy/malformed defaults; boss unlock; save round trip; existing key, version, inventory and durability; v0.67 kami state');
+// v0.73：スズキの状態 suzuki（古いセーブ・不正な値は「まだ仲間でない」）
+{ const sc=vm.createContext({});
+  vm.runInContext(html.slice(html.indexOf("const SZ_ORDERS=['follow'"),html.indexOf('// 読み込む：ついて来ているスズキと')),sc);
+  const L=q=>JSON.parse(JSON.stringify(vm.runInContext('szLoadState('+JSON.stringify(q)+',180)',sc)));
+  for(const bad of [undefined,null,42,'x',[],{v:2,joined:true},{v:1},{v:1,joined:false},{v:1,joined:'yes'}]) assert.equal(L(bad===undefined?null:bad).joined,false,'old/malformed save: not joined');
+  const full=L({v:1,joined:true,order:'wait',region:'kamishihi',x:5070.25,z:759.5,wx:5071,wz:760,hp:120,down:false});
+  assert.deepEqual(full,{joined:true,order:'wait',region:'kamishihi',x:5070.25,z:759.5,wx:5071,wz:760,hp:120,down:false},'round trip');
+  assert.deepEqual(L({v:1,joined:true,order:'fly',region:'mars',x:'a',z:3,hp:999}),{joined:true,order:'follow',region:'komyoji',x:null,z:null,wx:null,wz:null,hp:180,down:false},'bad fields fall back');
+  const dn=L({v:1,joined:true,order:'follow',region:'komyoji',x:120,z:10,wx:0,wz:0,hp:50,down:true}); assert.equal(dn.down,true); assert.equal(dn.hp,0,'down: hp 0');
+  assert.equal(L({v:1,joined:true,order:'follow',x:1,z:1,hp:0}).hp,1,'standing Suzuki keeps at least 1 hp');
+  const w=L({v:1,joined:true,order:'wait',region:'komyoji',x:7,z:8}); assert.deepEqual([w.order,w.wx,w.wz],['wait',7,8],'wait spot falls back to the position');
+  assert.equal(L({v:1,joined:true,order:'wait',region:'komyoji'}).order,'follow','no position: follow');
+  assert.equal(L({v:1,joined:true,order:'base',region:'kamishihi',x:5000,z:700}).order,'follow','base only in Komyoji');
+  assert.match(html,/kami:kamiSave\(\),suzuki:szSave\(\)\}/); assert.match(html,/szApplyLoad\(d\.suzuki\)/); }
+console.log('PASS: inline script syntax; legacy/malformed defaults; boss unlock; save round trip; existing key, version, inventory and durability; v0.67 kami state; v0.73 suzuki state');
