@@ -538,7 +538,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.73 スズキの仲間 AI テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.74 スズキの仲間 AI テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -10151,14 +10151,17 @@ function szHurt(dmg,fx,fz,knock,src){ if(SZ.down||!szHere()) return false; dmg=f
 SZ.hurt=(d,e)=>szHurt(d,e.x,e.z,5,e); // 変異したサルの e.tgt から直接あてるとき（mutHit）
 function szDown(){ SZ.hp=0; SZ.down=true; SZ.downT=0; SZ.upT=0; SZ.kick=null; SZ.tgt=null; SZ.stagger=0; SZ.fight=false; toast('スズキが倒れた！ 近くで長押しすると助け起こせる',true); }
 // 戦う範囲の中心：ついて来るときは主人公、待つときは待つ所、拠点では自分（自衛だけ）
-function szAnchor(){ return SZ.order==='wait'?{x:SZ.wx,z:SZ.wz}:SZ.order==='base'?{x:SZ.x,z:SZ.z}:{x:P.x,z:P.z}; }
+// 第5段階：防衛戦の間は、光明寺にいるスズキはどの指示でも主人公のそばへ来て一緒に戦い（主人公から8m まで）、終わると元の指示に戻る（2026-11-15 ユーザー決定「A」）。
+// 指示そのもの（SZ.order・保存する値）は変えない。上志比にいるスズキは加わらない
+function szOrd(){ return ev.kind&&SZ.region==='komyoji'&&REG.cur==='komyoji'&&SZ.order!=='follow'?'follow':SZ.order; }
+function szAnchor(){ const o=szOrd(); return o==='wait'?{x:SZ.wx,z:SZ.wz}:o==='base'?{x:SZ.x,z:SZ.z}:{x:P.x,z:P.z}; }
 // 戦う相手になるか（近くにいるだけでは戦わない。主人公かスズキを見つけた・たたいた獣だけ）
 function szIsThreat(e,A){ if(e.removed||e.state==='dead'||e.fled||e.kfY>1) return false;
   const busy=!SZ_CALM.includes(e.state)&&!(e.mode==='raid'&&e.state==='raid'&&!e.aggro);
   if(e.szT&&busy&&dist(e.x,e.z,SZ.x,SZ.z)<6) return true; // スズキを襲っている（どの指示でも反撃する）
-  if(SZ.order==='base') return false;
+  const o=szOrd(); if(o==='base') return false;
   if(dist(e.x,e.z,A.x,A.z)>SZF.chase) return false; // 追うのは主人公（待つときは待つ所）から8m まで
-  if(SZ.order==='wait') return busy&&dist(e.x,e.z,SZ.x,SZ.z)<4;
+  if(o==='wait') return busy&&dist(e.x,e.z,SZ.x,SZ.z)<4;
   if(e.mode==='raid') return e.aggro||!!ev.kind; // 防衛戦：主人公の近くの獣と戦う（最大8m）
   if(S.time-(e.hitP||-99)<8||S.time-(e.hitS||-99)<8) return true;
   return busy; }
@@ -10168,7 +10171,7 @@ function szCombat(dt){
   if(SZ.kick){ szKickTick(dt); return true; }
   const A=szAnchor(); let best=null, bs=1e9, n2=0;
   for(const e of enemies){ if(!szIsThreat(e,A)) continue; const dS=dist(SZ.x,SZ.z,e.x,e.z);
-    let sc=SZ.order==='follow'?Math.min(dS,dist(P.x,P.z,e.x,e.z)):dS; // 主人公やスズキを脅かす近くの敵から
+    let sc=szOrd()==='follow'?Math.min(dS,dist(P.x,P.z,e.x,e.z)):dS; // 主人公やスズキを脅かす近くの敵から
     if(ATK_ST.includes(e.state)) sc-=3; if(e.szT) sc-=1.5; if(e===SZ.tgt) sc-=2; if(e===SZ.hitBy&&S.time-SZ.hitAt<4) sc-=3;
     if(sc<bs){ bs=sc; best=e; } if(dS<2.6+e.r) n2++; }
   SZ.tgt=best; SZ.near2=n2; if(!best) return false;
@@ -10282,7 +10285,7 @@ function updateSuzuki(dt){
   if(SZ.down){ SZ.spd=0; SZ.downT+=dt; szAnimate(dt); return; } // 倒れている：動かず、攻撃せず、敵にも狙われない。時間では起きない
   if(SZ.upT>0){ SZ.upT-=dt; SZ.spd=0; szAnimate(dt); return; } // 起き上がる途中
   if(SZ.stagger>0){ SZ.stagger-=dt; SZ._px=SZ.x; SZ._pz=SZ.z; SZ.x+=SZ.kx*dt; SZ.z+=SZ.kz*dt; const f=Math.pow(0.02,dt); SZ.kx*=f; SZ.kz*=f; resolve(SZ,false); if(!szWalkable(SZ.x,SZ.z)){ SZ.x=SZ._px; SZ.z=SZ._pz; } SZ.spd=0; } // 押される
-  else if(!szCombat(dt)){ SZ.tgt=null; if(SZ.order==='follow') szFollow(dt); else if(SZ.order==='wait') szWait(dt); else szBase(dt); }
+  else if(!szCombat(dt)){ SZ.tgt=null; const o=szOrd(); if(o==='follow') szFollow(dt); else if(o==='wait') szWait(dt); else szBase(dt); } // 防衛戦の間は、どの指示でもついて来る
   szCombatClock(dt);
   if(!SZ.fight&&SZ.hp<SZ.maxHp) SZ.hp=Math.min(SZ.maxHp,SZ.hp+SZF.regen*dt); // 戦いの後は毎秒3回復（戦いの間は回復しない）
   const d=dist(SZ.x,SZ.z,P.x,P.z), rs=SZ.r+P.r; if(d<rs&&d>1e-3){ SZ.x+=(SZ.x-P.x)/d*(rs-d); SZ.z+=(SZ.z-P.z)/d*(rs-d); } // 主人公と重ならない（スズキがよける）

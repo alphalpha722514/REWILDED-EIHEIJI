@@ -15,9 +15,10 @@
 //
 // 使い方
 //   THREE_JS=/path/to/three.min.js node tools/defense-sim.cjs [--runs 30] [--cond A,B,C] [--seed 1]
-//        [--override '{"coreHp":400}'] [--json out.json]
+//        [--override '{"coreHp":400}'] [--json out.json] [--suzuki 1]
 //   THREE_JS は three.js r128 の three.min.js（CDN に出られない環境のため、ローカルのファイルを渡す）。
 //   SIM_TRACE=1 で1秒ごとの様子を表示する。playwright（Chromium 付き）が必要。
+//   --suzuki 1 で、スズキ（仲間・ついて来る・体力180）を連れて戦う（v0.74・第5段階。ボットはスズキを助け起こさない）。
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -66,7 +67,8 @@ function instrument(html) {
     'setTrap:(t,s,k)=>setTrap(t,s,k),startChapter2Defense:()=>startChapter2Defense(),chapter2State:(a,b)=>chapter2State(a,b),' +
     'f11Sim:d=>f11Sim(d),tryAttack:(k,a)=>tryAttack(k,a),tryDodge:()=>tryDodge(),eat:k=>eat(k),f31MaxHp:l=>f31MaxHp(l),' +
     'f47ApplyVisual:()=>f47ApplyVisual(),raidAlive:()=>raidAlive(),' +
-    'repairFence:(g,c,f)=>repairFence(g,c,f),rearmTrap:t=>rearmTrap(t)};\n';
+    'repairFence:(g,c,f)=>repairFence(g,c,f),rearmTrap:t=>rearmTrap(t),' +
+    'szJoin:()=>{ if(typeof szJoin==="function") szJoin(); },get SZ(){return typeof SZ!=="undefined"?SZ:null}};\n';
   html = rep(html, '// ================= NPC =================', hook + '// ================= NPC =================');
   // 試験用の書き換え（SIM_PATCH=JSON ファイル：[[元の文字列, 新しい文字列], ...]）。ゲームのファイルは変えない
   if (process.env.SIM_PATCH) for (const [a, b] of JSON.parse(fs.readFileSync(process.env.SIM_PATCH, 'utf8'))) html = rep(html, a, b);
@@ -99,6 +101,7 @@ function setup(c){
   g.GAPS.forEach((gp, i) => g.setFence(gp, c.gates[i] || null));
   for (const [i, kind] of c.traps) g.setTrap(g.traps[i], 'armed', kind);
   P.x = g.npcGen.x + 1.2; P.z = g.npcGen.z + 1.2;
+  if (window.__suzuki) g.szJoin(); // v0.74：スズキを連れて戦う
   return g.startChapter2Defense();
 }
 // 波の間や手が空いたときの補修（人が「調べる」で行う操作を、近くまで歩いてから呼ぶ）
@@ -192,6 +195,7 @@ window.__runOne = async function(c, seed, maxT, override){
   const fenceHp = g.GAPS.map(gp => gp.fence.hp), fenceBroke = [0,0,0], eshin = [0,0,0];
   const trapArmed = g.traps.slice(0, 6).map(tr => tr.state === 'armed'); let trapFired = 0;
   const coreBy = [0,0,0], coreByType = {}; let lastCore = g.ev.coreHp; const waveClearT = [];
+  const deadSeen = new Set(); let szKills = 0, szDowns = 0, szWasDown = false, szDmg = 0, szLastHp = g.SZ ? g.SZ.hp : 0; // v0.74：スズキ
   while (t < maxT) {
     for (let k = 0; k < 200 && t < maxT; k++) {
       const repBefore = B.repairs;
@@ -215,6 +219,8 @@ window.__runOne = async function(c, seed, maxT, override){
         for (const e of hitters) { const gi = (e.gap ?? e.opt?.gap ?? -1); if (gi >= 0) coreBy[gi] += (lastCore - g.ev.coreHp) / hitters.length; coreByType[e.type] = (coreByType[e.type] || 0) + (lastCore - g.ev.coreHp) / hitters.length; }
       }
       if (g.ev.kind === 'chapter2') lastCore = g.ev.coreHp;
+      if (window.__suzuki && g.SZ) { const Z = g.SZ; if (Z.down && !szWasDown) szDowns++; szWasDown = Z.down; if (Z.hp < szLastHp) szDmg += szLastHp - Z.hp; szLastHp = Z.hp;
+        for (const e of g.enemies) { if (e.mode !== 'raid' || e.state !== 'dead' || deadSeen.has(e)) continue; deadSeen.add(e); if ((e.hitS || -1) >= (e.hitP || -1) && e.hitS > 0) szKills++; } }
       if (B.trace && k % 20 === 0) { const e = B.tgt; B.trace.push([+t.toFixed(1), +g.P.x.toFixed(1), +g.P.z.toFixed(1), e ? e.type + ':' + e.state + ':' + Math.round(e.hp) : '-', Math.round(g.P.hp), Math.round(g.P.st), g.ev.phase, Math.round(g.ev.coreHp || 0), alive, g.GAPS.map(gp => gp.fence.type ? Math.round(gp.fence.hp) : '-').join('/')]); }
       const won = !g.ev.kind && g.prog.chapter2 && g.prog.chapter2.progress && g.prog.chapter2.progress.defenseComplete;
       if (won || g.S.mode === 'dead') {
@@ -225,7 +231,7 @@ window.__runOne = async function(c, seed, maxT, override){
           coreHp: Math.round(won ? lastCore : (g.ev.coreHp || 0)), dmgTaken: Math.round(dmgTaken), ate: B.ate,
           repairs: B.repairs, rearms: B.rearms, trapFired, fenceBroke, eshin: eshin.map(Math.round),
           coreBy: coreBy.map(Math.round), coreByType: Object.fromEntries(Object.entries(coreByType).map(([k, v]) => [k, Math.round(v)])),
-          killer, maxAlive, kills: g.stats.kills - killsBefore, trace: B.trace,
+          killer, maxAlive, kills: g.stats.kills - killsBefore, trace: B.trace, szKills, szDowns, szDmg: Math.round(szDmg),
           after: {wood: g.inv.wood, straw: g.inv.straw, onigiri: g.inv.onigiri, rewarded: !!(g.prog.chapter2.progress || {}).defenseRewarded}};
       }
     }
@@ -233,7 +239,7 @@ window.__runOne = async function(c, seed, maxT, override){
   }
   return {result:'timeout', time: +t.toFixed(1), wave: maxWave, hp: Math.round(g.P.hp), coreHp: Math.round(g.ev.coreHp || 0),
     dmgTaken: Math.round(dmgTaken), ate: B.ate, repairs: B.repairs, rearms: B.rearms, trapFired, fenceBroke,
-    eshin: eshin.map(Math.round), coreBy: coreBy.map(Math.round), maxAlive, kills: g.stats.kills - killsBefore};
+    eshin: eshin.map(Math.round), coreBy: coreBy.map(Math.round), maxAlive, kills: g.stats.kills - killsBefore, szKills, szDowns, szDmg: Math.round(szDmg)};
 };
 `;
 
@@ -260,7 +266,7 @@ async function main() {
     if (u.startsWith('http://game.local')) return r.fulfill({ body: html, contentType: 'text/html; charset=utf-8' });
     return r.abort();
   });
-  await page.addInitScript('window.__noRender = true;' + (process.env.SIM_TRACE ? 'window.__wantTrace = true;' : ''));
+  await page.addInitScript('window.__noRender = true;' + (process.env.SIM_TRACE ? 'window.__wantTrace = true;' : '') + (+arg('suzuki', 0) ? 'window.__suzuki = true;' : ''));
   await page.goto('http://game.local/', { waitUntil: 'load', timeout: 240000 });
   await page.waitForFunction(() => window.__g && window.__g.S, null, { timeout: 120000 });
   await page.evaluate(PAGE_CODE);
@@ -295,6 +301,9 @@ async function main() {
       `  ${med(rs.map(r => r.ate))}  ${med(rs.map(r => r.repairs))}  ${med(rs.map(r => r.trapFired))}  ${sum3('fenceBroke')}  ${sum3('eshin')}  ${sum3('coreBy')}  ${Math.max(...rs.map(r => r.maxAlive))}`);
     const killers = {}; rs.filter(r => r.killer).forEach(r => { killers[r.killer] = (killers[r.killer] || 0) + 1; });
     if (Object.keys(killers).length) console.log('   体力切れのとき一番近かった獣:', JSON.stringify(killers));
+    const kills = rs.reduce((a, r) => a + (r.kills || 0), 0);
+    console.log(`   主人公の被ダメージ（中央）${med(rs.map(r => r.dmgTaken))}・倒した数（中央）${med(rs.map(r => r.kills))}` +
+      (+arg('suzuki', 0) ? `・スズキが倒した割合 ${kills ? Math.round(rs.reduce((a, r) => a + (r.szKills || 0), 0) / kills * 100) : 0}%・スズキの被ダメージ（中央）${med(rs.map(r => r.szDmg || 0))}・スズキが倒れた戦い ${rs.filter(r => r.szDowns > 0).length}/${n}` : ''));
   }
   if (errors.length) console.log('\nページエラー:', errors.slice(0, 5));
   if (out) fs.writeFileSync(out, JSON.stringify({ presets: PRESETS, runs, seed0, maxT, override, results, errors }, null, 2));
