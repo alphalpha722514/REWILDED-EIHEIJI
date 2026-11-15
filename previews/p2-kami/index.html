@@ -538,7 +538,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.69 上志比の獣・採集 テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.70 上志比の獣・採集 テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -4156,7 +4156,7 @@ function f11Lod(px,pz){ if(!f11Has('B')) return;
 function f11Sim(raw){ raw=Math.min(raw,F11D.rawMax); const n=Math.max(1,Math.ceil(raw/F11D.subDt-1e-9)); const step=raw/n; F11.sub=n; if(n>F11.subMax) F11.subMax=n;
   for(let k=0;k<n&&S.mode==='playing';k++){ let dt=step;
     if(S.hitstop>0){ S.hitstop-=step; dt=0; } else if(S.slowmo>0){ S.slowmo-=step; dt*=0.35; }
-    if(dt>0){ S.time+=dt; if(bossCinema52()){ tickCinema52(dt); continue; } updatePlayer(dt); updateEnemies(dt); updateNPCs(dt); updateWorld(dt); updateEvent(dt); updateProgress(dt); } } }
+    if(dt>0){ S.time+=dt; if(bossCinema52()){ tickCinema52(dt); continue; } updatePlayer(dt); updateSuzuki(dt); updateEnemies(dt); updateNPCs(dt); updateWorld(dt); updateEvent(dt); updateProgress(dt); } } }
 // 獣を消したときの片付け：その獣だけが使っていた形・材質・画像を GPU から外す（ほかで使っている物は残す）
 function f11Dispose(objs){ const geo=new Set(), mats=new Set(), tex=new Set(), skel=new Set(); // 骨の動きを入れる画像（スキニング）も外す
   const addM=m=>{ if(!m) return; mats.add(m); for(const k of ['map','alphaMap','emissiveMap','normalMap']) if(m[k]) tex.add(m[k]); };
@@ -5277,7 +5277,7 @@ const CLASSIC_PLAYER_OPTS={scale:0.9,tall:1.22,legLen:1.8,armLen:1.55,girth:0.8,
     bottom:{col:0x4a4e44,col2:0x3e4238,top:0.47,kneePad:0x2c2e30,cargo:true,t:0.028},shoes:{kind:'boots',col:0x5a3e2c,col2:0x7a5a40},
     belt:{col:0x2a2420,pouch:0x5a5a48,buckle:true,y:0.405},hair:{style:'short',col:0x2a1e16},band:{col:0xf4f1e8,pat:0x2f5f9a},wardrobe:true}};
 // v0.60（P2・試作）スズキ：主人公と同年代の陸上部。顔が大きめ・センター分け・濃い青の眼鏡・上半身は裸・緑のジャージ・裸足・背中に自作の大きな棍棒。
-// 体型・色・棍棒の形は暫定（ユーザーの確認待ち）。蹴りで戦うので脚を長めに。
+// 見た目は 2026-11-15 ユーザー承認（ズボンを濃い緑にして）。ゲームにはまだ出ない（作業E・F で出す）。蹴りで戦うので脚を長めに。
 function suzukiClub({chest,body,T}){
   body.add(mesh(G.sphLo,mat(0xc99a7a),0,T(0.52),0.168,0.016,0.022,0.01)); // へそ（上半身が裸だと分かるように）
   const c=new THREE.Group(); c.position.set(0.02,T(0.8)-T(0.62),-0.28); c.rotation.set(0.12,0,-0.62); c.scale.setScalar(1.3); chest.add(c);
@@ -5291,10 +5291,16 @@ function suzukiClub({chest,body,T}){
   return c;
 }
 const SUZUKI_OPTS={scale:0.79,tall:1.2,legLen:1.95,armLen:1.5,girth:0.84,waist:0.82,neck:0.86,headR:0.45,limb:0.8,legGap:1.25,step:0.024,muscle:1,
-  outfit:{bottom:{col:0x1f6a38,col2:0x165029,top:0.48,stripe:0xf2c41c,waistBand:true,t:0.026}, // 横の線は黄色（2026-11-12 ユーザー指定）
+  outfit:{bottom:{col:0x154a28,col2:0x0e3519,top:0.48,stripe:0xf2c41c,waistBand:true,t:0.026}, // 横の線は黄色（2026-11-12 ユーザー指定）。ズボンは濃い緑（2026-11-15 見た目を承認）
     kesa:{col:0x5a4430,col2:0x46341f}, // 棍棒を背負うひも
     hair:{style:'center',col:0x1c1814},glasses:{col:0x101a33,size:1.22},armband:false}, // 眼鏡：黒に近い青・顔に対して大きく（2026-11-12 ユーザー指定）
   extra:suzukiClub};
+// v0.70（P2 作業E）スズキの仲間 AI の数と状態（使い方は「v0.70 スズキの仲間 AI」の節）
+const SZA={back:2.6,side:2.4,runD:7,speed:6.2,catch:8.0,walk:1.6,roamR:6,still:2.0,roamWait:[2,4],baseWait:[4,10],warp:25,fightR:15,
+  r:0.42,talkR:2.3,crumb:0.6,crumbN:100,losT:0.25,stuckT:0.8,stuckD:0.35,sideT:0.55,turn:10}; // すべて暫定
+const SZ={joined:false,order:'follow',region:'komyoji',x:0,z:0,wx:0,wz:0,hp:180,maxHp:180,down:false, // 保存する分（セーブは第4段階）
+  r:SZA.r,m:null,rot:0,spd:0,phase:0,pose:null,look:0,roam:null,still:0,crumbs:[],ci:-1,los:true,losAt:-9,crumbT:0,
+  stk:{t:0,x:0,z:0,n:0,side:1,sideT:0},_px:null,_pz:null};
 function makeHuman(o={}){
   const player=!!o.player47;
   const m=makeHumanClassic(player?CLASSIC_PLAYER_OPTS:o);
@@ -6354,6 +6360,7 @@ function freshState(){
   prog={gear:f47Fresh(),stage:'talk',unlockTrap:false,unlockBoss:false,clues:[false,false,false],bossDefeated:false,scoutTower:false,scoutWarned:false,scoutRaidWarned:false,prepT:150,gatherT:0,introSeen:false,lastSaveT:0,townRequests:loadTownRequests(),g4:g4Fresh(),f4:f4Fresh(),level:1,exp:0,mastery:{nata:0,axe:0,club:0,spear:0},xph:0}; prog.f7=f7FromInv(); f7Sync(); prog.f8=f8Fresh(); prog.conv=facFresh(); prog.kama=kamaFresh(); prog.f9=f9Fresh(); prog.f10=f10Fresh(); prog.kami=kamiFresh(); prog.chapter2=chapter2State(null,false);
   stats={kills:0,deaths:0,crafts:0,time:0,perfect:0,hunt:loadHuntRecords()};
   P.lvx48=0;P.lvz48=0;
+  szFresh(); // v0.70
   P.maxHp=100; P.hp=100; P.full=100; P.weapon='nata1'; P.dur=120; prog.arms={nata1:120}; prog.f5=f5Fresh(); P.dead=false; P.atk=null; P.dodge=null; P.buffer=null; P.stagger=0; P.buffT=0; P.vegT=0; P.porridgeT=0; resetCombat();
 }
 freshState();
@@ -8107,7 +8114,7 @@ function interactables(){
   }
   {const d=dist(P.x,P.z,SCOUT.x,SCOUT.z);
    if(d<2.6)L.push({d,label:prog.scoutTower?'見張り台：見張り中':'見張り台を建設（木材10・縄4）',act:()=>buildScoutTower()});}
-  g4Interactables(L);
+  g4Interactables(L); szInteractables(L); // v0.70：スズキへの指示
   L.sort((a,b)=>a.d-b.d); return L[0]||null;
 }
 function interact(){ if(bossCinema52()) return; if(curInter) curInter.act(); }
@@ -9302,11 +9309,11 @@ async function regionTravel(id,at=null,opt={}){
       if(!ctx.h||!ctx.bounds||!ctx.arrival) throw new Error('地域の形が足りない');
       Object.assign(BOUNDS,ctx.bounds);
       const a=at||ctx.arrival; P.x=a.x; P.z=a.z; P.facing=a.facing||0; }
-    REG.cur=id; if(prog.chapter2) prog.chapter2.currentRegion=id;
+    REG.cur=id; if(prog.chapter2) prog.chapter2.currentRegion=id; szAfterTravel(from,id); // v0.70：ついて来ているスズキも移る
     setCam(P.facing); resetCombat(); updateChunks(0,true); saveGame();
     S.mode=mode==='loading'?'playing':mode; regionLoading(false); REG.busy=false; return true;
   }catch(e){ console.error(e);
-    regionResetHome(); P.x=PSPAWN.x; P.z=PSPAWN.z; P.facing=0; if(prog.chapter2) prog.chapter2.currentRegion='komyoji';
+    regionResetHome(); P.x=PSPAWN.x; P.z=PSPAWN.z; P.facing=0; if(prog.chapter2) prog.chapter2.currentRegion='komyoji'; szAfterTravel(from,'komyoji');
     S.mode=mode==='loading'?'playing':mode; toast('地域の読み込みに失敗したため、光明寺に戻りました',true); saveGame(); return false; }
 }
 
@@ -9952,6 +9959,125 @@ function kamiDrawMarks(ctx,c2,X,Z){ const kw=ctx.kw, dot=(x,z,col,r)=>{ c2.fillS
   for(const s of kw.sp) dot(s.x,s.z,CL[s.type]||'#fff',4.5);
   for(const g of kw.groups) dot(g.x,g.z,'#ff2a8a',7); }
 
+// ================= v0.70（P2 作業E）スズキの仲間 AI =================
+// ChatGPT の実装指示「P2作業E スズキの仲間AI」（2026-11-15）。照合と方針は docs/p2-suzuki-ally.md。数はすべて暫定。
+// 本編では、作業F で仲間になる（SZ.joined）まで出さない。呼び出すボタンは試遊版 previews/p2-suzuki/ だけにある。
+// 第1段階：ついて来る（主人公の少し後ろ・遅れたら走る・止まった主人公のまわりを歩く）・障害物（当たり判定・歩いた跡をたどる・横へずれる）・
+//          25m より離れたら主人公から見えない所へ移す・指示（ついて来い／ここで待て／拠点で過ごせ）・地域の移動についてくる。
+// SZA・SZ（数と状態）は、早く使われる（freshState）ので SUZUKI_OPTS の後ろに置いた
+function szFresh(){ Object.assign(SZ,{joined:false,order:'follow',region:'komyoji',wx:0,wz:0,hp:SZ.maxHp,down:false,roam:null,still:0,ci:-1,crumbT:0,pose:null});
+  SZ.crumbs.length=0; if(SZ.m) SZ.m.g.visible=false; }
+function szHere(){ return SZ.joined&&SZ.region===REG.cur&&!REG.busy; }
+function szModel(){ if(!SZ.m){ SZ.m=makeHuman(SUZUKI_OPTS); SZ.m.g.visible=false; scene.add(SZ.m.g); } return SZ.m; }
+// 当たり判定のない所か（獣だけを止める門の柵は通れる＝主人公と同じ。2026-11-15 ユーザー了承）
+function szFree(x,z,r){ for(const b of gridQuery(x-r,x+r,z-r,z+r)){ if(b.active===false||b.enemyOnly) continue;
+    if(b.k==='c'){ if(dist(x,z,b.x,b.z)<b.r+r) return false; }
+    else if(b.k==='o'){ const dx=x-b.x, dz=z-b.z, lx=dx*b.c+dz*b.s, lz=-dx*b.s+dz*b.c; if(Math.abs(lx)<b.hx+r&&Math.abs(lz)<b.hz+r) return false; }
+    else if(x+r>b.minX&&x-r<b.maxX&&z+r>b.minZ&&z-r<b.maxZ) return false; }
+  return true; }
+function szWalkable(x,z){ if(isWater(x,z)) return false; const B=BOUNDS; if(x<B.minX+0.5||x>B.maxX-0.5||z<B.minZ+0.5||z>B.maxZ-0.5) return false;
+  if(REG.cur==='kamishihi'&&KAMI&&!kamiReach(x,z)) return false; return true; }
+// まっすぐ歩いて行けるか（0.5m おきに調べる）
+function szLine(ax,az,bx,bz){ const d=dist(ax,az,bx,bz), n=Math.ceil(d/0.5); for(let i=1;i<n;i++){ const t=i/n, x=ax+(bx-ax)*t, z=az+(bz-az)*t; if(!szFree(x,z,SZA.r*0.8)||!szWalkable(x,z)) return false; } return true; }
+function szSpotOK(x,z,minEnemy=6){ if(!szFree(x,z,SZA.r+0.08)||!szWalkable(x,z)) return false; if(Math.abs(groundH(x,z)-groundH(P.x,P.z))>2.5) return false;
+  for(const e of enemies){ if(e.removed||e.state==='dead') continue; if(dist(x,z,e.x,e.z)<minEnemy) return false; } return true; }
+// 戦っているか：まわり15m に、落ち着いていない獣がいる（第2段階で、スズキか主人公を狙っている獣に絞る）
+const SZ_CALM=['idle','return','sleep','dead','flee','flee2','steal','kfwatch','kfpatrol','kfreturn','kfsearch','search','probe','notice'];
+function szFighting(){ for(const e of enemies){ if(e.removed||e.state==='dead'||SZ_CALM.includes(e.state)) continue; if(dist(SZ.x,SZ.z,e.x,e.z)<SZA.fightR||dist(P.x,P.z,e.x,e.z)<SZA.fightR) return true; } return false; }
+// 画面に映っているか（今のカメラで調べる）
+const _szFr=new THREE.Frustum(), _szMx=new THREE.Matrix4(), _szV=new THREE.Vector3();
+function szInView(x,z){ camera.updateMatrixWorld(); _szMx.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse); _szFr.setFromProjectionMatrix(_szMx);
+  const y=groundH(x,z); for(const h of [0.1,0.9,1.6]){ _szV.set(x,y+h,z); if(_szFr.containsPoint(_szV)) return true; } return false; }
+// 主人公の近くの、映らない・歩いて行ける所へ移す（なければ映る所。それもなければ移さない）
+function szWarp(){ const back=Math.atan2(camera.position.x-P.x,camera.position.z-P.z); let seen=null;
+  for(const R of [10,13,8,16,6]) for(let k=0;k<14;k++){ const a=back+(k%2?1:-1)*Math.ceil(k/2)*0.32, x=P.x+Math.sin(a)*R, z=P.z+Math.cos(a)*R;
+    if(!szSpotOK(x,z)||!szLine(x,z,P.x,P.z)) continue;
+    if(!szInView(x,z)){ szPut(x,z,Math.atan2(P.x-x,P.z-z)); return true; } if(!seen) seen={x,z}; }
+  if(seen){ szPut(seen.x,seen.z,Math.atan2(P.x-seen.x,P.z-seen.z)); return true; } return false; }
+function szPut(x,z,rot){ SZ.x=x; SZ.z=z; SZ._px=x; SZ._pz=z; if(rot!=null) SZ.rot=rot; SZ.roam=null; SZ.ci=-1; SZ.stk.t=0; SZ.stk.n=0; SZ.stk.x=x; SZ.stk.z=z; SZ.spd=0; }
+// 主人公のすぐ後ろに出す（仲間になったとき・地域を移ったとき）
+function szPlaceBehind(){ const f=P.facing, L=Math.atan2(Math.cos(cam.yaw),-Math.sin(cam.yaw)), a0=Math.atan2(-Math.sin(f)*SZA.back+Math.sin(L)*SZA.side,-Math.cos(f)*SZA.back+Math.cos(L)*SZA.side); // ついて来るときの場所（後ろ・画面の左）から探す
+  for(const R of [3.5,4.5,2.5,6]) for(const da of [0,0.6,-0.6,1.2,-1.2,2,-2,Math.PI]){ const a=a0+da, x=P.x+Math.sin(a)*R, z=P.z+Math.cos(a)*R;
+    if(szSpotOK(x,z,2)&&szLine(x,z,P.x,P.z)){ szPut(x,z,f); return; } }
+  szPut(P.x-Math.sin(f)*1.2,P.z-Math.cos(f)*1.2,f); resolve(SZ,false); }
+// 1コマ進む。向きは少しずつ変え、当たり判定と歩ける範囲で止める
+function szGo(ax,spd,dt){ SZ.rot+=clamp(angDiff(SZ.rot,ax),-SZA.turn*dt,SZA.turn*dt); const k=Math.max(0,Math.cos(angDiff(SZ.rot,ax))), v=spd*(0.35+0.65*k);
+  const ox=SZ.x, oz=SZ.z; SZ._px=ox; SZ._pz=oz; SZ.x+=Math.sin(ax)*v*dt; SZ.z+=Math.cos(ax)*v*dt; resolve(SZ,false);
+  if(!szWalkable(SZ.x,SZ.z)){ SZ.x=ox; SZ.z=oz; } SZ.spd=dist(ox,oz,SZ.x,SZ.z)/Math.max(dt,1e-4); }
+// 引っかかり：動こうとしているのに0.8秒で0.35m も進めなければ、しばらく横へずれ、主人公の歩いた跡をたどる
+function szStuck(dt,want){ const s=SZ.stk; if(s.sideT>0) s.sideT-=dt; if(!want){ s.t=0; s.x=SZ.x; s.z=SZ.z; return false; }
+  s.t+=dt; if(s.t<SZA.stuckT) return false; const mv=dist(s.x,s.z,SZ.x,SZ.z); s.t=0; s.x=SZ.x; s.z=SZ.z;
+  if(mv<SZA.stuckD){ s.n++; s.side=(s.n%2)?s.side:-s.side; s.sideT=SZA.sideT; SZ.crumbT=3; return true; } s.n=0; return false; }
+function szMoveTo(tx,tz,spd,dt){ let a=Math.atan2(tx-SZ.x,tz-SZ.z); const s=SZ.stk; if(s.sideT>0) a+=s.side*Math.PI/2; szGo(a,spd,dt); }
+// 主人公の歩いた跡：まっすぐ行けないときは、いちばん近い跡から先へたどる（主人公が通れた道なので、家の角などで止まりにくい）
+function szCrumbTarget(){ const cr=SZ.crumbs; if(!cr.length) return null; let i=SZ.ci;
+  if(i<0||i>=cr.length||dist(SZ.x,SZ.z,cr[i].x,cr[i].z)>4){ let bd=1e9; i=0; for(let k=0;k<cr.length;k++){ const d=dist(SZ.x,SZ.z,cr[k].x,cr[k].z); if(d<=bd){ bd=d; i=k; } } }
+  while(i<cr.length-1&&dist(SZ.x,SZ.z,cr[i].x,cr[i].z)<0.8) i++; SZ.ci=i; return cr[i]; }
+function szFollow(dt){
+  const cr=SZ.crumbs, last=cr[cr.length-1]; if(!last||dist(last.x,last.z,P.x,P.z)>SZA.crumb){ cr.push({x:P.x,z:P.z}); if(cr.length>SZA.crumbN){ cr.shift(); if(SZ.ci>0) SZ.ci--; } }
+  const pd=dist(SZ.x,SZ.z,P.x,P.z);
+  if(pd>SZA.warp&&!szFighting()&&szWarp()) return;
+  const pv=Math.hypot(P.lvx48||0,P.lvz48||0); SZ.still=pv<0.3&&!P.dodge&&!P.atk?SZ.still+dt:0;
+  if(SZ.still>SZA.still&&pd<SZA.roamR+1.5){ szRoam(dt,P.x,P.z,SZA.roamR,SZA.roamWait); return; }
+  SZ.roam=null;
+  // 目当て：主人公の進む向き（止まっていれば向いている向き）の後ろ2.6m・画面の左へ2.4m（主人公から約3.5m）。
+  // まうしろ（カメラと主人公の間）だと画面の下を大きくふさぐので、カメラから見て左（主人公は画面のやや左、カメラは右の肩越し）へ寄せる。空いていなければ右・まうしろ
+  const fa=pv>0.5?Math.atan2(P.lvx48,P.lvz48):P.facing, lx=Math.cos(cam.yaw), lz=-Math.sin(cam.yaw), bx=P.x-Math.sin(fa)*SZA.back, bz=P.z-Math.cos(fa)*SZA.back;
+  let tx=P.x, tz=P.z; for(const k of [1,-1,0]){ const x=bx+lx*SZA.side*k, z=bz+lz*SZA.side*k; if(szFree(x,z,SZA.r)&&szWalkable(x,z)){ tx=x; tz=z; break; } }
+  const td=dist(SZ.x,SZ.z,tx,tz), stop=(tx===P.x&&tz===P.z)?2.8:0.8;
+  if(td<stop||pd<1.6){ szStuck(dt,false); SZ.spd=0; SZ.rot+=clamp(angDiff(SZ.rot,Math.atan2(P.x-SZ.x,P.z-SZ.z)),-4*dt,4*dt); return; }
+  const spd=pd>SZA.runD?SZA.catch:clamp(pv+td*0.9,SZA.walk,SZA.speed);
+  if(S.time-SZ.losAt>SZA.losT){ SZ.losAt=S.time; SZ.los=szLine(SZ.x,SZ.z,tx,tz); }
+  SZ.crumbT=Math.max(0,SZ.crumbT-dt);
+  if(SZ.los&&SZ.crumbT<=0){ SZ.ci=-1; szMoveTo(tx,tz,spd,dt); }
+  else { const c=szCrumbTarget(); if(c) szMoveTo(c.x,c.z,spd,dt); else szMoveTo(tx,tz,spd,dt); }
+  szStuck(dt,true); }
+// 止まった主人公のまわり（6m 以内）や拠点の中を歩き回る：歩いて行ける所を選んで歩き、2〜4秒（拠点は4〜10秒）立ち止まってあたりを見る
+function szRoam(dt,cx,cz,R,wait,inside){ let r=SZ.roam;
+  if(!r||(r.done&&r.t<=0)){ r=null; for(let k=0;k<8&&!r;k++){ const a=Math.random()*TAU, d=rr(R*0.3,R), x=cx+Math.sin(a)*d, z=cz+Math.cos(a)*d;
+      if(dist(x,z,P.x,P.z)<1.8||!szFree(x,z,SZA.r+0.1)||!szWalkable(x,z)||(inside&&!inside(x,z))||!szLine(SZ.x,SZ.z,x,z)) continue; r={x,z,t:rr(wait[0],wait[1]),done:false}; }
+    if(!r) r={x:SZ.x,z:SZ.z,t:rr(wait[0],wait[1]),done:true}; SZ.roam=r; }
+  if(!r.done){ szMoveTo(r.x,r.z,SZA.walk,dt); if(dist(SZ.x,SZ.z,r.x,r.z)<0.5||szStuck(dt,true)) r.done=true; }
+  else { r.t-=dt; SZ.spd=0; szStuck(dt,false); SZ.look=Math.sin(S.time*0.9+SZ.phase)*0.6; } }
+// ここで待て：その場を守る。押されて離れたら戻る。歩き回らない
+function szWait(dt){ const d=dist(SZ.x,SZ.z,SZ.wx,SZ.wz); if(d>0.9){ szMoveTo(SZ.wx,SZ.wz,d>6?SZA.speed:SZA.walk*1.5,dt); szStuck(dt,true); } else { SZ.spd=0; szStuck(dt,false); SZ.pose='wait'; } }
+// 拠点で過ごせ：光明寺の拠点（桜隊の拠点の範囲）の中を、住民のように歩き回る。外にいれば拠点まで歩く（何度も引っかかれば、見えない所で拠点の中へ移す）
+const szInBase=(x,z)=>inBase(x,z,-3);
+function szBase(dt){
+  if(!szInBase(SZ.x,SZ.z)){ SZ.roam=null; szMoveTo(BX,BZ,SZA.speed*0.8,dt); szStuck(dt,true);
+    if(SZ.stk.n>=6&&!szInView(SZ.x,SZ.z)&&!szFighting()){ for(let k=0;k<20;k++){ const x=rr(BASE.minX+4,BASE.maxX-4), z=rr(BASE.minZ+4,BASE.maxZ-4); if(szSpotOK(x,z,4)&&!szInView(x,z)){ szPut(x,z,SZ.rot); break; } } }
+    return; }
+  szRoam(dt,BX,BZ,18,SZA.baseWait,szInBase); }
+function szOrder(k){ SZ.order=k; SZ.roam=null; SZ.ci=-1; SZ.stk.n=0; if(k==='wait'){ SZ.wx=SZ.x; SZ.wz=SZ.z; }
+  toast(k==='follow'?'スズキはついて来る':k==='wait'?'スズキはここで待つ':'スズキは拠点で過ごす'); }
+// 話しかけると、柵や罠と同じ選ぶ画面で指示を選ぶ（「拠点で過ごせ」は光明寺にいるときだけ）
+function szTalk(){ const now=k=>SZ.order===k?'（いまの指示）':''; const C=[{label:'ついて来い'+now('follow'),act:()=>szOrder('follow')},{label:'ここで待て'+now('wait'),act:()=>szOrder('wait')}];
+  if(REG.cur==='komyoji') C.push({label:'拠点で過ごせ'+now('base'),act:()=>szOrder('base')}); chooseDefense('スズキへの指示',C); }
+function szInteractables(L){ if(!szHere()||SZ.down) return; const d=dist(P.x,P.z,SZ.x,SZ.z); if(d<SZA.talkR) L.push({d:d+0.3,label:'スズキに指示する',act:szTalk}); }
+// 仲間になる（作業F の初遭遇の後に呼ぶ。今は試遊版のボタンだけが呼ぶ）
+function szJoin(){ szModel(); SZ.joined=true; SZ.order='follow'; SZ.region=REG.cur; SZ.down=false; SZ.hp=SZ.maxHp; SZ.crumbs.length=0; szPlaceBehind(); }
+// 地域を移ったとき：ついて来ているスズキは一緒に移る。待っている・拠点にいる・倒れているときは、その地域に残る
+function szAfterTravel(from,to){ if(!SZ.joined) return; if(SZ.region===from&&SZ.order==='follow'&&!SZ.down){ SZ.region=to; SZ.crumbs.length=0; szPlaceBehind(); }
+  if(SZ.m) SZ.m.g.visible=false; }
+const SZP={wait:{L:[-0.32,1.2,0],R:[-0.32,-1.2,0],elbow:1.7}}; // 姿勢（腕の回し方 YXZ・ひじの曲げ）。暫定
+function szAnimate(dt){ const m=SZ.m, v=SZ.spd, walking=v>0.3, run=v>4.5;
+  m.g.position.set(SZ.x,groundH(SZ.x,SZ.z),SZ.z); m.g.rotation.y=SZ.rot;
+  SZ.phase+=dt*(walking?5+v*1.25:0); const sw=walking?Math.sin(SZ.phase):0, amp=run?0.85:0.5;
+  m.root.position.y=walking?Math.abs(sw)*(run?0.09:0.05):0;
+  m.legs[0].rotation.x=sw*amp; m.legs[1].rotation.x=-sw*amp; m.body.scale.set(1,1,1);
+  m.armL.rotation.order='YXZ'; m.armR.rotation.order='YXZ';
+  if(SZ.pose==='wait'&&!walking){ const W=SZP.wait; m.armL.rotation.set(...W.L); m.armR.rotation.set(...W.R); } // 待つ：腕を組む（暫定。確認画像で承認を受ける）
+  else { m.armL.rotation.set(-sw*amp*0.9,0,0.1); m.armR.rotation.set(sw*amp*0.9,0,-0.1); }
+  m.body.rotation.x=walking?(run?0.22:0.08):0; m.head.rotation.y=walking?0:SZ.look; if(walking) SZ.look=0;
+  softPose(m,dt,{elbow:SZ.pose==='wait'&&!walking?SZP.wait.elbow:run?0.95:0.35,knee:run?0.22:0.08});
+  m.g.visible=dist(SZ.x,SZ.z,camera.position.x,camera.position.z)>2.3; } // カメラにくっつくほど近いときは描かない（村人と同じ 2.3m）
+function updateSuzuki(dt){
+  if(!szHere()){ if(SZ.m&&SZ.m.g.visible) SZ.m.g.visible=false; return; }
+  szModel(); SZ.pose=null;
+  if(SZ.order==='follow') szFollow(dt); else if(SZ.order==='wait') szWait(dt); else szBase(dt);
+  const d=dist(SZ.x,SZ.z,P.x,P.z), rs=SZ.r+P.r; if(d<rs&&d>1e-3){ SZ.x+=(SZ.x-P.x)/d*(rs-d); SZ.z+=(SZ.z-P.z)/d*(rs-d); resolve(SZ,false); } // 主人公と重ならない（スズキがよける）
+  szAnimate(dt); }
+
 // ================= 初期化 =================
 try{
   buildWorld(); buildRain(); f31Build(); buildPillars(); buildBarrier(); buildNodes(); buildClues(); buildFenceSlots(); buildTraps(); buildScoutSite();
@@ -10134,7 +10260,7 @@ $('btnPerf').onclick=()=>f11Toggle(); $('btnPerfRec').onclick=()=>{ f11RecStart(
 $('btnShadow').onclick=()=>{ applyShadow(!shadowPref); toast(shadowPref?'影をオンにした（描画が重くなります）':'影をオフにした'); };
 $('btnShadow').textContent='高画質の影：'+(renderer.shadowMap.enabled?'オン':'オフ');
 $('btnSave').onclick=()=>{ saveGame(); toast(storageOK?(ev.kind||bossActive?'セーブした（戦闘中は開始前の状態で記録）':'セーブした'):'このブラウザでは保存できない',!storageOK); };
-$('btnToTitle').onclick=()=>{ saveGame(); regionResetHome(); hideAllOv(); $('hud').hidden=true; S.mode='title'; lightMode='dusk'; snapLight(); P.x=158; P.z=22; $('title').hidden=false; $('btnContinue').hidden=!readSave(); for(const f of floats) f.d.style.display='none'; for(const b of hpBars) b.style.display='none'; for(const [,b] of barkEls){b.t=0;b.d.style.display='none';} };
+$('btnToTitle').onclick=()=>{ saveGame(); regionResetHome(); if(SZ.m) SZ.m.g.visible=false; /* v0.70 */ hideAllOv(); $('hud').hidden=true; S.mode='title'; lightMode='dusk'; snapLight(); P.x=158; P.z=22; $('title').hidden=false; $('btnContinue').hidden=!readSave(); for(const f of floats) f.d.style.display='none'; for(const b of hpBars) b.style.display='none'; for(const [,b] of barkEls){b.t=0;b.d.style.display='none';} };
 $('btnCraftClose').onclick=closeOverlay; $('btnStoreClose').onclick=closeOverlay; $('btnNpcClose').onclick=closeOverlay; mapPtr(); $('objective').addEventListener('pointerdown',e=>{ e.stopPropagation(); objOpen.pin=!objOpen.pin; if(!objOpen.pin) objOpen.t=0; }); $('btnQuestClose').onclick=closeOverlay;
 $('btnInvClose').onclick=closeOverlay;
 $('btnRetry').onclick=retryFromBase;
