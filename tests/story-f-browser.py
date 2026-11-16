@@ -267,6 +267,9 @@ async def main():
 
         # ================= 6) 山王で初遭遇 → 逃げ去る → 仲間に =================
         await ev("async () => { await window.__s.regionTravel('kamishihi', null, {force: true}); }")
+        # スズキの掛け声（吹き出し）を記録する：文が入るたびに、そのときの状態といっしょに
+        await ev("""() => { window.__cries = []; new MutationObserver(ms => { for (const m of ms) { const t = m.target; if (!t.classList || !t.classList.contains('bark') || !t.textContent.includes('Reddish')) continue;
+            const T = window.__s; window.__cries.push({joined: T.SZ.joined, enc: !!T.STF.enc, text: t.textContent}); } }).observe(document.body, {subtree: true, childList: true}); return true; }""")
         await ev(NEAR_SANNO, 52)
         await until("() => window.MUTANT_MONKEY_MODEL ? true : null", 120)
         await ev(NEAR_SANNO, 26)
@@ -285,8 +288,8 @@ async def main():
         await ev("() => { window.__s.inv.wood += 7; window.__s.saveGame(); }")
         s1 = await ev("() => localStorage.getItem('eiheiji_vs_beasts_v010')")
         check(w['nosave'] and s0 == s1, '初遭遇の途中は保存しない')
-        cry0 = await ev("() => [...document.querySelectorAll('.bark')].some(d => d.style.display === 'block' && d.textContent.includes('Reddish'))")
-        check(not cry0, '初遭遇の戦いでは、スズキは「Reddish…」と言わない')
+        cry0 = await ev("() => window.__cries.length")
+        check(cry0 == 0, f'初遭遇のカットと戦いでは、スズキは「Reddish…」と言わない（{cry0}回）')
         await shot('7_fight')
         fl = await until("""() => { const T = window.__s, E = T.STF.enc; if (!E) return 'gone'; if (E.phase !== 'fight') return {phase: E.phase, drop: !!E.e.scaleDropped, met: T.prog.chapter2.progress.mutantMet};
             const e = E.e, P = T.P; T.damageEnemy(e, 120, 'heavy', Math.atan2(e.x - P.x, e.z - P.z)); return null; }""", 60)
@@ -307,12 +310,17 @@ async def main():
         await pg.wait_for_timeout(5000)
         again = await ev("() => ({enc: !!window.__s.STF.enc, dlg: !document.getElementById('dialog').hidden})")
         check(not again['enc'] and not again['dlg'], '山王にいても、初遭遇は二度と起きない')
-        cry = await ev("""async () => { const T = window.__s; let e = null;
-            for (const o of T.enemies) { if (o.removed || o.state === 'dead' || o.type === 'boss' || o.stfF) continue; if (!e || Math.hypot(o.x - T.SZ.x, o.z - T.SZ.z) < Math.hypot(e.x - T.SZ.x, e.z - T.SZ.z)) e = o; }
-            if (!e) return 'no enemy'; e.x = T.SZ.x + 5; e.z = T.SZ.z + 2; e.home = {x: e.x, z: e.z}; e.hp = e.maxHp; T.setState(e, 'chase');
-            for (let i = 0; i < 100; i++) { await new Promise(r => setTimeout(r, 300)); const b = [...document.querySelectorAll('.bark')].find(d => d.style.display === 'block' && d.textContent.includes('Reddish')); if (b) return {text: b.textContent, fight: T.SZ.fight}; }
-            return {text: null, fight: T.SZ.fight, tgt: !!T.SZ.tgt}; }""")
-        check(isinstance(cry, dict) and cry['text'] == 'Reddishにしてやろうかああぁぁあ！？', f'仲間になったあと、戦いが始まるとスズキが「Reddishにしてやろうかああぁぁあ！？」と言う {cry}')
+        # 仲間になったあと：まわりの獣と戦い始めたら言う。20秒たっても戦いが始まらなければ、近くに獣を置く
+        cry = await until("() => { const c = window.__cries.filter(c => c.joined && !c.enc); return c.length ? c[0] : null; }", 20)
+        how = '止めた獣が動き出して戦いになった'
+        if not cry:
+            how = '近くに獣を置いた'
+            await ev("""() => { const T = window.__s; let e = null;
+                for (const o of T.enemies) { if (o.removed || o.state === 'dead' || o.type === 'boss' || o.stfF) continue; if (!e || Math.hypot(o.x - T.SZ.x, o.z - T.SZ.z) < Math.hypot(e.x - T.SZ.x, e.z - T.SZ.z)) e = o; }
+                if (!e) return false; e.x = T.SZ.x + 5; e.z = T.SZ.z + 2; e.home = {x: e.x, z: e.z}; e.hp = e.maxHp; T.SZ.fight = false; T.SZ.calmT = 0; T.setState(e, 'chase'); return true; }""")
+            cry = await until("() => { const c = window.__cries.filter(c => c.joined && !c.enc); return c.length ? c[0] : null; }", 40)
+        n = await ev("() => window.__cries.length")
+        check(isinstance(cry, dict) and cry['text'] == 'Reddishにしてやろうかああぁぁあ！？' and n == 1, f'仲間になったあと、戦いが始まるとスズキが「Reddishにしてやろうかああぁぁあ！？」と言う（{how}・{n}回）{cry}')
         await shot('9_joined')
 
         # ================= 7) 旧セーブ：移動権を残す・無線は1回 =================

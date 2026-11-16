@@ -10644,7 +10644,7 @@ function szPick(e){
   const want=ss<sp; if(want!==!!e.szT){ e.szT=want; e.szSw=S.time; } return want; }
 // 敵の攻撃を受ける：2割減。重い一撃は蹴りを止める。体力0で倒れる（助け起こすのは第3段階）
 function szHurt(dmg,fx,fz,knock,src){ if(SZ.down||!szHere()) return false; dmg=f11InvDmg(dmg,src); const d=Math.max(1,Math.round(dmg*(1-SZF.guard)));
-  SZ.hp=Math.max(0,SZ.hp-d); floatText(SZ.x,2.0,SZ.z,`-${d}`,'#ffb080'); SZ.hitBy=src; SZ.hitAt=S.time; SZ.fight=true; SZ.calmT=0;
+  SZ.hp=Math.max(0,SZ.hp-d); floatText(SZ.x,2.0,SZ.z,`-${d}`,'#ffb080'); SZ.hitBy=src; SZ.hitAt=S.time; szFightOn();
   const a=Math.atan2(SZ.x-fx,SZ.z-fz); SZ.kx=Math.sin(a)*knock*0.6; SZ.kz=Math.cos(a)*knock*0.6; SZ.stagger=0.25; if(SZ.kick&&(SZ.kick.id!=='jump'||SZ.kick.t>SZK.jump.hit)&&d>=15) SZ.kick=null;
   if(SZ.hp<=0) szDown(); return true; }
 SZ.hurt=(d,e)=>STF.sz?stfSzHit(e):szHurt(d,e.x,e.z,5,e); // 変異したサルの e.tgt から直接あてるとき（mutHit）。v0.77：仲間になる前（作業F の台本で動くスズキ）はよろけるだけ
@@ -10674,7 +10674,7 @@ function szCombat(dt){
     if(ATK_ST.includes(e.state)) sc-=3; if(e.szT) sc-=1.5; if(e===SZ.tgt) sc-=2; if(e===SZ.hitBy&&S.time-SZ.hitAt<4) sc-=3;
     if(sc<bs){ bs=sc; best=e; } if(dS<2.6+e.r) n2++; }
   SZ.tgt=best; SZ.near2=n2; if(!best) return false;
-  SZ.fight=true; SZ.calmT=0;
+  szFightOn();
   const e=best, dE=dist(SZ.x,SZ.z,e.x,e.z)-SZ.r-e.r, face=Math.atan2(e.x-SZ.x,e.z-SZ.z), off=Math.abs(angDiff(SZ.rot,face));
   const ready=k=>S.time>=SZ.cd[k]&&S.time>=SZ.gapT;
   if(SZ.hp<=SZF.low){ // 体力が少ない：4〜7m 離れ、近づいた敵と攻撃の後の隙だけローキックで返す。飛び蹴りはしない
@@ -10731,7 +10731,8 @@ function szBark(kind){ const L=SZ_BARKS[kind]; if(!L||!L.length||S.time-(SZ.bark
 // v0.77：仲間になったあとの戦闘開始の掛け声（確定台詞。2026-11-17 ユーザー許可。山王の初遭遇では言わない）
 const SZ_CRY={text:'Reddishにしてやろうかああぁぁあ！？',gap:20}; // gap：次に言えるまでの秒（暫定。続けざまの小競り合いで繰り返さない）
 function szBattleCry(){ if(!SZ.joined||STF.sz||SZ.down||!SZ.m||!SZ.m.g.visible) return; if(S.time-(SZ.cryAt??-1e9)<SZ_CRY.gap) return; SZ.cryAt=S.time; say(SZ,SZ_CRY.text); }
-function szCombatClock(dt){ if(SZ.tgt){ SZ.calmT=0; if(!SZ.fight) szBattleCry(); SZ.fight=true; return; } let near=false;
+function szFightOn(){ if(!SZ.fight) szBattleCry(); SZ.fight=true; SZ.calmT=0; } // 戦いに入る（v0.77：入ったときに掛け声）
+function szCombatClock(dt){ if(SZ.tgt){ szFightOn(); return; } let near=false;
   for(const e of enemies){ if(e.removed||e.state==='dead'||SZ_CALM.includes(e.state)||e.kfY>1) continue; if(dist(SZ.x,SZ.z,e.x,e.z)<SZF.endR){ near=true; break; } }
   if(near){ SZ.calmT=0; return; } SZ.calmT+=dt; if(SZ.calmT>=SZF.endT) SZ.fight=false; }
 // 敵と重ならない（スズキがよける。見張り台の上・倒れた獣は除く）
