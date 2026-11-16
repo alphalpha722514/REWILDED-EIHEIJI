@@ -174,19 +174,19 @@ async def main():
         check(rw['max'] == round(rw['before'] * 0.7) and rw['hp'] <= rw['max'] and rw['speed'] == 0.3, '変異した鱗の4部位で最大体力0.7倍・移動+30%')
         check(rw['name'] == '変異した鱗の胸部装甲', '名前：変異した鱗（ユーザー決定）')
         sw = await pg.evaluate("""() => { const T = window.__t, P = T.P; for (const e of [...T.enemies]) T.removeEnemy(e); P.x = 150; P.z = 52;
-          const e = T.spawnEnemy('monkey', P.x + 2.2, P.z + 0.4, 'field', {aggro: true}); const hp0 = e.hp; T.SCALE_FX.charge = 0; T.SCALE_FX.smoke.forEach(s => s.visible = false);
+          const e = T.spawnEnemy('monkey', P.x + 2.2, P.z + 0.4, 'field', {aggro: true}); const hp0 = e.hp; T.SCALE_FX.charge = 0; T.SCALE_FX.smoke.forEach(s => s.visible = false); T.SCALE_FX.pool.forEach(s => s.visible = false);
           const d = () => Math.hypot(e.x - P.x, e.z - P.z); let maxAuto = 0;
           for (let i = 0; i < 12 * 30; i++) { T.S.time += 1 / 30; T.scaleFxUpdate(1 / 30); e.x = P.x + 2.2; e.z = P.z + 0.4; e.state = 'stun'; e.stunT = 9; T.updateEnemies(1 / 30); P.hp = P.maxHp; P.dead = false; maxAuto = Math.max(maxAuto, d()); }
           T.updateF6C(0); const btnReady = document.getElementById('tbWave').classList.contains('ready');
-          const smoke = T.SCALE_FX.smoke.filter(s => s.visible).length; const charged = T.SCALE_FX.charge; T.scaleWaveBtn(); const fired = T.SCALE_FX.charge === 0;
+          const smoke = T.SCALE_FX.smoke.filter(s => s.visible).length, embers = T.SCALE_FX.pool.filter(s => s.visible).length; const charged = T.SCALE_FX.charge; T.scaleWaveBtn(); const fired = T.SCALE_FX.charge === 0;
           for (let i = 0; i < 40; i++) { T.S.time += 1 / 30; T.updateEnemies(1 / 30); } const after = d();
-          T.updateF6C(0); const btn = document.getElementById('tbWave'); const out = {maxAuto, charged, fired, after, hp0, hp: e.hp, smoke, btnShown: !btn.hidden, btnReady}; T.removeEnemy(e);
+          T.updateF6C(0); const btn = document.getElementById('tbWave'); const out = {maxAuto, charged, fired, after, hp0, hp: e.hp, smoke, embers, btnShown: !btn.hidden, btnReady}; T.removeEnemy(e);
           T.SCALE_FX.charge = 3; const s2 = T.SCALE_FX.charge; T.scaleWaveBtn(); out.early = T.SCALE_FX.charge === s2; return out; }""")
         print('衝撃波（防具）：', sw)
         check(sw['maxAuto'] < 3.0, '衝撃波は自動では出ない（ユーザー決定：ボタンで出す）')
         check(sw['charged'] >= 10 and sw['fired'] and sw['after'] > 5.0 and sw['hp'] == sw['hp0'], f'力がたまったらボタンで放ち、獣を押し出す（{sw["after"]:.1f}m・ダメージなし）')
         check(sw['early'], 'たまる前に押しても出ない')
-        check(sw['smoke'] > 0, '暗い紫のもやが立ちのぼる')
+        check(sw['embers'] > 0, '青緑の火の粉が立ちのぼる（v0.76。前は暗い紫のもや）')
         check(sw['btnShown'] and sw['btnReady'], 'スマホの「衝撃」ボタンが一式のときに出て、たまると光る')
         await shot('6_raw_front', "const P = T.P, gy = T.groundH(P.x, P.z); T.SCALE_FX.charge = 10; for (let i = 0; i < 40; i++) T.scaleFxUpdate(1 / 30); cam.position.set(P.x + Math.sin(P.facing) * 2.9 + 0.5, gy + 1.5, P.z + Math.cos(P.facing) * 2.9); cam.lookAt(P.x, gy + 1.05, P.z);", mv_front)
 
