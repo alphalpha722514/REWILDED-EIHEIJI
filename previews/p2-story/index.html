@@ -10728,7 +10728,10 @@ function szSmokeTick(dt){ for(const p of SZ_SMOKE){ if(!p.sp.visible) continue; 
 const SZ_BARKS={};
 function szBark(kind){ const L=SZ_BARKS[kind]; if(!L||!L.length||S.time-(SZ.barkAt||-9)<4) return; SZ.barkAt=S.time; floatText(SZ.x,2.3,SZ.z,L[Math.floor(Math.random()*L.length)],'#f0e6c8'); }
 // 戦闘の終わり：まわり15m に落ち着いていない敵がいない状態が8秒続いたら終わり（回復は第3段階）
-function szCombatClock(dt){ if(SZ.tgt){ SZ.calmT=0; SZ.fight=true; return; } let near=false;
+// v0.77：仲間になったあとの戦闘開始の掛け声（確定台詞。2026-11-17 ユーザー許可。山王の初遭遇では言わない）
+const SZ_CRY={text:'Reddishにしてやろうかああぁぁあ！？',gap:20}; // gap：次に言えるまでの秒（暫定。続けざまの小競り合いで繰り返さない）
+function szBattleCry(){ if(!SZ.joined||STF.sz||SZ.down||!SZ.m||!SZ.m.g.visible) return; if(S.time-(SZ.cryAt??-1e9)<SZ_CRY.gap) return; SZ.cryAt=S.time; say(SZ,SZ_CRY.text); }
+function szCombatClock(dt){ if(SZ.tgt){ SZ.calmT=0; if(!SZ.fight) szBattleCry(); SZ.fight=true; return; } let near=false;
   for(const e of enemies){ if(e.removed||e.state==='dead'||SZ_CALM.includes(e.state)||e.kfY>1) continue; if(dist(SZ.x,SZ.z,e.x,e.z)<SZF.endR){ near=true; break; } }
   if(near){ SZ.calmT=0; return; } SZ.calmT+=dt; if(SZ.calmT>=SZF.endT) SZ.fight=false; }
 // 敵と重ならない（スズキがよける。見張り台の上・倒れた獣は除く）
@@ -10862,6 +10865,7 @@ function stfFresh(){ if(STF.live){ try{ stfAbort(); stfUngather(); const el=docu
   Object.assign(STF,{live:false,busy:false,radioT:0,pre:false,enc:null,sz:null,cut:null,npc:null,camOwn:false}); STF.hold.length=0; }
 function stfObjective(){ const p=stfP(), st=stfStage();
   if(REG.cur==='komyoji'){
+    if(st==='radio'&&!stfWalkOK()) return ['第二章：光明寺防衛戦を完了',null]; // 無線が鳴るまで（まだ上志比へは行けない）
     if(st==='decide') return ['第二章：無線から救援の声が届いた。上志比へ向かう準備をしよう',stfRoom()];
     if(st==='truck'){ const t=trk(); if(!t.found) return ['第二章：上志比へ続く道で故障した軽トラックを探そう',truckPos()];
       return ['第二章：KEI truckの修理に必要な材料と部品を集めよう（'+truckNeedText(true)+'）',truckNextTarget()]; }

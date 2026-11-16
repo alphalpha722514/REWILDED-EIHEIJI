@@ -165,7 +165,7 @@ ChatGPT との相談に渡すための資料です。基準は main `efe8ae4`（
 | C 防具の作り直し（着替え） | 済（v0.65、2026-11-13 採用） | `docs/p2-investigation.md` |
 | D スズキの見た目 | 済（2026-11-15 承認、ズボンを濃い緑に）。ゲームにはまだ出ない | `docs/p2-investigation.md` |
 | E スズキの仲間 AI | 済（v0.70〜v0.74.1。本編に出るのは作業F から）。防衛戦の易しさは案A（今のまま）に決定（2026-11-16） | `docs/p2-suzuki-ally.md` |
-| F 物語イベント（無線・出発・初遭遇） | 未着手。**現状整理を作成（2026-11-16）**。台詞は案のみ（承認待ち）。スズキを追う場面は短いカット（決定） | `docs/p2-story-f-plan.md`・`docs/p2-drafts.md` |
+| F 物語イベント（無線・出発・KEI truck・初遭遇） | **作業ブランチ `v077-story-f` で実装・確認済み（2026-11-17）。main（本編）には未反映**（草案の台詞と KEI truck の仮の値の承認待ち）。試遊版 `previews/p2-story/`。2026-11-17 ユーザー確定の5項目どおり | `docs/p2-story-f.md`・`docs/p2-story-f-plan.md` |
 | 上志比の獣・採集・伐採・占拠区域 | 第1段階 済（v0.67）・第2段階 済（v0.68：要塞・小拠点・侵入経路・物資置き場）・第3段階 済（v0.69：守りのサル・見張り・巡回・通報・探索・物資の再補充） | `docs/p2-kami-wild.md`・`docs/p2-kami-fort.md`・`docs/p2-kami-watch.md` |
 | 変異したサル | 済（v0.61〜v0.62.1）。本編での出現は未実装 | `docs/mutant-monkey-ai.md` |
 | 変異した鱗の使い道 | 済（v0.63〜v0.65）。防具の形は v0.76 で作り直し（2026-11-16 ユーザーの修正指示を反映して main へ）。変異鱗の武器の代償は未定 | `docs/mutant-scale-uses.md`・`docs/scale-armor-v2.md` |

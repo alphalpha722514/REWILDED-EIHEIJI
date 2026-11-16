@@ -32,7 +32,7 @@ HOOK = ("window.__s={get curInter(){return curInter},get P(){return P},get S(){r
         "winEvent:()=>winEvent(),regionTravel,stfAnchor:()=>stfAnchor(),stfStage:()=>stfStage(),stfMeetStage:()=>stfMeetStage(),stfTravelOK:()=>stfTravelOK(),truckTravelOK:()=>truckTravelOK(),stfRoom:()=>stfRoom(),"
         "trk:()=>trk(),truckSpots:()=>truckSpots(),truckPos:()=>truckPos(),objective:()=>objective(),interactables:()=>interactables(),stfNoSave:()=>stfNoSave(),"
         "damageEnemy:(e,d,k,a)=>damageEnemy(e,d,k,a),saveGame:()=>saveGame(),retryFromBase:()=>retryFromBase(),kamiMutantOK:()=>kamiMutantOK(),szWalkable:(x,z)=>szWalkable(x,z),szFree:(x,z,r)=>szFree(x,z,r),szSave:()=>szSave(),"
-        "stfCutOn:()=>stfCutOn(),chapter2State:(a,b)=>chapter2State(a,b),f31MaxHp:l=>f31MaxHp(l),get XP(){return XP},get WEAPONS(){return WEAPONS}};\n")
+        "setState:(e,s)=>setState(e,s),stfCutOn:()=>stfCutOn(),chapter2State:(a,b)=>chapter2State(a,b),f31MaxHp:l=>f31MaxHp(l),get XP(){return XP},get WEAPONS(){return WEAPONS}};\n")
 HTML = SRC.replace('function updateNPCs(dt){', HOOK + 'function updateNPCs(dt){', 1)
 DLG = "() => { const d = document.getElementById('dialog'); return d.hidden ? null : {name: document.getElementById('dlgName').textContent, text: document.getElementById('dlgText').textContent, draft: !document.getElementById('dlgTag').hidden}; }"
 BASE = """(kind) => { const T = window.__s, prog = T.prog, P = T.P; prog.bossDefeated = true; prog.stage = 'cleared'; prog.unlockTrap = true; prog.unlockBoss = true; prog.introSeen = true;
@@ -285,6 +285,8 @@ async def main():
         await ev("() => { window.__s.inv.wood += 7; window.__s.saveGame(); }")
         s1 = await ev("() => localStorage.getItem('eiheiji_vs_beasts_v010')")
         check(w['nosave'] and s0 == s1, '初遭遇の途中は保存しない')
+        cry0 = await ev("() => [...document.querySelectorAll('.bark')].some(d => d.style.display === 'block' && d.textContent.includes('Reddish'))")
+        check(not cry0, '初遭遇の戦いでは、スズキは「Reddish…」と言わない')
         await shot('7_fight')
         fl = await until("""() => { const T = window.__s, E = T.STF.enc; if (!E) return 'gone'; if (E.phase !== 'fight') return {phase: E.phase, drop: !!E.e.scaleDropped, met: T.prog.chapter2.progress.mutantMet};
             const e = E.e, P = T.P; T.damageEnemy(e, 120, 'heavy', Math.atan2(e.x - P.x, e.z - P.z)); return null; }""", 60)
@@ -305,6 +307,12 @@ async def main():
         await pg.wait_for_timeout(5000)
         again = await ev("() => ({enc: !!window.__s.STF.enc, dlg: !document.getElementById('dialog').hidden})")
         check(not again['enc'] and not again['dlg'], '山王にいても、初遭遇は二度と起きない')
+        cry = await ev("""async () => { const T = window.__s; let e = null;
+            for (const o of T.enemies) { if (o.removed || o.state === 'dead' || o.type === 'boss' || o.stfF) continue; if (!e || Math.hypot(o.x - T.SZ.x, o.z - T.SZ.z) < Math.hypot(e.x - T.SZ.x, e.z - T.SZ.z)) e = o; }
+            if (!e) return 'no enemy'; e.x = T.SZ.x + 5; e.z = T.SZ.z + 2; e.home = {x: e.x, z: e.z}; e.hp = e.maxHp; T.setState(e, 'chase');
+            for (let i = 0; i < 100; i++) { await new Promise(r => setTimeout(r, 300)); const b = [...document.querySelectorAll('.bark')].find(d => d.style.display === 'block' && d.textContent.includes('Reddish')); if (b) return {text: b.textContent, fight: T.SZ.fight}; }
+            return {text: null, fight: T.SZ.fight, tgt: !!T.SZ.tgt}; }""")
+        check(isinstance(cry, dict) and cry['text'] == 'Reddishにしてやろうかああぁぁあ！？', f'仲間になったあと、戦いが始まるとスズキが「Reddishにしてやろうかああぁぁあ！？」と言う {cry}')
         await shot('9_joined')
 
         # ================= 7) 旧セーブ：移動権を残す・無線は1回 =================
