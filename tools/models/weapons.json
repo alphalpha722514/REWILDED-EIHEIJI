@@ -1,0 +1,206 @@
+{
+ "note": "武器の GLB からゲーム用のコピーを作る設定（tools/models/weapon_build.mjs）。map：元の軸 → ゲームの軸（ゲームは 握る所が原点・先端 -y・刃 +z）。grip：上端から握る所までの割合。tip：先端の高さ（武器の形の単位。f47WeaponScale を掛ける前）。tex：色の絵の大きさ（2026-11-16 1024 と 512 を近くで比べ、iPhone のメモリを考えて 512 に）。glow：光る所の絵を作る（blue＝青い鱗／purple＝紫の亀裂）",
+ "assets": [
+  {
+   "id": "weapon.normal.nata",
+   "src": "assets/models/weapons/normal/nata/src/鉈１.glb",
+   "out": "assets/models/weapons/normal/nata/game/nata_normal.glb",
+   "map": {
+    "x": "+y",
+    "y": "-z",
+    "z": "-x"
+   },
+   "grip": 0.2,
+   "tip": -1.3,
+   "tex": 512,
+   "twist": "auto",
+   "flip": true
+  },
+  {
+   "id": "weapon.normal.axe",
+   "src": "assets/models/weapons/normal/axe/src/hand axe 3d model.glb",
+   "out": "assets/models/weapons/normal/axe/game/axe_normal.glb",
+   "map": {
+    "x": "-y",
+    "y": "-z",
+    "z": "+x"
+   },
+   "grip": 0.12,
+   "tip": -1.15,
+   "tex": 512
+  },
+  {
+   "id": "weapon.normal.club",
+   "src": "assets/models/weapons/normal/club/src/wooden club 3d model.glb",
+   "out": "assets/models/weapons/normal/club/game/club_normal.glb",
+   "map": {
+    "x": "+x",
+    "y": "-y",
+    "z": "-z"
+   },
+   "grip": 0.15,
+   "tip": -1.33,
+   "tex": 512
+  },
+  {
+   "id": "weapon.normal.spear",
+   "src": "assets/models/weapons/normal/spear/src/spear 3d model(1).glb",
+   "out": "assets/models/weapons/normal/spear/game/spear_normal.glb",
+   "map": {
+    "x": "+x",
+    "y": "-y",
+    "z": "-z"
+   },
+   "grip": 0.21,
+   "tip": -2.3,
+   "tex": 512
+  },
+  {
+   "id": "weapon.azure.nata",
+   "src": "assets/models/weapons/azure/nata/src/fantasy knife 3d model.glb",
+   "out": "assets/models/weapons/azure/nata/game/nata_azure.glb",
+   "map": {
+    "x": "-y",
+    "y": "-z",
+    "z": "+x"
+   },
+   "grip": 0.22,
+   "tip": -1.43,
+   "tex": 512,
+   "twist": "auto",
+   "glow": "blue",
+   "flip": true
+  },
+  {
+   "id": "weapon.azure.axe",
+   "src": "assets/models/weapons/azure/axe/src/fantasy battle axe 3d model.glb",
+   "out": "assets/models/weapons/azure/axe/game/axe_azure.glb",
+   "map": {
+    "x": "-z",
+    "y": "-y",
+    "z": "-x"
+   },
+   "grip": 0.15,
+   "tip": -1.15,
+   "tex": 512,
+   "glow": "blue"
+  },
+  {
+   "id": "weapon.azure.club",
+   "src": "assets/models/weapons/azure/club/src/fantasy staff 3d model.glb",
+   "out": "assets/models/weapons/azure/club/game/club_azure.glb",
+   "map": {
+    "x": "+x",
+    "y": "-y",
+    "z": "-z"
+   },
+   "grip": 0.18,
+   "tip": -1.33,
+   "tex": 512,
+   "glow": "blue"
+  },
+  {
+   "id": "weapon.azure.spear",
+   "src": "assets/models/weapons/azure/spear/src/fantasy staff 3d model 2.glb",
+   "out": "assets/models/weapons/azure/spear/game/spear_azure.glb",
+   "map": {
+    "x": "+x",
+    "y": "-y",
+    "z": "-z"
+   },
+   "grip": 0.21,
+   "tip": -2.3,
+   "tex": 512,
+   "glow": "blue"
+  },
+  {
+   "id": "weapon.mutant.nata",
+   "src": "assets/models/weapons/mutant/nata/src/変異　鉈.glb",
+   "out": "assets/models/weapons/mutant/nata/game/nata_mutant.glb",
+   "map": {
+    "x": "-y",
+    "y": "-z",
+    "z": "+x"
+   },
+   "grip": 0.18,
+   "tip": -1.43,
+   "tex": 512,
+   "twist": "auto",
+   "glow": "purple",
+   "cracks": 45
+  },
+  {
+   "id": "weapon.mutant.axe",
+   "src": "assets/models/weapons/mutant/axe/src/変異　斧.glb",
+   "out": "assets/models/weapons/mutant/axe/game/axe_mutant.glb",
+   "map": {
+    "x": "-z",
+    "y": "-y",
+    "z": "-x"
+   },
+   "grip": 0.12,
+   "tip": -1.15,
+   "tex": 512,
+   "glow": "purple",
+   "twist": "auto",
+   "cracks": 45
+  },
+  {
+   "id": "weapon.mutant.club",
+   "src": "assets/models/weapons/mutant/club/src/変異　棍棒.glb",
+   "out": "assets/models/weapons/mutant/club/game/club_mutant.glb",
+   "map": {
+    "x": "+y",
+    "y": "+z",
+    "z": "+x"
+   },
+   "grip": 0.15,
+   "tip": -1.33,
+   "tex": 512,
+   "glow": "purple",
+   "cracks": 45
+  },
+  {
+   "id": "weapon.mutant.spear",
+   "src": "assets/models/weapons/mutant/spear/src/変異　槍.glb",
+   "out": "assets/models/weapons/mutant/spear/game/spear_mutant.glb",
+   "map": {
+    "x": "+y",
+    "y": "+z",
+    "z": "+x"
+   },
+   "grip": 0.21,
+   "tip": -2.3,
+   "tex": 512,
+   "preRotY": -26.5,
+   "glow": "purple",
+   "cracks": 45
+  },
+  {
+   "id": "weapon.special.scale_boomerang",
+   "src": "assets/models/weapons/special/throwing_scale/src/dragon-scale blade 3d model.glb",
+   "out": "assets/models/weapons/special/throwing_scale/game/boomerang_scale.glb",
+   "map": {
+    "x": "+x",
+    "y": "-z",
+    "z": "+y"
+   },
+   "hub": 0.8,
+   "tex": 512,
+   "glow": "purple"
+  },
+  {
+   "id": "accessory.normal.nata_sheath",
+   "src": "assets/models/weapons/accessory/nata_sheath/src/leather knife sheath 3d model.glb",
+   "out": "assets/models/weapons/accessory/nata_sheath/game/sheath_nata.glb",
+   "map": {
+    "x": "+y",
+    "y": "+z",
+    "z": "+x"
+   },
+   "grip": 0.0,
+   "tip": -0.7,
+   "tex": 512
+  }
+ ]
+}

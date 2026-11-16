@@ -1,0 +1,512 @@
+{
+  "project": "REWILDED EIHEIJI",
+  "created_date": "2026-11-16",
+  "origin": "user-supplied Tripo GLB",
+  "note": "Source files copied byte-for-byte; proposed logical IDs do not assert game code item IDs. Game copies must be prepared by Claude.",
+  "assets": [
+    {
+      "id": "weapon.normal.nata",
+      "group": "normal",
+      "item": "nata",
+      "japanese_name": "通常の鉈",
+      "original_filename": "鉈１.glb",
+      "path_in_package": "assets/models/weapons/normal/nata/src/鉈１.glb",
+      "approval_state": "final_adopted",
+      "file_size_bytes": 3470880,
+      "triangle_count": 5796,
+      "vertex_count": 3615,
+      "mesh_count": 1,
+      "material_count": 1,
+      "node_count": 1,
+      "glb_version": 2,
+      "texture_images": [
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "PNG"
+        }
+      ],
+      "is_rigged": false,
+      "animation_count": 0,
+      "sha256": "a8f299149b08c2ae617eadf1f0f525fb88283c9dc02d9161ee35f68245a395fb"
+    },
+    {
+      "id": "weapon.normal.axe",
+      "group": "normal",
+      "item": "axe",
+      "japanese_name": "通常の斧",
+      "original_filename": "hand axe 3d model.glb",
+      "path_in_package": "assets/models/weapons/normal/axe/src/hand axe 3d model.glb",
+      "approval_state": "final_adopted",
+      "file_size_bytes": 4521628,
+      "triangle_count": 5590,
+      "vertex_count": 3763,
+      "mesh_count": 1,
+      "material_count": 1,
+      "node_count": 1,
+      "glb_version": 2,
+      "texture_images": [
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "PNG"
+        }
+      ],
+      "is_rigged": false,
+      "animation_count": 0,
+      "sha256": "b3ceff69784675fc09c3829daceee368abe6c1a39e2c4dfcd43cbc44d055b47e"
+    },
+    {
+      "id": "weapon.normal.club",
+      "group": "normal",
+      "item": "club",
+      "japanese_name": "通常の棍棒",
+      "original_filename": "wooden club 3d model.glb",
+      "path_in_package": "assets/models/weapons/normal/club/src/wooden club 3d model.glb",
+      "approval_state": "final_adopted",
+      "file_size_bytes": 4157964,
+      "triangle_count": 5466,
+      "vertex_count": 3588,
+      "mesh_count": 1,
+      "material_count": 1,
+      "node_count": 1,
+      "glb_version": 2,
+      "texture_images": [
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "PNG"
+        }
+      ],
+      "is_rigged": false,
+      "animation_count": 0,
+      "sha256": "19923f2cf992c2f3d455703e617ddbe7fb30c335c606c858a044f8d558d29829"
+    },
+    {
+      "id": "weapon.normal.spear",
+      "group": "normal",
+      "item": "spear",
+      "japanese_name": "通常の槍",
+      "original_filename": "spear 3d model(1).glb",
+      "path_in_package": "assets/models/weapons/normal/spear/src/spear 3d model(1).glb",
+      "approval_state": "final_adopted",
+      "file_size_bytes": 4336376,
+      "triangle_count": 5692,
+      "vertex_count": 3910,
+      "mesh_count": 1,
+      "material_count": 1,
+      "node_count": 1,
+      "glb_version": 2,
+      "texture_images": [
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "PNG"
+        }
+      ],
+      "is_rigged": false,
+      "animation_count": 0,
+      "sha256": "daf611f272c2041afc6ca2f8b7933a491bb28792e6f5796d703c55e4050e08c6"
+    },
+    {
+      "id": "weapon.azure.nata",
+      "group": "azure",
+      "item": "nata",
+      "japanese_name": "蒼鱗の鉈",
+      "original_filename": "fantasy knife 3d model.glb",
+      "path_in_package": "assets/models/weapons/azure/nata/src/fantasy knife 3d model.glb",
+      "approval_state": "final_adopted",
+      "file_size_bytes": 4323488,
+      "triangle_count": 5612,
+      "vertex_count": 4442,
+      "mesh_count": 1,
+      "material_count": 1,
+      "node_count": 1,
+      "glb_version": 2,
+      "texture_images": [
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "PNG"
+        }
+      ],
+      "is_rigged": false,
+      "animation_count": 0,
+      "sha256": "864171ddd3ff43b66615a72f2fa01a0802adee57f9332d8f97ef5e60a359bbf6"
+    },
+    {
+      "id": "weapon.azure.axe",
+      "group": "azure",
+      "item": "axe",
+      "japanese_name": "蒼鱗の斧",
+      "original_filename": "fantasy battle axe 3d model.glb",
+      "path_in_package": "assets/models/weapons/azure/axe/src/fantasy battle axe 3d model.glb",
+      "approval_state": "final_adopted",
+      "file_size_bytes": 4683700,
+      "triangle_count": 5974,
+      "vertex_count": 4228,
+      "mesh_count": 1,
+      "material_count": 1,
+      "node_count": 1,
+      "glb_version": 2,
+      "texture_images": [
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "PNG"
+        }
+      ],
+      "is_rigged": false,
+      "animation_count": 0,
+      "sha256": "e6bbca55c9d607e627c68a6a49bfd1a3ef61122e5540cab2a01950479d77d40f"
+    },
+    {
+      "id": "weapon.azure.club",
+      "group": "azure",
+      "item": "club",
+      "japanese_name": "蒼鱗の棍棒",
+      "original_filename": "fantasy staff 3d model.glb",
+      "path_in_package": "assets/models/weapons/azure/club/src/fantasy staff 3d model.glb",
+      "approval_state": "final_adopted",
+      "file_size_bytes": 4926472,
+      "triangle_count": 5894,
+      "vertex_count": 4015,
+      "mesh_count": 1,
+      "material_count": 1,
+      "node_count": 1,
+      "glb_version": 2,
+      "texture_images": [
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "PNG"
+        }
+      ],
+      "is_rigged": false,
+      "animation_count": 0,
+      "sha256": "614fdc96c6082c8f2849526d603546032248c79a1948451a805c8f8f4bbf4949"
+    },
+    {
+      "id": "weapon.azure.spear",
+      "group": "azure",
+      "item": "spear",
+      "japanese_name": "蒼鱗の槍",
+      "original_filename": "fantasy staff 3d model 2.glb",
+      "path_in_package": "assets/models/weapons/azure/spear/src/fantasy staff 3d model 2.glb",
+      "approval_state": "created_pending_explicit_final_confirmation",
+      "file_size_bytes": 4197552,
+      "triangle_count": 5827,
+      "vertex_count": 4480,
+      "mesh_count": 1,
+      "material_count": 1,
+      "node_count": 1,
+      "glb_version": 2,
+      "texture_images": [
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "PNG"
+        }
+      ],
+      "is_rigged": false,
+      "animation_count": 0,
+      "sha256": "ee24cf801da82e6416f60dffd421020e4a2646aa3d48f2b05dad5845ca1f6f12"
+    },
+    {
+      "id": "weapon.mutant.nata",
+      "group": "mutant",
+      "item": "nata",
+      "japanese_name": "変異鱗の鉈",
+      "original_filename": "変異　鉈.glb",
+      "path_in_package": "assets/models/weapons/mutant/nata/src/変異　鉈.glb",
+      "approval_state": "final_adopted",
+      "file_size_bytes": 3596292,
+      "triangle_count": 5738,
+      "vertex_count": 4039,
+      "mesh_count": 1,
+      "material_count": 1,
+      "node_count": 1,
+      "glb_version": 2,
+      "texture_images": [
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "PNG"
+        }
+      ],
+      "is_rigged": false,
+      "animation_count": 0,
+      "sha256": "2e92c0a1bb7688655c08f2307ad3f48acbadeb36f4b7c80343b9c2cf544b4451"
+    },
+    {
+      "id": "weapon.mutant.axe",
+      "group": "mutant",
+      "item": "axe",
+      "japanese_name": "変異鱗の斧",
+      "original_filename": "変異　斧.glb",
+      "path_in_package": "assets/models/weapons/mutant/axe/src/変異　斧.glb",
+      "approval_state": "final_adopted",
+      "file_size_bytes": 3172320,
+      "triangle_count": 5908,
+      "vertex_count": 3964,
+      "mesh_count": 1,
+      "material_count": 1,
+      "node_count": 1,
+      "glb_version": 2,
+      "texture_images": [
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "PNG"
+        }
+      ],
+      "is_rigged": false,
+      "animation_count": 0,
+      "sha256": "f3ccf838f6f1b58616ad372cf607208a5a329a13ba9232563c569a3063bfa40d"
+    },
+    {
+      "id": "weapon.mutant.club",
+      "group": "mutant",
+      "item": "club",
+      "japanese_name": "変異鱗の棍棒",
+      "original_filename": "変異　棍棒.glb",
+      "path_in_package": "assets/models/weapons/mutant/club/src/変異　棍棒.glb",
+      "approval_state": "final_adopted",
+      "file_size_bytes": 3648612,
+      "triangle_count": 5694,
+      "vertex_count": 3783,
+      "mesh_count": 1,
+      "material_count": 1,
+      "node_count": 1,
+      "glb_version": 2,
+      "texture_images": [
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "PNG"
+        }
+      ],
+      "is_rigged": false,
+      "animation_count": 0,
+      "sha256": "6eb517d2ebc2b9ce715b4093776ca43af425a0e215408d742049a8360cd5b5fa"
+    },
+    {
+      "id": "weapon.mutant.spear",
+      "group": "mutant",
+      "item": "spear",
+      "japanese_name": "変異鱗の槍",
+      "original_filename": "変異　槍.glb",
+      "path_in_package": "assets/models/weapons/mutant/spear/src/変異　槍.glb",
+      "approval_state": "final_adopted",
+      "file_size_bytes": 4174148,
+      "triangle_count": 5774,
+      "vertex_count": 4271,
+      "mesh_count": 1,
+      "material_count": 1,
+      "node_count": 1,
+      "glb_version": 2,
+      "texture_images": [
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "PNG"
+        }
+      ],
+      "is_rigged": false,
+      "animation_count": 0,
+      "sha256": "03cbaf2389924d2d8543c9d98d69e8baeb02422a9a0c5d73d7e9e9a93c8980c0"
+    },
+    {
+      "id": "weapon.special.throwing_scale",
+      "group": "special",
+      "item": "throwing_scale",
+      "japanese_name": "特殊の鱗の飛去来器",
+      "original_filename": "dragon-scale blade 3d model.glb",
+      "path_in_package": "assets/models/weapons/special/throwing_scale/src/dragon-scale blade 3d model.glb",
+      "approval_state": "final_adopted",
+      "file_size_bytes": 5385736,
+      "triangle_count": 5888,
+      "vertex_count": 4351,
+      "mesh_count": 1,
+      "material_count": 1,
+      "node_count": 1,
+      "glb_version": 2,
+      "texture_images": [
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "PNG"
+        }
+      ],
+      "is_rigged": false,
+      "animation_count": 0,
+      "sha256": "2f14ce5702be3fa495ffae84edf9178df0fb65abfa8d62a1dc3f7eb427362cbb"
+    },
+    {
+      "id": "accessory.normal.nata_sheath",
+      "group": "accessory",
+      "item": "nata_sheath",
+      "japanese_name": "鞘の鉈の鞘",
+      "original_filename": "leather knife sheath 3d model.glb",
+      "path_in_package": "assets/models/weapons/accessory/nata_sheath/src/leather knife sheath 3d model.glb",
+      "approval_state": "final_adopted",
+      "file_size_bytes": 4310284,
+      "triangle_count": 5678,
+      "vertex_count": 3932,
+      "mesh_count": 1,
+      "material_count": 1,
+      "node_count": 1,
+      "glb_version": 2,
+      "texture_images": [
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "JPEG"
+        },
+        {
+          "width": 2048,
+          "height": 2048,
+          "format": "PNG"
+        }
+      ],
+      "is_rigged": false,
+      "animation_count": 0,
+      "sha256": "0dee1443707038bfa6cac2b9ca954fb2aa3e73941a0f14d68cba6a12c28d89fe"
+    }
+  ]
+}

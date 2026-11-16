@@ -49,7 +49,7 @@
 
 ## 作業の進め方
 - main へ入れる前に、作業ブランチで検証する。変更は小さく分ける。
-- テスト：`node tests/chapter2-save.cjs`、`node tests/chapter2-defense.cjs`、`node tests/classic-body.cjs`、`node tests/death-penalty.cjs`、`node tests/combat-aim.cjs`。地域の往復は `python3 tests/region-browser.py`、上志比は `python3 tests/kamishihi-browser.py`（`KAMI_SHOTS=フォルダ` で画面を撮る）、変異したサルは `python3 tests/mutant-browser.py`、主人公の着替え（初期の服の見た目が変わっていないか）は `python3 tests/wardrobe-browser.py`、鱗の装備は `python3 tests/scale-gear-browser.py`、かまどの料理は `python3 tests/kamado-browser.py`、上志比の獣・採集・伐採は `python3 tests/kami-wild-browser.py`、サルの要塞と侵入経路は `python3 tests/kami-fort-browser.py`、要塞のサルの見張り・巡回・通報と物資の再補充は `python3 tests/kami-watch-browser.py`、スズキの仲間 AI は `python3 tests/suzuki-browser.py`（ついて来る・指示）と `python3 tests/suzuki-combat-browser.py`（戦い）と `python3 tests/suzuki-rescue-browser.py`（倒れる・助け起こす）と `python3 tests/suzuki-save-browser.py`（セーブ・地域をまたぐ状態）と `python3 tests/suzuki-defense-browser.py`（防衛戦）（どれも画面のない Chromium、各数分）。防衛戦の勝率は `tools/defense-sim.cjs`（`docs/p1-sim-baseline.md`。`--suzuki 1` でスズキを連れる）、変異したサルとの1対1は `tools/mutant-duel-sim.cjs`（`docs/mutant-monkey-ai.md`）。画面の確認は Playwright（SwiftShader）で起動と表示を見る。
+- テスト：`node tests/chapter2-save.cjs`、`node tests/chapter2-defense.cjs`、`node tests/classic-body.cjs`、`node tests/death-penalty.cjs`、`node tests/combat-aim.cjs`。地域の往復は `python3 tests/region-browser.py`、上志比は `python3 tests/kamishihi-browser.py`（`KAMI_SHOTS=フォルダ` で画面を撮る）、変異したサルは `python3 tests/mutant-browser.py`、主人公の着替え（初期の服の見た目が変わっていないか）は `python3 tests/wardrobe-browser.py`、鱗の装備は `python3 tests/scale-gear-browser.py`、かまどの料理は `python3 tests/kamado-browser.py`、上志比の獣・採集・伐採は `python3 tests/kami-wild-browser.py`、サルの要塞と侵入経路は `python3 tests/kami-fort-browser.py`、要塞のサルの見張り・巡回・通報と物資の再補充は `python3 tests/kami-watch-browser.py`、武器の GLB（見た目の差し替え・当たり・作る・飛去来器・セーブ）は `python3 tests/weapon-glb-browser.py`（`WGT_NOGLB=1` で読めないときの確認）、スズキの仲間 AI は `python3 tests/suzuki-browser.py`（ついて来る・指示）と `python3 tests/suzuki-combat-browser.py`（戦い）と `python3 tests/suzuki-rescue-browser.py`（倒れる・助け起こす）と `python3 tests/suzuki-save-browser.py`（セーブ・地域をまたぐ状態）と `python3 tests/suzuki-defense-browser.py`（防衛戦）（どれも画面のない Chromium、各数分）。防衛戦の勝率は `tools/defense-sim.cjs`（`docs/p1-sim-baseline.md`。`--suzuki 1` でスズキを連れる）、変異したサルとの1対1は `tools/mutant-duel-sim.cjs`（`docs/mutant-monkey-ai.md`）。画面の確認は Playwright（SwiftShader）で起動と表示を見る。
 - 報告では「コードに存在／コミット済み／公開済み／PCで確認／iPhoneで確認」を区別する。実機で確かめていないことを確認済みと書かない。
 - 各フェーズで、変更履歴・使った3Dアセットと版・実装済み／未実装・テスト結果・未解決の不具合・セーブ互換・次の工程を `docs/` に残す。
 
@@ -75,11 +75,13 @@
 | `docs/p2-kami-watch.md` | 要塞・小拠点のサルと警戒 AI（v0.69、P2 指示の第3段階）：顔ぶれ・見張り（18m・視線・遮り）・巡回・通報と増援・見失った後の探索・倒された守りの戻り・遠くのサルの簡略化・物資の回収と再補充（60分）・確認 |
 | `docs/p2-suzuki-ally-plan.md` | スズキの仲間 AI（作業E）の現状整理：目標・使える既存の処理・確定仕様（見た目は 2026-11-15 承認）・ChatGPT に決めてほしい質問14個・依存関係・技術的な問題・推奨順序 |
 | `docs/p2-suzuki-ally.md` | スズキの仲間 AI（作業E）の実装記録：ChatGPT 指示書との照合（既存コード15項目・食い違い）・実装方針・未確定の数の提案・段階ごとの確認 |
+| `docs/p2-weapon-glb.md` | 武器13本と鉈の鞘の GLB（v0.75）：照合・対応表（アイテムID ← GLB）・ゲーム用の作り方（`tools/models/weapon_build.mjs`）・読み込みとフォールバック・光・確認・重さ・未確認 |
 | `docs/p2-investigation.md` | P2 統合指示書 v3.0 への初期調査（防具の原因・地理データ・スズキ・順序・確認事項） |
 | `docs/p1-sim-baseline.md` | 防衛戦の勝率測定ツールと基準値 |
 | `docs/p1-balance-report.md` | P1 の測定結果・調整（v0.55・v0.56 で反映）・未確認事項 |
 | `docs/death-penalty.md` | 倒れたときの代償（v0.56） |
 | `docs/combat-aim.md` | 攻撃の向きと当たり判定（v0.58） |
 
+- 武器の GLB の確認画像：`python3 tools/weapon-studio.py 出力.png lineup|hand|holster|perf 武器ID …`（前の形との比較・手に持つ姿・腰と背中・重さ）。ゲーム用の GLB を作り直すときは `node tools/models/weapon_build.mjs [ID …]`（設定 `tools/models/weapons.json`。`tools/models` で npm install が要る）。
 - キャラクターの確認画像：`python3 tools/char-studio.py 出力.png player suzuki gen`（`player@forest` で防具の組を着せる。`STUDIO_POSE=1` で動きの姿勢。`STUDIO_HTML` で別の index.html）。鱗の防具（蒼鱗・変異した鱗）は `python3 tools/scale-armor-studio.py 出力.png`。スズキの動き（待つ・歩く・走る・蹴り3種・倒れる・臭いの煙など、ゲームの中で）は `python3 tools/suzuki-pose-shots.py 出力.png [姿勢 …]`。動画は `python3 tools/suzuki-anim-video.py 出力.mp4`。スズキを連れたときの重さの目安は `python3 tools/suzuki-perf.py`。
 - 試遊版の作り方：`python3 tools/build-p1-preview.py`（防衛戦。A／B／C ボタン。`previews/p1-balance/`）と `python3 tools/build-p2-mutant-preview.py`（変異したサル。`previews/p2-mutant/`）と `python3 tools/build-p2-kami-preview.py`（上志比の獣・採集・サルの要塞。開発用テストモードはここだけ。`previews/p2-kami/`）と `python3 tools/build-p2-suzuki-preview.py`（スズキの仲間 AI。スズキを呼ぶボタンはここだけ。`previews/p2-suzuki/`）。どちらも本編をコピーして試遊用の保存キーを足す。本編を変えたら作り直す。

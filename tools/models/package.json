@@ -1,12 +1,13 @@
 {
   "name": "rewilded-model-tools",
   "private": true,
-  "description": "Tripo などの GLB を調べて軽くする道具（docs/mutant-monkey-glb-check.md）。npm install してから node で使う。",
+  "description": "Tripo などの GLB を調べて軽くする道具（docs/mutant-monkey-glb-check.md）。npm install してから node で使う。 武器の GLB（weapon_build.mjs）にも使う。",
   "type": "module",
   "dependencies": {
     "@gltf-transform/core": "^4",
     "@gltf-transform/extensions": "^4",
     "@gltf-transform/functions": "^4",
-    "meshoptimizer": "^0.22"
+    "meshoptimizer": "^0.22",
+    "sharp": "^0.35"
   }
 }
