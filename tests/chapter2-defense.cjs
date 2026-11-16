@@ -9,6 +9,7 @@ const npcGen={x:0,z:0},CORE={x:10,z:10},ev={kind:null,ids:new Set()},enemies=[],
 let saves=0,damaged=0,sector=0,dialogs=0;
 const inv={wood:0,straw:0},food={onigiri:0},foodAdd=(k,n)=>{food[k]=(food[k]||0)+n},queueDialog=()=>{dialogs++},say=()=>{},npcTome={},npcEshin={},npcYone={};
 const hideAllOv=()=>{},saveGame=()=>{saves++},banner=()=>{},sfx=()=>{},setState=(e,s)=>{e.state=s},inBase=()=>false;
+const STF={radioT:0},stfTravelOK=()=>false; // v0.77：作業F（無線のきっかけ。tests/story-f-browser.py で確かめる）
 const dist=(x,z,a,b)=>Math.hypot(x-a,z-b);
 ${foundation}
 ${extract('startEvent')}
