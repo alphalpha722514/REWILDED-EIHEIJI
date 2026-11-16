@@ -538,7 +538,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.74.1 防衛戦テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.75 防衛戦テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -2648,8 +2648,8 @@ function setArmDur(id,v){ if(id===P.weapon) P.dur=v; else prog.arms[id]=v; }
 function equipArm(id){ if(!WEAPONS[id]||!(id in prog.arms)||id===P.weapon) return; if(BOOM.st!=='hand'){ sfx('deny'); toast('飛去来器が戻るまで持ち替えられない',true); return; } if(P.weapon) prog.arms[P.weapon]=P.dur; P.weapon=id; P.dur=prog.arms[id]; refreshWeaponMesh(); toast(`${WEAPONS[id].name}に持ち替えた`); }
 function equipUnarmed(){ if(P.weapon==null) return; if(BOOM.st!=='hand'){ sfx('deny'); return; } if(!swapAllowed()){ sfx('deny'); return; } prog.arms[P.weapon]=P.dur; P.weapon=null; P.dur=0; refreshWeaponMesh(); toast('素手に持ち替えた'); } // v0.45：空枠＝素手
 function cycleArm(){ const L=armList(); if(L.length<2) return; if(!swapAllowed()){ sfx('deny'); return; } const i=L.indexOf(P.weapon); const was=P.weapon; equipArm(L[(i+1)%L.length]); if(P.weapon!==was) onSwap(); }
-function armGain(id,equip=true){ prog.arms[id]=WEAPONS[id].maxDur; if(equip){ if(P.weapon) prog.arms[P.weapon]=P.dur; /* v0.45 */ P.weapon=id; P.dur=WEAPONS[id].maxDur; refreshWeaponMesh(); } }
-function armUpgrade(from,to){ delete prog.arms[from]; prog.arms[to]=WEAPONS[to].maxDur; if(P.weapon===from){ P.weapon=to; P.dur=WEAPONS[to].maxDur; refreshWeaponMesh(); } }
+function armGain(id,equip=true){ prog.arms[id]=WEAPONS[id].maxDur; wglbPrefetch(); /* v0.75：手に入れた武器の GLB を読む */ if(equip){ if(P.weapon) prog.arms[P.weapon]=P.dur; /* v0.45 */ P.weapon=id; P.dur=WEAPONS[id].maxDur; refreshWeaponMesh(); } }
+function armUpgrade(from,to){ delete prog.arms[from]; prog.arms[to]=WEAPONS[to].maxDur; wglbPrefetch(); if(P.weapon===from){ P.weapon=to; P.dur=WEAPONS[to].maxDur; refreshWeaponMesh(); } }
 // 木を切るのに使う道具（いちばん切れる物。刃こぼれした物は半分の力）
 function f5BestTool(){ let best=null,bp=0; for(const id of armList()){ const c=(WEAPONS[id].chop||0)*(armDur(id)>0?1:0.5); if(c>bp){ bp=c; best=id; } } return best; }
 function f5ChopPower(){ const t=f5BestTool(); return t?(WEAPONS[t].chop||0)*(armDur(t)>0?1:0.5):0; }
@@ -5526,8 +5526,72 @@ function weaponFineDetail(w,id){
     for(let i=0;i<3;i++){const b=mesh(G.cyl8,rope,0,-1.63-i*0.045,0,0.044,0.014,0.044); w.add(b);}
   }
 }
-function makeWeapon(id){
-  if(SCALE_ARMS[id]){ const g=makeWeapon(SCALE_ARMS[id]); scaleArmDeco(g,id); return g; } // v0.63：元の武器の形に鱗と光を足す
+// ---- v0.75 武器の GLB（ユーザーが Tripo で作った形。docs/p2-weapon-glb.md）----
+// 見た目だけを差し替える。当たり（WTIP）・大きさ（f47WeaponScale）・威力・名前・セーブは変えない。
+// ゲーム用のコピーは tools/models/weapon_build.mjs で作る（握る所が原点・先端 -y・刃 +z。元の GLB は src に残す）。
+// 持っている武器の形だけを読む。読めるまで・読めないときはコードの形のまま（フォールバック）。形・色の絵は武器の種類ごとに1つを使い回す。
+const WGLB_FILE={
+  normalNata:'assets/models/weapons/normal/nata/game/nata_normal.glb', normalAxe:'assets/models/weapons/normal/axe/game/axe_normal.glb',
+  normalClub:'assets/models/weapons/normal/club/game/club_normal.glb', normalSpear:'assets/models/weapons/normal/spear/game/spear_normal.glb',
+  azureNata:'assets/models/weapons/azure/nata/game/nata_azure.glb', azureAxe:'assets/models/weapons/azure/axe/game/axe_azure.glb',
+  azureClub:'assets/models/weapons/azure/club/game/club_azure.glb', azureSpear:'assets/models/weapons/azure/spear/game/spear_azure.glb',
+  mutantNata:'assets/models/weapons/mutant/nata/game/nata_mutant.glb', mutantAxe:'assets/models/weapons/mutant/axe/game/axe_mutant.glb',
+  mutantClub:'assets/models/weapons/mutant/club/game/club_mutant.glb', mutantSpear:'assets/models/weapons/mutant/spear/game/spear_mutant.glb',
+  boomer:'assets/models/weapons/special/throwing_scale/game/boomerang_scale.glb', sheath:'assets/models/weapons/accessory/nata_sheath/game/sheath_nata.glb',
+};
+// 武器ID → {f：形, s：大きさ, p：位置, r：回転（x,y,z）, glow：光（blue／raw）}。s・p・r は見た目の微調整だけ
+const WGLB={
+  nata1:{f:'normalNata'}, nata2:{f:'normalNata',s:1.046}, nata3:{f:'normalNata',s:1.1}, // 2026-11-16 ユーザー：Lv1〜3 とも同じ形。長さだけ前の形にそろえる
+  axeIron:{f:'normalAxe'}, club:{f:'normalClub'}, spear:{f:'normalSpear'}, // 石の手斧・竹槍は今のコードの形のまま（2026-11-16 ユーザー）
+  scNata:{f:'azureNata',glow:'blue'}, scAxe:{f:'azureAxe',glow:'blue'}, scClub:{f:'azureClub',glow:'blue'}, scSpear:{f:'azureSpear',glow:'blue'}, // 蒼鱗の槍は 2026-11-16 ユーザー採用
+  rwNata:{f:'mutantNata',glow:'raw'}, rwAxe:{f:'mutantAxe',glow:'raw'}, rwClub:{f:'mutantClub',glow:'raw'}, rwSpear:{f:'mutantSpear',glow:'raw'},
+  boomer:{f:'boomer',glow:'raw',hold:true}, // 手に持つ姿（コードの形と同じく立てて持つ）。飛んでいる姿は boomerMesh（下の boomerFly）
+};
+const WGLB_X={boomerFly:{f:'boomer',glow:'raw',p:[0,0,0]}, sheath:{f:'sheath',p:[0,-0.12,0.10],sc:[1.2,1,1.25]}}; // 飛ぶ飛去来器（p：回る中心のずれの直し）・通常の鉈の鞘（腰）
+// 光：蒼鱗は鱗が青く光ってゆっくり脈打つ。変異鱗は紫の亀裂が不安定にちらつく（2026-11-16 指示書）。強さは暫定。攻撃中は少し強める（効果は変えない）
+const WG_GLOW={blue:{col:0x5cc8ff,base:0.85,atk:1.35}, raw:{col:0xa040ff,base:0.95,atk:1.4}};
+const WG={lib:null,files:{},pend:[],mats:[],failLib:false};
+const WG_BASE=['','../../']; // 本編と試遊版（previews/…/index.html）
+function wglbLib(){ if(!WG.lib) WG.lib=loadScriptTry(WG_BASE.map(b=>b+'vendor/three-r128/GLTFLoader.js').concat(['https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js']),()=>!!THREE.GLTFLoader).catch(e=>{ WG.failLib=true; throw e; }); return WG.lib; }
+// 形を1つ読む（同じ形は1回だけ）。r.st：'load'／'ok'／'fail'
+function wglbFile(f){ const r=WG.files[f]||(WG.files[f]={st:'load',geo:null,mat:null});
+  if(r.p) return r.p;
+  r.p=wglbLib().then(()=>new Promise((res,rej)=>{ let i=0; const L=new THREE.GLTFLoader();
+      const next=()=>{ if(i>=WG_BASE.length) return rej(new Error('GLB を読めない: '+f)); L.load(WG_BASE[i++]+WGLB_FILE[f],res,undefined,next); }; next(); }))
+    .then(g=>{ let src=null; g.scene.traverse(o=>{ if(o.isMesh&&!src) src=o; }); if(!src) throw new Error('形がない: '+f);
+      const m0=src.material, map=m0.map, em=m0.emissiveMap; if(map){ map.encoding=THREE.LinearEncoding; map.anisotropy=2; } if(em) em.encoding=THREE.LinearEncoding; // 画面は線形のまま描くので、絵も変換しない
+      r.geo=src.geometry; r.geo.computeBoundingSphere();
+      const gk=em?Object.values(WGLB).concat(Object.values(WGLB_X)).find(d=>d.f===f&&d.glow)?.glow:null;
+      r.mat=new THREE.MeshToonMaterial({color:0xffffff,map,gradientMap:toneTex,emissiveMap:gk?em:null,emissive:gk?WG_GLOW[gk].col:0x000000,emissiveIntensity:gk?WG_GLOW[gk].base:0});
+      if(gk){ r.glow=gk; WG.mats.push(r); } else if(em) em.dispose();
+      m0.dispose(); r.st='ok'; wglbReady(f); return r; })
+    .catch(e=>{ r.st='fail'; console.warn('[武器の形]',e&&e.message||e); WG.pend=WG.pend.filter(q=>wglbDef(q.id).f!==f); return r; });
+  return r.p; }
+// 持っている武器の形を前もって読む（手・腰・背中・アイコンに使う）
+function wglbPrefetch(){ if(typeof prog==='undefined'||!prog||!prog.arms) return; for(const id in prog.arms){ const d=WGLB[id]; if(d&&!WG.files[d.f]) wglbFile(d.f); }
+  if((prog.arms.nata1!=null||prog.arms.nata2!=null||prog.arms.nata3!=null)&&!WG.files.sheath) wglbFile('sheath'); } // 通常の鉈を持っていれば鞘も
+function wglbDef(id){ return WGLB[id]||WGLB_X[id]; }
+function wglbOk(id){ const d=wglbDef(id); return !!d&&WG.files[d.f]?.st==='ok'; }
+// GLB の形を w に入れる（コードの形は外す）
+function wglbFill(w,id){ const d=wglbDef(id), r=WG.files[d.f];
+  for(const c of [...w.children]){ w.remove(c); c.traverse(o=>{ if(o.isMesh&&o.geometry.userData.own) o.geometry.dispose(); }); }
+  const m=new THREE.Mesh(r.geo,r.mat); m.castShadow=true; const s=d.s||1; m.scale.setScalar(s); if(d.sc) m.scale.set(s*d.sc[0],s*d.sc[1],s*d.sc[2]); /* sc：鞘を鉈の幅に合わせる */ if(d.p) m.position.set(...d.p); if(d.r) m.rotation.set(...d.r);
+  if(d.hold){ const inner=new THREE.Group(); inner.rotation.set(Math.PI/2,0,0.5); inner.position.set(0,-0.3,0.08); inner.add(m); w.add(inner); } // 飛去来器はコードの形と同じ持ち方
+  else w.add(m);
+  w.userData.wglb=id; return w; }
+// 鞘・飛ぶ飛去来器など、武器の手持ちでない物も同じ仕組みで差し替える
+function wglbUse(w,id){ if(wglbOk(id)) wglbFill(w,id); else if(WG.files[wglbDef(id).f]?.st!=='fail') WG.pend.push({w,id}); return w; }
+function wglbReady(f){ const left=[]; for(const q of WG.pend){ if(wglbDef(q.id).f===f) wglbFill(q.w,q.id); else left.push(q); } WG.pend=left; if(f==='sheath'&&HOL.hip) updHolster();
+  for(const id in WGLB) if(WGLB[id].f===f) delete ICONS[id]; } // アイコンは次に表示するとき GLB の形で描き直す
+function makeWeapon(id,o={}){ const w=makeWeaponCode(id);
+  if(WGLB[id]){ if(wglbOk(id)) wglbFill(w,id); else if(!o.noSwap&&WG.files[WGLB[id].f]?.st!=='fail') WG.pend.push({w,id}); }
+  return w; }
+// 光の脈打ち（scaleFxUpdate から）。手に持っている鱗の武器が攻撃中なら少し強める
+function wglbGlow(){ if(!WG.mats.length) return; const t=S.time, f=WGLB[P.weapon]?.f, atk=!!P.atk||(P.weapon==='boomer'&&BOOM.st!=='hand');
+  for(const r of WG.mats){ const G0=WG_GLOW[r.glow]; let k=r.glow==='blue'?0.78+0.22*Math.sin(t*4.2):0.62+0.2*Math.sin(t*2.3)+0.13*Math.sin(t*7.7+1.3)+0.07*Math.sin(t*13.1);
+    if(atk&&(r===WG.files[f]||(f==='boomer'&&r===WG.files.boomer))) k*=G0.atk; r.mat.emissiveIntensity=G0.base*k; } }
+function makeWeaponCode(id){
+  if(SCALE_ARMS[id]){ const g=makeWeaponCode(SCALE_ARMS[id]); scaleArmDeco(g,id); return g; } // v0.63：元の武器の形に鱗と光を足す
   if(id==='boomer'){ const w=new THREE.Group(), inner=boomerShape(new THREE.Group()); inner.rotation.set(Math.PI/2,0,0.5); inner.position.set(0,-0.3,0.08); w.add(inner); return w; } // v0.64：手に持つ姿（立てて持つ）
   if(id==='axeStone'||id==='axeIron'||id==='club'||id==='bamboo'||id==='hammerStone'||id==='pickIron'){ const g=makeArm(id); weaponFineDetail(g,id);
     if(id==='axeStone'||id==='axeIron'){ // v0.45：斧の刃先を明るく切り出し、柄との締め輪を追加（鉈と明確に別物の見た目へ）
@@ -5612,6 +5676,7 @@ function scaleFxUpdate(dt){
     if(u.smoke){ s.material.opacity=Math.sin(Math.PI*Math.min(1,k*1.4))*0.62; s.scale.setScalar(u.size*(0.55+0.9*k)); } else { s.material.opacity=Math.sin(Math.PI*k)*0.85; s.scale.setScalar(u.size*(1-0.4*k)); } }
   if(SCALE_FX.glow.length){ const pl=0.65+0.35*Math.sin(S.time*4.2); for(const m of SCALE_FX.glow) m.opacity=m.userData.base*pl; }
   if(SCALE_FX.glowRaw.length){ const pl=0.7+0.3*Math.sin(S.time*2.3); for(const m of SCALE_FX.glowRaw) m.opacity=m.userData.base*pl; }
+  wglbGlow(); // v0.75：GLB の武器の光
   if(SCALE_FX.ring&&SCALE_FX.ring.visible){ SCALE_FX.ringT+=dt; const k=Math.min(1,SCALE_FX.ringT/0.45); SCALE_FX.ring.scale.setScalar(0.6+(SCALE_FX.ring.userData.R||6)*k); SCALE_FX.ring.material.opacity=0.85*(1-k); if(k>=1) SCALE_FX.ring.visible=false; }
   if(S.mode!=='playing'||P.dead){ return; }
   // 乱数は鱗の装備があるときだけ使う（防衛戦の測定と同じ結果を保つため）
@@ -5628,7 +5693,7 @@ function scaleFxUpdate(dt){
 function scaleEmitter(set){ const L=SCALE_FX.emit[set]; let n=0, pick=null; for(const o of L){ if(!o.userData.layer.visible) continue; n++; if(Math.random()*n<1) pick=o; } return pick; } // 見えている吹き出し口から1つ選ぶ
 // ---- v0.64：鱗の飛去来器（投げると戻る。飛んでいる間にもう一度攻撃で、飛去来器の周りに衝撃波。耐久が尽きると投げられない） ----
 const BOOM={st:'hand',x:0,z:0,y:1.1,vx:0,vz:0,t:0,d:0,range:12,hit:new Set(),det:false,m:null};
-function boomerMesh(){ if(BOOM.m) return BOOM.m; const g=new THREE.Group(); boomerShape(g); g.visible=false; scene.add(g); return BOOM.m=g; }
+function boomerMesh(){ if(BOOM.m) return BOOM.m; const g=new THREE.Group(); boomerShape(g); wglbUse(g,'boomerFly'); g.visible=false; scene.add(g); return BOOM.m=g; } // v0.75：GLB が読めたら差し替え（回り方・当たりは同じ）
 function boomerAct(kind,aim){ if(P.dur<=0){ sfx('deny'); toast('飛去来器が傷んで投げられない（作業台で手入れ：加工した鱗1）',true); return false; }
   if(kind==='heavy'){ if(P.st<BOOMER.stamH){ staminaDeny(); return false; } spendSt(BOOMER.stamH); }
   P.atk=makeAtk('BTH',1); P.atk.throwKind=kind; P.facing=attackAimNow(aim); P.atk.aimAngle=P.facing; sfx('swing'); return true; }
@@ -6414,8 +6479,10 @@ function buildHolsters(){
   pm.g.updateMatrixWorld(true);
   const bp=pm.body.getWorldPosition(new THREE.Vector3()); pm.root.worldToLocal(bp); // 腰の静止位置を root 基準に1回だけ写す
   HOL.hip=new THREE.Group(); HOL.hip.position.set(bp.x+0.26,bp.y-0.05,bp.z+0.02); HOL.hip.rotation.set(-0.5,0,-0.1); pm.body.add(HOL.hip); HOL.hip.position.set(-0.25,-0.08,-0.03); // 左腰、刃を後ろ下
+  if(pm.classic) HOL.hip.position.y+=pm.legs[0].position.y; // v0.75：やわらかい体（v0.54.1〜）は腰の骨が足もとにあるので、脚の付け根の高さへ上げる（それまで鞘が足もとに埋まっていた）
   HOL.back=new THREE.Group(); HOL.back.position.set(bp.x+0.12,bp.y+0.42,bp.z-0.17); HOL.back.rotation.set(-2.45,0,0.3); pm.chest.add(HOL.back); HOL.back.position.set(0.16,-0.10,-0.20); // 背中に頭上へ
   for(const g of [HOL.hip,HOL.back]) g.add(mesh(G.box,mat(0x453626),0.03,-0.3,-0.05,0.09,0.62,0.11)); // 簡素な革と木の鞘
+  HOL.hipBox=HOL.hip.children[0]; HOL.sheath=new THREE.Group(); HOL.sheath.visible=false; HOL.hip.add(HOL.sheath); wglbUse(HOL.sheath,'sheath'); // v0.75：通常の鉈は GLB の鞘（読めるまでは箱）
   for(const id of ['nata1','nata2','nata3','axeIron','axeStone','scNata','scAxe','rwNata','rwAxe']){ const m=makeWeapon(id); m.scale.setScalar(f47WeaponScale(id)); m.visible=false; HOL.mesh[id]=m; }
 }
 function updHolster(){ if(typeof prog==='undefined'||!prog) return; // v0.45：初期化前に呼ばれても無害化
@@ -6425,8 +6492,9 @@ function updHolster(){ if(typeof prog==='undefined'||!prog) return; // v0.45：�
   for(const id in HOL.mesh) HOL.mesh[id].visible=false;
   const put=(g,id)=>{ if(!id||id===P.weapon) return; const m=HOL.mesh[id]; if(m.parent!==g) g.add(m); m.position.set(0,0.06,0.06); m.visible=true; };
   put(HOL.hip,nata); put(HOL.back,axe);
+  const sh=!!nata&&nata.startsWith('nata')&&wglbOk('sheath'); HOL.sheath.visible=sh; HOL.hipBox.visible=!sh; // 蒼鱗・変異の鉈は今の箱のまま（鞘を使うかはユーザー未定）
 }
-function refreshWeaponMesh(){ showWeapon(P.weapon); updHolster(); } // v0.45：流線は刃先の実位置から毎フレーム作るので、武器別の下準備は不要
+function refreshWeaponMesh(){ wglbPrefetch(); showWeapon(P.weapon); updHolster(); } // v0.45：流線は刃先の実位置から毎フレーム作るので、武器別の下準備は不要
 // ---- v0.45：斬撃の流線。地面のリング板をやめ、刃の根元〜先端の軌跡をCatmull-Rom補間した滑らかな帯にする。
 // 頂点は全て事前確保（毎フレームの新規確保なし）、加算合成＋両端で細く消える明るさグラデーション。----
 const SLASH={n:24,head:0,cnt:0,pts:[],geo:null,mesh:null,mat:null,out:null};
@@ -10328,7 +10396,7 @@ function hoverOK(){ try{ return matchMedia('(hover: hover)').matches; }catch(e){
 const ICONS={};
 let _ir=null,_isc=null,_icam=null;
 function makeIconObj(id){
-  if(WEAPONS[id]){ try{ return makeWeapon(id); }catch(e){ return null; } }
+  if(WEAPONS[id]){ try{ return makeWeapon(id,{noSwap:true}); }catch(e){ return null; } } // v0.75：GLB が読めていればその形（読めたらアイコンを描き直す）
   const g=new THREE.Group(); const M=c=>new THREE.MeshLambertMaterial({color:c});
   const B=(c,sx,sy,sz,x,y,z,rz)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),M(c));m.position.set(x,y,z);if(rz)m.rotation.z=rz;g.add(m);return m;};
   const C=(c,rt,rb,h,x,y,z)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,12),M(c));m.position.set(x,y,z);g.add(m);return m;};
@@ -10404,7 +10472,7 @@ function hbBuild(){ const hb=$('items'); if(!hb) return; hb.innerHTML=''; HB.els
     hb.appendChild(d); HB.els.push(d); } }
 function hbRefresh(){ const hb=$('items'); if(!hb) return;
   const sig=armList().join(',')+(prog.unlockBoss?'S':'');
-  if(sig!==hbKey||HB.els.length!==10){ hbKey=sig; hbBuild(); }
+  if(sig!==hbKey||HB.els.length!==10){ hbKey=sig; hbBuild(); wglbPrefetch(); } // v0.75：持っている武器が変わったら、その GLB を読む
   for(let i=0;i<10;i++){ const d=HB.els[i]; if(!d) continue; const def=HB.defs[i];
     const ki=`<span class="ki">${i===9?'0':i+1}</span>`;
     if(def.kind==='arm'){ const w=def.id, dur=armDur(w), m=WEAPONS[w].maxDur;
