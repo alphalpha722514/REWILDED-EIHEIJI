@@ -5205,11 +5205,16 @@ function makeHumanClassic(o){
       add('hat',(x,y,z)=>{ const r=Math.hypot(x,z+R*0.04), ys=ap-r*sl; return Math.max(Math.abs(y-ys)*0.94-th,r-rb); },hy+R*0.6,ap+0.05,
         (x,y,z)=>{ const r=Math.hypot(x,z+R*0.04); if(r>rb-0.025) return h.col2; return Math.sin(r*95)>0.55?h.col2:h.col; },true);
       add('hat',(x,y,z)=>SDF.ell(x,y,z,[0,ap-0.005,-R*0.04],[R*0.12,R*0.07,R*0.12]),ap-0.06,ap+0.06,()=>h.col2,true); return; }
-    const dome=h.kind==='helmet'?[R*1.1,R*0.92,R*1.14]:[R*1.04,R*0.8,R*1.06], cy=hy+R*(h.kind==='helmet'?0.2:0.28), cut=hy+R*(h.kind==='helmet'?0.16:0.3);
+    let dome=h.kind==='helmet'?[R*1.1,R*0.92,R*1.14]:[R*1.04,R*0.8,R*1.06], cy=hy+R*(h.kind==='helmet'?0.2:0.28), cut=hy+R*(h.kind==='helmet'?0.16:0.3), k=1;
+    // v0.76：髪の上にかぶる（hair:'full'。2026-11-16 ユーザー「頭部に装備をつけると禿頭になっている」）。縁を前髪の上まで上げ、髪がはみ出ない大きさまで広げる
+    const hp=h.hair==='full'&&pieces.find(p=>p.name==='hair');
+    if(hp){ cut=hy+R*0.46; cy=cut+R*(h.kind==='helmet'?0.04:-0.02); const base=dome.slice(), out=kk=>{ for(let i=0;i<16;i++) for(let j=0;j<=8;j++){ const th=i/16*Math.PI*2, ph=j/8*Math.PI/2, d=[Math.cos(ph)*Math.sin(th),Math.sin(ph),Math.cos(ph)*Math.cos(th)];
+        const x=d[0]*base[0]*kk, y=cy+d[1]*base[1]*kk, z=-R*0.04+d[2]*base[2]*kk; if(y>=cut-0.005&&hp.field(x,y,z)<0.012) return false; } return true; };
+      while(k<1.6&&!out(k)) k+=0.02; dome=base.map(v=>v*k); }
     add('hat',(x,y,z)=>{ let d=Math.max(SDF.ell(x,y,z,[0,cy,-R*0.04],dome),cut-y); if(h.kind==='helmet') d=SDF.smin(d,Math.max(SDF.ell(x,y,z,[0,cy+R*0.05,-R*0.04],[R*0.14,dome[1]*1.06,dome[2]*0.98]),cy-y),0.02); return d; },cut-0.03,cy+dome[1]+0.05,
       (x,y,z)=>{ if(y<cut+0.02) return h.col2; if(h.kind==='helmet'&&Math.abs(x)<R*0.13&&y>cy) return h.col2; if(h.kind==='cap'&&y>cy+dome[1]-0.02) return h.col2; return h.col; },true);
-    if(h.kind==='helmet') add('hat',(x,y,z)=>Math.max(SDF.ell(x,y,z,[0,cut+0.008,-R*0.02],[R*1.3,0.016,R*1.36]),-SDF.ell(x,y,z,[0,cut,-R*0.04],[R*1.02,0.05,R*1.06])),cut-0.04,cut+0.04,()=>h.col2,true);
-    if(h.kind==='cap') add('hat',(x,y,z)=>SDF.ell(x,y,z,[0,cut+0.004,R*0.98],[R*0.62,0.014,R*0.5]),cut-0.04,cut+0.04,()=>h.col2,true); };
+    if(h.kind==='helmet') add('hat',(x,y,z)=>Math.max(SDF.ell(x,y,z,[0,cut+0.008,-R*0.02],[R*1.3*k,0.016,R*1.36*k]),-SDF.ell(x,y,z,[0,cut,-R*0.04],[R*1.02*k,0.05,R*1.06*k])),cut-0.04,cut+0.04,()=>h.col2,true);
+    if(h.kind==='cap') add('hat',(x,y,z)=>SDF.ell(x,y,z,[0,cut+0.004,R*0.98*k],[R*0.62*k,0.014,R*0.5*k]),cut-0.04,cut+0.04,()=>h.col2,true); };
   const meshFromPieces=pcs=>{ const LP=[],LN=[],LC=[],LI=[],LW=[],tris=[],vm=[];
     const cov=pcs.map((p,i)=>pcs.filter((q,j)=>(j>i&&q.cover)||j<i).map(q=>q.field));
     pcs.forEach((pc,pi)=>{ const mm=surfaceNets(pc.field,pc.min,pc.max,step); const pos=mm.pos, nv=pos.length/3; if(!nv) return; const base=LP.length/3, f=pc.field, allow=ALLOWG[pc.name];
@@ -5255,7 +5260,7 @@ function makeHumanClassic(o){
     // w = {chest,legs,feet:'base'|'none'|服のID, head:'none'|服のID}。初期の服は 'base'、脱いだら 'none'（下着）
     setWear=w=>{ const wv=k=>w[k]==null?(k==='head'?'none':'base'):w[k];
       let act=ALL; for(const k of ['chest','legs','feet']) if(GBIT[k]&&wv(k)!=='base') act&=~GBIT[k];
-      const hg=W.gar[wv('head')], full=hg&&hg.hairFull;
+      const hg=W.gar[wv('head')], full=(hg&&hg.hairFull)||wv('head')==='circlet'; // circlet：鱗の兜・輪（髪は全部残す）
       if(wv('head')!=='none'){ if(GBIT.band) act&=~GBIT.band; if(full){ if(GBIT.hatHair) act&=~GBIT.hatHair; } else if(GBIT.hair) act&=~GBIT.hair; } else if(GBIT.hatHair) act&=~GBIT.hatHair;
       if(GBIT.underT&&wv('chest')!=='none') act&=~GBIT.underT; if(GBIT.underB&&wv('legs')!=='none') act&=~GBIT.underB;
       let actX=0; for(const sr of W.srcs) if(wv(sr.slot)===(sr.id.startsWith('base:')?'base':sr.id)) actX|=sr.bit;
@@ -5655,7 +5660,7 @@ function saPatch(B,pl,t0,s0,o){ const pf=pl.pf, P=(t,s)=>{ const q=pl.at(t,s,0);
 // ---- 変異した鱗 ----
 const saRawSc=C=>({col:C.scale,col2:C.scale2,colEdge:C.scaleEdge,bumpy:0.45,keel:1.1,tilt:0.5,shape:'hex'});
 const saRawBig=C=>Object.assign(saRawSc(C),{mount:'claws',claws:3,claw:C.claw,bumpy:0.35});
-SA_DESIGN.raw.head=(B,m,C)=>{ const H=saProf(m,'head','sph',{c:[0,0.27,-0.03],skip:['hair','band']}), sc=saRawSc(C);
+SA_DESIGN.raw.head=(B,m,C)=>{ const H=saProf(m,'head','sph',{c:[0,0.27,-0.03],skip:['band','hatHair']}), sc=saRawSc(C); // 髪の上にかぶる（縁の下に髪が出る）
   // 額から後頭部まで覆う厚い兜（顔の前は開ける）。下の縁は前で額の上、横で耳の上、後ろで首の上。厚い額当てと、前から後ろへの稜
   const low=t=>{ const th=lerp(-Math.PI,Math.PI,t), f=Math.cos(th); return lerp(1.6,1.06,(f+1)/2)+0.3*Math.pow(Math.max(0,-f),2); };
   const hel=saPlate(B,H,{u:[-Math.PI,Math.PI],v:t=>[0,low(t)-0.12],gap:0.012,t:0.022,lip:0.006,dent:0.007,nu:28,nv:8,col:C.metal,colIn:C.metal2,rim:C.rim,uvx:5,uvy:2});
@@ -5708,7 +5713,13 @@ SA_DESIGN.raw.legs=(B,m,C)=>{ const sc=saRawSc(C); saSides((S,sx)=>{ const L=saP
     saScale(B,kb,0.5,0.5,Object.assign(saRawBig(C),{w:0.044,l:0.052,h:0.012,lift:0.004}));
     saPatch(B,sh,0.5,0.5,{cols:[3,3,2],w:0.036,sc});
     saCracks(B,sh,0.5,0.55,{n:2,len:8,step:0.04,aspect:1,w:0.0036,col:C.crack});
-    saAura(B,th); saAura(B,ka); saAura(B,kb); saAura(B,sh); }); };
+    // 脚の後ろ（2026-11-16 ユーザー「脚部装甲は足の後ろにも」）：太ももの裏の板と、ふくらはぎの板。膝の裏は開ける
+    const bt=saPlate(B,L,{u:s=>[Math.PI-lerp(0.72,0.95,s),Math.PI+lerp(0.72,0.95,s)],v:t=>[-0.33-0.025*saG(t-0.5,0.2),-0.12],gap:0.02,t:0.022,lip:0.011,dent:0.007,nu:10,nv:6,col:C.metal,colIn:C.metal2,rim:C.rim,uvx:2,uvy:2,uo:0.3});
+    const cf=saPlate(B,K,{u:s=>[Math.PI-lerp(0.62,0.85,s),Math.PI+lerp(0.62,0.85,s)],v:t=>[-0.25-0.02*saG(t-0.5,0.2),-0.09],gap:0.02,t:0.02,lip:0.01,dent:0.006,nu:9,nv:6,col:C.metal,colIn:C.metal2,rim:C.rim,uvx:1.5,uvy:1.5,uo:0.7});
+    saPatch(B,bt,0.5,0.55,{cols:[3,4,3],w:0.04,sc}); saPatch(B,cf,0.5,0.55,{cols:[2,3,2],w:0.034,sc});
+    saCracks(B,bt,0.5,0.55,{n:3,len:8,step:0.035,aspect:1.2,w:0.0038,col:C.crack});
+    for(const t of [0.15,0.85]) saRivet(B,bt,t,0.85,0.0065,C.rim);
+    saAura(B,th); saAura(B,ka); saAura(B,kb); saAura(B,sh); saAura(B,bt); saAura(B,cf); }); };
 SA_DESIGN.raw.feet=(B,m,C)=>{ const sc=saRawSc(C); saSides((S,sx)=>{ const F=saProf(m,'foot'+S,'sph',{c:[0,-0.03,0.05],only:['shoes']}), K=saProf(m,'shin'+S,'y');
     // 革のブーツの上に、足の甲の大きな黒鉄の板と、足首の上の板（足首そのものは開ける）。革のベルト
     const ins=saPlate(B,F,{u:[-1.0,1.0],v:t=>[0.4,1.36-0.1*(1-saG(t-0.5,0.3))],gap:0.014,t:0.02,lip:0.01,lipW:5,dent:0.006,nu:10,nv:6,col:C.metal,colIn:C.metal2,rim:C.rim,uvx:1.5,uvy:1});
@@ -5722,7 +5733,7 @@ SA_DESIGN.raw.feet=(B,m,C)=>{ const sc=saRawSc(C); saSides((S,sx)=>{ const F=saP
     saAura(B,ins); saAura(B,cuff); }); };
 // ---- 蒼鱗 ----
 const saBlueSc=C=>({col:C.scale,col2:C.scale2,colEdge:C.scaleEdge,mount:'bezel',bezel:C.bezel,glow:1,streak:true,keel:0.6,tilt:0.18});
-SA_DESIGN.blue.head=(B,m,C)=>{ const H=saProf(m,'head','sph',{c:[0,0.27,-0.03],skip:['hair','band']}), sc=saBlueSc(C);
+SA_DESIGN.blue.head=(B,m,C)=>{ const H=saProf(m,'head','sph',{c:[0,0.27,-0.03],skip:['band','hatHair']}), sc=saBlueSc(C); // 髪は残すので、髪の上を測る
   // 開放型の軽い兜：額・側頭・後頭を巡る細い輪と、額から頭頂への稜（蒼鱗を連ねる）、側頭の小さな板。顔の前は開ける
   const low=t=>{ const th=lerp(-Math.PI,Math.PI,t), f=Math.cos(th); return lerp(1.56,1.1,(f+1)/2)+0.22*Math.pow(Math.max(0,-f),2); };
   const band=saPlate(B,H,{u:[-Math.PI,Math.PI],v:t=>[low(t)-0.22,low(t)+0.06*saG(lerp(-Math.PI,Math.PI,t),0.3)],gap:0.01,t:0.009,lip:0.004,lipW:8,nu:20,nv:2,col:C.metal,colIn:C.metal2,rim:C.rim,uvx:6,uvy:0.5});
@@ -5751,7 +5762,12 @@ SA_DESIGN.blue.legs=(B,m,C)=>{ const sc=saBlueSc(C); saSides((S,sx)=>{ const L=s
     const th=saPlate(B,L,{u:s=>[o0-lerp(0.5,0.82,s),o0+lerp(0.5,0.82,s)],v:t=>[-0.37+0.04*Math.abs(t-0.5)*2,-0.15],gap:0.018,t:0.008,lip:0.004,lipW:8,nu:4,nv:4,col:C.metal,colIn:C.metal2,rim:C.rim,uvx:1,uvy:1.5});
     saTrim(B,th,{col:C.rim,inset:0.12}); saScale(B,th,0.5,0.6,Object.assign({},sc,{w:0.078,l:0.094,h:0.018})); saScale(B,th,0.5,0.22,Object.assign({},sc,{w:0.04,l:0.048,h:0.01}));
     const sh=saPlate(B,K,{u:s=>[-lerp(0.45,0.62,s),lerp(0.45,0.62,s)],v:t=>[-0.25,-0.06-0.03*Math.abs(t-0.5)*2],gap:0.018,t:0.008,lip:0.004,lipW:8,nu:4,nv:4,col:C.metal,colIn:C.metal2,rim:C.rim,uvx:1,uvy:1.5,uo:0.5});
-    saTrim(B,sh,{col:C.rim,inset:0.12}); saScale(B,sh,0.5,0.55,Object.assign({},sc,{w:0.05,l:0.06,h:0.012})); }); };
+    saTrim(B,sh,{col:C.rim,inset:0.12}); saScale(B,sh,0.5,0.55,Object.assign({},sc,{w:0.05,l:0.06,h:0.012}));
+    // 脚の後ろ（2026-11-16 ユーザー「脚部装甲は足の後ろにも」）：太ももの裏とふくらはぎの薄い板。膝の裏は開ける
+    const bt=saPlate(B,L,{u:s=>[Math.PI-lerp(0.45,0.72,s),Math.PI+lerp(0.45,0.72,s)],v:t=>[-0.35+0.04*Math.abs(t-0.5)*2,-0.16],gap:0.018,t:0.008,lip:0.004,lipW:8,nu:4,nv:4,col:C.metal,colIn:C.metal2,rim:C.rim,uvx:1,uvy:1.5,uo:0.3});
+    saTrim(B,bt,{col:C.rim,inset:0.12}); saScale(B,bt,0.5,0.58,Object.assign({},sc,{w:0.058,l:0.07,h:0.014}));
+    const cf=saPlate(B,K,{u:s=>[Math.PI-lerp(0.4,0.56,s),Math.PI+lerp(0.4,0.56,s)],v:t=>[-0.24,-0.08-0.03*Math.abs(t-0.5)*2],gap:0.018,t:0.008,lip:0.004,lipW:8,nu:4,nv:4,col:C.metal,colIn:C.metal2,rim:C.rim,uvx:1,uvy:1.5,uo:0.8});
+    saTrim(B,cf,{col:C.rim,inset:0.12}); saScale(B,cf,0.5,0.55,Object.assign({},sc,{w:0.044,l:0.052,h:0.011})); }); };
 SA_DESIGN.blue.feet=(B,m,C)=>{ const sc=saBlueSc(C); saSides((S,sx)=>{ const F=saProf(m,'foot'+S,'sph',{c:[0,-0.03,0.05],only:['shoes']}), K=saProf(m,'shin'+S,'y');
     // 足の甲の薄い板（つま先側が細い）と、足首の小さな板
     const ins=saPlate(B,F,{u:s=>[-lerp(0.85,0.55,s),lerp(0.85,0.55,s)],v:[0.45,1.05],gap:0.012,t:0.008,lip:0.004,lipW:8,nu:5,nv:5,col:C.metal,colIn:C.metal2,rim:C.rim,uvx:1,uvy:1});
@@ -5909,7 +5925,7 @@ const WGLB={
   rwNata:{f:'mutantNata',glow:'raw'}, rwAxe:{f:'mutantAxe',glow:'raw'}, rwClub:{f:'mutantClub',glow:'raw'}, rwSpear:{f:'mutantSpear',glow:'raw'},
   boomer:{f:'boomer',glow:'raw',hold:true}, // 手に持つ姿（コードの形と同じく立てて持つ）。飛んでいる姿は boomerMesh（下の boomerFly）
 };
-const WGLB_X={boomerFly:{f:'boomer',glow:'raw',p:[0,0,0]}, sheath:{f:'sheath',p:[0,-0.12,0.10],sc:[1.2,1,1.25]}}; // 飛ぶ飛去来器（p：回る中心のずれの直し）・通常の鉈の鞘（腰）
+const WGLB_X={boomerFly:{f:'boomer',glow:'raw',p:[0,0,0]}, sheath:{f:'sheath',p:[0,-0.12,0.10],sc:[1.2,1,1.25]}}; // 飛ぶ飛去来器（p：回る中心のずれの直し）・鉈の鞘（腰。通常・蒼鱗・変異の鉈で共通）
 // 光：蒼鱗は鱗が青く光ってゆっくり脈打つ。変異鱗は紫の亀裂が不安定にちらつく（2026-11-16 指示書）。強さは暫定。攻撃中は少し強める（効果は変えない）
 const WG_GLOW={blue:{col:0x5cc8ff,base:0.85,atk:1.35}, raw:{col:0xa040ff,base:0.95,atk:1.4}};
 const WG={lib:null,files:{},pend:[],mats:[],failLib:false};
@@ -5931,7 +5947,7 @@ function wglbFile(f){ const r=WG.files[f]||(WG.files[f]={st:'load',geo:null,mat:
   return r.p; }
 // 持っている武器の形を前もって読む（手・腰・背中・アイコンに使う）
 function wglbPrefetch(){ if(typeof prog==='undefined'||!prog||!prog.arms) return; for(const id in prog.arms){ const d=WGLB[id]; if(d&&!WG.files[d.f]) wglbFile(d.f); }
-  if((prog.arms.nata1!=null||prog.arms.nata2!=null||prog.arms.nata3!=null)&&!WG.files.sheath) wglbFile('sheath'); } // 通常の鉈を持っていれば鞘も
+  if(['nata1','nata2','nata3','scNata','rwNata'].some(id=>prog.arms[id]!=null)&&!WG.files.sheath) wglbFile('sheath'); } // 鉈（通常・蒼鱗・変異）を持っていれば鞘も
 function wglbDef(id){ return WGLB[id]||WGLB_X[id]; }
 function wglbOk(id){ const d=wglbDef(id); return !!d&&WG.files[d.f]?.st==='ok'; }
 // GLB の形を w に入れる（コードの形は外す）
@@ -6639,12 +6655,12 @@ const F60_GARMENTS={
     legs:{bottom:{col:0x5e5546,col2:0x4b4337,top:0.47,patch:0x8d7a58,kneePad:0x7a6a4c,t:0.03,hemFor:'boots'}},
     feet:{shoes:{kind:'tabi',col:0x4a3c2c,sole:0x2a221a},gaiter:{col:0xd9cfb4,col2:0xc4b896,tie:0x6a5440,t:0.05}}},
   forest:{  // 山守の保安帽／補強上着／防護ズボン／踏張り靴
-    head:{hat:{kind:'helmet',col:0xcaa036,col2:0xa27e22}},
+    head:{hat:{kind:'helmet',col:0xcaa036,col2:0xa27e22,hair:'full'}},
     chest:{top:{col:0x56623a,col2:0x434d2c,hem:0.42,cut:0.9,collar:'stand',zip:true,pockets:true,elbowPad:0x2c3024,refl:0.74,reflSleeve:true,t:0.036}},
     legs:{bottom:{col:0x40472f,col2:0x343a26,top:0.47,kneePad:0x25272a,cargo:true,cargoBig:true,t:0.03,hemFor:'boots'}},
     feet:{shoes:{kind:'boots',col:0x3b2d21,col2:0x574333,sole:0x141210,soleH:0.042,t:0.034}}},
   tracker:{ // 沢追いの作業帽／軽装上着／脚衣／足袋靴
-    head:{hat:{kind:'cap',col:0x6b6046,col2:0x564c36}},
+    head:{hat:{kind:'cap',col:0x6b6046,col2:0x564c36,hair:'full'}},
     chest:{top:{col:0x8c7c54,col2:0x6f613f,hem:0.44,sleeve:'rolled',cut:0.55,collar:'stand',pockets:true,zip:true,t:0.03}},
     legs:{bottom:{col:0x58584a,col2:0x46463a,top:0.47,taper:true,gaiter:0x6f5c3c,t:0.028,hemFor:'tabi'}},
     feet:{shoes:{kind:'tabi',col:0x2b3242,sole:0x1a1a1e,split:0x161a24}}}};
@@ -6654,7 +6670,7 @@ function f60WearOf(g){ const w={};
     if(!a){ w[slot]='none'; continue; }
     const spec=F60_GARMENTS[a.set]&&F60_GARMENTS[a.set][slot];
     if(spec&&pm.wardrobe){ pm.wardrobe.ensure(id,slot,spec); w[slot]=pm.wardrobe.W.gar[id]?id:'base'; }
-    else w[slot]=slot==='head'?(a.set==='blue'||a.set==='raw'?'helmet':'none'):'base'; } // v0.76：鱗の兜は帽子と同じく鉢巻・頭の上の髪をしまう（横と後ろの髪は残す） // 町民の作業着・引き継いだ旧式は初期の服のまま
+    else w[slot]=slot==='head'?(a.set==='raw'||a.set==='blue'?'circlet':'none'):'base'; } // v0.76：鱗の兜・輪は鉢巻だけしまい、髪は残す（髪の上にかぶる。2026-11-16 ユーザー「禿頭になってしまっているのを治して」） // 町民の作業着・引き継いだ旧式は初期の服のまま
   return w; }
 function f47ApplyVisual(){
  const g=prog.gear||f47Fresh();
@@ -6854,7 +6870,7 @@ function updHolster(){ if(typeof prog==='undefined'||!prog) return; // v0.45：�
   for(const id in HOL.mesh) HOL.mesh[id].visible=false;
   const put=(g,id)=>{ if(!id||id===P.weapon) return; const m=HOL.mesh[id]; if(m.parent!==g) g.add(m); m.position.set(0,0.06,0.06); m.visible=true; };
   put(HOL.hip,nata); put(HOL.back,axe);
-  const sh=!!nata&&nata.startsWith('nata')&&wglbOk('sheath'); HOL.sheath.visible=sh; HOL.hipBox.visible=!sh; // 蒼鱗・変異の鉈は今の箱のまま（鞘を使うかはユーザー未定）
+  const sh=!!nata&&FAM[nata]==='nata'&&wglbOk('sheath'); HOL.sheath.visible=sh; HOL.hipBox.visible=!sh; // 蒼鱗・変異の鉈も通常の鉈と同じ GLB の鞘（2026-11-16 ユーザー）
 }
 function refreshWeaponMesh(){ wglbPrefetch(); showWeapon(P.weapon); updHolster(); } // v0.45：流線は刃先の実位置から毎フレーム作るので、武器別の下準備は不要
 // ---- v0.45：斬撃の流線。地面のリング板をやめ、刃の根元〜先端の軌跡をCatmull-Rom補間した滑らかな帯にする。

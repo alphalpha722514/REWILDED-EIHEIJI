@@ -29,7 +29,7 @@ NOGLB = bool(os.environ.get('WGT_NOGLB'))
 HOOK = ("window.__w={get P(){return P},get S(){return S},get prog(){return prog},get inv(){return inv},get WG(){return WG},get WGLB(){return WGLB},get WEAPONS(){return WEAPONS},get enemies(){return enemies},get F11(){return F11},"
         "get weaponMesh(){return weaponMesh},get BOOM(){return BOOM},get HOL(){return HOL},get ICONS(){return ICONS},get REG(){return REG},"
         "craft:i=>craft(i),equipArm:i=>equipArm(i),updatePlayer:dt=>updatePlayer(dt),boomerUpdate:dt=>boomerUpdate(dt),startAttack:k=>startAttack(k),weaponWorld:()=>weaponWorld().map(v=>v.toArray()),"
-        "iconOf:i=>iconOf(i),saveGame:()=>saveGame(),regionTravel,makeWeaponCode:i=>makeWeaponCode(i),f47WeaponScale:i=>f47WeaponScale(i),setState:(e,s)=>setState(e,s)};\n")
+        "iconOf:i=>iconOf(i),saveGame:()=>saveGame(),regionTravel,makeWeaponCode:i=>makeWeaponCode(i),f47WeaponScale:i=>f47WeaponScale(i),setState:(e,s)=>setState(e,s),updHolster:()=>updHolster()};\n")
 HTML = SRC.replace('function updateNPCs(dt){', HOOK + 'function updateNPCs(dt){', 1)
 WAIT = """async (fs) => { const W = window.__w; for (let i = 0; i < 400; i++) { if (fs.every(f => W.WG.files[f] && W.WG.files[f].st !== 'load')) break; await new Promise(r => setTimeout(r, 50)); }
   return Object.fromEntries(Object.entries(W.WG.files).map(([k, v]) => [k, v.st])); }"""
@@ -103,6 +103,13 @@ async def main():
             out[id] = {g: m.userData.wglb || null, vis: m.visible, tris, sc: +m.scale.x.toFixed(3), want: +W.f47WeaponScale(id).toFixed(3)}; } return out; }""", ids)
         bad = {k: v for k, v in rows.items() if v['g'] != (None if NOGLB else k) or not v['vis'] or v['sc'] != v['want']}
         check(not bad, f'13本とも、手に持つと {"コードの形" if NOGLB else "GLB の形"}・大きさは今と同じ {bad or "（すべて）"}')
+
+        # ---- 腰の鉈：通常・蒼鱗・変異の鉈とも、同じ GLB の鞘（2026-11-16 ユーザー）。読めないときは箱 ----
+        hs = await pg.evaluate("""async () => { const W = window.__w, out = {}; W.equipArm('club'); const keep = {...W.prog.arms};
+            for (const id of ['nata1', 'scNata', 'rwNata']) { for (const k of ['nata1', 'nata2', 'nata3', 'scNata', 'rwNata']) delete W.prog.arms[k]; W.prog.arms[id] = W.WEAPONS[id].maxDur; W.updHolster();
+              const H = W.HOL; out[id] = {hip: H.hip.visible, sheath: H.sheath.visible, box: H.hipBox.visible, nata: !!(H.mesh[id] && H.mesh[id].visible)}; }
+            Object.assign(W.prog.arms, keep); W.updHolster(); return out; }""")
+        check(all(v['hip'] and v['nata'] and v['sheath'] == (not NOGLB) and v['box'] == NOGLB for v in hs.values()), f'腰の鉈は通常・蒼鱗・変異とも{"箱（GLB なし）" if NOGLB else "同じ GLB の鞘"}に収まる {hs}')
 
         # ---- 当たりの点はコードの形と同じ（武器の形の中の点 WTIP × 大きさ。形は関係しない） ----
         hp = await pg.evaluate("""async () => { const W = window.__w, P = W.P; W.equipArm('nata3'); for (let i = 0; i < 20; i++) W.updatePlayer(1/60);

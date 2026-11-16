@@ -15,6 +15,7 @@ import asyncio
 import json
 import os
 import sys
+import time
 
 from playwright.async_api import async_playwright
 
@@ -60,7 +61,7 @@ async def main():
         async def boot(cont=False):
             await pg.goto('http://game.local/', wait_until='load', timeout=300000)
             await pg.wait_for_function('window.__t', timeout=300000)
-            await pg.click('#btnContinue' if cont else '#btnNew')
+            t0 = time.time(); await pg.click('#btnContinue' if cont else '#btnNew', timeout=240000); print(f'  （{"つづきから" if cont else "はじめから"}：{time.time() - t0:.1f}秒）')
             await pg.wait_for_timeout(500)
             for _ in range(15):
                 if await pg.evaluate("document.getElementById('dialog').hidden"):
