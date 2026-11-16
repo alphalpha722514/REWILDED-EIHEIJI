@@ -538,7 +538,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.74 防衛戦テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.74.1 防衛戦テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -5281,14 +5281,35 @@ const CLASSIC_PLAYER_OPTS={scale:0.9,tall:1.22,legLen:1.8,armLen:1.55,girth:0.8,
 function suzukiClub({chest,body,T}){
   body.add(mesh(G.sphLo,mat(0xc99a7a),0,T(0.52),0.168,0.016,0.022,0.01)); // へそ（上半身が裸だと分かるように）
   const c=new THREE.Group(); c.position.set(0.02,T(0.8)-T(0.62),-0.28); c.rotation.set(0.12,0,-0.62); c.scale.setScalar(1.3); chest.add(c);
-  const wood=mat(0x8a6238), dark=mat(0x6a4a2a), tape=mat(0xe2dccb), wire=mat(0x8c9094);
-  c.add(outline(mesh(G.cyl8,wood,0,-0.12,0,0.045,0.62,0.045),0.02));              // 握り側の柄
-  c.add(outline(mesh(G.cyl8,wood,0,0.42,0,0.085,0.5,0.085),0.02));               // 太い先
-  c.add(outline(mesh(G.sph,wood,0,0.68,0,0.1,0.09,0.1),0.02));                    // 先の丸み
-  for(const [y,r] of [[0.3,0.088],[0.52,0.09]]) c.add(mesh(G.cyl8,wire,0,y,0,r+0.008,0.03,r+0.008)); // 巻いた針金
-  for(const y of [-0.3,-0.22,-0.14]) c.add(mesh(G.cyl8,tape,0,y,0,0.05,0.05,0.05));  // 握りのテープ
-  for(const [a,y] of [[0,0.4],[2.1,0.48],[4.2,0.6],[1.1,0.62]]){ const k=mesh(G.sphLo,dark,Math.sin(a)*0.08,y,Math.cos(a)*0.08,0.03,0.035,0.03); c.add(k); } // 木の節
+  // v0.74.1 部品15個（と輪郭）を、頂点色の形1つと輪郭1つにまとめた（描く回数を減らす。形・色・輪郭の太さは前と同じ）
+  const wood=0x8a6238, dark=0x6a4a2a, tape=0xe2dccb, wire=0x8c9094, P=[]; // [形, 色, x,y,z, 大きさx,y,z, 輪郭の押し出し]
+  P.push([G.cyl8,wood,0,-0.12,0,0.045,0.62,0.045,0.01]);                           // 握り側の柄（outline 0.02 と同じ）
+  P.push([G.cyl8,wood,0,0.42,0,0.085,0.5,0.085,0.01]);                             // 太い先
+  P.push([G.sph,wood,0,0.68,0,0.1,0.09,0.1,0.01]);                                  // 先の丸み
+  for(const [y,r] of [[0.3,0.088],[0.52,0.09]]) P.push([G.cyl8,wire,0,y,0,r+0.008,0.03,r+0.008,0]); // 巻いた針金
+  for(const y of [-0.3,-0.22,-0.14]) P.push([G.cyl8,tape,0,y,0,0.05,0.05,0.05,0]);  // 握りのテープ
+  for(const [a,y] of [[0,0.4],[2.1,0.48],[4.2,0.6],[1.1,0.62]]) P.push([G.sphLo,dark,Math.sin(a)*0.08,y,Math.cos(a)*0.08,0.03,0.035,0.03,0]); // 木の節
+  for(const m of mergeParts(P)) c.add(m);
   return c;
+}
+// 部品の一覧 [形, 色, x,y,z, 大きさx,y,z, 輪郭の押し出し] を、頂点色の形1つ（charVC）と輪郭1つにまとめる。
+// bakeGeo と違って色ムラを付けない。輪郭は outlineMatT が描くときにする押し出し（部品の向きの法線×t）を、形に焼き込む
+function mergeParts(P){
+  const A={p:[],n:[],c:[],i:[]}, B={p:[],i:[]}, M=new THREE.Matrix4(), q=new THREE.Quaternion(), v=new THREE.Vector3(), s=new THREE.Vector3(), col=new THREE.Color();
+  const push=(D,g,cl)=>{ const base=D.p.length/3, p=g.attributes.position, n=g.attributes.normal;
+    for(let i=0;i<p.count;i++){ D.p.push(p.getX(i),p.getY(i),p.getZ(i)); if(D.n){ D.n.push(n.getX(i),n.getY(i),n.getZ(i)); D.c.push(cl.r,cl.g,cl.b); } }
+    if(g.index) for(const k of g.index.array) D.i.push(k+base); else for(let i=0;i<p.count;i++) D.i.push(i+base); g.dispose(); };
+  for(const [geo,cl,x,y,z,sx,sy,sz,t] of P){ M.compose(v.set(x,y,z),q,s.set(sx,sy,sz));
+    const g=geo.clone(); g.applyMatrix4(M); push(A,g,col.setHex(cl));
+    if(t){ const h=geo.clone(), p=h.attributes.position, n=h.attributes.normal;
+      for(let i=0;i<p.count;i++){ v.set(n.getX(i),n.getY(i),n.getZ(i)).normalize().multiplyScalar(t); p.setXYZ(i,p.getX(i)+v.x,p.getY(i)+v.y,p.getZ(i)+v.z); }
+      h.applyMatrix4(M); push(B,h); } }
+  const mk=(D,m)=>{ const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(D.p,3));
+    if(D.n){ g.setAttribute('normal',new THREE.Float32BufferAttribute(D.n,3)); g.setAttribute('color',new THREE.Float32BufferAttribute(D.c,3)); }
+    g.setIndex(D.p.length/3>65535?new THREE.Uint32BufferAttribute(D.i,1):new THREE.Uint16BufferAttribute(D.i,1)); g.computeBoundingSphere(); return new THREE.Mesh(g,m); };
+  const out=[mk(A,charVC)];
+  if(B.p.length){ const o=mk(B,outlineMat); o.userData.noBake=true; o.userData.isOutline=true; o.raycast=()=>{}; out.push(o); }
+  return out;
 }
 const SUZUKI_OPTS={scale:0.79,tall:1.2,legLen:1.95,armLen:1.5,girth:0.84,waist:0.82,neck:0.86,headR:0.45,limb:0.8,legGap:1.25,step:0.024,muscle:1,
   outfit:{bottom:{col:0x154a28,col2:0x0e3519,top:0.48,stripe:0xf2c41c,waistBand:true,t:0.026}, // 横の線は黄色（2026-11-12 ユーザー指定）。ズボンは濃い緑（2026-11-15 見た目を承認）
