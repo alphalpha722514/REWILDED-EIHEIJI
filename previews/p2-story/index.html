@@ -541,7 +541,7 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.77 作業F 物語イベント テスト版（本編とは別に保存・台詞は仮）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.77 作業F 物語イベント テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -6946,7 +6946,7 @@ function fstAtTruck(){ const t=trk(); if(t.region!==REG.cur) return false; const
 async function fstTest(kind){
  if(kind==='radio'){ fstBase(); ev.kind='chapter2'; ev.ended=false; winEvent(); toast('試遊：会話のあと、救援無線 → 相談'); return; }
  if(kind==='truck'){ const p=fstBase(); Object.assign(p,{defenseComplete:true,defenseRewarded:true,radioHeard:true,departureDecision:true,departureComplete:false}); TRUCK.sync=false;
-   banner('試遊：KEI truck を直す','国道416号の東の出口の手前に軽トラックがある。部品は資材倉庫の前と国道416号の脇、燃料は資材倉庫の前。素材は上の「素材を足す」で足せる',8); saveGame(); return; }
+   banner('試遊：KEI truck を直す','国道416号の東の出口の手前に軽トラックがある。部品は資材倉庫の前と国道416号の脇、燃料は資材倉庫の前。素材（木材・屑鉄・縄・石・竹）は上の「素材を足す」で1台分足せる',8); saveGame(); return; }
  if(kind==='sanno'){ const p=fstBase(); Object.assign(p,{defenseComplete:true,defenseRewarded:true,radioHeard:true,departureDecision:true,departureComplete:true});
    const t=trk(); Object.assign(t,{found:true,repaired:true,fueled:true,parts:['p1','p2'],trips:1}); TRUCK.sync=false;
    const ok=await regionTravel('kamishihi',null,{force:true}); if(!ok){ toast('上志比を読み込めませんでした',true); return; }
@@ -6960,7 +6960,7 @@ async function fstTest(kind){
   bar.innerHTML=B('fsa','素材を足す')+B('fsb','KEI truck の前へ')+B('fse','山王の手前へ')+B('fsc','回復')+B('fsd','進み');
   document.body.appendChild(bar); bar.hidden=true;
   const on=(id,f)=>document.getElementById(id).addEventListener('click',e=>{ e.stopPropagation(); f(); cv.focus(); });
-  on('fsa',()=>{ inv.wood+=10; inv.iron+=10; inv.rope+=10; toast('試遊：木材・屑鉄・縄を10ずつ足した（KEI truck の修理に使う数は仮）'); });
+  on('fsa',()=>{ const m=TRUCK_CFG.mats; for(const k in m) inv[k]=(inv[k]|0)+m[k]; toast('試遊：KEI truck の修理に使う素材を1台分足した（'+Object.keys(m).map(k=>(RNAME[k]||k)+m[k]).join('・')+'。数は暫定）'); });
   on('fsb',async()=>{ if(P.dead||REG.busy||STF.busy||TRUCK.drive) return; const t=trk(); if(!truckShown()){ toast('試遊：KEI truck はまだ出ていない（防衛戦のあと）',true); return; }
     if(t.region!==REG.cur){ const ok=await regionTravel(t.region,null,{force:true}); if(!ok) return; } fstAtTruck(); toast('試遊：KEI truck の前'); });
   on('fse',async()=>{ if(P.dead||REG.busy||STF.busy) return; if(!stfP().defenseComplete){ toast('試遊：先にタイトルのボタンで始めてください',true); return; }
@@ -10800,50 +10800,50 @@ function updateSuzuki(dt){
 // 2026-11-17 ユーザー確定（ChatGPT 実装指示書「確定5項目＋KEI truck修理ゲート」）：
 //  ① 無線は防衛戦の勝利の直後に自動で1回 ② 出発の相談のあと、KEI truck を直して使えるようになって初めて上志比へ（上志比へ行けた旧セーブはそのまま行ける）
 //  ③ 初遭遇の戦いの間、スズキは安全な所へ退いて見守る（仲間 AI では戦わない。サルは主人公と戦う） ④ 負けたら上志比の西端から、山王でカットからやり直す
-// ・台詞は STF_LINES。確定（ユーザー）は札なし、草案（未承認）は画面に「草案（未承認）」の札。Claude は台詞を創作しない。無線の発信者は不明のまま。
+// ・台詞は STF_LINES。すべて確定（スズキの初登場の3行は 2026-11-17 00:12、ほかは ChatGPT の草案を 2026-11-17 承認）。Claude は台詞を創作しない。無線の発信者は不明のまま。
 // ・作業ブランチと試遊版 previews/p2-story/ で確かめる。台詞と KEI truck の素材などが承認されるまで main に入れない。docs/p2-story-f.md
 // ・記録は chapter2.progress（中身はそのまま保存される）。radioHeard 無線・departureDecision 相談・truck（KEI truck）・departureComplete 見送り・
 //   mutantMet 初遭遇（v0.67 で予約。会話を終えて仲間になったとき）・legacyKamishihiAccess 旧セーブの移動権。仲間かどうかは suzuki.joined だけ。
-const STF_HERO={name:'主人公'}, STF_SZW={name:'スズキ'}, STF_RADIO_WHO={name:'無線'}, STF_DRAFT={prov:true};
+const STF_HERO={name:'主人公'}, STF_SZW={name:'スズキ'}, STF_RADIO_WHO={name:'無線'}; // 台詞はすべて 2026-11-17 ユーザー承認（ChatGPT の草案をそのまま）。「草案（未承認）」の札の仕組みは次の草案のために残す
 const STF_LINES={ // 2026-11-17 台詞・演出草案（ChatGPT）。確定の行には札を付けない
   radio:[ // A 救援無線（草案）
-    [STF_RADIO_WHO,'……ザザッ……誰か……聞こえますか……',STF_DRAFT],
-    [STF_RADIO_WHO,'……かみし……ザッ……助けて……誰か、助けて……',STF_DRAFT],
-    [STF_RADIO_WHO,'……もし聞こえていたら……ザザザッ……',STF_DRAFT]],
+    [STF_RADIO_WHO,'……ザザッ……誰か……聞こえますか……'],
+    [STF_RADIO_WHO,'……かみし……ザッ……助けて……誰か、助けて……'],
+    [STF_RADIO_WHO,'……もし聞こえていたら……ザザザッ……']],
   decide:[ // B 上志比へ向かう決意（草案）
-    [npcTome,'……今のは、上志比の方からか？',STF_DRAFT],
-    [npcEshin,'声だけでは、どなたかも分かりませんね。……ですが、確かに助けを求めておられました',STF_DRAFT],
-    [STF_HERO,'行ってくる。上志比へ',STF_DRAFT],
-    [npcGen,'あかん。上志比は今、獣だらけや。ひとりで行ってどうなる',STF_DRAFT],
-    [STF_HERO,'助けを呼んでる人がいるんだ。それに、獣がおかしくなった理由も、あっちに何かあるかもしれない',STF_DRAFT],
-    [npcGen,'……サルどもの動き、あれはただの群れやなかった。おまえも見たやろ',STF_DRAFT],
-    [STF_HERO,'だから行くんだ。ここで待ってても、何も分からない',STF_DRAFT],
-    [npcTome,'源さん。この子の目ぇ見てみ。止めても行くわ、こりゃ',STF_DRAFT],
-    [STF_HERO,'……でも、歩いて行くには遠いな',STF_DRAFT],
-    [npcTome,'上志比へ続く道に、動かんようになった軽トラックがあったはずじゃ。あれを直せたら……',STF_DRAFT],
-    [STF_HERO,'まずはその車を探してみる',STF_DRAFT],
-    [npcEshin,'どうか、無理はなさらないでください',STF_DRAFT]],
-  found:[[STF_HERO,'これが言ってた軽トラックか。……このままじゃ走れそうにない',STF_DRAFT]], // C 発見（草案）
+    [npcTome,'……今のは、上志比の方からか？'],
+    [npcEshin,'声だけでは、どなたかも分かりませんね。……ですが、確かに助けを求めておられました'],
+    [STF_HERO,'行ってくる。上志比へ'],
+    [npcGen,'あかん。上志比は今、獣だらけや。ひとりで行ってどうなる'],
+    [STF_HERO,'助けを呼んでる人がいるんだ。それに、獣がおかしくなった理由も、あっちに何かあるかもしれない'],
+    [npcGen,'……サルどもの動き、あれはただの群れやなかった。おまえも見たやろ'],
+    [STF_HERO,'だから行くんだ。ここで待ってても、何も分からない'],
+    [npcTome,'源さん。この子の目ぇ見てみ。止めても行くわ、こりゃ'],
+    [STF_HERO,'……でも、歩いて行くには遠いな'],
+    [npcTome,'上志比へ続く道に、動かんようになった軽トラックがあったはずじゃ。あれを直せたら……'],
+    [STF_HERO,'まずはその車を探してみる'],
+    [npcEshin,'どうか、無理はなさらないでください']],
+  found:[[STF_HERO,'これが言ってた軽トラックか。……このままじゃ走れそうにない']], // C 発見（草案）
   fixed:[ // C 修理完了（草案）
-    [STF_HERO,'よし。これなら動かせそうだ',STF_DRAFT],
-    [npcTome,'おお、直したんか。……これが『KEI truck』じゃ',STF_DRAFT],
-    [STF_HERO,'KEI truck……。これで上志比まで行けるな',STF_DRAFT]],
+    [STF_HERO,'よし。これなら動かせそうだ'],
+    [npcTome,'おお、直したんか。……これが『KEI truck』じゃ'],
+    [STF_HERO,'KEI truck……。これで上志比まで行けるな']],
   sendoff:[ // D 見送り（草案）
-    [npcGen,'……はぁ。光明寺はわしらで守る。無理やと思たら、すぐ戻ってこい。ええな',STF_DRAFT],
-    [npcEshin,'道中のご無事をお祈りしております。……どうか、お気をつけて',STF_DRAFT],
-    [npcTome,'向こうに着いても、無茶だけはするでないぞ',STF_DRAFT],
-    [STF_HERO,'わかった。行ってくる',STF_DRAFT]],
+    [npcGen,'……はぁ。光明寺はわしらで守る。無理やと思たら、すぐ戻ってこい。ええな'],
+    [npcEshin,'道中のご無事をお祈りしております。……どうか、お気をつけて'],
+    [npcTome,'向こうに着いても、無茶だけはするでないぞ'],
+    [STF_HERO,'わかった。行ってくる']],
   meet:[ // E 変異したサルが逃げ去ったあと。最初の3行は確定（2026-11-17 ユーザーの原文のまま）。残りは草案
     [STF_SZW,'ありが、、、、、、　マンゴスチーーン！！'],
     [STF_HERO,'色々聞きたいことはあるけど、、、とりあえず名前は？あと、こんなところで何してたんだ？'],
     [STF_SZW,'おれはスズキ！探してる人がいるんだ。だから俺はここに残ったってかんじかな。'],
-    [STF_HERO,'探してる人……？　その人がどこにいるか、分かるのか？',STF_DRAFT],
-    [STF_SZW,'まだ分かんない。だから、この辺をずっと探してたんだ',STF_DRAFT],
-    [STF_HERO,'そうか。……でも、今みたいなサルがまた来るかもしれない',STF_DRAFT],
-    [STF_SZW,'それは、さすがに困るな……',STF_DRAFT],
-    [STF_HERO,'俺も上志比を調べたい。よかったら一緒に来ないか？',STF_DRAFT],
-    [STF_SZW,'いいの？　じゃあ、よろしく！',STF_DRAFT],
-    [STF_HERO,'まずは安全なところへ行こう',STF_DRAFT]]};
+    [STF_HERO,'探してる人……？　その人がどこにいるか、分かるのか？'],
+    [STF_SZW,'まだ分かんない。だから、この辺をずっと探してたんだ'],
+    [STF_HERO,'そうか。……でも、今みたいなサルがまた来るかもしれない'],
+    [STF_SZW,'それは、さすがに困るな……'],
+    [STF_HERO,'俺も上志比を調べたい。よかったら一緒に来ないか？'],
+    [STF_SZW,'いいの？　じゃあ、よろしく！'],
+    [STF_HERO,'まずは安全なところへ行こう']]};
 function stfP(){ return (prog.chapter2&&prog.chapter2.progress)||{}; }
 // 光明寺側の進み（無線 → 相談 → 車 → 見送り）。記録が無い（読み込み前・試験で開放しただけ）ときは 'open'＝今までどおり
 function stfStage(){ const p=stfP(); if(!prog.bossDefeated||!p.defenseComplete) return 'none';
@@ -11021,7 +11021,8 @@ for(const type of ['keydown','keyup','pointerdown','pointerup','touchstart','tou
 // 2026-11-17 ユーザー確定：出発の相談のあと、KEI truck を「今の素材＋専用部品」で直し、使えるようになって初めて上志比へ（初回は KEI truck で）。
 // 過去の確定：見つける場所は光明寺から上志比へ続く道の上・燃料が要る（手に入れ方は簡略）・PC と iPhone で操作できる。荷台・改造などは今回は作らない。
 // 未決定（ここは仮）：素材・部品・燃料の数、専用部品の名前と手に入れ方、燃料の減り方、車が壊れる仕組み、正式な車体（【3Dモデル制作依頼】）。燃料は減らない・車は壊れない（勝手に難しくしない）
-const TRUCK_CFG={mats:{wood:4,iron:3,rope:2}, parts:2, partName:'（仮）車の部品', fuel:1, fuelName:'（仮）燃料（携行缶）', // 数・名前は暫定（未承認）
+const TRUCK_CFG={mats:{wood:10,iron:6,rope:4,stone:6,bamboo:3}, parts:2, // 素材は 2026-11-17「もう少し労力が必要に」で増やした（数は暫定。どれも光明寺で採れる）
+   partName:'（仮）車の部品', fuel:1, fuelName:'（仮）燃料（携行缶）', // 数・名前は暫定（未承認）
   parkX:560, speed:14, rev:5, acc:7, brake:16, turn:1.9, r:1.35}; // 置き場所（国道416号の x）・運転（暫定）
 function trk(){ const p=stfP(); let t=p.truck; if(!t||typeof t!=='object'||Array.isArray(t)){ t={}; if(prog.chapter2) p.truck=t; }
   if(!Array.isArray(t.parts)) t.parts=[]; t.found=!!t.found; t.repaired=!!t.repaired; t.fueled=!!t.fueled; t.fuel=Math.max(0,t.fuel|0); t.trips=Math.max(0,t.trips|0);
@@ -11032,8 +11033,8 @@ function truckPos(){ if(!TRUCK.sync) truckLoadPos(); return {x:TRUCK.x,z:TRUCK.z
 function truckLoadPos(){ const t=trk(); if(t.x==null||t.z==null||!isFinite(t.x)||!isFinite(t.z)){ const h=truckHome(); t.x=h.x; t.z=h.z; t.a=h.a; t.region='komyoji'; }
   TRUCK.x=+t.x; TRUCK.z=+t.z; TRUCK.a=isFinite(t.a)?+t.a:0; TRUCK.sync=true; }
 function truckOK(){ const t=trk(); return t.repaired&&t.fueled; }
-function truckNeedText(short){ const t=trk(), m=TRUCK_CFG.mats, N={wood:'木材',iron:'屑鉄',rope:'縄'}, out=[];
-  if(!t.repaired){ for(const k in m) out.push(`${N[k]} ${Math.min(inv[k]|0,m[k])}/${m[k]}`); out.push(`${short?'部品':TRUCK_CFG.partName} ${Math.min(t.parts.length,TRUCK_CFG.parts)}/${TRUCK_CFG.parts}`); }
+function truckNeedText(short){ const t=trk(), m=TRUCK_CFG.mats, N=k=>RNAME[k]||F5_MATS[k]||k, out=[];
+  if(!t.repaired){ for(const k in m) out.push(`${N(k)} ${Math.min(inv[k]|0,m[k])}/${m[k]}`); out.push(`${short?'部品':TRUCK_CFG.partName} ${Math.min(t.parts.length,TRUCK_CFG.parts)}/${TRUCK_CFG.parts}`); }
   if(!t.fueled) out.push(`${short?'燃料':TRUCK_CFG.fuelName} ${Math.min(t.fuel,TRUCK_CFG.fuel)}/${TRUCK_CFG.fuel}`); return out.join('・'); }
 // 部品と燃料の場所（光明寺の中。上志比へ行かなくても手に入る）：資材倉庫の前と、国道416号の脇（暫定）
 function truckSpots(){ const [sx,sz]=M(-15,40), rz=roadZAt('国道416号',380)??160;

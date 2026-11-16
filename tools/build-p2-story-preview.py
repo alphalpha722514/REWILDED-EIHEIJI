@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """作業F（救援無線・相談・KEI truck・見送り・山王での初遭遇・仲間に）の試遊版を作る（previews/p2-story/index.html）。docs/p2-story-f.md
 
-本編（作業ブランチの index.html）をコピーして、試遊用の機能だけを加える。イベントの仕組み・台詞（確定と草案）・KEI truck の仮の値は本編と同じ。
+本編（作業ブランチの index.html）をコピーして、試遊用の機能だけを加える。イベントの仕組み・台詞（2026-11-17 すべて承認）・KEI truck の仮の値は本編と同じ。
 - 保存キーを試遊用に変える（本編のセーブを上書きしない）
 - タイトル画面の右上のボタン：
   ・防衛戦を終えたところから（光明寺。勝利の会話 → 救援無線 → 相談 → KEI truck を探す）
@@ -31,7 +31,7 @@ s = rep(s, "const SAVE_KEY='eiheiji_vs_beasts_v010'", "const SAVE_KEY='eiheiji_v
 m = re.search(r'<span class="tver">(v[0-9.]+) デモ版', s)
 if not m:
     raise SystemExit('版表記が見つからない')
-s = s.replace(m.group(0), f'<span class="tver">{m.group(1)} 作業F 物語イベント テスト版（本編とは別に保存・台詞は仮）', 1)
+s = s.replace(m.group(0), f'<span class="tver">{m.group(1)} 作業F 物語イベント テスト版（本編とは別に保存）', 1)
 
 BTN = 'style="font-size:12px;padding:6px 10px;min-height:0"'
 s = rep(s, '    <div class="tact">',
@@ -55,7 +55,7 @@ function fstAtTruck(){ const t=trk(); if(t.region!==REG.cur) return false; const
 async function fstTest(kind){
  if(kind==='radio'){ fstBase(); ev.kind='chapter2'; ev.ended=false; winEvent(); toast('試遊：会話のあと、救援無線 → 相談'); return; }
  if(kind==='truck'){ const p=fstBase(); Object.assign(p,{defenseComplete:true,defenseRewarded:true,radioHeard:true,departureDecision:true,departureComplete:false}); TRUCK.sync=false;
-   banner('試遊：KEI truck を直す','国道416号の東の出口の手前に軽トラックがある。部品は資材倉庫の前と国道416号の脇、燃料は資材倉庫の前。素材は上の「素材を足す」で足せる',8); saveGame(); return; }
+   banner('試遊：KEI truck を直す','国道416号の東の出口の手前に軽トラックがある。部品は資材倉庫の前と国道416号の脇、燃料は資材倉庫の前。素材（木材・屑鉄・縄・石・竹）は上の「素材を足す」で1台分足せる',8); saveGame(); return; }
  if(kind==='sanno'){ const p=fstBase(); Object.assign(p,{defenseComplete:true,defenseRewarded:true,radioHeard:true,departureDecision:true,departureComplete:true});
    const t=trk(); Object.assign(t,{found:true,repaired:true,fueled:true,parts:['p1','p2'],trips:1}); TRUCK.sync=false;
    const ok=await regionTravel('kamishihi',null,{force:true}); if(!ok){ toast('上志比を読み込めませんでした',true); return; }
@@ -69,7 +69,7 @@ async function fstTest(kind){
   bar.innerHTML=B('fsa','素材を足す')+B('fsb','KEI truck の前へ')+B('fse','山王の手前へ')+B('fsc','回復')+B('fsd','進み');
   document.body.appendChild(bar); bar.hidden=true;
   const on=(id,f)=>document.getElementById(id).addEventListener('click',e=>{ e.stopPropagation(); f(); cv.focus(); });
-  on('fsa',()=>{ inv.wood+=10; inv.iron+=10; inv.rope+=10; toast('試遊：木材・屑鉄・縄を10ずつ足した（KEI truck の修理に使う数は仮）'); });
+  on('fsa',()=>{ const m=TRUCK_CFG.mats; for(const k in m) inv[k]=(inv[k]|0)+m[k]; toast('試遊：KEI truck の修理に使う素材を1台分足した（'+Object.keys(m).map(k=>(RNAME[k]||k)+m[k]).join('・')+'。数は暫定）'); });
   on('fsb',async()=>{ if(P.dead||REG.busy||STF.busy||TRUCK.drive) return; const t=trk(); if(!truckShown()){ toast('試遊：KEI truck はまだ出ていない（防衛戦のあと）',true); return; }
     if(t.region!==REG.cur){ const ok=await regionTravel(t.region,null,{force:true}); if(!ok) return; } fstAtTruck(); toast('試遊：KEI truck の前'); });
   on('fse',async()=>{ if(P.dead||REG.busy||STF.busy) return; if(!stfP().defenseComplete){ toast('試遊：先にタイトルのボタンで始めてください',true); return; }

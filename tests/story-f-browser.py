@@ -5,14 +5,14 @@
  ① 防衛戦の勝利 → 報酬の表示が終わってから、救援無線が自動で1回（主人公は無線室の前・3人が集まる）→ 相談 → もう鳴らない
  ② 直す前は、歩いても初めて上志比へは行けない
  ③ 部品と燃料は光明寺で手に入る（上志比へ行かなくても）。素材が足りないと要る物を出す
- ④ 直す・燃料 → 直した報告と見送り（草案）→ 乗った状態に。運転して東の出口へ → 上志比の西端に車ごと着く → 降りる・乗る → 運転して西の出口から光明寺へ
+ ④ 直す・燃料 → 直した報告と見送り → 乗った状態に。運転して東の出口へ → 上志比の西端に車ごと着く → 降りる・乗る → 運転して西の出口から光明寺へ
  ⑤ 旧セーブ（防衛戦は済み・作業F の記録なし）：歩いて上志比へ行ける権利が残る。無線は光明寺で1回
  ⑥ 山王に近づくと短いカット → 戦い（スズキは退いて見守る・サルは主人公と戦う）→ 傷230で逃げ去る（鱗1枚）
  ⑦ 初遭遇の途中で倒れる → 上志比の西端で起きる → 山王でカットからやり直す（スズキは仲間でない・記録も鱗もなし）
  ⑧ 仲間になる・初遭遇の記録は会話を終えたときに同時。そのあと二度と起きない。初遭遇の途中は保存しない（鱗の二重取りを防ぐ）
  ⑨ mutantMet で上志比の群れに変異したサルが加わる
  ⑩ セーブ→続きから：KEI truck（直した・燃料・地域・場所）と各段階が戻る
- ・台詞：確定（スズキの初登場の3つ）は札なし、草案は「草案（未承認）」の札
+ ・台詞：すべて承認済み（2026-11-17）なので「草案（未承認）」の札は出ない
  ・初遭遇の途中で光明寺へ移ると、始まる前に戻す ・エラーなし
 環境変数：STORY_SHOTS=フォルダ（場面の画面を撮る）、THREE_JS
 """
@@ -32,7 +32,7 @@ HOOK = ("window.__s={get curInter(){return curInter},get P(){return P},get S(){r
         "winEvent:()=>winEvent(),regionTravel,stfAnchor:()=>stfAnchor(),stfStage:()=>stfStage(),stfMeetStage:()=>stfMeetStage(),stfTravelOK:()=>stfTravelOK(),truckTravelOK:()=>truckTravelOK(),stfRoom:()=>stfRoom(),"
         "trk:()=>trk(),truckSpots:()=>truckSpots(),truckPos:()=>truckPos(),objective:()=>objective(),interactables:()=>interactables(),stfNoSave:()=>stfNoSave(),"
         "damageEnemy:(e,d,k,a)=>damageEnemy(e,d,k,a),saveGame:()=>saveGame(),retryFromBase:()=>retryFromBase(),kamiMutantOK:()=>kamiMutantOK(),szWalkable:(x,z)=>szWalkable(x,z),szFree:(x,z,r)=>szFree(x,z,r),szSave:()=>szSave(),"
-        "setState:(e,s)=>setState(e,s),stfCutOn:()=>stfCutOn(),chapter2State:(a,b)=>chapter2State(a,b),f31MaxHp:l=>f31MaxHp(l),get XP(){return XP},get WEAPONS(){return WEAPONS}};\n")
+        "get TRUCK_CFG(){return TRUCK_CFG},setState:(e,s)=>setState(e,s),stfCutOn:()=>stfCutOn(),chapter2State:(a,b)=>chapter2State(a,b),f31MaxHp:l=>f31MaxHp(l),get XP(){return XP},get WEAPONS(){return WEAPONS}};\n")
 HTML = SRC.replace('function updateNPCs(dt){', HOOK + 'function updateNPCs(dt){', 1)
 DLG = "() => { const d = document.getElementById('dialog'); return d.hidden ? null : {name: document.getElementById('dlgName').textContent, text: document.getElementById('dlgText').textContent, draft: !document.getElementById('dlgTag').hidden}; }"
 BASE = """(kind) => { const T = window.__s, prog = T.prog, P = T.P; prog.bossDefeated = true; prog.stage = 'cleared'; prog.unlockTrap = true; prog.unlockBoss = true; prog.introSeen = true;
@@ -154,14 +154,14 @@ async def main():
         win = await read_all(quiet=0.6, timeout=30)
         radio = await until(DLG, 300)
         bn = await ev("() => window.__s.bannerT")
-        check(bool(radio) and radio['name'] == '無線' and radio['draft'] and bn <= 0, f'勝利の会話（{len(win)}行）と報酬の表示のあと、救援無線が自動で鳴る（草案の札）{radio}')
+        check(bool(radio) and radio['name'] == '無線' and not radio['draft'] and bn <= 0, f'勝利の会話（{len(win)}行）と報酬の表示のあと、救援無線が自動で鳴る（承認済みの台詞・札なし）{radio}')
         pos = await ev("() => { const T = window.__s, r = T.stfRoom(); return {d: Math.hypot(T.P.x - r.x, T.P.z - r.z), npc: T.npcs.map(n => +Math.hypot(n.x - r.x, n.z - r.z).toFixed(1)), cam: !!T.cam.override}; }")
         check(pos['d'] < 0.5 and all(d < 4 for d in pos['npc']) and pos['cam'], f'主人公は無線室の前・トミオ／源さん／慧心が集まる・場面のカメラ {pos}')
         await shot('1_radio')
         lines = await read_all()
         names = [d['name'] for d in lines]
-        check(len(lines) == 3 + 12 and names[:3] == ['無線'] * 3 and '無線' not in names[3:] and all(d['draft'] for d in lines) and '区長 トミオ' in names and '見張りの源さん' in names and '修行僧 慧心' in names,
-              f'無線の3行と相談の12行（すべて草案）{len(lines)}行')
+        check(len(lines) == 3 + 12 and names[:3] == ['無線'] * 3 and '無線' not in names[3:] and not any(d['draft'] for d in lines) and '区長 トミオ' in names and '見張りの源さん' in names and '修行僧 慧心' in names,
+              f'無線の3行と相談の12行（承認済み・札なし）{len(lines)}行')
         a1 = await ev("""() => { const T = window.__s, p = T.prog.chapter2.progress, r = T.stfRoom(); return {r: p.radioHeard, d: p.departureDecision, stage: T.stfStage(), obj: T.objective()[0],
             npc: T.npcs.map(n => +Math.hypot(n.x - r.x, n.z - r.z).toFixed(1)), home: T.npcs.map(n => n.home ? +Math.hypot(n.home.x - r.x, n.home.z - r.z).toFixed(1) : null), kept: !!T.STF.npc,
             cam: !!T.cam.override, fade: getComputedStyle(document.getElementById('stfFade')).opacity, walk: T.stfTravelOK()}; }""")
@@ -182,18 +182,19 @@ async def main():
         check(cur == 'komyoji', f'KEI truck を直す前は、歩いて東の出口へ行っても上志比へ移らない（{cur}）')
 
         # ================= 3) KEI truck を見つける・部品・燃料・直す =================
+        MATS = await ev("() => window.__s.TRUCK_CFG.mats")
         tp = await ev("() => window.__s.truckPos()")
         await ev("(tp) => { const T = window.__s; T.P.x = tp.x - 2.6; T.P.z = tp.z + 0.3; }", tp)
         await pg.wait_for_timeout(1200)
         lab = await press_e('軽トラックを調べる')
         found = await read_all(quiet=1.0, timeout=20)
-        check(lab == '軽トラックを調べる' and len(found) == 2 and found[0]['draft'] and found[1]['name'] == 'KEI truck' and '木材' in found[1]['text'], f'軽トラックを調べる → 発見の台詞（草案）と直すのに要る物 {[d["text"][:30] for d in found]}')
+        check(lab == '軽トラックを調べる' and len(found) == 2 and not found[0]['draft'] and found[1]['name'] == 'KEI truck' and '木材' in found[1]['text'], f'軽トラックを調べる → 発見の台詞と直すのに要る物 {[d["text"][:30] for d in found]}')
         await shot('2_truck_found')
-        await ev("() => { const T = window.__s; T.inv.wood = 0; T.inv.iron = 0; T.inv.rope = 0; }")
+        await ev("() => { const T = window.__s; for (const k in T.TRUCK_CFG.mats) T.inv[k] = 0; }")
         lab = await press_e('KEI truck を直す')
         info = await read_all(quiet=1.0, timeout=10)
         rp = await ev("() => window.__s.trk().repaired")
-        check(rp is False and len(info) == 1 and '0/4' in info[0]['text'], f'素材・部品が足りないと直せず、要る物を出す {info and info[0]["text"]}')
+        check(rp is False and len(info) == 1 and all(f' 0/{v}' in info[0]['text'] for v in MATS.values()), f'素材・部品が足りないと直せず、要る物を出す {info and info[0]["text"]}')
         sp = await ev("() => window.__s.truckSpots()")
         for q in sp['parts']:
             await ev("(q) => { const T = window.__s; T.P.x = q.x + 0.7; T.P.z = q.z; }", q)
@@ -204,11 +205,11 @@ async def main():
         await press_e('を受け取る')
         got = await ev("() => { const T = window.__s, t = T.trk(); return {parts: t.parts.length, fuel: t.fuel, reg: T.REG.cur}; }")
         check(got['parts'] == 2 and got['fuel'] == 1 and got['reg'] == 'komyoji', f'部品と燃料は光明寺で手に入る（上志比へ行かずに）{got}')
-        await ev("(tp) => { const T = window.__s; T.inv.wood = 4; T.inv.iron = 3; T.inv.rope = 2; T.P.x = tp.x - 2.6; T.P.z = tp.z + 0.3; }", tp)
+        await ev("(tp) => { const T = window.__s; for (const k in T.TRUCK_CFG.mats) T.inv[k] = T.TRUCK_CFG.mats[k]; T.P.x = tp.x - 2.6; T.P.z = tp.z + 0.3; }", tp)
         await pg.wait_for_timeout(800)
         await press_e('KEI truck を直す')
-        r1 = await ev("() => { const T = window.__s; return {rep: T.trk().repaired, wood: T.inv.wood, iron: T.inv.iron, rope: T.inv.rope, fueled: T.trk().fueled}; }")
-        check(r1['rep'] and r1['wood'] == 0 and r1['iron'] == 0 and r1['rope'] == 0 and not r1['fueled'], f'素材（仮：木材4・屑鉄3・縄2）と部品2で直す {r1}')
+        r1 = await ev("() => { const T = window.__s; return {rep: T.trk().repaired, left: Object.keys(T.TRUCK_CFG.mats).map(k => T.inv[k]), fueled: T.trk().fueled}; }")
+        check(r1['rep'] and not any(r1['left']) and not r1['fueled'], f'素材（暫定 {MATS}）と部品2で直す・素材が減る {r1}')
         await pg.wait_for_timeout(500)
         await press_e('燃料を入れる')
         await until(DLG, 30)
@@ -216,7 +217,7 @@ async def main():
         so = await read_all()
         sn = [d['name'] for d in so]
         dr = await ev("() => { const T = window.__s, p = T.prog.chapter2.progress; return {c: p.departureComplete, drive: T.TRUCK.drive, stage: T.stfStage(), obj: T.objective()[0], fueled: T.trk().fueled, ok: T.truckTravelOK(), walk: T.stfTravelOK()}; }")
-        check(len(so) == 7 and all(d['draft'] for d in so) and sn[0] == '主人公' and '区長 トミオ' in sn and '見張りの源さん' in sn, f'燃料を入れると、直した報告と見送り（草案7行）{sn}')
+        check(len(so) == 7 and not any(d['draft'] for d in so) and sn[0] == '主人公' and '区長 トミオ' in sn and '見張りの源さん' in sn, f'燃料を入れると、直した報告と見送り（7行）{sn}')
         check(dr['c'] is True and dr['drive'] and dr['fueled'] and dr['ok'] and dr['walk'] is False and '上志比へ向かおう' in dr['obj'], f'見送りのあと KEI truck に乗った状態・まだ歩いては行けない・目標「{dr["obj"]}」')
 
         # ================= 4) 運転して上志比へ・戻る =================
@@ -300,8 +301,8 @@ async def main():
         L3 = [(d['name'], d['text'], d['draft']) for d in lines[:3]]
         want = [('スズキ', 'ありが、、、、、、　マンゴスチーーン！！', False), ('主人公', '色々聞きたいことはあるけど、、、とりあえず名前は？あと、こんなところで何してたんだ？', False),
                 ('スズキ', 'おれはスズキ！探してる人がいるんだ。だから俺はここに残ったってかんじかな。', False)]
-        check(L3 == want, f'スズキの初登場の確定の3行（札なし）{L3}')
-        check(len(lines) == 10 and all(d['draft'] for d in lines[3:]), f'そのあとは草案の7行（札つき）{len(lines) - 3}行')
+        check(L3 == want, f'スズキの初登場の確定の3行 {L3}')
+        check(len(lines) == 10 and not any(d['draft'] for d in lines[3:]), f'そのあとの7行（承認済み・札なし）{len(lines) - 3}行')
         j = await ev("""() => { const T = window.__s, p = T.prog.chapter2.progress, sv = JSON.parse(localStorage.getItem('eiheiji_vs_beasts_v010'));
             return {joined: T.SZ.joined, order: T.SZ.order, met: p.mutantMet, enc: !!T.STF.enc, held: T.enemies.filter(e => e.stfHold).length, meet: T.stfMeetStage(), ok: T.kamiMutantOK(),
               saved: {met: sv.chapter2.progress.mutantMet, joined: sv.suzuki.joined}, obj: T.objective()[0]}; }""")

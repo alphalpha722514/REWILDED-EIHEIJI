@@ -146,7 +146,8 @@ async def main():
         await pg.wait_for_timeout(800)
         while await ev(DLG):
             await tap('#dialog')
-        tm = await ev("() => ({t: window.__s.touchMode, cls: document.body.classList.contains('touchmode'), joy: !!document.getElementById('joyZone').offsetParent})")
+        await until("() => { const r = document.getElementById('joyZone').getBoundingClientRect(); return r.width > 0 && !document.getElementById('touch').hidden ? true : null; }", 30)
+        tm = await ev("() => { const r = document.getElementById('joyZone').getBoundingClientRect(); return {t: window.__s.touchMode, cls: document.body.classList.contains('touchmode'), joy: r.width > 0 && !document.getElementById('touch').hidden}; }")
         check(tm['t'] and tm['cls'] and tm['joy'], f'タッチの操作になる（スティックが出る）{tm}')
 
         # KEI truck を直したところ（燃料はまだ）から
