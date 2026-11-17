@@ -1,6 +1,6 @@
 {
  "_comment": "KEI truck のゲーム用 GLB の作り方（tools/models/kei_truck_build.mjs）。座標は元の GLB（Tripo）の単位。前は +Z。数は 2026-11-17 に元の形から測った（docs/kei-truck-glb.md）",
- "lengthM": 3.75,
+ "lengthM": 4.125,
  "tex": 1024,
  "jpegQ": 84,
  "wheelPadIn": 0.004,

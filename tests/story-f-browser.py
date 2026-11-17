@@ -64,7 +64,7 @@ async def main():
 
         async def route(r):
             u = r.request.url
-            if 'three' in u and u.endswith('.js'): return await r.fulfill(body=THREE, content_type='application/javascript')
+            if 'three.min.js' in u or 'three.js/r128' in u: return await r.fulfill(body=THREE, content_type='application/javascript')
             if u.startswith('http://game.local'):
                 path = u.split('http://game.local/', 1)[1].split('?')[0]
                 if path in ('', 'index.html'): return await r.fulfill(body=HTML, content_type='text/html; charset=utf-8')

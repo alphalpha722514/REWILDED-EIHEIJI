@@ -1,21 +1,21 @@
 {
  "built": "2026-11-17",
  "tool": "tools/models/kei_truck_build.mjs",
- "lengthM": 3.75,
+ "lengthM": 4.125,
  "assets": [
   {
    "id": "kei_truck.broken",
    "src": "assets/models/kei-truck/src/kei_truck_broken_tripo_original.glb",
    "srcSha256": "8983b26d9a9c7bf0e1ee04f0dce64614c0869e92011c70bd59587db2bb96294f",
    "out": "assets/models/kei-truck/game/kei_truck_broken.glb",
-   "bytes": 694452,
-   "sha256": "e81371a3d6161dc11f405250ee73f9f4bc877f76a5c5a24ddf7961eb03d6f9c0",
-   "scale": 3.8222,
+   "bytes": 694328,
+   "sha256": "f087d4e23e9a14ad3c66b89e6bf4bae16b40aa9299a9d15cd2771bd19b408ae0",
+   "scale": 4.2044,
    "zShiftSrc": 0.0086,
    "size": {
-    "x": 1.93,
-    "y": 2.255,
-    "z": 3.75
+    "x": 2.123,
+    "y": 2.481,
+    "z": 4.125
    },
    "trisSrc": 23079,
    "trisBody": 11090,
@@ -31,38 +31,38 @@
     {
      "name": "wheel_fr",
      "center": [
-      -0.8199,
-      0.388,
-      0.8774
+      -0.9018,
+      0.4267,
+      0.9651
      ],
-     "radius": 0.388
+     "radius": 0.4267
     },
     {
      "name": "wheel_fl",
      "center": [
-      0.8199,
-      0.388,
-      0.8774
+      0.9018,
+      0.4267,
+      0.9651
      ],
-     "radius": 0.388
+     "radius": 0.4267
     },
     {
      "name": "wheel_rr",
      "center": [
-      -0.7778,
-      0.3849,
-      -0.8774
+      -0.8556,
+      0.4234,
+      -0.9651
      ],
-     "radius": 0.3849
+     "radius": 0.4234
     },
     {
      "name": "wheel_rl",
      "center": [
-      0.7778,
-      0.3849,
-      -0.8774
+      0.8556,
+      0.4234,
+      -0.9651
      ],
-     "radius": 0.3849
+     "radius": 0.4234
     }
    ],
    "tex": 1024,
@@ -73,17 +73,17 @@
    "src": "assets/models/kei-truck/src/kei_truck_repaired_tripo_original.glb",
    "srcSha256": "ab5bf207a0ba928f6e1d5bb28f0e0263ea3c6eb8cdcb8bae933b537f4fc4aad4",
    "out": "assets/models/kei-truck/game/kei_truck_repaired.glb",
-   "bytes": 747828,
-   "sha256": "95a401ae7c84082f5a553c8565324d865c9b715fb79c37a5038dd483bebaf92c",
-   "scale": 3.8237,
+   "bytes": 747736,
+   "sha256": "967b0b306f5e66d2cb2643e2f1bd75cc44f3f52299f840972debbf50ae9e0ab1",
+   "scale": 4.2061,
    "zShiftSrc": 0.0089,
    "size": {
-    "x": 1.875,
-    "y": 2.236,
-    "z": 3.75
+    "x": 2.062,
+    "y": 2.459,
+    "z": 4.125
    },
    "trisSrc": 23464,
-   "trisBody": 11555,
+   "trisBody": 11549,
    "trisWheels": [
     881,
     745,
@@ -91,43 +91,43 @@
     948
    ],
    "trisGlass": 144,
-   "trisTotal": 15163,
+   "trisTotal": 15157,
    "wheels": [
     {
      "name": "wheel_fr",
      "center": [
-      -0.7992,
-      0.3801,
-      0.885
+      -0.8791,
+      0.4181,
+      0.9735
      ],
-     "radius": 0.3801
+     "radius": 0.4181
     },
     {
      "name": "wheel_fl",
      "center": [
-      0.7992,
-      0.3801,
-      0.885
+      0.8791,
+      0.4181,
+      0.9735
      ],
-     "radius": 0.3801
+     "radius": 0.4181
     },
     {
      "name": "wheel_rr",
      "center": [
-      -0.7533,
-      0.377,
-      -0.885
+      -0.8286,
+      0.4147,
+      -0.9735
      ],
-     "radius": 0.377
+     "radius": 0.4147
     },
     {
      "name": "wheel_rl",
      "center": [
-      0.7533,
-      0.377,
-      -0.885
+      0.8286,
+      0.4147,
+      -0.9735
      ],
-     "radius": 0.377
+     "radius": 0.4147
     }
    ],
    "tex": 1024,

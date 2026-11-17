@@ -21,7 +21,7 @@
 | 石の手斧・竹槍 | コードで生成 | `makeArm` | 正式（GLB は未制作。「余裕があれば後から作る」2026-11-16 ユーザー） |
 | 建物・柵・罠・地形 | コードで生成・`MAPDATA` | — | 正式 |
 | 変換炉・かまど | コードで生成 | `convBuildModel`・`kamaBuildModel` | v0.63・v0.64。仮扱い |
-| KEI truck（作業ブランチ `v077-story-f`） | コードで生成（車体・運転席・窓・荷台・あおり・車輪4つ。壊れている間はさび・開いたボンネット・前のパンクを重ねる） | `truckModel()` | v0.77。**仮**（正式は Tripo。main 未反映） |
+| KEI truck（作業ブランチ `v077-story-f`） | **GLB**（ユーザーが Tripo で制作。2026-11-17 正式採用。修理前・修理後の2つ。元：`assets/models/kei-truck/src/`、ゲーム用：`…/game/`。車輪4つを分け、修理後にフロントガラスを足した。`docs/kei-truck-glb.md`） | `truckGlbLoad`・`truckVisual`（読めないときはコードの仮車体 `truckModel()`） | v0.77。**正式**（main 未反映） |
 | KEI truck の部品・燃料（作業ブランチ `v077-story-f`） | コードで生成（木箱・タイヤ・部品／赤い携行缶／黄色い目印の旗） | `truckItemModel()` | v0.77。**仮**（2026-11-17 ユーザー指示で見えるように置いた。正式な形は未定） |
 | 無線機（作業F） | なし（無線室の建物を映すだけ。小物は作っていない） | — | — |
 | 鱗の防具（蒼鱗・変異した鱗） | コードで生成（体を測って沿わせる厚みのある板＋立体の鱗。体と同じ骨で動く skinning） | `saEnsure`・`SA_DESIGN` | v0.76。改修指示書（2026-11-16）どおり作り直し、ユーザーの修正指示（蒼鱗の兜で髪を残す・脚の後ろ）を反映（`docs/scale-armor-v2.md`） |
@@ -32,7 +32,7 @@
 |---|---|---|
 | 上志比の地形・道路・家並み | P2 | 国土地理院の標高・OpenStreetMap からコード生成（Tripo 不要）。`data/kamishihi/kamishihi-map.js`（2026-11-12 取得、`docs/p2-kamishihi-map.md`） |
 | 変異したサル（P2 専用の新しい敵。通常の猿・双子猿とは別） | P2 | ユーザーが Tripo で生成（2026-11-12 受領）。元：`assets/models/mutant-monkey/src/mutant_monkey_tripo_original.glb`（11,577 三角形、2048 のテクスチャ3枚）。画風は「少しデフォルメ＋輪郭線」（頭控えめ・前腕強調）に決定。現行：`game/mutant_monkey_B_deform_v2.glb`。**未統合**（`docs/mutant-monkey-glb-check.md`） |
-| KEI truck（軽トラック） | P2（作業F）から | Tripo（車輪・荷台のあおり・ドアは別部品）。v0.77（作業ブランチ）はコードの仮車体 `truckModel()`。【3Dモデル制作依頼】は `docs/p2-story-f.md` §7（2026-11-17） |
+| KEI truck のドア・荷台のあおり（開け閉め） | 荷台・改修を作るとき | 今の GLB は1つのつながった形で、ドア・あおりは分けていない（`docs/kei-truck-glb.md` §5）。Blender で切り分けるか、ゲーム用のコピーで板だけ作り直す |
 | 上志比の拠点施設 | P3 | まず仮モデル。一部を Tripo |
 | 双子猿 なおすけ・ゆうや（操られた姿／解放後の子猿） | P4 | Tripo。2体×2状態にするかは要決定 |
 | ボス区域（廃工場・倉庫群） | P4 | コード生成が基本。一部の小物を Tripo |
@@ -69,6 +69,7 @@
 
 | 日付 | 対象 | 内容 | コミット |
 |---|---|---|---|
+| 2026-11-17 | KEI truck（正式・GLB） | 修理前 `off-road vehicle 3d model.glb`（23,079 三角形）・修理後 `offroad vehicle 3d model.glb`（23,464）を受領・**正式採用**（統合指示書）。元を `src/kei_truck_{broken,repaired}_tripo_original.glb` に保存（sha256 `8983b26d…`・`ab5bf207…`）。ゲーム用 `game/kei_truck_{broken,repaired}.glb`：全長 4.125m（最初 3.75m、同日ユーザー「もう少し大きく」「1.1倍に」で1.1倍）・原点は前後の車輪の真ん中・車輪4つを分ける・修理後はフロントガラスを足す（元に無い）・色の絵 1024 JPEG 1枚・車体 55%（14,005／15,157 三角形、694KB／748KB）。`tools/models/kei_truck_build.mjs`・`docs/kei-truck-glb.md`。**main 未反映** | ブランチ `v077-story-f` |
 | 2026-11-17 | KEI truck（仮） | 作業F 用にコードの仮車体を作成（乗る・運転・地域の移動の確認用）。正式モデルの【3Dモデル制作依頼】を `docs/p2-story-f.md` §7 に。**main 未反映** | ブランチ `v077-story-f` |
 | 2026-11-16 | 鱗の防具8種類 | 改修指示書どおり作り直し（変異：傷のある黒鉄の厚い板・青緑の鱗のかたまり・光る亀裂・炎のゆらぎ／蒼鱗：銀灰色の薄い板・縁金の蒼鱗・光の筋）。v0.76（`docs/scale-armor-v2.md`） | v0.76 |
 | 2026-11-16 | 武器13本・鉈の鞘（GLB） | 受領した14個（SHA-256 一致）を `src/` に保存。向き・握る所・長さをそろえ、色の絵を 512²（光る武器は光の絵も）にしたゲーム用を `game/` に（合計 約3.8MB）。本編で持っている武器だけ読み込み、読めないときはコードの形。当たり・威力・セーブは不変。v0.75（`docs/p2-weapon-glb.md`） | v0.75 |
