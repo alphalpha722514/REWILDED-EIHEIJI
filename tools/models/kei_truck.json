@@ -1,0 +1,76 @@
+{
+ "_comment": "KEI truck のゲーム用 GLB の作り方（tools/models/kei_truck_build.mjs）。座標は元の GLB（Tripo）の単位。前は +Z。数は 2026-11-17 に元の形から測った（docs/kei-truck-glb.md）",
+ "lengthM": 3.75,
+ "tex": 1024,
+ "jpegQ": 84,
+ "wheelPadIn": 0.004,
+ "wheelPadOut": 0.008,
+ "wheelPadR": 0.006,
+ "variants": [
+  {
+   "id": "broken",
+   "src": "assets/models/kei-truck/src/kei_truck_broken_tripo_original.glb",
+   "out": "assets/models/kei-truck/game/kei_truck_broken.glb",
+   "wheels": {
+    "front": {
+     "z": 0.2381,
+     "r": 0.1015,
+     "xin": 0.177,
+     "xout": 0.252
+    },
+    "rear": {
+     "z": -0.221,
+     "r": 0.1007,
+     "xin": 0.166,
+     "xout": 0.241
+    }
+   },
+   "simplify": {
+    "ratio": 0.55,
+    "error": 0.004
+   }
+  },
+  {
+   "id": "repaired",
+   "src": "assets/models/kei-truck/src/kei_truck_repaired_tripo_original.glb",
+   "out": "assets/models/kei-truck/game/kei_truck_repaired.glb",
+   "wheels": {
+    "front": {
+     "z": 0.2403,
+     "r": 0.0994,
+     "xin": 0.173,
+     "xout": 0.245
+    },
+    "rear": {
+     "z": -0.2226,
+     "r": 0.0986,
+     "xin": 0.162,
+     "xout": 0.232
+    }
+   },
+   "glass": {
+    "_comment": "元の形にフロントガラスが無い（窓枠だけ）ので足す。枠の内側：x ±0.164・y 0.393〜0.508。面の前後 z = z0 + (yRef - y)*k - c*x^2 - inset",
+    "x0": -0.164,
+    "x1": 0.164,
+    "y0": 0.393,
+    "y1": 0.508,
+    "z0": 0.313,
+    "yRef": 0.43,
+    "k": 0.55,
+    "c": 0.625,
+    "inset": 0.004,
+    "color": [
+     0.62,
+     0.74,
+     0.8,
+     0.32
+    ]
+   },
+   "simplify": {
+    "ratio": 0.55,
+    "error": 0.004
+   }
+  }
+ ],
+ "_simplify": "車体の三角形を simplify.ratio まで減らす（meshoptimizer、縁は固定、誤差は元の大きさに対する割合）。2026-11-17、元と並べて見た目の違いがほぼ無いことを確かめた（docs/kei-truck-glb.md）"
+}
