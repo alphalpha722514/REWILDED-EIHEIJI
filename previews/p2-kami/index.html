@@ -292,6 +292,9 @@ button:disabled{opacity:.4;cursor:not-allowed;}
 #dlgName{font-family:var(--display);color:var(--gold);font-size:18px;margin-bottom:6px;}
 #dlgText{font-size:16px;line-height:1.85;min-height:3.6em;}
 #dlgNext{text-align:right;font-size:12px;color:var(--washi-dim);margin-top:6px;}
+#dialog .card{position:relative;}
+#dlgTag{position:absolute;top:8px;right:12px;font-size:11px;color:#1d1a12;background:#d8b45a;border-radius:4px;padding:1px 6px;letter-spacing:.06em;}
+#stfFade{position:fixed;inset:0;background:#050707;opacity:0;pointer-events:none;z-index:55;transition:opacity .45s ease;}
 .result-stats{display:grid;grid-template-columns:auto 1fr;gap:4px 18px;font-size:14px;margin:10px 0;}
 .result-stats b{font-variant-numeric:tabular-nums;color:var(--gold);}
 #fatal{z-index:9;}
@@ -575,7 +578,7 @@ body.touchmode #items .hslot{width:min(var(--hbMax),calc((100vw - var(--hbL) - v
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.76.1 上志比の獣・採集 テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.77 上志比の獣・採集 テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -696,7 +699,7 @@ body.touchmode #items .hslot{width:min(var(--hbMax),calc((100vw - var(--hbL) - v
 <div class="ov" id="regionLoading" hidden style="z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(18,16,12,.86)"><div style="color:#efe6d2;font-size:20px;letter-spacing:.1em"><b></b>へ移動中……</div></div>
 <div class="ov" id="dialog" hidden>
   <div class="card">
-    <div id="dlgName"></div>
+    <div id="dlgName"></div><div id="dlgTag" hidden>草案（未承認）</div>
     <div id="dlgText"></div>
     <div id="dlgNext">E / Space / クリックで次へ</div>
   </div>
@@ -2918,7 +2921,7 @@ function drawMap(){ const cv=$('mapCv'); if(!cv||$('mapOv').hidden) return; cons
   CLOSURES.forEach((cl,i)=>{ if(f4.closures[i]) return; const x=X(cl.x), y=Z(cl.z); c.strokeStyle='#ff6a40'; c.lineWidth=3; c.beginPath(); c.moveTo(x-5,y-5); c.lineTo(x+5,y+5); c.moveTo(x+5,y-5); c.lineTo(x-5,y+5); c.stroke(); });
   // 拠点の施設：掲示板・作業台・丸太置き場・一輪車
   G4BOARDS.forEach((b,i)=>{ icon(X(b.x),Z(b.z),'#f0a8bc','掲',8); lab(i===0?'掲示板（拠点）':'掲示板（駅前）',X(b.x)+10,Z(b.z)+4,'#ffd6e0'); });
-  icon(X(157),Z(66.5),'#d8b04a','作',7); if(F4.yard) icon(X(F4.yard.x),Z(F4.yard.z),'#b08458','木',7);
+  icon(X(157),Z(66.5),'#d8b04a','作',7); if(F4.yard) icon(X(F4.yard.x),Z(F4.yard.z),'#b08458','木',7); truckMapIcons(icon,lab,X,Z); // v0.77
   if(f4.cart&&!f4.cart.push){ c.fillStyle='#7ab0c8'; c.fillRect(X(f4.cart.x)-3,Z(f4.cart.z)-3,6,6); }
   for(const l of f4.logs){ c.fillStyle='#c89a60'; c.fillRect(X(l[0])-2,Z(l[1])-2,4,4); }
   // 手掛かり（探す段階のときだけ、だいたいの範囲を出す）
@@ -4193,7 +4196,7 @@ function f11Lod(px,pz){ if(!f11Has('B')) return;
 function f11Sim(raw){ raw=Math.min(raw,F11D.rawMax); const n=Math.max(1,Math.ceil(raw/F11D.subDt-1e-9)); const step=raw/n; F11.sub=n; if(n>F11.subMax) F11.subMax=n;
   for(let k=0;k<n&&S.mode==='playing';k++){ let dt=step;
     if(S.hitstop>0){ S.hitstop-=step; dt=0; } else if(S.slowmo>0){ S.slowmo-=step; dt*=0.35; }
-    if(dt>0){ S.time+=dt; if(bossCinema52()){ tickCinema52(dt); continue; } updatePlayer(dt); updateSuzuki(dt); updateEnemies(dt); updateNPCs(dt); updateWorld(dt); updateEvent(dt); updateProgress(dt); } } }
+    if(dt>0){ S.time+=dt; if(bossCinema52()){ tickCinema52(dt); continue; } if(stfCutOn()){ stfCutTick(dt); continue; } updatePlayer(dt); updateSuzuki(dt); updateEnemies(dt); updateNPCs(dt); updateWorld(dt); updateEvent(dt); updateProgress(dt); stfUpdate(dt); } } }
 // 獣を消したときの片付け：その獣だけが使っていた形・材質・画像を GPU から外す（ほかで使っている物は残す）
 function f11Dispose(objs){ const geo=new Set(), mats=new Set(), tex=new Set(), skel=new Set(); // 骨の動きを入れる画像（スキニング）も外す
   const addM=m=>{ if(!m) return; mats.add(m); for(const k of ['map','alphaMap','emissiveMap','normalMap']) if(m[k]) tex.add(m[k]); };
@@ -5375,6 +5378,14 @@ const SZ={joined:false,order:'follow',region:'komyoji',x:0,z:0,wx:0,wz:0,hp:180,
   r:SZA.r,m:null,rot:0,spd:0,phase:0,pose:null,look:0,roam:null,still:0,crumbs:[],ci:-1,los:true,losAt:-9,crumbT:0,
   kick:null,tgt:null,cd:{low:0,spin:0,jump:0},gapT:0,pref:'low',near2:0,fight:false,calmT:0,hitBy:null,hitAt:-9,kx:0,kz:0,stagger:0,downT:0,upT:0,hk:0,
   stk:{t:0,x:0,z:0,n:0,side:1,sideT:0},_px:null,_pz:null};
+// v0.77（P2 作業F）：2026-11-17 ユーザー確定（ChatGPT 実装指示書「確定5項目＋KEI truck修理ゲート」）。数はすべて暫定
+const STF_CFG={radioDelay:3,  // 防衛戦の勝利の会話・報酬のあと、救援無線が鳴るまで（遊んだ時間・秒。暫定）
+  meetR:34,                   // 上志比の山王の駅から、この距離に入ると初遭遇（実地で調整。暫定）
+  clearR:60,                  // 初遭遇の間、山王のまわりのほかの獣を遠ざけて止めておく距離（暫定）
+  watchR:13,                  // 戦闘中にスズキが退く距離（主人公とサルから。暫定）
+  talkR:8};                   // 初遭遇のあと話す前に読み直したとき：山王で待つスズキに、この距離まで近づくと話す（暫定）
+const STF={live:false,busy:false,radioT:0,pre:false,enc:null,sz:null,cut:null,hold:[],npc:null}; // 動いている間だけの状態（保存しない）
+const TRUCK={m:null,wheels:null,broken:null,col:null,drive:false,v:0,vx:0,vz:0,yr:0,steer:0,roll:0,pitch:0,slide:0,x:0,z:0,a:0,sync:false}; // KEI truck の動いている間の状態（保存は chapter2.progress.truck）
 function makeHuman(o={}){
   const player=!!o.player47;
   const m=makeHumanClassic(player?CLASSIC_PLAYER_OPTS:o);
@@ -6874,6 +6885,7 @@ function freshState(){
   stats={kills:0,deaths:0,crafts:0,time:0,perfect:0,hunt:loadHuntRecords()};
   P.lvx48=0;P.lvz48=0;
   szFresh(); // v0.70
+  stfFresh(); // v0.77
   P.maxHp=100; P.hp=100; P.full=100; P.weapon='nata1'; P.dur=120; prog.arms={nata1:120}; prog.f5=f5Fresh(); P.dead=false; P.atk=null; P.dodge=null; P.buffer=null; P.stagger=0; P.buffT=0; P.vegT=0; P.porridgeT=0; resetCombat();
 }
 freshState();
@@ -7492,6 +7504,7 @@ function aimAngle(){
 
 // ================= プレイヤーの行動 =================
 function tryAttack(kind,aimSnapshot=null){
+  if(TRUCK.drive) return; // v0.77：運転中は攻撃しない
   if(bossCinema52()) return;
   if(P.dead||P.stagger>0) return;
   if(f4Busy()){ if(S.time-F4.hintT>2.5){ F4.hintT=S.time; toast(prog.f4.carry?'丸太を担いでいる間は攻撃できない（調べるで下ろす）':'一輪車を押している間は攻撃できない（調べるで置く）',true); } return; }
@@ -7537,6 +7550,7 @@ function attackAimNow(aimSnapshot){
   return aimSnapshot==null?aimAngle():aimSnapshot;
 }
 function tryDodge(fromBuf){
+  if(TRUCK.drive) return; // v0.77：運転中は回避しない
   if(bossCinema52()) return;
   if(P.dead||P.dodge) return;
   if(P.dodgeCD>0||(P.atk&&P.atk.t<P.atk.cancelT)){ if(!fromBuf&&!P.dbuf) P.dbuf=S.time; return; } // まだ回避できない：少しだけ予約
@@ -8210,6 +8224,7 @@ function updateEnemies(dt){
     const e=enemies[i]; if(e.removed) continue;
     e.st+=dt; e.flash=Math.max(0,e.flash-dt);
     if(e.state==='dead'){ updateEnemyAnim(e,dt); if(e.st>2.6) removeEnemy(e); continue; }
+    if(e.stfHold) continue; // v0.77：作業F の初遭遇の間、山王のまわりから遠ざけて止めておく獣
     // v0.45.1：AIのLOD。90m先の野性獣は思考を0.25秒間隔に間引く（新規オブジェクトは作らない。raid・ボス・攻撃中は対象外）
     if((e.mode==='field'||(e.kfw&&KF_CALM.includes(e.state)))&&e.type!=='boss'&&!AILOD_SKIP.includes(e.state)&&dist(e.x,e.z,P.x,P.z)>90){ // v0.69：普段の変異したサルも、落ち着いていれば間引く
       e.lodT=(e.lodT||0)+dt;
@@ -8346,9 +8361,10 @@ function winEvent(){
   sfx('win');
   if(kind==='chapter2'){
     const c=syncChapter2();const first=!c.progress.defenseRewarded;c.progress.openingStarted=true;c.progress.defenseComplete=true;c.currentChapter=2;
+    if(c.progress.radioHeard===undefined){ c.progress.radioHeard=false; c.progress.departureDecision=false; c.progress.departureComplete=false; } STF.radioT=0; // v0.77：作業F。勝利の会話・報酬のあと、救援無線が自動で1回
     if(first){ // v0.55：住民からの礼は1回だけ（記録 defenseRewarded。報酬導入前にクリアしたセーブにも1回だけ出る）
       c.progress.defenseRewarded=true; inv.wood+=6; inv.straw+=6; foodAdd('onigiri',2);
-      banner('光明寺防衛戦　完了','住民からの礼：木材6・藁6・おにぎり2。東の出口（国道416号）から上志比へ行けるようになった。',5);
+      banner('光明寺防衛戦　完了',stfTravelOK()?'住民からの礼：木材6・藁6・おにぎり2。東の出口（国道416号）から上志比へ行けるようになった。':'住民からの礼：木材6・藁6・おにぎり2。',5);
       queueDialog([[npcTome,'みんなで守りきったのう。……ほんとに、ようやってくれた。'],[npcEshin,'柵もやぐらも、まだ立っております。皆さんの手があったからこそです。'],[npcYone,'けど、あのサルら、鳴き声ひとつで一斉に動いとったぞ。ただの群れやないわ。'],[npcGen,'山はまだ静かになっとらん。……上志比の方も、様子を見に行かんとあかんかもしれんな。']]);
     } else banner('光明寺防衛戦　完了（再挑戦）','戦績を更新しました。住民からの礼は初回のみです。',5);
     saveGame();return;
@@ -8543,8 +8559,9 @@ const dlgQueue=[]; let dlgOnEnd=null;
 function queueDialog(lines,onEnd){ dlgQueue.push(...lines); if(onEnd) dlgOnEnd=onEnd; if(S.mode==='playing') nextDialog(); }
 function nextDialog(){
   if(!dlgQueue.length){ $('dialog').hidden=true; if(S.mode==='dialog') S.mode='playing'; const f=dlgOnEnd; dlgOnEnd=null; if(f) f(); return; }
-  const [who,text]=dlgQueue.shift();
+  const [who,text,o]=dlgQueue.shift();
   S.mode='dialog'; $('dialog').hidden=false; $('dlgName').textContent=who?who.name:''; $('dlgText').textContent=text;
+  { const tg=$('dlgTag'); if(tg) tg.hidden=!(o&&o.prov); } // v0.77：承認前の台詞（草案）には「草案（未承認）」の札を出す
   keys.clear();
 }
 let dlgLock=0;
@@ -8594,6 +8611,8 @@ function chooseDefense(title,options){
   document.body.appendChild(wrap);keys.clear();S.mode='menu';wrap.focus();
 }
 function interactables(){
+  if(STF.busy||STF.cut) return null; // v0.77：作業F の場面の間は出さない
+  if(TRUCK.drive) return {d:0,label:'KEI truck を降りる',act:()=>truckExit()}; // v0.77
   const L=[];
   for(const n of NPCS){ const d=dist(P.x,P.z,n.x,n.z); if(d<(n.y?3.6:2.3)) L.push({d:d+f9Pen(n),label:f9Label(n),act:()=>f9Interact(n)}); }
   { const d=dist(P.x,P.z,157,66.5); if(d<2.4) L.push({d,label:'作業台（クラフト・修理）',act:openCraft}); }
@@ -8638,7 +8657,7 @@ function interactables(){
   }
   {const d=dist(P.x,P.z,SCOUT.x,SCOUT.z);
    if(d<2.6)L.push({d,label:prog.scoutTower?'見張り台：見張り中':'見張り台を建設（木材10・縄4）',act:()=>buildScoutTower()});}
-  g4Interactables(L); szInteractables(L); // v0.70：スズキへの指示
+  g4Interactables(L); szInteractables(L); truckInteractables(L); // v0.70：スズキへの指示。v0.77：KEI truck・部品・燃料
   L.sort((a,b)=>a.d-b.d); return L[0]||null;
 }
 function interact(){ if(bossCinema52()) return; if(curInter) curInter.act(); }
@@ -8845,6 +8864,7 @@ function retryFromBase(){
   setupBoss(); $('bossBar').hidden=true; setBarrier(!(prog.stage==='toBoss'||prog.stage==='cleared'));
   P.x=PSPAWN.x; P.z=PSPAWN.z; P.facing=0; if(typeof REG!=='undefined'&&REG.cur!=='komyoji'&&REG.live){ const a=REG.live.respawn||REG.live.arrival; P.x=a.x; P.z=a.z; P.facing=a.facing||0; } /* v0.60 ほかの地域で倒れたら、その地域の着いた場所で起きる（2026-11-12 ユーザー決定：上志比は西の端） */ setCam(P.facing); resetCombat(); P.hp=Math.ceil(P.maxHp*0.5); P.full=Math.max(15,P.full-25); /* v0.56：体力は半分、満腹は25減る */ if(P.weapon&&WEAPONS[P.weapon]){ P.dur=Math.max(0,P.dur-WEAPONS[P.weapon].maxDur*0.25); prog.arms[P.weapon]=P.dur; } /* v0.56：手に持っていた武器の耐久 -25% */ P.dead=false; P.atk=null; P.dodge=null; P.stagger=0; P.buffer=null; heavyRing.visible=false;
   // 拠点付近の野生の敵を初期位置へ
+  stfAfterRetry(); // v0.77：作業F の初遭遇の途中で倒れたら、始まる前に戻す（記録はそのまま）
   szAfterRetry(); // v0.72：ついて来ているスズキは起きた場所の近くへ（倒れているスズキはその場に残る）
   for(const e of enemies) if(e.mode==='field'&&e.state!=='dead'){ e.x=e.home.x; e.z=e.home.z; e.hp=e.maxHp; setState(e,'idle'); } // v0.56：野の獣も傷が癒える（倒れながら削る戦い方を防ぐ）
   hideAllOv(); S.mode='playing'; S.slowmo=0; S.hitstop=0;
@@ -8986,6 +9006,7 @@ let storageOK=true;
 function checkpointStage(){ const s=prog.stage; return s==='raid'?'buildFence':s==='invasion'?'invasionPrep':s==='boss'?'toBoss':s; }
 function saveGame(){
   if(!storageOK) return;
+  if(stfNoSave()) return; // v0.77：作業F の初遭遇の途中は保存しない（変異した鱗が二重に手に入らないように。始まる前の保存から山王でやり直す）
   try{
     syncChapter2();
     if(P.weapon) prog.arms[P.weapon]=P.dur; // v0.45：素手のときは武器耐久を書き戻さない
@@ -9024,7 +9045,7 @@ function applySave(d){
     prog.townRequests=loadTownRequests(p.townRequests);
     prog.stage=STAGES.includes(p.stage)?p.stage:'talk';
     prog.unlockTrap=!!p.unlockTrap; prog.unlockBoss=!!p.unlockBoss; prog.bossDefeated=!!p.bossDefeated; prog.scoutTower=!!p.scoutTower; prog.scoutWarned=!!p.scoutWarned; prog.scoutRaidWarned=!!p.scoutRaidWarned; f31LoadProg(p); // v0.31 任意項目（無ければ Lv1・熟練0・防具なし）
-    prog.chapter2=chapter2State(d.chapter2,prog.bossDefeated);
+    prog.chapter2=chapter2State(d.chapter2,prog.bossDefeated); stfNormalize(); // v0.77：旧セーブの作業F の記録
     if(Array.isArray(p.clues)) prog.clues=[0,1,2].map(i=>!!p.clues[i]);
     prog.introSeen=true;
     if(prog.stage==='invasionPrep') prog.prepT=150;
@@ -9102,6 +9123,7 @@ function inputWorld(){
 const easeOut=t=>1-(1-t)*(1-t);
 function updatePlayer(dt){
   if(P.dead) return;
+  if(TRUCK.drive){ truckDrive(dt); return; } // v0.77：KEI truck を運転している
   const w=equippedWeapon(); // null は素手。以降の移動・攻撃処理では武器情報を直接参照しない。
   P.dodgeCD=Math.max(0,P.dodgeCD-dt); P.perfectT=Math.max(0,P.perfectT-dt); P.buffT=Math.max(0,P.buffT-dt);
   updateStamina(dt); updateF6C(dt); if(P.dbuf){ if(S.time-P.dbuf>0.25) P.dbuf=0; else if(!P.dodge&&P.stagger<=0) tryDodge(true); }
@@ -9531,9 +9553,11 @@ function updateProgress(dt){ f31Tick(dt);
   prog.lastSaveT+=dt; if(prog.lastSaveT>30&&!ev.kind&&!bossActive){ prog.lastSaveT=0; saveGame(); }
 }
 function objective(){
+  if(REG.cur!=='komyoji'){ const o=stfObjective(); if(o) return o; } // v0.77：上志比の山王へ（作業F）
   if(REG.cur!=='komyoji'&&REG.live&&REG.live.objective) return REG.live.objective(); // v0.60 ほかの地域
   if(prog.bossDefeated&&chapter2Opening().openingStarted){
     if(ev.kind==='chapter2')return ['第二章：三方向の混成部隊からやぐらを守る。猪・熊は柵と罠で止め、猿を迎撃',CORE];
+    { const o=stfObjective(); if(o) return o; } // v0.77：作業F（無線・出発・上志比の山王へ）
     if(chapter2Opening().defenseComplete)return ['第二章：光明寺防衛戦を完了。東の出口（国道416号）から上志比へ向かえる',KOMYOJI_EAST];
     return ['第二章：拠点で装備を整え、見張りの源さんに話しかけて防衛戦を始める',npcGen];
   }
@@ -9639,7 +9663,7 @@ function drawMini(){
     if(!inside){ const a=Math.atan2(tz-H/2,tx-W/2); const k=Math.min((W/2-8)/Math.abs(Math.cos(a)||1e-6),(H/2-8)/Math.abs(Math.sin(a)||1e-6)); tx=W/2+Math.cos(a)*k; tz=H/2+Math.sin(a)*k;
       c.save(); c.translate(tx,tz); c.rotate(a); c.fillStyle='#f0c34a'; c.beginPath(); c.moveTo(6,0); c.lineTo(-4,-5); c.lineTo(-4,5); c.closePath(); c.fill(); c.restore(); }
     else { c.beginPath(); c.moveTo(tx,tz-5); c.lineTo(tx+5,tz); c.lineTo(tx,tz+5); c.lineTo(tx-5,tz); c.closePath(); c.stroke(); } }
-  g4Mini(c,X,Z);
+  g4Mini(c,X,Z); truckMini(c,X,Z); // v0.77：KEI truck の部品・燃料・車
   c.save(); c.translate(W/2,H/2); c.rotate(-P.facing+Math.PI); c.fillStyle='#ffffff'; c.beginPath(); c.moveTo(0,-5); c.lineTo(3.5,4); c.lineTo(-3.5,4); c.closePath(); c.fill(); c.restore();
 }
 function updateLabels(dt){
@@ -9728,8 +9752,9 @@ function updateCamera(dt){
   if(foe){ const big=foe.type==='boss'?1:foe.type==='bear'?0.45:0.15; D+=big*2.4; Hh+=big*0.3; lookH+=big*1.7; ahead*=0.5; }
   { const ak=(P.atk&&P.atk.kind==='heavy')?1:(P.atk?0.5:0); cam.atkK=cam.atkK==null?ak:cam.atkK+(ak-cam.atkK)*Math.min(1,dt*5); D+=cam.atkK*0.7; Hh-=cam.atkK*0.25; } // v0.45：攻撃の重量感（軽い寄り）
   if(intro){ D=8.5; Hh=1.5; lookH=3.2; }
+  if(TRUCK.drive){ D+=3.9; Hh+=1.25; lookH+=0.45; } // v0.77：運転中は少し引いて高く（正式モデルは全長 約4.1m・高さ 約2.5m）
   const fx=Math.sin(cam.yaw), fz=Math.cos(cam.yaw);
-  const gy=groundH(P.x,P.z);
+  const gy=groundH(P.x,P.z)+(TRUCK.drive?(TRUCK.camLift||0):0); // v0.77：車が跳ねるとカメラも少し上がる
   let tx=P.x, tz=P.z;
   if(foe){ const k=foe.type==='boss'?0.3:0.2; tx=lerp(P.x,foe.x,k); tz=lerp(P.z,foe.z,k); }
   const sx=-fz*CAM.shoulder, sz=fx*CAM.shoulder; // 右へずらして主人公を画面のやや左に置く
@@ -9834,11 +9859,11 @@ async function regionTravel(id,at=null,opt={}){
       if(!ctx.h||!ctx.bounds||!ctx.arrival) throw new Error('地域の形が足りない');
       Object.assign(BOUNDS,ctx.bounds);
       const a=at||ctx.arrival; P.x=a.x; P.z=a.z; P.facing=a.facing||0; }
-    REG.cur=id; if(prog.chapter2) prog.chapter2.currentRegion=id; szAfterTravel(from,id); // v0.70：ついて来ているスズキも移る
+    REG.cur=id; if(prog.chapter2) prog.chapter2.currentRegion=id; stfAfterTravel(true); szAfterTravel(from,id); // v0.70：ついて来ているスズキも移る。v0.77：作業F の初遭遇の途中なら始まる前に戻す・運転中の KEI truck も移る
     setCam(P.facing); resetCombat(); updateChunks(0,true); saveGame();
     S.mode=mode==='loading'?'playing':mode; regionLoading(false); REG.busy=false; return true;
   }catch(e){ console.error(e);
-    regionResetHome(); P.x=PSPAWN.x; P.z=PSPAWN.z; P.facing=0; if(prog.chapter2) prog.chapter2.currentRegion='komyoji'; szAfterTravel(from,'komyoji');
+    regionResetHome(); P.x=PSPAWN.x; P.z=PSPAWN.z; P.facing=0; if(prog.chapter2) prog.chapter2.currentRegion='komyoji'; stfAfterTravel(false); szAfterTravel(from,'komyoji');
     S.mode=mode==='loading'?'playing':mode; toast('地域の読み込みに失敗したため、光明寺に戻りました',true); saveGame(); return false; }
 }
 
@@ -9866,7 +9891,7 @@ function kamishihiOpen(){ const c=prog.chapter2; return !!(prog.bossDefeated&&c&
 let gateNoteT=-99;
 let gateArmed=false;
 function regionGateKomyoji(){ if(S.mode!=='playing'||REG.busy||P.dead) return; const d=dist(P.x,P.z,KOMYOJI_EAST.x,KOMYOJI_EAST.z); if(d>19) gateArmed=true; if(d>11||!gateArmed) return;
-  if(!kamishihiOpen()){ if(stats.time-gateNoteT>8){ gateNoteT=stats.time; toast('この先は上志比。まだ行く時ではない'); } return; }
+  if(TRUCK.drive?!truckTravelOK():(!kamishihiOpen()||!stfTravelOK())){ if(stats.time-gateNoteT>8){ gateNoteT=stats.time; toast('この先は上志比。まだ行く時ではない'); } return; } // v0.77：初回は直した KEI truck で（旧セーブの移動権・一度 KEI truck で行ったあとは歩いても行ける）
   if(!regionCanTravel()){ if(stats.time-gateNoteT>8){ gateNoteT=stats.time; toast('今は光明寺を離れられない',true); } return; }
   gateArmed=false; regionTravel('kamishihi'); }
 regionDefine('kamishihi',{name:'上志比', load:()=>loadScriptTry(KAMI_SRC,()=>!!window.KAMISHIHI_MAP).then(()=>{ kamiGrid(); }),
@@ -10644,10 +10669,10 @@ function szPick(e){
   const want=ss<sp; if(want!==!!e.szT){ e.szT=want; e.szSw=S.time; } return want; }
 // 敵の攻撃を受ける：2割減。重い一撃は蹴りを止める。体力0で倒れる（助け起こすのは第3段階）
 function szHurt(dmg,fx,fz,knock,src){ if(SZ.down||!szHere()) return false; dmg=f11InvDmg(dmg,src); const d=Math.max(1,Math.round(dmg*(1-SZF.guard)));
-  SZ.hp=Math.max(0,SZ.hp-d); floatText(SZ.x,2.0,SZ.z,`-${d}`,'#ffb080'); SZ.hitBy=src; SZ.hitAt=S.time; SZ.fight=true; SZ.calmT=0;
+  SZ.hp=Math.max(0,SZ.hp-d); floatText(SZ.x,2.0,SZ.z,`-${d}`,'#ffb080'); SZ.hitBy=src; SZ.hitAt=S.time; szFightOn();
   const a=Math.atan2(SZ.x-fx,SZ.z-fz); SZ.kx=Math.sin(a)*knock*0.6; SZ.kz=Math.cos(a)*knock*0.6; SZ.stagger=0.25; if(SZ.kick&&(SZ.kick.id!=='jump'||SZ.kick.t>SZK.jump.hit)&&d>=15) SZ.kick=null;
   if(SZ.hp<=0) szDown(); return true; }
-SZ.hurt=(d,e)=>szHurt(d,e.x,e.z,5,e); // 変異したサルの e.tgt から直接あてるとき（mutHit）
+SZ.hurt=(d,e)=>STF.sz?stfSzHit(e):szHurt(d,e.x,e.z,5,e); // 変異したサルの e.tgt から直接あてるとき（mutHit）。v0.77：仲間になる前（作業F の台本で動くスズキ）はよろけるだけ
 function szDown(){ SZ.hp=0; SZ.down=true; SZ.downT=0; SZ.upT=0; SZ.kick=null; SZ.tgt=null; SZ.stagger=0; SZ.fight=false; toast('スズキが倒れた！ 近くで長押しすると助け起こせる',true); }
 // 戦う範囲の中心：ついて来るときは主人公、待つときは待つ所、拠点では自分（自衛だけ）
 // 第5段階：防衛戦の間は、光明寺にいるスズキはどの指示でも主人公のそばへ来て一緒に戦い（主人公から8m まで）、終わると元の指示に戻る（2026-11-15 ユーザー決定「A」）。
@@ -10674,7 +10699,7 @@ function szCombat(dt){
     if(ATK_ST.includes(e.state)) sc-=3; if(e.szT) sc-=1.5; if(e===SZ.tgt) sc-=2; if(e===SZ.hitBy&&S.time-SZ.hitAt<4) sc-=3;
     if(sc<bs){ bs=sc; best=e; } if(dS<2.6+e.r) n2++; }
   SZ.tgt=best; SZ.near2=n2; if(!best) return false;
-  SZ.fight=true; SZ.calmT=0;
+  szFightOn();
   const e=best, dE=dist(SZ.x,SZ.z,e.x,e.z)-SZ.r-e.r, face=Math.atan2(e.x-SZ.x,e.z-SZ.z), off=Math.abs(angDiff(SZ.rot,face));
   const ready=k=>S.time>=SZ.cd[k]&&S.time>=SZ.gapT;
   if(SZ.hp<=SZF.low){ // 体力が少ない：4〜7m 離れ、近づいた敵と攻撃の後の隙だけローキックで返す。飛び蹴りはしない
@@ -10728,7 +10753,11 @@ function szSmokeTick(dt){ for(const p of SZ_SMOKE){ if(!p.sp.visible) continue; 
 const SZ_BARKS={};
 function szBark(kind){ const L=SZ_BARKS[kind]; if(!L||!L.length||S.time-(SZ.barkAt||-9)<4) return; SZ.barkAt=S.time; floatText(SZ.x,2.3,SZ.z,L[Math.floor(Math.random()*L.length)],'#f0e6c8'); }
 // 戦闘の終わり：まわり15m に落ち着いていない敵がいない状態が8秒続いたら終わり（回復は第3段階）
-function szCombatClock(dt){ if(SZ.tgt){ SZ.calmT=0; SZ.fight=true; return; } let near=false;
+// v0.77：仲間になったあとの戦闘開始の掛け声（確定台詞。2026-11-17 ユーザー許可。山王の初遭遇では言わない）
+const SZ_CRY={text:'Reddishにしてやろうかああぁぁあ！？',gap:20}; // gap：次に言えるまでの秒（暫定。続けざまの小競り合いで繰り返さない）
+function szBattleCry(){ if(!SZ.joined||STF.sz||SZ.down||!SZ.m||!SZ.m.g.visible) return; if(S.time-(SZ.cryAt??-1e9)<SZ_CRY.gap) return; SZ.cryAt=S.time; say(SZ,SZ_CRY.text); }
+function szFightOn(){ if(!SZ.fight) szBattleCry(); SZ.fight=true; SZ.calmT=0; } // 戦いに入る（v0.77：入ったときに掛け声）
+function szCombatClock(dt){ if(SZ.tgt){ szFightOn(); return; } let near=false;
   for(const e of enemies){ if(e.removed||e.state==='dead'||SZ_CALM.includes(e.state)||e.kfY>1) continue; if(dist(SZ.x,SZ.z,e.x,e.z)<SZF.endR){ near=true; break; } }
   if(near){ SZ.calmT=0; return; } SZ.calmT+=dt; if(SZ.calmT>=SZF.endT) SZ.fight=false; }
 // 敵と重ならない（スズキがよける。見張り台の上・倒れた獣は除く）
@@ -10778,6 +10807,7 @@ function szAnimate(dt){ const m=SZ.m, v=SZ.spd, walking=v>0.3&&!SZ.kick, run=v>4
 function updateSuzuki(dt){
   szSmellTick(dt); // 臭いは敵に付いているので、スズキが倒れていても続く
   szPlaceTick(); // 読み込んだ直後：主人公の近くへ出す
+  if(STF.sz){ stfSzTick(dt); return; } // v0.77：仲間になる前（作業F の台本どおりに動く）
   if(!szHere()){ if(SZ.m&&SZ.m.g.visible) SZ.m.g.visible=false; return; }
   szModel(); SZ.pose=null; szCrumb();
   szRescueTick(dt);
@@ -10790,6 +10820,480 @@ function updateSuzuki(dt){
   const d=dist(SZ.x,SZ.z,P.x,P.z), rs=SZ.r+P.r; if(d<rs&&d>1e-3){ SZ.x+=(SZ.x-P.x)/d*(rs-d); SZ.z+=(SZ.z-P.z)/d*(rs-d); } // 主人公と重ならない（スズキがよける）
   szPushOut(); resolve(SZ,false);
   szAnimate(dt); }
+
+// ================= v0.77（P2 作業F）物語イベント：救援無線 → 相談 → KEI truck を直す → 見送り → 上志比の山王でスズキと初遭遇 → 仲間に =================
+// 2026-11-17 ユーザー確定（ChatGPT 実装指示書「確定5項目＋KEI truck修理ゲート」）：
+//  ① 無線は防衛戦の勝利の直後に自動で1回 ② 出発の相談のあと、KEI truck を直して使えるようになって初めて上志比へ（上志比へ行けた旧セーブはそのまま行ける）
+//  ③ 初遭遇の戦いの間、スズキは安全な所へ退いて見守る（仲間 AI では戦わない。サルは主人公と戦う） ④ 負けたら上志比の西端から、山王でカットからやり直す
+// ・台詞は STF_LINES。すべて確定（スズキの初登場の3行は 2026-11-17 00:12、ほかは ChatGPT の草案を 2026-11-17 承認）。Claude は台詞を創作しない。無線の発信者は不明のまま。
+// ・作業ブランチと試遊版 previews/p2-story/ で確かめる。台詞と KEI truck の素材などが承認されるまで main に入れない。docs/p2-story-f.md
+// ・記録は chapter2.progress（中身はそのまま保存される）。radioHeard 無線・departureDecision 相談・truck（KEI truck）・departureComplete 見送り・
+//   mutantMet 初遭遇（v0.67 で予約。会話を終えて仲間になったとき）・legacyKamishihiAccess 旧セーブの移動権。仲間かどうかは suzuki.joined だけ。
+const STF_HERO={name:'主人公'}, STF_SZW={name:'スズキ'}, STF_RADIO_WHO={name:'無線'}; // 台詞はすべて 2026-11-17 ユーザー承認（ChatGPT の草案をそのまま）。「草案（未承認）」の札の仕組みは次の草案のために残す
+const STF_LINES={ // 2026-11-17 台詞・演出草案（ChatGPT）。確定の行には札を付けない
+  radio:[ // A 救援無線（草案）
+    [STF_RADIO_WHO,'……ザザッ……誰か……聞こえますか……'],
+    [STF_RADIO_WHO,'……かみし……ザッ……助けて……誰か、助けて……'],
+    [STF_RADIO_WHO,'……もし聞こえていたら……ザザザッ……']],
+  decide:[ // B 上志比へ向かう決意（草案）
+    [npcTome,'……今のは、上志比の方からか？'],
+    [npcEshin,'声だけでは、どなたかも分かりませんね。……ですが、確かに助けを求めておられました'],
+    [STF_HERO,'行ってくる。上志比へ'],
+    [npcGen,'あかん。上志比は今、獣だらけや。ひとりで行ってどうなる'],
+    [STF_HERO,'助けを呼んでる人がいるんだ。それに、獣がおかしくなった理由も、あっちに何かあるかもしれない'],
+    [npcGen,'……サルどもの動き、あれはただの群れやなかった。おまえも見たやろ'],
+    [STF_HERO,'だから行くんだ。ここで待ってても、何も分からない'],
+    [npcTome,'源さん。この子の目ぇ見てみ。止めても行くわ、こりゃ'],
+    [STF_HERO,'……でも、歩いて行くには遠いな'],
+    [npcTome,'上志比へ続く道に、動かんようになった軽トラックがあったはずじゃ。あれを直せたら……'],
+    [STF_HERO,'まずはその車を探してみる'],
+    [npcEshin,'どうか、無理はなさらないでください']],
+  found:[[STF_HERO,'これが言ってた軽トラックか。……このままじゃ走れそうにない']], // C 発見（草案）
+  fixed:[ // C 修理完了（草案）
+    [STF_HERO,'よし。これなら動かせそうだ'],
+    [npcTome,'おお、直したんか。……これが『KEI truck』じゃ'],
+    [STF_HERO,'KEI truck……。これで上志比まで行けるな']],
+  sendoff:[ // D 見送り（草案）
+    [npcGen,'……はぁ。光明寺はわしらで守る。無理やと思たら、すぐ戻ってこい。ええな'],
+    [npcEshin,'道中のご無事をお祈りしております。……どうか、お気をつけて'],
+    [npcTome,'向こうに着いても、無茶だけはするでないぞ'],
+    [STF_HERO,'わかった。行ってくる']],
+  meet:[ // E 変異したサルが逃げ去ったあと。最初の3行は確定（2026-11-17 ユーザーの原文のまま）。残りは草案
+    [STF_SZW,'ありが、、、、、、　マンゴスチーーン！！'],
+    [STF_HERO,'色々聞きたいことはあるけど、、、とりあえず名前は？あと、こんなところで何してたんだ？'],
+    [STF_SZW,'おれはスズキ！探してる人がいるんだ。だから俺はここに残ったってかんじかな。'],
+    [STF_HERO,'探してる人……？　その人がどこにいるか、分かるのか？'],
+    [STF_SZW,'まだ分かんない。だから、この辺をずっと探してたんだ'],
+    [STF_HERO,'そうか。……でも、今みたいなサルがまた来るかもしれない'],
+    [STF_SZW,'それは、さすがに困るな……'],
+    [STF_HERO,'俺も上志比を調べたい。よかったら一緒に来ないか？'],
+    [STF_SZW,'いいの？　じゃあ、よろしく！'],
+    [STF_HERO,'まずは安全なところへ行こう']]};
+function stfP(){ return (prog.chapter2&&prog.chapter2.progress)||{}; }
+// 光明寺側の進み（無線 → 相談 → 車 → 見送り）。記録が無い（読み込み前・試験で開放しただけ）ときは 'open'＝今までどおり
+function stfStage(){ const p=stfP(); if(!prog.bossDefeated||!p.defenseComplete) return 'none';
+  if(p.radioHeard===false) return 'radio';
+  if(p.radioHeard===undefined) return 'open';
+  if(p.departureDecision!==true) return 'decide';
+  if(p.departureComplete!==true){ const t=trk(); return t.repaired&&t.fueled?'sendoff':'truck'; }
+  return 'away'; }
+// 上志比側の進み（初遭遇 → 仲間）。見送りを終えたか、旧セーブの移動権があれば山王で初遭遇
+function stfMeetStage(){ const p=stfP(); if(SZ.joined) return 'done'; if(!(p.departureComplete===true||p.legacyKamishihiAccess)) return 'none'; return p.mutantMet===true?'talk':'meet'; }
+// 歩いて上志比へ：記録が無い（今までどおり）・旧セーブの移動権・一度 KEI truck で行った
+function stfWalkOK(){ const p=stfP(); return stfStage()==='open'||!!p.legacyKamishihiAccess||(trk().trips|0)>0; }
+function stfTravelOK(){ return stfWalkOK(); }
+function stfNoSave(){ return !!(STF.enc&&STF.enc.phase!=='wait'); } // 初遭遇の途中は保存しない（鱗が二重に手に入らないように）
+// 読み込み：旧セーブ（防衛戦は済み・作業F の記録なし）は、上志比へ歩いて行ける権利を残し、無線は光明寺で1回だけ流す
+function stfNormalize(){ const p=stfP(); if(!prog.bossDefeated||!p.defenseComplete||p.radioHeard!==undefined) return;
+  Object.assign(p,{radioHeard:false,departureDecision:false,departureComplete:false,legacyKamishihiAccess:true}); }
+function stfFresh(){ if(STF.live){ try{ stfAbort(); stfUngather(); const el=document.getElementById('stfFade'); if(el) el.style.opacity='0'; stfCamOff(); document.body.classList.remove('cinema52'); }catch(err){ console.error(err); } }
+  if(TRUCK.drive&&typeof pm!=='undefined'&&pm) pm.g.visible=true; truckColOff(); Object.assign(TRUCK,{drive:false,sync:false}); truckStop();
+  Object.assign(STF,{live:false,busy:false,radioT:0,pre:false,enc:null,sz:null,cut:null,npc:null,camOwn:false}); STF.hold.length=0; }
+function stfObjective(){ const p=stfP(), st=stfStage();
+  if(REG.cur==='komyoji'){
+    if(st==='radio'&&!stfWalkOK()) return ['第二章：光明寺防衛戦を完了',null]; // 無線が鳴るまで（まだ上志比へは行けない）
+    if(st==='decide') return ['第二章：無線から救援の声が届いた。上志比へ向かう準備をしよう',stfRoom()];
+    if(st==='truck'){ const t=trk(); if(!t.found) return ['第二章：上志比へ続く道で故障した軽トラックを探そう',truckPos()];
+      return ['第二章：KEI truckの修理に必要な材料と部品を集めよう（'+truckNeedText(true)+'）',truckNextTarget()]; }
+    if(st==='sendoff') return ['第二章：KEI truckで上志比へ向かおう',truckPos()];
+    if(st==='away'&&(trk().trips|0)===0) return ['第二章：KEI truckで上志比へ向かおう',TRUCK.drive?KOMYOJI_EAST:truckPos()];
+    return null; }
+  if(REG.cur==='kamishihi'){ const m=stfMeetStage(), a=stfAnchor();
+    if((m==='meet'||m==='talk')&&a) return ['第二章：上志比を探索し、山王方面の様子を確かめよう',a];
+    if(m==='done'&&p.radioHeard!==undefined&&p.mutantMet===true) return ['第二章：スズキとともに上志比を探索しよう',null]; }
+  return null; }
+// ---- 画面の演出：暗転・カメラ ----
+const stfWait=ms=>new Promise(r=>setTimeout(r,ms));
+function stfFadeEl(){ let el=document.getElementById('stfFade'); if(!el){ el=document.createElement('div'); el.id='stfFade'; document.body.appendChild(el); } return el; }
+async function stfFade(on){ stfFadeEl().style.opacity=on?'1':'0'; await stfWait(500); }
+function stfCam(p,l,fov){ STF.camOwn=true; cam.override={p:new THREE.Vector3(p[0],p[1],p[2]),l:new THREE.Vector3(l[0],l[1],l[2]),fov:fov||CAM.fov}; }
+function stfCamOff(yaw){ if(!STF.camOwn) return; STF.camOwn=false; cam.override=null; if(yaw!=null) cam.yaw=yaw; cam.init=false; camera.fov=CAM.fov; camera.updateProjectionMatrix(); }
+// 暗い間に少し動かして、人の形を新しい場所に置く（会話の間はゲームが止まるため）
+async function stfSettle(){ S.mode='playing'; clearCinemaInput52(); await nextFrame(); await nextFrame(); clearCinemaInput52(); S.mode='dialog'; }
+function stfLines(k){ return STF_LINES[k].map(l=>l.slice()); }
+// 主人公とトミオ・源さん・慧心を、場面の場所へ（終わったら町民は元の場所へ戻す）。spots：[主人公, トミオ, 慧心, 源さん] の {x,z,face}
+function stfGather(spots){ if(TRUCK.drive) truckExit(true); if(f4Busy()) f4DropAll('');
+  const [h,...ns]=spots; P.x=h.x; P.z=h.z; P.facing=h.face; P.lvx48=0; P.lvz48=0; P.atk=null; P.dodge=null;
+  if(!STF.npc){ STF.npc=[]; for(const n of [npcTome,npcEshin,npcGen]) STF.npc.push({n,x:n.x,z:n.z,face:n.face,home:n.home?{x:n.home.x,z:n.home.z}:null}); }
+  [npcTome,npcEshin,npcGen].forEach((n,i)=>{ const q=ns[i]; n.x=q.x; n.z=q.z; if(n.home){ n.home.x=q.x; n.home.z=q.z; } n.face=q.face; }); }
+function stfUngather(){ if(!STF.npc) return; for(const o of STF.npc){ const n=o.n; n.x=o.x; n.z=o.z; n.face=o.face; if(o.home&&n.home){ n.home.x=o.home.x; n.home.z=o.home.z; } } STF.npc=null; }
+async function stfSceneEnd(after){ try{ S.mode='dialog'; await stfFade(true); stfUngather(); stfCamOff(P.facing); if(after) after(); await stfSettle(); await stfFade(false); }
+  finally{ if(S.mode==='dialog'&&$('dialog').hidden) S.mode='playing'; STF.busy=false; } }
+function stfSceneFail(err){ console.error(err); stfUngather(); stfCamOff(P.facing); stfFadeEl().style.opacity='0'; if(S.mode==='dialog'&&$('dialog').hidden) S.mode='playing'; STF.busy=false; }
+// ---- 光明寺：救援無線 → 相談 ----
+// 無線室（prefab(15,40)、向き π：入口は -z 側）。主人公は入口の前に立ち、3人はその後ろに集まる
+function stfRoom(){ const [x,z]=M(15,40); return {x:x-5.5/4,z:z-2-1.9,dx:x-5.5/4,dz:z-2}; }
+function stfRoomSpots(){ const r=stfRoom(), f=(x,z)=>Math.atan2(r.x-x,r.z-z); return [{x:r.x,z:r.z,face:0},{x:r.x-2.1,z:r.z-1.0,face:f(r.x-2.1,r.z-1.0)},{x:r.x+2.1,z:r.z-1.1,face:f(r.x+2.1,r.z-1.1)},{x:r.x+0.2,z:r.z-2.7,face:f(r.x+0.2,r.z-2.7)}]; } // 主人公・トミオ・慧心・源さん
+async function stfRadio(){ if(STF.busy) return; STF.busy=true; STF.live=true; keys.clear();
+  try{ S.mode='dialog'; await stfFade(true); stfGather(stfRoomSpots()); await stfSettle();
+    const r=stfRoom(), gy=groundH(r.x,r.z); stfCam([r.x-4.6,gy+2.6,r.z-5.4],[r.dx,gy+1.5,r.dz],52); // 無線室を斜め前から
+    await stfFade(false); noise(1.4,0.05,2600); noise(0.5,0.04,900,0.6);
+    S.mode='playing'; queueDialog(stfLines('radio'),()=>{ stfP().radioHeard=true; saveGame(); stfDecide(true); });
+  }catch(err){ stfSceneFail(err); } }
+async function stfDecide(gathered){ STF.busy=true; STF.live=true;
+  try{ if(!gathered||!STF.npc){ S.mode='dialog'; await stfFade(true); stfGather(stfRoomSpots()); await stfSettle(); await stfFade(false); }
+    const r=stfRoom(), gy=groundH(r.x,r.z); P.facing=Math.PI; pm.g.rotation.y=P.facing; // みんなの方へ向く。横から見る
+    stfCam([r.x-5.4,gy+2.1,r.z-4.2],[r.x+0.1,gy+1.25,r.z-1.2],50);
+    S.mode='playing'; queueDialog(stfLines('decide'),()=>{ stfP().departureDecision=true; saveGame(); stfSceneEnd(); });
+  }catch(err){ stfSceneFail(err); } }
+// ---- 上志比：山王での初遭遇 ----
+function stfAnchor(){ const D=window.KAMISHIHI_MAP, st=D&&D.pts&&(D.pts.station||[]).find(s=>s[2]==='山王'); return st?{x:st[0],z:st[1]}:null; }
+function stfSpot(x,z){ for(const R of [0,1.5,3,4.5,6,8,10,13]) for(let k=0;k<(R?12:1);k++){ const a=k/12*TAU, xx=x+Math.sin(a)*R, zz=z+Math.cos(a)*R; if(szWalkable(xx,zz)&&szFree(xx,zz,0.6)) return {x:xx,z:zz}; } return {x,z}; }
+// 山王のまわりのほかの獣を遠ざけて止めておく（初遭遇の間だけ。終わると動き出す）
+function stfHoldBeasts(a){ const R=STF_CFG.clearR; for(const e of enemies){ if(e.removed||e.state==='dead'||e.stfF||e.stfHold) continue; if(dist(e.x,e.z,a.x,a.z)>R&&dist(e.x,e.z,P.x,P.z)>R*0.6) continue;
+    const ang=Math.atan2(e.x-a.x,e.z-a.z); let ok=false;
+    for(const da of [0,0.5,-0.5,1,-1,1.6,-1.6,2.4,-2.4,Math.PI]){ const x=a.x+Math.sin(ang+da)*(R+18), z=a.z+Math.cos(ang+da)*(R+18); if(dist(x,z,P.x,P.z)>R*0.8&&szWalkable(x,z)){ e.x=x; e.z=z; ok=true; break; } }
+    e.stfHold=true; e.stfVis=e.m.g.visible; if(ok) e.m.g.position.set(e.x,groundH(e.x,e.z)+(e.airY||0),e.z); else e.m.g.visible=false;
+    if(e.ind) e.ind.visible=false; if(!e.kf) setState(e,'idle'); STF.hold.push(e); } }
+function stfRelease(){ for(const e of STF.hold){ e.stfHold=false; if(e.m&&e.stfVis!==false) e.m.g.visible=true; } STF.hold.length=0; }
+async function stfMeetStart(a){ if(STF.busy||STF.enc) return; STF.busy=true; STF.live=true;
+  try{ if(TRUCK.drive) truckExit(true);
+    const L=Math.hypot(P.x-a.x,P.z-a.z)||1, ux=(P.x-a.x)/L, uz=(P.z-a.z)/L; // 山王から主人公への向き
+    const S0=stfSpot(a.x-ux*9,a.z-uz*9), S1=stfSpot(P.x-ux*6.5,P.z-uz*6.5), M0=stfSpot(S0.x-ux*7,S0.z-uz*7);
+    stfHoldBeasts(a);
+    const e=await spawnMutant(M0.x,M0.z,{fleeOnly:true,aggro:true});
+    if(!e||REG.cur!=='kamishihi'||P.dead||!prog.chapter2){ if(e) removeEnemy(e); stfRelease(); return; }
+    e.stfF=true; e.tgt=null; setState(e,'alert'); e.spd=0; e.rot=Math.atan2(S1.x-M0.x,S1.z-M0.z);
+    szModel(); SZ.region=REG.cur; SZ.down=false; SZ.upT=0; SZ.stagger=0; SZ.kick=null; szPut(S0.x,S0.z,Math.atan2(S1.x-S0.x,S1.z-S0.z));
+    STF.sz={mode:'run',tx:S1.x,tz:S1.z,spd:6};
+    STF.enc={phase:'cut',e,a,S0,S1,u:[ux,uz],t:0};
+    stfCutStart();
+  }catch(err){ console.error(err); stfAbort(); }
+  finally{ STF.busy=false; } }
+// 短いカット：スズキが変異したサルに追われて走って来て、主人公に気づく（約5〜7秒。操作は止める。台詞は付けない）
+function stfCutStart(){ const E=STF.enc, dS=dist(E.S0.x,E.S0.z,E.S1.x,E.S1.z), runT=clamp(dS/6.8,2.6,4.6); STF.sz.spd=Math.max(4,dS/runT);
+  const [ux,uz]=E.u, mx=(E.S0.x+E.S1.x)/2, mz=(E.S0.z+E.S1.z)/2; let side=1; for(const sd of [1,-1]){ if(szFree(mx-uz*sd*11,mz+ux*sd*11,1.2)&&szWalkable(mx-uz*sd*11,mz+ux*sd*11)){ side=sd; break; } }
+  STF.cut={t:0,runT,dur:runT+2.0,side}; document.body.classList.add('cinema52'); introText52.textContent=''; clearCinemaInput52(); }
+function stfCutOn(){ return !!STF.cut&&S.mode==='playing'; }
+function stfCutTick(dt){ const c=STF.cut, E=STF.enc, e=E&&E.e; if(!e||e.removed){ stfCutEnd(false); return; } clearCinemaInput52(); c.t+=dt;
+  stfSzTick(dt);
+  const k=Math.min(1,c.t/c.runT), gap=lerp(7,3.8,k);
+  if(c.t<c.runT+0.15){ const tx=SZ.x-Math.sin(SZ.rot)*gap, tz=SZ.z-Math.cos(SZ.rot)*gap, d=dist(e.x,e.z,tx,tz), ox=e.x, oz=e.z;
+    if(d>0.15){ const a=Math.atan2(tx-e.x,tz-e.z), v=Math.min(d/dt,STF.sz.spd*1.3); e.x+=Math.sin(a)*v*dt; e.z+=Math.cos(a)*v*dt; e.rot=a; }
+    e.spd=dist(ox,oz,e.x,e.z)/Math.max(dt,1e-4); }
+  else { e.spd=0; e.rot+=clamp(angDiff(e.rot,Math.atan2(P.x-e.x,P.z-e.z)),-4*dt,4*dt); if(!c.roar){ c.roar=true; sfx('roar'); S.shake=Math.max(S.shake||0,0.15); } }
+  updateEnemyAnim(e,dt);
+  // カメラ：走る向きの横から二人を追い、走り終えたら主人公の後ろへ
+  const [ux,uz]=E.u, mx=(SZ.x+e.x)/2, mz=(SZ.z+e.z)/2, gy=groundH(mx,mz), sx=-uz*c.side, sz=ux*c.side;
+  const q=clamp((c.t-c.runT)/1.5,0,1), qq=q*q*(3-2*q), yaw=Math.atan2(e.x-P.x,e.z-P.z), hy=groundH(P.x,P.z);
+  const ax=mx+sx*11-ux*3, az=mz+sz*11-uz*3, bx=P.x-Math.sin(yaw)*CAM.dist, bz=P.z-Math.cos(yaw)*CAM.dist;
+  stfCam([lerp(ax,bx,qq),lerp(gy+3.0,hy+CAM.h,qq),lerp(az,bz,qq)],[lerp(mx,P.x,qq),lerp(gy+1.1,hy+CAM.look,qq),lerp(mz,P.z,qq)],lerp(50,CAM.fov,qq));
+  if(c.t>=c.dur) stfCutEnd(true); }
+function stfCutEnd(done){ const E=STF.enc, e=E&&E.e; STF.cut=null; document.body.classList.remove('cinema52'); introText52.textContent='';
+  const yaw=e&&!e.removed?Math.atan2(e.x-P.x,e.z-P.z):P.facing; P.facing=yaw; stfCamOff(yaw);
+  if(done&&E) stfFightStart(); }
+// 戦い：サルは主人公と戦う（逃げ去る作り：傷230・倒れない・鱗1枚。v0.61〜v0.62 のまま）。スズキは画面の中の安全な所へ退いて見守る
+function stfFightStart(){ const E=STF.enc, e=E.e; E.phase='fight'; E.t=0; e.aggro=true; e.tgt=null; setState(e,'alert'); e.st=0;
+  STF.sz={mode:'watch',spot:null,re:0}; banner('変異したサル','傷を負わせて追い払え',3); }
+// 退く所：主人公から 10〜13m・サルから 10m 以上・歩けて・画面に映る所（なければ映らなくても歩ける所）
+function stfWatchSpot(e){ const R=STF_CFG.watchR, base=Math.atan2(e.x-P.x,e.z-P.z); let fb=null;
+  for(const da of [1.2,-1.2,1.6,-1.6,0.9,-0.9,2.1,-2.1]) for(const r of [R,R-2.5,R+2]){ const x=P.x+Math.sin(base+da)*r, z=P.z+Math.cos(base+da)*r;
+    if(!szWalkable(x,z)||!szFree(x,z,0.7)||dist(x,z,e.x,e.z)<10) continue; if(szInView(x,z)) return {x,z}; if(!fb) fb={x,z}; }
+  return fb||stfSpot(P.x-Math.sin(base)*R,P.z-Math.cos(base)*R); }
+function stfFled(){ const E=STF.enc; E.phase='fled'; E.t=0; STF.sz={mode:'stand'}; } // 記録は会話を終えて仲間になったとき（ここでは保存しない）
+function stfApproach(){ const E=STF.enc; E.phase='approach'; E.t=0; STF.sz={mode:'approach',spd:3.4}; }
+// 初遭遇は済んだが仲間になる前の保存（ふつうは作られない）：スズキが山王で待っている
+function stfTalkWait(a){ if(STF.enc) return; const s=stfSpot(a.x,a.z); szModel(); SZ.region=REG.cur; SZ.down=false; szPut(s.x,s.z,0);
+  STF.sz={mode:'stand'}; STF.enc={phase:'wait',a,t:0,e:null}; STF.live=true; }
+function stfTalkStart(){ const E=STF.enc; if(!E||E.phase==='talk'||S.mode!=='playing') return; E.phase='talk'; STF.busy=true; STF.sz={mode:'stand'}; SZ.spd=0;
+  SZ.rot=Math.atan2(P.x-SZ.x,P.z-SZ.z); P.facing=Math.atan2(SZ.x-P.x,SZ.z-P.z); pm.g.rotation.y=P.facing; szAnimate(0);
+  const mx=(P.x+SZ.x)/2, mz=(P.z+SZ.z)/2, dx=SZ.x-P.x, dz=SZ.z-P.z, L=Math.hypot(dx,dz)||1, gy=groundH(mx,mz); let nx=dz/L, nz=-dx/L; if(!szFree(mx+nx*4.6,mz+nz*4.6,1)){ nx=-nx; nz=-nz; }
+  stfCam([mx+nx*4.6,gy+1.7,mz+nz*4.6],[mx,gy+1.25,mz],48);
+  queueDialog(stfLines('meet'),()=>stfJoin()); }
+// 会話を終えたら：初遭遇の記録と仲間（suzuki.joined）を同時に確定して保存
+function stfJoin(){ const x=SZ.x, z=SZ.z, r=SZ.rot; STF.sz=null; STF.enc=null; stfP().mutantMet=true; szJoin(); szPut(x,z,r); stfRelease(); stfCamOff(P.facing); STF.busy=false;
+  banner('スズキが仲間になった','話しかける（近くで E・行動ボタン）と、行動を指示できる',6); saveGame(); }
+// 初遭遇の途中でやめる（倒れた・地域を移った・タイトルへ戻った）：始まる前に戻す（記録はそのまま）
+function stfAbort(){ const E=STF.enc; if(STF.cut){ STF.cut=null; document.body.classList.remove('cinema52'); introText52.textContent=''; }
+  if(E&&E.e&&!E.e.removed) removeEnemy(E.e); STF.enc=null;
+  if(STF.sz){ STF.sz=null; if(!SZ.joined&&SZ.m) SZ.m.g.visible=false; }
+  stfRelease(); stfCamOff(P.facing); STF.busy=false; }
+function stfAfterTravel(ok){ if(STF.enc||STF.sz) stfAbort(); STF.pre=false; truckAfterTravel(ok); }
+function stfAfterRetry(){ if(STF.enc||STF.sz) stfAbort(); }
+// 変異したサルにたたかれた（仲間になる前のスズキ）：よろけるだけ
+function stfSzHit(e){ const a=Math.atan2(SZ.x-e.x,SZ.z-e.z); SZ.kx=Math.sin(a)*4.5; SZ.kz=Math.cos(a)*4.5; SZ.stagger=0.32; return true; }
+// 仲間になる前のスズキ（台本どおり）：走る・退いて見守る・近づく・立つ
+function stfSzTick(dt){ const s=STF.sz; szModel(); SZ.region=REG.cur; SZ.fight=false; SZ.kick=null; SZ.pose=null;
+  const E=STF.enc, e=E&&E.e&&!E.e.removed&&E.e.state!=='dead'?E.e:null, face=(x,z,r)=>{ SZ.rot+=clamp(angDiff(SZ.rot,Math.atan2(x-SZ.x,z-SZ.z)),-r*dt,r*dt); };
+  if(SZ.stagger>0){ SZ.stagger-=dt; const ox=SZ.x, oz=SZ.z; SZ.x+=SZ.kx*dt; SZ.z+=SZ.kz*dt; const f=Math.pow(0.02,dt); SZ.kx*=f; SZ.kz*=f; resolve(SZ,false); if(!szWalkable(SZ.x,SZ.z)){ SZ.x=ox; SZ.z=oz; } SZ.spd=0; }
+  else if(s.mode==='run'){ const d=dist(SZ.x,SZ.z,s.tx,s.tz); if(d>0.35) szGo(Math.atan2(s.tx-SZ.x,s.tz-SZ.z),s.spd||6,dt); else { SZ.spd=0; face(P.x,P.z,6); } }
+  else if(s.mode==='watch'){ s.re-=dt; if(e&&(!s.spot||(s.re<=0&&(dist(s.spot.x,s.spot.z,e.x,e.z)<8||dist(s.spot.x,s.spot.z,P.x,P.z)>20)))){ s.spot=stfWatchSpot(e); s.re=1.5; }
+    const sp=s.spot; if(sp&&dist(SZ.x,SZ.z,sp.x,sp.z)>0.6) szGo(Math.atan2(sp.x-SZ.x,sp.z-SZ.z),5.6,dt); else { SZ.spd=0; face(e?(e.x+P.x)/2:P.x,e?(e.z+P.z)/2:P.z,5); } }
+  else if(s.mode==='approach'){ if(dist(SZ.x,SZ.z,P.x,P.z)>2.4) szGo(Math.atan2(P.x-SZ.x,P.z-SZ.z),s.spd||3.4,dt); else { SZ.spd=0; face(P.x,P.z,6); } }
+  else { SZ.spd=0; if(e) face(e.x,e.z,5); else if(dist(SZ.x,SZ.z,P.x,P.z)<14) face(P.x,P.z,4); }
+  const d=dist(SZ.x,SZ.z,P.x,P.z), rs=SZ.r+P.r; if(d<rs&&d>1e-3){ SZ.x+=(SZ.x-P.x)/d*(rs-d); SZ.z+=(SZ.z-P.z)/d*(rs-d); }
+  szAnimate(dt); }
+function stfEnc(dt){ const E=STF.enc; E.t+=dt; const e=E.e;
+  if(E.phase==='fight'){ if(!e||e.removed||e.state==='flee'||e.fled){ stfFled(); return; } if(e.tgt) e.tgt=null; }
+  else if(E.phase==='fled'){ if(E.t>2.2) stfApproach(); }
+  else if(E.phase==='approach'){ if(dist(SZ.x,SZ.z,P.x,P.z)<2.9||E.t>6) stfTalkStart(); }
+  else if(E.phase==='wait'){ if(dist(SZ.x,SZ.z,P.x,P.z)<STF_CFG.talkR) stfApproach(); } }
+// 毎コマ：きっかけを見る・初遭遇を進める・KEI truck
+function stfUpdate(dt){ if(!prog.chapter2) return; truckUpdate(dt); if(P.dead) return;
+  const p=stfP(); if(SZ.joined&&p.radioHeard!==undefined&&p.mutantMet!==true&&(p.departureComplete===true||p.legacyKamishihiAccess)) p.mutantMet=true; // 仲間なのに記録が無い（試遊版のボタンなど）：そろえる
+  if(STF.enc){ if(REG.cur==='kamishihi'&&!REG.busy) stfEnc(dt); return; }
+  if(STF.busy) return;
+  if(REG.cur==='komyoji'){ if(ev.kind||bossActive) return; const st=stfStage();
+    if(st==='radio'){ if(bannerT>0){ STF.radioT=0; return; } STF.radioT+=dt; if(STF.radioT>=STF_CFG.radioDelay) stfRadio(); } // 勝利の会話・報酬の表示が終わってから（旧セーブは読み込んだあと）、少しして
+    else if(st==='decide'){ STF.radioT+=dt; if(STF.radioT>=2) stfDecide(false); } // 無線を聞いたあと、相談の前に読み直したとき
+    return; }
+  if(REG.cur==='kamishihi'&&!REG.busy&&KAMI){ const a=stfAnchor(); if(!a) return; const m=stfMeetStage(), d=dist(P.x,P.z,a.x,a.z);
+    if(m==='meet'){ if(!STF.pre&&d<STF_CFG.meetR+70){ STF.pre=true; mutantLoad().catch(()=>{}); } if(d<STF_CFG.meetR) stfMeetStart(a); } // 近づいたら変異したサルの形を先に読む
+    else if(m==='talk') stfTalkWait(a); } }
+for(const type of ['keydown','keyup','pointerdown','pointerup','touchstart','touchmove','touchend','click','wheel']) document.addEventListener(type,e=>{ if(stfCutOn()){ e.preventDefault(); e.stopImmediatePropagation(); } },{capture:true,passive:false});
+
+// ================= v0.77（作業F）KEI truck：見つける・直す・燃料・乗る・運転する・上志比へ =================
+// 2026-11-17 ユーザー確定：出発の相談のあと、KEI truck を「今の素材＋専用部品」で直し、使えるようになって初めて上志比へ（初回は KEI truck で）。
+// 過去の確定：見つける場所は光明寺から上志比へ続く道の上・燃料が要る（手に入れ方は簡略）・PC と iPhone で操作できる。荷台・改造などは今回は作らない。
+// 未決定（ここは仮）：素材・部品・燃料の数、専用部品の名前と手に入れ方、燃料の減り方、車が壊れる仕組み、正式な車体（【3Dモデル制作依頼】）。燃料は減らない・車は壊れない（勝手に難しくしない）
+const TRUCK_CFG={mats:{wood:10,iron:6,rope:4,stone:6,bamboo:3}, parts:2, // 素材は 2026-11-17「もう少し労力が必要に」で増やした（数は暫定。どれも光明寺で採れる）
+   partName:'（仮）車の部品', fuel:1, fuelName:'（仮）燃料（携行缶）', // 数・名前は暫定（未承認）
+  parkX:560, r:1.5, // 置き場所（国道416号の x）・運転中の当たりの半径（正式モデル 全長 約4.1m・幅 約2.1m に合わせて 1.35→1.5）
+  // 運転（v0.77、2026-11-17 ユーザー指示「慣性や遠心力で、こんなに俊敏には曲がれないはず」で見直し。数は暫定）
+  speed:14, rev:4, acc:3.5, brake:8, coast:1.2, // m/秒・m/秒²（前 約50km/時・0→50km/時 約5秒・ブレーキ 約0.8G）
+  wheelbase:1.947, steerMax:0.496, steerRate:1.4, steerBack:2.2, // 前後の車輪の間（m。正式モデル）・いちばん切ったハンドル（最小の回る半径 約3.6m は前の仮の形と同じ）・切る／戻す速さ（rad/秒）
+  grip:7, steerGrip:1.1, yawSlip:1.25, yawLag:0.18, scrub:4, // タイヤが横に踏ん張れる限界（m/秒²）・速いときにいっぱい切って出る横の力（grip の何倍。1 を少し超えると外へ少し滑る）・曲がれる上限・向きの変わり遅れ・横滑りで落ちる速さ
+  rollK:0.009, pitchK:0.006, // 車体の傾き（見た目だけ）
+  // ばね（v0.77、2026-11-17 ユーザー指示「段差で跳ね上がったり少し浮いたりするところも」。数は暫定）
+  suspHz:1.7, suspZeta:0.32, suspStop:0.10, stopK:6, stopD:3, gyroP:0.86, gyroR:0.5, tireR:0.42, // 正式モデルの車輪の位置に合わせ、前後・左右の揺れの速さは前の仮の形と同じにした。タイヤの半径（m）。ばねの揺れ（回/秒）・揺れの収まり方・底づきまでの縮み（m）と底づきの強さ（ばねの何倍）・前後と左右の回りにくさ（m²）
+  bump:{paved:0.006,track:0.03,grass:0.035,farm:0.045,forest:0.06,paddy:0.03,ridge:0.12,rail:0.08,bed:0.1}}; // 地面のでこぼこ（m）：舗装・砂利道・草地・畑・林・田んぼ・畦（田んぼの縁の段差）・線路・線路の砂利
+function trk(){ const p=stfP(); let t=p.truck; if(!t||typeof t!=='object'||Array.isArray(t)){ t={}; if(prog.chapter2) p.truck=t; }
+  if(!Array.isArray(t.parts)) t.parts=[]; t.found=!!t.found; t.repaired=!!t.repaired; t.fueled=!!t.fueled; t.fuel=Math.max(0,t.fuel|0); t.trips=Math.max(0,t.trips|0);
+  if(t.region!=='kamishihi') t.region='komyoji'; return t; }
+function truckShown(){ const p=stfP(); return !!(prog.bossDefeated&&p.defenseComplete&&p.radioHeard!==undefined); } // 作業F の記録があるときだけ置く（第1章・試験の開放だけでは出さない）
+function truckHome(){ const z=roadZAt('国道416号',TRUCK_CFG.parkX)??160, z2=roadZAt('国道416号',TRUCK_CFG.parkX+6)??z; return {x:TRUCK_CFG.parkX,z:z+1.2,a:Math.atan2(6,z2-z)}; }
+function truckPos(){ if(!TRUCK.sync) truckLoadPos(); return {x:TRUCK.x,z:TRUCK.z}; }
+function truckLoadPos(){ const t=trk(); if(t.x==null||t.z==null||!isFinite(t.x)||!isFinite(t.z)){ const h=truckHome(); t.x=h.x; t.z=h.z; t.a=h.a; t.region='komyoji'; }
+  TRUCK.x=+t.x; TRUCK.z=+t.z; TRUCK.a=isFinite(t.a)?+t.a:0; TRUCK.sync=true; TRUCK.susp=null; }
+function truckOK(){ const t=trk(); return t.repaired&&t.fueled; }
+function truckNeedText(short){ const t=trk(), m=TRUCK_CFG.mats, N=k=>RNAME[k]||F5_MATS[k]||k, out=[];
+  if(!t.repaired){ for(const k in m) out.push(`${N(k)} ${Math.min(inv[k]|0,m[k])}/${m[k]}`); out.push(`${short?'部品':TRUCK_CFG.partName} ${Math.min(t.parts.length,TRUCK_CFG.parts)}/${TRUCK_CFG.parts}`); }
+  if(!t.fueled) out.push(`${short?'燃料':TRUCK_CFG.fuelName} ${Math.min(t.fuel,TRUCK_CFG.fuel)}/${TRUCK_CFG.fuel}`); return out.join('・'); }
+// 部品と燃料の場所（光明寺の中。上志比へ行かなくても手に入る）：資材倉庫の前と、国道416号の脇（暫定）
+function truckSpots(){ if(TRUCK.spots) return TRUCK.spots; const [sx,sz]=M(-15,40), rz=roadZAt('国道416号',380)??160, here=REG.cur==='komyoji', used=[];
+  // 置きたい所が建物・丸太などと重なるときは、近くの空いた所へずらす（v0.77：見える形を置くため。光明寺の当たりで1回だけ決める）
+  const ok=(x,z)=>!isWater(x,z)&&f4Free(x,z,0.9)&&used.every(u=>dist(x,z,u[0],u[1])>2.2);
+  const fit=(x,z)=>{ let r0=[x,z]; if(here&&!ok(x,z)){ found: for(let r=0.6;r<=6;r+=0.6) for(let k=0;k<16;k++){ const a=k/16*TAU, X=x+Math.cos(a)*r, Z=z+Math.sin(a)*r; if(ok(X,Z)){ r0=[X,Z]; break found; } } } used.push(r0); return r0; };
+  const [p1,fu,p2]=[fit(sx-2.6,sz-4.2),fit(sx+2.2,sz-4.2),fit(380,rz-6)];
+  const out={parts:[{id:'p1',x:p1[0],z:p1[1]},{id:'p2',x:p2[0],z:p2[1]}],fuel:{x:fu[0],z:fu[1]}}; if(here) TRUCK.spots=out; return out; }
+function truckNextTarget(){ const t=trk(), sp=truckSpots(); if(t.fuel<TRUCK_CFG.fuel&&!t.fueled) return sp.fuel; for(const q of sp.parts) if(!t.parts.includes(q.id)&&!t.repaired) return q; return truckPos(); }
+// ---- 部品と燃料の仮の形（地面に置き、拾うと消える。2026-11-17 ユーザー指示「見えるように木箱や携行缶の仮の形を置く」）----
+// 出す条件は「拾う」と同じ（光明寺・相談のあと・まだ拾っていない／直していない）。木箱（タイヤと部品）・赤い携行缶と、遠くから見つける目印の黄色い旗
+function truckPickups(){ const out=[]; if(REG.cur!=='komyoji'||!truckShown()) return out; const st=stfStage(), p=stfP(), t=trk(), sp=truckSpots();
+  if(p.departureDecision!==true||!(st==='truck'||st==='sendoff'||st==='away'||p.legacyKamishihiAccess)) return out;
+  if(!t.repaired) for(const q of sp.parts) if(!t.parts.includes(q.id)) out.push({kind:'part',id:q.id,x:q.x,z:q.z});
+  if(!t.fueled&&t.fuel<TRUCK_CFG.fuel) out.push({kind:'fuel',id:'fuel',x:sp.fuel.x,z:sp.fuel.z});
+  return out; }
+function truckItemModel(kind){ const g=new THREE.Group(), add=(m,ol=0.03)=>{ g.add(ol?outline(m,ol):m); return m; };
+  if(kind==='part'){ add(mesh(G.box,mat(0x9a7448),0,0.25,0,0.8,0.5,0.55)); // 木箱
+    for(const y of [0.1,0.4]) add(mesh(G.box,mat(0x6e4f2e),0,y,0,0.82,0.06,0.57),0); // 箱の帯
+    const tire=add(mesh(G.cyl8,mat(0x26282a),0.56,0.27,0.05,0.26,0.14,0.26)); tire.rotation.z=Math.PI/2-0.25; // 立てかけたタイヤ
+    const hub=add(mesh(G.cyl8,mat(0x9aa0a6),0.575,0.27,0.05,0.12,0.15,0.12),0); hub.rotation.z=Math.PI/2-0.25;
+    add(mesh(G.box,mat(0x8c949c),-0.08,0.56,0,0.3,0.12,0.2)); // 箱の上の部品
+    const sh=add(mesh(G.cyl8,mat(0x5a6068),0.2,0.55,0.08,0.05,0.34,0.05),0); sh.rotation.z=Math.PI/2; }
+  else { add(mesh(G.box,mat(0xc8352c),0,0.22,0,0.34,0.44,0.17)); // 赤い携行缶
+    add(mesh(G.box,mat(0x2a2c2e),0,0.47,0,0.2,0.05,0.06),0); // 取っ手
+    const sp=add(mesh(G.cyl8,mat(0x3a3a3a),0.12,0.5,0,0.035,0.12,0.035),0); sp.rotation.z=-0.5; // 注ぎ口
+    add(mesh(G.box,mat(0xe8e2d0),0,0.24,0.088,0.2,0.12,0.005),0); } // 白い札
+  add(mesh(G.cyl8,mat(0xd8d0c0),-0.55,0.85,-0.1,0.03,1.7,0.03),0); add(mesh(G.box,mat(0xf0c34a),-0.33,1.56,-0.1,0.42,0.26,0.014),0.015); // 目印の旗
+  g.scale.setScalar(1.2); return g; }
+function truckItemsUpdate(){ const L=truckPickups(), keep=new Set(L.map(o=>o.id)); if(!TRUCK.items) TRUCK.items={};
+  for(const o of L){ let m=TRUCK.items[o.id]; if(!m){ m=TRUCK.items[o.id]=truckItemModel(o.kind); m.rotation.y=hash2(o.x,o.z)*TAU; scene.add(m); } m.position.set(o.x,groundH(o.x,o.z),o.z); m.visible=true; }
+  for(const id in TRUCK.items) if(!keep.has(id)) TRUCK.items[id].visible=false; }
+function truckHideAll(){ if(TRUCK.m) TRUCK.m.visible=false; for(const id in (TRUCK.items||{})) TRUCK.items[id].visible=false; } // タイトルへ戻るとき
+// 地図の印（部品＝茶・燃料＝赤・KEI truck＝白）
+function truckMini(c,X,Z){ for(const o of truckPickups()){ c.fillStyle=o.kind==='part'?'#c89a60':'#e0473c'; c.strokeStyle='#111'; c.lineWidth=1; c.fillRect(X(o.x)-3,Z(o.z)-3,6,6); c.strokeRect(X(o.x)-3,Z(o.z)-3,6,6); }
+  if(REG.cur==='komyoji'&&truckShown()&&trk().region==='komyoji'&&!TRUCK.drive){ const tp=truckPos(); c.fillStyle='#f4f0e4'; c.strokeStyle='#111'; c.fillRect(X(tp.x)-4,Z(tp.z)-2.5,8,5); c.strokeRect(X(tp.x)-4,Z(tp.z)-2.5,8,5); } }
+function truckMapIcons(icon,lab,X,Z){ for(const o of truckPickups()){ const part=o.kind==='part'; icon(X(o.x),Z(o.z),part?'#c89a60':'#e0473c',part?'部':'燃',7); lab(part?TRUCK_CFG.partName:TRUCK_CFG.fuelName,X(o.x)+9,Z(o.z)+4,part?'#f0d8b0':'#ffc0b8'); }
+  if(REG.cur==='komyoji'&&truckShown()&&trk().region==='komyoji'){ const tp=truckPos(); icon(X(tp.x),Z(tp.z),'#f4f0e4','車',7); lab('KEI truck',X(tp.x)+9,Z(tp.z)+4,'#ffffff'); } }
+// ---- 正式モデル（Tripo の GLB。2026-11-17 ユーザー採用。docs/kei-truck-glb.md）----
+// 修理前（発見したとき）と修理後（直したあと）。ゲーム用のコピー（assets/models/kei-truck/game/）を読む。前は +Z、前後の車輪の真ん中が原点、接地は y=0、全長 4.125m（2026-11-17 ユーザー「もう少し大きく」「1.1倍に」で 3.75m から1.1倍）。
+// 車輪は4つの別の形（wheel_fr・wheel_fl・wheel_rr・wheel_rl：右前・左前・右後ろ・左後ろ。原点は車軸）。読めないとき・読み終わるまではコードの仮の形を見せる
+const TRUCK_GLB={broken:'assets/models/kei-truck/game/kei_truck_broken.glb', repaired:'assets/models/kei-truck/game/kei_truck_repaired.glb'};
+const TRUCK_VIS={}; // 形の種類 → {st:'load'|'ok'|'fail', g, wheels:[], hub:[車軸の高さ], r:車輪の半径}
+// 運転席と荷台の位置（車の中の座標。+x が左・+z が前。正式モデルから測った。暫定）：運転席は右（日本の車）。荷台の床（荷台に積む見た目・物を置く所に使う予定）
+const TRUCK_SEAT={x:-0.4,y:1.49,z:0.5}, TRUCK_BED={x0:-0.88,x1:0.88,z0:-1.71,z1:-0.11,y:1.09,wall:0.33};
+function truckGlbLoad(kind){ let V=TRUCK_VIS[kind]; if(V) return V; V=TRUCK_VIS[kind]={st:'load',g:null,wheels:[],hub:[],r:0.38};
+  wglbLib().then(()=>new Promise((res,rej)=>{ let i=0; const L=new THREE.GLTFLoader(); const next=()=>{ if(i>=WG_BASE.length) return rej(new Error('GLB を読めない: '+kind)); L.load(WG_BASE[i++]+TRUCK_GLB[kind],res,undefined,next); }; next(); }))
+    .then(gl=>{ const g=gl.scene; if(TRUCK_VIS[kind]!==V){ truckGlbFree(g); return; }
+      g.traverse(o=>{ if(!o.isMesh) return; const m0=o.material;
+        if(m0.transparent||m0.opacity<1) o.material=new THREE.MeshPhongMaterial({color:m0.color,transparent:true,opacity:m0.opacity,side:THREE.DoubleSide,shininess:90,specular:0x8a9a9e,depthWrite:false}); // ガラス（修理後のフロントガラス）
+        else { const map=m0.map; if(map){ map.encoding=THREE.LinearEncoding; map.anisotropy=4; } o.material=new THREE.MeshToonMaterial({color:0xffffff,map,gradientMap:toneTex}); } // 武器の GLB と同じ：画面は線形のまま描くので、絵も変換しない
+        m0.dispose(); o.castShadow=!o.material.transparent; o.receiveShadow=true; });
+      for(const n of ['wheel_fr','wheel_fl','wheel_rr','wheel_rl']){ const w=g.getObjectByName(n); if(!w) throw new Error('車輪が無い: '+n); w.rotation.order='YXZ'; V.wheels.push(w); V.hub.push(w.position.y); }
+      V.r=V.hub.reduce((a,b)=>a+b,0)/4; g.visible=false; if(TRUCK.m) TRUCK.m.add(g); V.g=g; V.st='ok'; })
+    .catch(e=>{ V.st='fail'; console.warn('[KEI truck の形]',e&&e.message||e); });
+  return V; }
+function truckGlbFree(g){ g.traverse(o=>{ if(!o.isMesh) return; o.geometry.dispose(); const m=o.material; if(m.map) m.map.dispose(); m.dispose(); }); if(g.parent) g.parent.remove(g); }
+function truckGlbDrop(kind){ const V=TRUCK_VIS[kind]; if(!V) return; if(V.g) truckGlbFree(V.g); delete TRUCK_VIS[kind]; } // 使わなくなった形を GPU から外す（直したあとの修理前の形）
+// いま見せる形を選ぶ：直していれば修理後、まだなら修理前。読めていなければコードの仮の形
+function truckVisual(t){ const want=t.repaired?'repaired':'broken', V=truckGlbLoad(want), B0=TRUCK_VIS.broken; let use=V.st==='ok'?V:null, kind=use?want:'code';
+  if(!use&&V.st==='load'&&want==='repaired'&&B0&&B0.st==='ok'){ use=B0; kind='broken'; } // 修理後の形を読み終わるまでは修理前の形のまま（コードの仮の形を一瞬出さない）
+  if(use&&use.g.parent!==TRUCK.m) TRUCK.m.add(use.g);
+  if(TRUCK.visKind!==kind){ const was=TRUCK.visKind; TRUCK.visKind=kind; for(const k in TRUCK_VIS){ const X=TRUCK_VIS[k]; if(X.g) X.g.visible=X===use; } TRUCK.code.visible=!use;
+    TRUCK.wheels=use?use.wheels:TRUCK.codeWheels; TRUCK.hub=use?use.hub:[0.3,0.3,0.3,0.3]; TRUCK.wr=use?use.r:0.3;
+    if(kind==='repaired'&&was==='broken'&&TRUCK.m.visible){ const sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a); for(const [lx,lz] of TRUCK_WHEELS){ const x=TRUCK.x+lx*ca+lz*sa, z=TRUCK.z-lx*sa+lz*ca; spawnParticles(x,groundH(x,z)+0.6,z,4,0xd8d0b8,2); } } } // 直した：形が変わる所に土ぼこり
+  if(want==='repaired'&&V.st!=='load'&&B0) truckGlbDrop('broken'); // 直したら修理前の形は外す（修理後が読めなかったときはコードの仮の形）
+  if(!t.repaired&&stfP().departureDecision) truckGlbLoad('repaired'); // 部品を集めている間に、修理後の形を先に読んでおく（直した瞬間に切り替わる）
+  return use; }
+// ---- 仮の車体（コードで作る。正式モデルを読み終わるまで・読めないときに見せる）----
+function truckModel(){ if(TRUCK.m) return TRUCK.m; const root=new THREE.Group(), g=new THREE.Group(), W=1.48, L=3.4; root.add(g); // root：位置と向き（ばね）。g：コードの仮の形
+  const add=(m,ol=0.035)=>{ g.add(ol?outline(m,ol):m); return m; };
+  add(mesh(rbox(W,0.42,L,0.08),mat(0xe9e8e1),0,0.62,0)); // 車台
+  add(mesh(rbox(W,1.0,1.25,0.14),mat(0xeeede6),0,1.32,L/2-0.66)); // 運転席
+  add(mesh(G.box,mat(0x27323c),0,1.5,L/2-0.02,W*0.86,0.46,0.04),0); // 前の窓
+  for(const sx of [-1,1]) add(mesh(G.box,mat(0x27323c),sx*(W/2+0.005),1.5,L/2-0.62,0.03,0.42,0.86),0); // 横の窓
+  add(mesh(G.box,mat(0xdcdbd2),0,1.0,-0.62,W,0.06,2.1),0); // 荷台の床
+  for(const sx of [-1,1]) add(mesh(G.box,mat(0xe2e1d9),sx*(W/2-0.03),1.2,-0.62,0.06,0.4,2.1)); // あおり（横）
+  add(mesh(G.box,mat(0xe2e1d9),0,1.2,-L/2+0.06,W,0.4,0.06)); add(mesh(G.box,mat(0xd8d7cf),0,1.32,0.03,W,0.62,0.07)); // あおり（後ろ）・鳥居
+  add(mesh(G.box,mat(0x55585c),0,0.5,L/2+0.02,W*1.02,0.2,0.08),0); add(mesh(G.box,mat(0x55585c),0,0.5,-L/2-0.02,W*1.02,0.18,0.08),0); // バンパー
+  for(const sx of [-1,1]){ add(mesh(G.box,mat(0xf6f2c8),sx*0.55,0.86,L/2+0.01,0.26,0.14,0.04),0); add(mesh(G.box,mat(0xb03328),sx*0.6,0.86,-L/2-0.01,0.16,0.18,0.04),0); }
+  const wg=new THREE.CylinderGeometry(0.3,0.3,0.22,14); wg.rotateZ(Math.PI/2); const wheels=[];
+  for(const [x,z] of [[-W/2+0.08,1.05],[W/2-0.08,1.05],[-W/2+0.08,-1.05],[W/2-0.08,-1.05]]){ const w=new THREE.Mesh(wg,mat(0x1d1f21)); w.position.set(x,0.3,z); g.add(w); wheels.push(w); }
+  // 壊れている間だけ：さび・前のパンク・開いたボンネット
+  const br=new THREE.Group(); g.add(br);
+  for(const [x,y,z,w,h,d] of [[0.62,0.7,0.6,0.08,0.3,0.5],[-0.7,0.66,-0.9,0.06,0.22,0.7],[0.2,1.82,1.0,0.5,0.06,0.4]]) br.add(mesh(G.box,mat(0x7a4b2a),x,y,z,w,h,d));
+  const hood=outline(mesh(G.box,mat(0xe4e3dc),0,1.98,L/2-0.22,W*0.9,0.06,0.62),0.03); hood.rotation.x=-0.5; br.add(hood);
+  castAll(g); root.visible=false; scene.add(root); TRUCK.m=root; TRUCK.code=g; TRUCK.codeWheels=wheels; TRUCK.wheels=wheels; TRUCK.hub=[0.3,0.3,0.3,0.3]; TRUCK.wr=0.3; TRUCK.visKind='code'; TRUCK.broken=br;
+  for(const k in TRUCK_VIS) if(TRUCK_VIS[k].g) root.add(TRUCK_VIS[k].g); return root; }
+// 置いてある間の当たり（主人公・獣が通り抜けない）。運転している間・別の地域にあるときは外す
+function truckColOff(){ if(TRUCK.col){ try{ gridRemove(TRUCK.col); }catch(err){} TRUCK.col=null; } }
+function truckColOn(){ truckColOff(); TRUCK.col=addOBox(TRUCK.x,TRUCK.z,2.0,4.1,-TRUCK.a,'truck'); } // 当たり（見た目の形とは別）：正式モデル（幅 約2.1m・全長 約4.1m）に合わせた箱
+function truckUpdate(dt){ truckItemsUpdate(); const show=truckShown()&&!REG.busy; if(!show){ if(TRUCK.m) TRUCK.m.visible=false; truckColOff(); return; }
+  if(!TRUCK.sync) truckLoadPos(); const t=trk(), here=t.region===REG.cur, m=truckModel(); m.visible=here; truckVisual(t);
+  if(!here){ truckColOff(); return; }
+  if(!TRUCK.drive&&!TRUCK.col) truckColOn();
+  const B=truckSusp(dt); // ばね：車体の高さ・前後と左右の傾き
+  if(!TRUCK.drive){ TRUCK.roll*=Math.max(0,1-dt*5); TRUCK.pitch*=Math.max(0,1-dt*5); }
+  m.position.set(TRUCK.x,B.Y,TRUCK.z); m.rotation.set(0,TRUCK.a,0); m.rotation.order='YXZ'; m.rotation.x=-Math.atan(B.p)+TRUCK.pitch; m.rotation.z=Math.atan(B.q)+TRUCK.roll; // ばね（坂・段差）＋（運転中の）沈みと傾き
+  TRUCK.wheels.forEach((w,i)=>{ if(TRUCK.visKind!=='code'||i||t.repaired) w.position.y=TRUCK.hub[i]+B.wo[i]; }); // 車輪は地面に沿って上下する（ばねが縮むと上へ、地面を離れると下へ伸びる）
+  TRUCK.broken.visible=!t.repaired; const cw=TRUCK.codeWheels[0]; cw.scale.set(1,t.repaired?1:0.7,1); if(!t.repaired) cw.position.y=0.22; } // さび・パンク・開いたボンネットはコードの仮の形だけ（正式モデルは修理前の形そのもの）
+// ---- ばね（v0.77、2026-11-17 ユーザー指示「段差で跳ね上がったり少し浮いたりするところも表現して」）----
+// 4つの車輪それぞれのばね（縮むほど押し返す・速く縮むほど強く止める）で、車体の上下・前後の傾き・左右の傾きを動かす。
+// 地面の高さ＋でこぼこ（道・砂利道・草地・畑・田んぼの畦・線路）を車輪ごとに見る。段差でばねが急に縮むと車体は跳ね上がり、
+// 地面が急に下がる所（坂の頂上・段差の下り）では車輪が地面を離れて少し浮く。浮いている間はアクセル・ハンドルが効かない（truckDrive）。
+const TRUCK_WHEELS=[[-0.879,0.9735],[0.879,0.9735],[-0.829,-0.9735],[0.829,-0.9735]]; // 車の中の [横（+が左）, 前後（+が前）]。右前・左前・右後ろ・左後ろ（TRUCK.wheels と同じ順）。正式モデル（全長 約4.1m）の車輪の位置（2026-11-17）
+function truckSegIdx(list){ const M=new Map(), C=24; for(const it of list){ const p=it.p||it, w=(it.w||0)/2; for(let i=0;i<p.length-1;i++){ const sg=[p[i][0],p[i][1],p[i+1][0],p[i+1][1],w];
+    for(let a=Math.floor((Math.min(sg[0],sg[2])-4)/C);a<=Math.floor((Math.max(sg[0],sg[2])+4)/C);a++) for(let b=Math.floor((Math.min(sg[1],sg[3])-4)/C);b<=Math.floor((Math.max(sg[1],sg[3])+4)/C);b++){ const k=a*7919+b; let L=M.get(k); if(!L){ L=[]; M.set(k,L); } L.push(sg); } } }
+  return (x,z)=>{ let best=1e9; const L=M.get(Math.floor(x/C)*7919+Math.floor(z/C)); if(L) for(const sg of L){ const d=segDist(x,z,sg[0],sg[1],sg[2],sg[3])-sg[4]; if(d<best) best=d; } return best; }; } // 道の端（線路は中心）までの距離
+function truckGroundIdx(){ const reg=REG.cur; if(TRUCK.gidx&&TRUCK.gidx.reg===reg) return TRUCK.gidx; const roads=reg==='komyoji'?MD.roads:((typeof KAMI!=='undefined'&&KAMI.D&&KAMI.D.roads)||[]);
+  TRUCK.gidx={reg, paved:truckSegIdx(roads.filter(r=>!r.tn&&!['track','path','footway'].includes(r.k))), track:truckSegIdx(roads.filter(r=>!r.tn&&['track','path','footway'].includes(r.k))), rail:reg==='komyoji'?truckSegIdx((MD.rails||[]).map(p=>({p,w:0}))):null};
+  return TRUCK.gidx; }
+function truckBumpH(x,z){ const B=TRUCK_CFG.bump, G=truckGroundIdx(); let h=0;
+  const wave=Math.sin(x*2.3+1.7*Math.sin(z*0.9))*Math.sin(z*2.1+1.3*Math.sin(x*1.1))+0.4*Math.sin(x*5.3+z*4.1); // でこぼこの形（約1〜3m の波）
+  let amp; if(G.paved(x,z)<0.2) amp=B.paved; else if(G.track(x,z)<0.2) amp=B.track;
+  else { const c=clsAt(x,z), pd=isPaddy(x,z); amp=pd?B.paddy:c===1?B.forest:c===4?B.farm:B.grass;
+    if(pd!==isPaddy(x+0.35,z)||pd!==isPaddy(x-0.35,z)||pd!==isPaddy(x,z+0.35)||pd!==isPaddy(x,z-0.35)) h+=B.ridge; } // 田んぼの縁の畦（段差）
+  h+=amp*wave;
+  if(G.rail){ const d=G.rail(x,z); if(d<1.7){ if(G.paved(x,z)>=0.2) h+=B.bed; if(Math.abs(d-0.55)<0.07) h+=B.rail; } } // 線路（踏切ではレールの出っ張りだけ）
+  return h; }
+function truckSusp(dt){ const C=TRUCK_CFG, W=TRUCK_WHEELS, g=9.8;
+  const om=2*Math.PI*C.suspHz, kap=om*om/4, del=2*C.suspZeta*om/4, c0=g/(om*om); // 車輪1つあたりのばね・止める強さ、止まっているときの縮み
+  const gAt=(x,z)=>groundH(x,z)+(TRUCK.drive?truckBumpH(x,z):0), R=C.tireR, d=0.15, drop=d*d/(2*R); // タイヤは丸いので、段差は少し手前から乗り上げ始める
+  const wheelsAt=(X,Z,A)=>{ const sa=Math.sin(A), ca=Math.cos(A); return W.map(([lx,lz])=>{ const x=X+lx*ca+lz*sa, z=Z-lx*sa+lz*ca; return Math.max(gAt(x,z),gAt(x+sa*d,z+ca*d)-drop,gAt(x-sa*d,z-ca*d)-drop); }); };
+  let U=TRUCK.susp;
+  if(!U||!isFinite(U.Y)){ const h=wheelsAt(TRUCK.x,TRUCK.z,TRUCK.a), p=((h[0]+h[1])-(h[2]+h[3]))/2/(W[0][1]-W[2][1]), q=((h[1]+h[3])-(h[0]+h[2]))/2/(W[1][0]-W[0][0]); // 置いた所の地面に合わせる
+    U=TRUCK.susp={Y:(h[0]+h[1]+h[2]+h[3])/4,p,q,vY:0,vp:0,vq:0,hp:h,air:0,s:[c0,c0,c0,c0],px:TRUCK.x,pz:TRUCK.z,pa:TRUCK.a}; }
+  // 前のコマから今のコマまでの道のりを細かく分けて、車輪ごとの地面を見る（速いときに細い畦を飛び越して見落とさない）
+  const moved=dist(U.px,U.pz,TRUCK.x,TRUCK.z), n=Math.max(1,Math.ceil(dt/(1/120)),Math.min(24,Math.ceil(moved/0.2))), st=dt/n;
+  let h=U.hp;
+  for(let k=1;k<=n;k++){ const f=k/n, hn=(n===1&&!moved)?wheelsAt(TRUCK.x,TRUCK.z,TRUCK.a):wheelsAt(U.px+(TRUCK.x-U.px)*f,U.pz+(TRUCK.z-U.pz)*f,U.pa+angDiff(U.pa,TRUCK.a)*f);
+    let aY=-g, ap=0, aq=0;
+    for(let i=0;i<4;i++){ const [lx,lz]=W[i], hi=hn[i], hv=st>0?clamp((hn[i]-h[i])/st,-8,8):0, yi=U.Y+lz*U.p+lx*U.q, vy=U.vY+lz*U.vp+lx*U.vq, sp=hi-yi+c0; U.s[i]=sp; // hv：地面が上がってくる速さ（段差ほど大きい）
+      if(sp<=0) continue; let F=kap*sp+del*(hv-vy); if(hi-yi>C.suspStop) F+=kap*C.stopK*(hi-yi-C.suspStop)+del*C.stopD*Math.max(0,hv-vy); // 底づき：強く押し上げる（跳ね上がる）
+      F=Math.max(0,F); aY+=F; ap+=F*lz/C.gyroP; aq+=F*lx/C.gyroR; }
+    U.vY+=aY*st; U.vp+=ap*st; U.vq+=aq*st; U.Y+=U.vY*st; U.p+=U.vp*st; U.q+=U.vq*st; h=hn; }
+  U.p=clamp(U.p,-0.6,0.6); U.q=clamp(U.q,-0.5,0.5); const lo=Math.min(...h)-0.4; if(U.Y<lo){ U.Y=lo; U.vY=Math.max(0,U.vY); }
+  U.hp=h; U.px=TRUCK.x; U.pz=TRUCK.z; U.pa=TRUCK.a; const on=U.s.map(v=>v>0), was=U.air;
+  TRUCK.gf=(on[0]+on[1])/2; TRUCK.gr=(on[2]+on[3])/2; U.air=on.some(v=>v)?0:U.air+dt; TRUCK.air=U.air;
+  if(TRUCK.drive&&was>0.15&&!U.air){ const hit=Math.min(1,was*1.8), sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a); S.shake=Math.max(S.shake||0,0.1+0.25*hit); if(hit>0.4) sfx('hit'); // 着地：画面が揺れ、土ぼこり
+    for(const [lx,lz] of W){ const x=TRUCK.x+lx*ca+lz*sa, z=TRUCK.z-lx*sa+lz*ca; spawnParticles(x,groundH(x,z)+0.1,z,3,0xb8a888,2); } }
+  const lift=Math.max(0,U.Y-(h[0]+h[1]+h[2]+h[3])/4); TRUCK.camLift=(TRUCK.camLift||0)+(lift*0.6-(TRUCK.camLift||0))*Math.min(1,dt*6);
+  return {Y:U.Y,p:U.p,q:U.q,wo:U.s.map(v=>clamp(v-c0,-0.18,0.14))}; } // wo：車輪の上下（止まっているときの高さから。ねじれた地面でも4つとも接地して見える）
+// 乗る・降りる
+function truckBoard(){ if(TRUCK.drive||!truckOK()) return; if(f4Busy()) f4DropAll(''); const t=trk();
+  if(!stfP().departureComplete&&stfStage()==='sendoff'){ stfSendoff(); return; } // 初めて乗る前に、直した報告と見送り
+  TRUCK.drive=true; truckStop(); truckColOff(); P.atk=null; P.dodge=null; P.x=TRUCK.x; P.z=TRUCK.z; P.facing=TRUCK.a; pm.g.visible=false; cam.yaw=TRUCK.a; cam.init=false;
+  toast('KEI truck に乗った（移動：運転・E／行動ボタン：降りる）'); }
+function truckExit(quiet){ if(!TRUCK.drive) return; const a=TRUCK.a, t=trk(); TRUCK.drive=false; truckStop(); pm.g.visible=true;
+  const side=[[Math.cos(a)*-2.05,Math.sin(a)*2.05],[Math.cos(a)*2.05,-Math.sin(a)*2.05],[-Math.sin(a)*3.25,-Math.cos(a)*3.25],[Math.sin(a)*3.25,Math.cos(a)*3.25]]; // 右・左・後ろ・前（正式モデルの大きさ）
+  let put=false; for(const [dx,dz] of side){ const x=TRUCK.x+dx, z=TRUCK.z+dz; if(szWalkable(x,z)&&szFree(x,z,0.5)){ P.x=x; P.z=z; put=true; break; } }
+  if(!put){ P.x=TRUCK.x-Math.cos(a)*2.05; P.z=TRUCK.z+Math.sin(a)*2.05; }
+  t.x=+TRUCK.x.toFixed(2); t.z=+TRUCK.z.toFixed(2); t.a=+TRUCK.a.toFixed(3); t.region=REG.cur; truckColOn(); if(!quiet) toast('KEI truck を降りた'); }
+// 運転：上下（W・S・スティック）で進む・止まる・下がる、左右（A・D・スティック）で曲がる。速いほどよく曲がり、止まっていると曲がらない
+function truckInput(){ let ix=0,iz=0; if(keys.has('w')||keys.has('arrowup')) iz+=1; if(keys.has('s')||keys.has('arrowdown')) iz-=1; if(keys.has('a')||keys.has('arrowleft')) ix-=1; if(keys.has('d')||keys.has('arrowright')) ix+=1;
+  const jv=joyVec(); if(jv){ ix=jv.x; iz=-jv.z; const l=Math.hypot(ix,iz)||1; ix=ix/l*jv.m; iz=iz/l*jv.m; } return {ix:clamp(ix,-1,1),iz:clamp(iz,-1,1)}; }
+function truckWalk(x,z){ if(isWater(x,z)) return false; const B=BOUNDS; if(x<B.minX+1||x>B.maxX-1||z<B.minZ+1||z>B.maxZ-1) return false; if(REG.cur==='kamishihi'&&KAMI&&!kamiReach(x,z)) return false; return true; }
+function truckStop(){ Object.assign(TRUCK,{v:0,vx:0,vz:0,yr:0,steer:0,slide:0,susp:null}); } // ばねは次のコマで地面に合わせ直す
+// 運転（v0.77）：簡単な車の物理。2026-11-17 ユーザー指示「慣性や遠心力で、こんなに俊敏には曲がれないはず」
+//  ・速さは向きとは別のベクトル（慣性）。向きを変えても、速さはすぐにはついて来ない
+//  ・ハンドルは少しずつ切れ、離すと戻る。曲がり方は「前向きの速さ÷前後の車輪の間×tan(切れ角)」で、止まっていると曲がらない
+//  ・タイヤが横に踏ん張れるのは grip まで（遠心力）。速いほど曲がれる半径は大きく、急に切ると外へ膨らんで滑り、速さが落ちる
+//  ・車体は曲がる外側へ傾き、ブレーキで前へ沈む（見た目だけ）
+function truckDrive(dt){ const C=TRUCK_CFG, {ix,iz}=truckInput();
+  const sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a); // 前 F=(sin a, cos a)・右 R=(-cos a, sin a)
+  let u=TRUCK.vx*sa+TRUCK.vz*ca, w=-TRUCK.vx*ca+TRUCK.vz*sa; const u0=u; // 前向きの速さ・右向きの速さ
+  const gf=TRUCK.gf??1, gr=TRUCK.gr??1, gc=(gf+gr)/2; // 地面に着いている車輪（前・後ろ・全体の割合）。浮いている間はアクセル・ハンドル・踏ん張りが効かない
+  if(iz>0.05) u=u<-0.3?Math.min(0,u+C.brake*iz*gc*dt):Math.min(C.speed,u+C.acc*iz*gc*Math.max(0.35,1-u/C.speed)*dt); // 速いほど伸びにくい
+  else if(iz<-0.05) u=u>0.3?Math.max(0,u+C.brake*iz*gc*dt):Math.max(-C.rev,u+C.acc*0.6*iz*gc*dt);
+  else u-=Math.sign(u)*Math.min(Math.abs(u),C.coast*Math.max(0.15,gc)*dt); // エンジンブレーキと転がる抵抗
+  const smax=Math.min(C.steerMax,Math.atan(C.grip*C.steerGrip*C.wheelbase/Math.max(1,u*u))); // 速いほど切れる角度は小さい（曲がれる半径は速さの2乗で大きくなる）
+  const target=-ix*smax; // 画面の右へ切ると向きの角度が減る
+  const back=Math.abs(target)<Math.abs(TRUCK.steer)||target*TRUCK.steer<0; TRUCK.steer+=clamp(target-TRUCK.steer,-(back?C.steerBack:C.steerRate)*dt,(back?C.steerBack:C.steerRate)*dt);
+  let rd=u/C.wheelbase*Math.tan(TRUCK.steer); const lim=C.grip*C.yawSlip/Math.max(1,Math.abs(u)); rd=clamp(rd,-lim,lim); // 速いほど曲がれない
+  TRUCK.yr+=(rd-TRUCK.yr)*Math.min(1,dt/C.yawLag)*gf; TRUCK.a+=TRUCK.yr*dt; // 前の車輪が浮いていると、ハンドルを切っても向きは変わらない
+  let vx=sa*u-ca*w, vz=ca*u+sa*w; const sb=Math.sin(TRUCK.a), cb=Math.cos(TRUCK.a);
+  u=vx*sb+vz*cb; w=-vx*cb+vz*sb; // 向きが変わった分、速さは横へずれる → タイヤの踏ん張り（grip）で消せる分だけ消す
+  const g=C.grip*gc*dt, slide=gc>0.3&&Math.abs(w)>g+0.05; w-=Math.sign(w)*Math.min(Math.abs(w),g);
+  if(slide) u-=Math.sign(u)*Math.min(Math.abs(u),C.scrub*Math.min(1,Math.abs(w)/2)*dt); TRUCK.slide=slide?Math.abs(w):0; // 大きく滑るほど速さが落ちる
+  vx=sb*u-cb*w; vz=cb*u+sb*w;
+  const nx=TRUCK.x+vx*dt, nz=TRUCK.z+vz*dt;
+  if(truckWalk(nx,nz)){ const tmp={x:nx,z:nz,r:C.r}; resolve(tmp,false); if(dist(tmp.x,tmp.z,nx,nz)>0.02){ const k=Math.pow(0.05,dt*4); vx*=k; vz*=k; TRUCK.yr*=k; } if(truckWalk(tmp.x,tmp.z)){ TRUCK.x=tmp.x; TRUCK.z=tmp.z; } else { vx=0; vz=0; } } else { vx=0; vz=0; TRUCK.yr=0; }
+  TRUCK.vx=vx; TRUCK.vz=vz; const v=TRUCK.v=vx*sb+vz*cb;
+  const latA=v*TRUCK.yr, lonA=(v-u0)/Math.max(dt,1e-3);
+  TRUCK.roll+=(clamp(latA*C.rollK,-0.09,0.09)-TRUCK.roll)*Math.min(1,dt*6); TRUCK.pitch+=(clamp(-lonA*C.pitchK,-0.05,0.05)-TRUCK.pitch)*Math.min(1,dt*6);
+  P.x=TRUCK.x; P.z=TRUCK.z; P.facing=TRUCK.a; P.iframe=true; P.moveMag=0; P.atk=null; P.dodge=null; pm.g.visible=false;
+  const t=trk(); t.x=+TRUCK.x.toFixed(2); t.z=+TRUCK.z.toFixed(2); t.a=+TRUCK.a.toFixed(3); t.region=REG.cur;
+  if(Math.abs(v)>1.5&&!(cam.manualT>0)) cam.yaw+=angDiff(cam.yaw,TRUCK.a)*Math.min(1,dt*2.2); // カメラは車の後ろへ
+  TRUCK.wheels.forEach((wh,i)=>{ wh.rotation.order='YXZ'; wh.rotation.x+=v*dt/(TRUCK.wr||0.3); if(i<2) wh.rotation.y=TRUCK.steer; }); // 前の車輪はハンドルの向き
+  if(TRUCK.slide>1.0&&Math.abs(v)>3&&(TRUCK.dustT=(TRUCK.dustT||0)-dt)<=0){ TRUCK.dustT=0.08; // 横滑りの土ぼこり（後ろの車輪）
+    for(const sd of [-1,1]){ const x=TRUCK.x-sb*1.05-cb*sd*0.66, z=TRUCK.z-cb*1.05+sb*sd*0.66; spawnParticles(x,groundH(x,z)+0.15,z,2,0xb8a888,1.5); } } }
+// 地域を移った：運転していれば車も一緒に（着いた所に車を置き、乗ったまま）。読み込みに失敗したら降りる
+function truckAfterTravel(ok){ if(!TRUCK.drive) { TRUCK.sync=false; truckColOff(); return; } const t=trk();
+  if(ok===false){ truckExit(true); TRUCK.sync=false; return; }
+  t.region=REG.cur; TRUCK.x=P.x; TRUCK.z=P.z; TRUCK.a=P.facing; truckStop(); if(REG.cur==='kamishihi') t.trips=(t.trips|0)+1; t.x=+P.x.toFixed(2); t.z=+P.z.toFixed(2); t.a=+P.facing.toFixed(3); truckColOff(); }
+// KEI truck で上志比へ行けるか（光明寺の東の出口に運転して入ったとき）
+function truckTravelOK(){ const p=stfP(); return kamishihiOpen()&&truckOK()&&(p.departureComplete===true||!!p.legacyKamishihiAccess); }
+async function truckGo(id,at){ if(TRUCK.drive) truckStop(); return regionTravel(id,at); }
+// 調べる・直す・燃料・乗る（行動ボタンの一覧）
+function truckInteractables(L){ if(!truckShown()) return; const st=stfStage(), t=trk(), sp=truckSpots();
+  if(REG.cur==='komyoji'&&(st==='truck'||st==='sendoff'||st==='away'||stfP().legacyKamishihiAccess)&&stfP().departureDecision===true){
+    if(!t.repaired) for(const q of sp.parts){ if(t.parts.includes(q.id)) continue; const d=dist(P.x,P.z,q.x,q.z); if(d<2.2) L.push({d,label:`${TRUCK_CFG.partName}を拾う`,act:()=>{ if(t.parts.includes(q.id)) return; t.parts.push(q.id); sfx('pickup'); toast(`${TRUCK_CFG.partName}を手に入れた（${t.parts.length}/${TRUCK_CFG.parts}）`); saveGame(); }}); }
+    if(!t.fueled&&t.fuel<TRUCK_CFG.fuel){ const d=dist(P.x,P.z,sp.fuel.x,sp.fuel.z); if(d<2.2) L.push({d,label:`${TRUCK_CFG.fuelName}を受け取る`,act:()=>{ t.fuel=TRUCK_CFG.fuel; sfx('pickup'); toast(`${TRUCK_CFG.fuelName}を受け取った`); saveGame(); }}); } }
+  if(t.region!==REG.cur) return; const d=dist(P.x,P.z,TRUCK.x,TRUCK.z)-1.55; if(d>2.2) return; // 車の中心から 3.75m 以内
+  if(!stfP().departureDecision&&!stfP().legacyKamishihiAccess){ L.push({d,label:'動かなくなった軽トラックが止まっている',act:()=>{}}); return; }
+  if(!t.found) L.push({d,label:'軽トラックを調べる',act:truckFind});
+  else if(!t.repaired) L.push({d,label:`KEI truck を直す（${truckNeedText(true)}）`,act:truckRepair});
+  else if(!t.fueled) L.push({d,label:`KEI truck に燃料を入れる（${truckNeedText(true)}）`,act:truckFuel});
+  else L.push({d,label:'KEI truck に乗る',act:truckBoard}); }
+function truckInfo(){ return [[{name:'KEI truck'},'直すのに要る物：'+truckNeedText(false)+(trk().repaired?'':'　／　燃料は直したあとで入れる')]]; }
+function truckFind(){ const t=trk(); t.found=true; saveGame(); queueDialog(stfLines('found').concat(truckInfo())); }
+function truckRepair(){ const t=trk(), m=TRUCK_CFG.mats; if(t.repaired) return; const lack=Object.keys(m).some(k=>(inv[k]|0)<m[k])||t.parts.length<TRUCK_CFG.parts;
+  if(lack){ sfx('deny'); queueDialog(truckInfo()); return; }
+  for(const k in m) inv[k]-=m[k]; t.repaired=true; sfx('craft'); toast('KEI truck を直した'+(t.fueled?'':'（あとは燃料）')); saveGame(); if(t.fueled) stfSendoff(); }
+function truckFuel(){ const t=trk(); if(t.fueled) return; if(t.fuel<TRUCK_CFG.fuel){ sfx('deny'); queueDialog(truckInfo()); return; } t.fuel-=TRUCK_CFG.fuel; t.fueled=true; sfx('pickup'); toast('KEI truck に燃料を入れた'); saveGame(); if(t.repaired) stfSendoff(); }
+// 直した報告と見送り（草案）：車のそばに3人が来る → 終わったら KEI truck に乗った状態で、東の出口へ
+function stfTruckSpots(){ const a=TRUCK.a, fx=Math.sin(a), fz=Math.cos(a), sx=Math.cos(a), sz=-Math.sin(a), P0={x:TRUCK.x+sx*2.45,z:TRUCK.z+sz*2.45};
+  const pt=(k,f)=>{ const x=TRUCK.x+sx*k+fx*f, z=TRUCK.z+sz*k+fz*f; return {x,z,face:Math.atan2(P0.x-x,P0.z-z)}; };
+  return [{x:P0.x,z:P0.z,face:Math.atan2(sx,sz)},pt(4.8,1.35),pt(5.2,0),pt(4.8,-1.35)]; }
+async function stfSendoff(){ if(STF.busy) return; STF.busy=true; STF.live=true; keys.clear();
+  try{ S.mode='dialog'; await stfFade(true); stfGather(stfTruckSpots()); await stfSettle();
+    const a=TRUCK.a, sx=Math.cos(a), sz=-Math.sin(a), fx=Math.sin(a), fz=Math.cos(a), gy=groundH(TRUCK.x,TRUCK.z), cx=TRUCK.x+sx*3.0, cz=TRUCK.z+sz*3.0; // 正式モデル（全長 約4.1m）が画面に収まるよう少し引く
+    stfCam([cx+fx*8.6,gy+2.6,cz+fz*8.6],[cx-fx*0.3,gy+1.3,cz-fz*0.3],48);
+    await stfFade(false); S.mode='playing';
+    queueDialog(stfLines('fixed').concat(stfLines('sendoff')),()=>{ stfP().departureComplete=true; saveGame();
+      stfSceneEnd(()=>{ truckBoard(); }); });
+  }catch(err){ stfSceneFail(err); } }
 
 // ================= 初期化 =================
 try{
@@ -10979,7 +11483,7 @@ $('btnPerf').onclick=()=>f11Toggle(); $('btnPerfRec').onclick=()=>{ f11RecStart(
 $('btnShadow').onclick=()=>{ applyShadow(!shadowPref); toast(shadowPref?'影をオンにした（描画が重くなります）':'影をオフにした'); };
 $('btnShadow').textContent='高画質の影：'+(renderer.shadowMap.enabled?'オン':'オフ');
 $('btnSave').onclick=()=>{ saveGame(); toast(storageOK?(ev.kind||bossActive?'セーブした（戦闘中は開始前の状態で記録）':'セーブした'):'このブラウザでは保存できない',!storageOK); };
-$('btnToTitle').onclick=()=>{ saveGame(); regionResetHome(); if(SZ.m) SZ.m.g.visible=false; /* v0.70 */ hideAllOv(); $('hud').hidden=true; S.mode='title'; lightMode='dusk'; snapLight(); P.x=158; P.z=22; $('title').hidden=false; $('btnContinue').hidden=!readSave(); for(const f of floats) f.d.style.display='none'; for(const b of hpBars) b.style.display='none'; for(const [,b] of barkEls){b.t=0;b.d.style.display='none';} };
+$('btnToTitle').onclick=()=>{ saveGame(); regionResetHome(); if(SZ.m) SZ.m.g.visible=false; /* v0.70 */ truckHideAll(); /* v0.77 */ hideAllOv(); $('hud').hidden=true; S.mode='title'; lightMode='dusk'; snapLight(); P.x=158; P.z=22; $('title').hidden=false; $('btnContinue').hidden=!readSave(); for(const f of floats) f.d.style.display='none'; for(const b of hpBars) b.style.display='none'; for(const [,b] of barkEls){b.t=0;b.d.style.display='none';} };
 $('btnCraftClose').onclick=closeOverlay; $('btnStoreClose').onclick=closeOverlay; $('btnNpcClose').onclick=closeOverlay; mapPtr(); $('objective').addEventListener('pointerdown',e=>{ e.stopPropagation(); objOpen.pin=!objOpen.pin; if(!objOpen.pin) objOpen.t=0; }); $('btnQuestClose').onclick=closeOverlay;
 $('btnInvClose').onclick=closeOverlay;
 $('btnRetry').onclick=retryFromBase;

@@ -21,7 +21,7 @@
 | 石の手斧・竹槍 | コードで生成 | `makeArm` | 正式（GLB は未制作。「余裕があれば後から作る」2026-11-16 ユーザー） |
 | 建物・柵・罠・地形 | コードで生成・`MAPDATA` | — | 正式 |
 | 変換炉・かまど | コードで生成 | `convBuildModel`・`kamaBuildModel` | v0.63・v0.64。仮扱い |
-| KEI truck（作業ブランチ `v077-story-f`） | **GLB**（ユーザーが Tripo で制作。2026-11-17 正式採用。修理前・修理後の2つ。元：`assets/models/kei-truck/src/`、ゲーム用：`…/game/`。車輪4つを分け、修理後にフロントガラスを足した。`docs/kei-truck-glb.md`） | `truckGlbLoad`・`truckVisual`（読めないときはコードの仮車体 `truckModel()`） | v0.77。**正式**（main 未反映） |
+| KEI truck | **GLB**（ユーザーが Tripo で制作。2026-11-17 正式採用。修理前・修理後の2つ。元：`assets/models/kei-truck/src/`、ゲーム用：`…/game/`。車輪4つを分け、修理後にフロントガラスを足した。`docs/kei-truck-glb.md`） | `truckGlbLoad`・`truckVisual`（読めないときはコードの仮車体 `truckModel()`） | v0.77。**正式** |
 | KEI truck の部品・燃料（作業ブランチ `v077-story-f`） | コードで生成（木箱・タイヤ・部品／赤い携行缶／黄色い目印の旗） | `truckItemModel()` | v0.77。**仮**（2026-11-17 ユーザー指示で見えるように置いた。正式な形は未定） |
 | 無線機（作業F） | なし（無線室の建物を映すだけ。小物は作っていない） | — | — |
 | 鱗の防具（蒼鱗・変異した鱗） | コードで生成（体を測って沿わせる厚みのある板＋立体の鱗。体と同じ骨で動く skinning） | `saEnsure`・`SA_DESIGN` | v0.76。改修指示書（2026-11-16）どおり作り直し、ユーザーの修正指示（蒼鱗の兜で髪を残す・脚の後ろ）を反映（`docs/scale-armor-v2.md`） |
