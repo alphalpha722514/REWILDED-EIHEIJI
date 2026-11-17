@@ -158,6 +158,7 @@ html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;backgrou
 
 #help{left:max(12px,env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));font-size:12px;line-height:1.7;color:var(--washi-dim);}
 #help b{color:var(--washi);font-weight:700;}
+#help .hk{white-space:nowrap;} /* v0.76.1：キーと説明の組は折り返さない */
 #prompt{left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom,0px));font-size:15px;padding:8px 14px;white-space:normal;max-width:min(560px,86vw);line-height:1.4;text-align:center;}
 #prompt .k{color:var(--ink);background:var(--gold);border-radius:3px;padding:0 6px;margin-right:6px;font-weight:700;}
 #toasts{right:max(12px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:4px;align-items:flex-end;}
@@ -460,6 +461,42 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
 }
 
 .gear47{margin:16px 0;padding:12px;border:1px solid #8e825f;border-radius:8px;background:#272b25;color:#eee5d2}.gear47 h3{margin:0 0 8px}.gear47 p{font-size:12px;line-height:1.6;margin:6px 0}.gear47row{display:grid;grid-template-columns:32px minmax(0,1fr);gap:5px 8px;margin:12px 0}.gear47row select{width:100%;min-height:44px;background:#393e33;color:#fff5df;border:1px solid #81775c;border-radius:5px;font:inherit;font-size:14px}.gear47row small{grid-column:2;font-size:12px;line-height:1.5}.gear47total{color:#dfc480}
+/* ===== v0.76.1：手持ちバー（持ち物欄）はスマホでも画面の下・PC の操作表と重ならない（2026-11-17 ユーザー指示） =====
+   ここより前の規則を上書きする。確認：python3 tests/hud-layout-browser.py */
+/* PC：操作表は左下。手持ちバー（幅 594px）の左に収まるよう、幅を手持ちバーの左までにする（折り返す）。1162px 以上 */
+@media (min-width:1162px){
+  #help{max-width:calc(50vw - 297px - 24px - max(12px,env(safe-area-inset-left,0px)));box-sizing:border-box;}
+}
+/* PC：それより狭い画面（761〜1161px）は、手持ちバーの左に入らないので、左上（体力の下・防衛の耐久の帯より下）へ */
+@media (min-width:761px) and (max-width:1161px){
+  #help{top:calc(160px + env(safe-area-inset-top,0px));bottom:auto;max-width:max(240px,min(420px,calc(50vw - 232px)));box-sizing:border-box;font-size:11px;line-height:1.6;}
+}
+/* PC：右下の通知も手持ちバーの右に収まる幅で折り返す */
+@media (min-width:761px){
+  body:not(.touchmode) #toasts{max-width:calc(50vw - 297px - 12px - max(12px,env(safe-area-inset-right,0px)));}
+}
+/* スマホ・タブレット：手持ちバーは画面の下。右下の戦いのボタンの左の空いた所の真ん中に置く（--hbL・--hbR は左右に空ける幅） */
+body.touchmode{--hbL:max(12px,env(safe-area-inset-left,0px));--hbR:calc(254px + env(safe-area-inset-right,0px));--hbMax:54px;}
+body.touchmode #items{top:auto;bottom:calc(8px + env(safe-area-inset-bottom,0px));left:calc(var(--hbL) + (100vw - var(--hbL) - var(--hbR))/2);right:auto;transform:translateX(-50%);max-width:none;gap:4px;}
+body.touchmode #items .hslot{width:min(var(--hbMax),calc((100vw - var(--hbL) - var(--hbR) - 36px)/10));}
+@media (orientation:landscape) and (max-height:600px){ body.touchmode{--hbMax:40px;} }
+/* 横向きのスマホ：右下のボタンが小さい（強攻撃の左の端まで空ける） */
+@media (orientation:landscape) and (max-height:480px){ body.touchmode{--hbR:calc(168px + env(safe-area-inset-right,0px));} }
+/* 縦向きのスマホ：手持ちバーは画面の下いっぱい。戦いのボタン・地図・止める・調べる帯はその分（50px）上へ */
+@media (max-width:760px) and (orientation:portrait){
+  body.touchmode{--hbR:max(12px,env(safe-area-inset-right,0px));--hbMax:38px;}
+  body.touchmode #tbAtk{bottom:calc(80px + env(safe-area-inset-bottom,0px));}
+  body.touchmode #tbHeavy{bottom:calc(68px + env(safe-area-inset-bottom,0px));}
+  body.touchmode #tbSwap{bottom:calc(64px + env(safe-area-inset-bottom,0px));}
+  body.touchmode #tbDodge{bottom:calc(184px + env(safe-area-inset-bottom,0px));}
+  body.touchmode #tbAct{bottom:calc(148px + env(safe-area-inset-bottom,0px));}
+  body.touchmode #tbWave{bottom:calc(256px + env(safe-area-inset-bottom,0px));}
+  body.touchmode .tb.sm{bottom:calc(264px + env(safe-area-inset-bottom,0px));}
+  body.touchmode #prompt{bottom:calc(308px + env(safe-area-inset-bottom,0px));}
+}
+@media (max-width:760px) and (max-height:640px) and (orientation:portrait){
+  body.touchmode #prompt{bottom:calc(306px + env(safe-area-inset-bottom,0px));}
+}
 </style>
 
 <canvas id="cv" tabindex="0"></canvas>
@@ -498,10 +535,10 @@ button,.hslot,#items,#hud,#touch{touch-action:manipulation;-webkit-tap-highlight
   <div id="bossBar" hidden><div id="bossName">光明寺のヌシ</div><div class="bigtrack"><div id="bossFill"></div></div><div class="poisetrack"><div id="bossPoise"></div></div></div>
   <div id="items"></div>
   <div id="help" class="panel">
-    <b>WASD</b> 移動　<b>Shift</b> 歩く　<b>←→</b> カメラ　<b>C</b> 背後へ<br>
-    <b>左クリック/J</b> 攻撃　<b>右クリック/K</b> 強攻撃<br>
-    <b>Space</b> 回避　<b>E</b> 調べる・拾う・設置<br>
-    <b>1〜9・0</b> 手持ち選択　<b>Q</b> おにぎり　<b>Tab</b> インベントリ　<b>R</b> 持ち替え　<b>G</b> 地図　<b>Esc</b> 一時停止　<b>ホイール</b> 手持ち切り替え<br>見切りの後の金の輪の間に攻撃＝反撃／攻撃直後にR→攻撃＝切り替え技
+    <span class="hk"><b>WASD</b> 移動</span>　<span class="hk"><b>Shift</b> 歩く</span>　<span class="hk"><b>←→</b> カメラ</span>　<span class="hk"><b>C</b> 背後へ</span><br>
+    <span class="hk"><b>左クリック/J</b> 攻撃</span>　<span class="hk"><b>右クリック/K</b> 強攻撃</span><br>
+    <span class="hk"><b>Space</b> 回避</span>　<span class="hk"><b>E</b> 調べる・拾う・設置</span><br>
+    <span class="hk"><b>1〜9・0</b> 手持ち選択</span>　<span class="hk"><b>Q</b> おにぎり</span>　<span class="hk"><b>Tab</b> インベントリ</span>　<span class="hk"><b>R</b> 持ち替え</span>　<span class="hk"><b>G</b> 地図</span>　<span class="hk"><b>Esc</b> 一時停止</span>　<span class="hk"><b>ホイール</b> 手持ち切り替え</span><br><span class="hk">見切りの後の金の輪の間に攻撃＝反撃</span>／<span class="hk">攻撃直後にR→攻撃＝切り替え技</span>
   </div>
   <div id="prompt" class="panel" hidden></div>
   <div id="toasts"></div>
@@ -11324,13 +11361,19 @@ function hbBuild(){ const hb=$('items'); if(!hb) return; hb.innerHTML=''; HB.els
   for(let i=0;i<HB.defs.length;i++){ const def=HB.defs[i];
     const d=document.createElement('div'); d.className='hslot';
     d.innerHTML=`<span class="ki">${i===9?'0':i+1}</span>`;
-    d.addEventListener('pointerdown',e=>{ e.preventDefault(); if(S.mode!=='playing') return;
+    const pick=()=>{
       if(def.kind==='empty'){ equipUnarmed(); return; } // v0.45：空枠クリックも素手へ
       if(def.kind==='bp'){ hideTip(); openInv(); return; }
       if(def.kind==='arm'){ if(!swapAllowed()){ sfx('deny'); return; } equipArm(def.id); }
       else if(def.kind==='food'){ eat(def.id); }
       else{ toast((HOTNM[def.id]||def.id)+`　所持 ${inv[def.id]||0}（設置は「調べる」から）`); }
-      if(!hOK) tapTip(d); });
+      if(!hOK) tapTip(d); };
+    // v0.76.1：指は「触れて、動かさずに離した」ときに選ぶ（手持ちバーが画面の下に来たので、スティックのつもりで触れても食べたり持ち替えたりしない）。マウスは押した瞬間のまま
+    d.addEventListener('pointerdown',e=>{ e.preventDefault(); if(S.mode!=='playing') return;
+      if(e.pointerType==='touch'||e.pointerType==='pen'){ d._tap={id:e.pointerId,x:e.clientX,y:e.clientY}; return; }
+      pick(); });
+    d.addEventListener('pointerup',e=>{ const t=d._tap; d._tap=null; if(!t||t.id!==e.pointerId||S.mode!=='playing') return; if(Math.hypot(e.clientX-t.x,e.clientY-t.y)>14) return; pick(); });
+    d.addEventListener('pointercancel',()=>{ d._tap=null; });
     if(hOK){ d.addEventListener('mouseenter',()=>{ if(d.dataset.name) showTip(d.dataset.name,d); });
       d.addEventListener('mouseleave',hideTip); d.addEventListener('click',hideTip); }
     hb.appendChild(d); HB.els.push(d); } }
