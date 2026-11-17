@@ -9731,7 +9731,7 @@ function updateCamera(dt){
   if(foe){ const big=foe.type==='boss'?1:foe.type==='bear'?0.45:0.15; D+=big*2.4; Hh+=big*0.3; lookH+=big*1.7; ahead*=0.5; }
   { const ak=(P.atk&&P.atk.kind==='heavy')?1:(P.atk?0.5:0); cam.atkK=cam.atkK==null?ak:cam.atkK+(ak-cam.atkK)*Math.min(1,dt*5); D+=cam.atkK*0.7; Hh-=cam.atkK*0.25; } // v0.45：攻撃の重量感（軽い寄り）
   if(intro){ D=8.5; Hh=1.5; lookH=3.2; }
-  if(TRUCK.drive){ D+=3.0; Hh+=0.9; lookH+=0.3; } // v0.77：運転中は少し引いて高く
+  if(TRUCK.drive){ D+=3.9; Hh+=1.25; lookH+=0.45; } // v0.77：運転中は少し引いて高く（正式モデルは全長 約4.1m・高さ 約2.5m）
   const fx=Math.sin(cam.yaw), fz=Math.cos(cam.yaw);
   const gy=groundH(P.x,P.z)+(TRUCK.drive?(TRUCK.camLift||0):0); // v0.77：車が跳ねるとカメラも少し上がる
   let tx=P.x, tz=P.z;
@@ -11027,14 +11027,14 @@ for(const type of ['keydown','keyup','pointerdown','pointerup','touchstart','tou
 // 未決定（ここは仮）：素材・部品・燃料の数、専用部品の名前と手に入れ方、燃料の減り方、車が壊れる仕組み、正式な車体（【3Dモデル制作依頼】）。燃料は減らない・車は壊れない（勝手に難しくしない）
 const TRUCK_CFG={mats:{wood:10,iron:6,rope:4,stone:6,bamboo:3}, parts:2, // 素材は 2026-11-17「もう少し労力が必要に」で増やした（数は暫定。どれも光明寺で採れる）
    partName:'（仮）車の部品', fuel:1, fuelName:'（仮）燃料（携行缶）', // 数・名前は暫定（未承認）
-  parkX:560, r:1.35, // 置き場所（国道416号の x）・当たりの半径
+  parkX:560, r:1.5, // 置き場所（国道416号の x）・運転中の当たりの半径（正式モデル 全長 約4.1m・幅 約2.1m に合わせて 1.35→1.5）
   // 運転（v0.77、2026-11-17 ユーザー指示「慣性や遠心力で、こんなに俊敏には曲がれないはず」で見直し。数は暫定）
   speed:14, rev:4, acc:3.5, brake:8, coast:1.2, // m/秒・m/秒²（前 約50km/時・0→50km/時 約5秒・ブレーキ 約0.8G）
-  wheelbase:2.1, steerMax:0.53, steerRate:1.4, steerBack:2.2, // 前後の車輪の間（m）・いちばん切ったハンドル（最小の回る半径 約3.6m）・切る／戻す速さ（rad/秒）
+  wheelbase:1.947, steerMax:0.496, steerRate:1.4, steerBack:2.2, // 前後の車輪の間（m。正式モデル）・いちばん切ったハンドル（最小の回る半径 約3.6m は前の仮の形と同じ）・切る／戻す速さ（rad/秒）
   grip:7, steerGrip:1.1, yawSlip:1.25, yawLag:0.18, scrub:4, // タイヤが横に踏ん張れる限界（m/秒²）・速いときにいっぱい切って出る横の力（grip の何倍。1 を少し超えると外へ少し滑る）・曲がれる上限・向きの変わり遅れ・横滑りで落ちる速さ
   rollK:0.009, pitchK:0.006, // 車体の傾き（見た目だけ）
   // ばね（v0.77、2026-11-17 ユーザー指示「段差で跳ね上がったり少し浮いたりするところも」。数は暫定）
-  suspHz:1.7, suspZeta:0.32, suspStop:0.10, stopK:6, stopD:3, gyroP:1.0, gyroR:0.3, // ばねの揺れ（回/秒）・揺れの収まり方・底づきまでの縮み（m）と底づきの強さ（ばねの何倍）・前後と左右の回りにくさ（m²）
+  suspHz:1.7, suspZeta:0.32, suspStop:0.10, stopK:6, stopD:3, gyroP:0.86, gyroR:0.5, tireR:0.42, // 正式モデルの車輪の位置に合わせ、前後・左右の揺れの速さは前の仮の形と同じにした。タイヤの半径（m）。ばねの揺れ（回/秒）・揺れの収まり方・底づきまでの縮み（m）と底づきの強さ（ばねの何倍）・前後と左右の回りにくさ（m²）
   bump:{paved:0.006,track:0.03,grass:0.035,farm:0.045,forest:0.06,paddy:0.03,ridge:0.12,rail:0.08,bed:0.1}}; // 地面のでこぼこ（m）：舗装・砂利道・草地・畑・林・田んぼ・畦（田んぼの縁の段差）・線路・線路の砂利
 function trk(){ const p=stfP(); let t=p.truck; if(!t||typeof t!=='object'||Array.isArray(t)){ t={}; if(prog.chapter2) p.truck=t; }
   if(!Array.isArray(t.parts)) t.parts=[]; t.found=!!t.found; t.repaired=!!t.repaired; t.fueled=!!t.fueled; t.fuel=Math.max(0,t.fuel|0); t.trips=Math.max(0,t.trips|0);
@@ -11085,8 +11085,38 @@ function truckMini(c,X,Z){ for(const o of truckPickups()){ c.fillStyle=o.kind===
   if(REG.cur==='komyoji'&&truckShown()&&trk().region==='komyoji'&&!TRUCK.drive){ const tp=truckPos(); c.fillStyle='#f4f0e4'; c.strokeStyle='#111'; c.fillRect(X(tp.x)-4,Z(tp.z)-2.5,8,5); c.strokeRect(X(tp.x)-4,Z(tp.z)-2.5,8,5); } }
 function truckMapIcons(icon,lab,X,Z){ for(const o of truckPickups()){ const part=o.kind==='part'; icon(X(o.x),Z(o.z),part?'#c89a60':'#e0473c',part?'部':'燃',7); lab(part?TRUCK_CFG.partName:TRUCK_CFG.fuelName,X(o.x)+9,Z(o.z)+4,part?'#f0d8b0':'#ffc0b8'); }
   if(REG.cur==='komyoji'&&truckShown()&&trk().region==='komyoji'){ const tp=truckPos(); icon(X(tp.x),Z(tp.z),'#f4f0e4','車',7); lab('KEI truck',X(tp.x)+9,Z(tp.z)+4,'#ffffff'); } }
-// ---- 仮の車体（コードで作る。正式な形はユーザーが Tripo で作る予定：docs/asset-registry.md）----
-function truckModel(){ if(TRUCK.m) return TRUCK.m; const g=new THREE.Group(), W=1.48, L=3.4;
+// ---- 正式モデル（Tripo の GLB。2026-11-17 ユーザー採用。docs/kei-truck-glb.md）----
+// 修理前（発見したとき）と修理後（直したあと）。ゲーム用のコピー（assets/models/kei-truck/game/）を読む。前は +Z、前後の車輪の真ん中が原点、接地は y=0、全長 4.125m（2026-11-17 ユーザー「もう少し大きく」「1.1倍に」で 3.75m から1.1倍）。
+// 車輪は4つの別の形（wheel_fr・wheel_fl・wheel_rr・wheel_rl：右前・左前・右後ろ・左後ろ。原点は車軸）。読めないとき・読み終わるまではコードの仮の形を見せる
+const TRUCK_GLB={broken:'assets/models/kei-truck/game/kei_truck_broken.glb', repaired:'assets/models/kei-truck/game/kei_truck_repaired.glb'};
+const TRUCK_VIS={}; // 形の種類 → {st:'load'|'ok'|'fail', g, wheels:[], hub:[車軸の高さ], r:車輪の半径}
+// 運転席と荷台の位置（車の中の座標。+x が左・+z が前。正式モデルから測った。暫定）：運転席は右（日本の車）。荷台の床（荷台に積む見た目・物を置く所に使う予定）
+const TRUCK_SEAT={x:-0.4,y:1.49,z:0.5}, TRUCK_BED={x0:-0.88,x1:0.88,z0:-1.71,z1:-0.11,y:1.09,wall:0.33};
+function truckGlbLoad(kind){ let V=TRUCK_VIS[kind]; if(V) return V; V=TRUCK_VIS[kind]={st:'load',g:null,wheels:[],hub:[],r:0.38};
+  wglbLib().then(()=>new Promise((res,rej)=>{ let i=0; const L=new THREE.GLTFLoader(); const next=()=>{ if(i>=WG_BASE.length) return rej(new Error('GLB を読めない: '+kind)); L.load(WG_BASE[i++]+TRUCK_GLB[kind],res,undefined,next); }; next(); }))
+    .then(gl=>{ const g=gl.scene; if(TRUCK_VIS[kind]!==V){ truckGlbFree(g); return; }
+      g.traverse(o=>{ if(!o.isMesh) return; const m0=o.material;
+        if(m0.transparent||m0.opacity<1) o.material=new THREE.MeshPhongMaterial({color:m0.color,transparent:true,opacity:m0.opacity,side:THREE.DoubleSide,shininess:90,specular:0x8a9a9e,depthWrite:false}); // ガラス（修理後のフロントガラス）
+        else { const map=m0.map; if(map){ map.encoding=THREE.LinearEncoding; map.anisotropy=4; } o.material=new THREE.MeshToonMaterial({color:0xffffff,map,gradientMap:toneTex}); } // 武器の GLB と同じ：画面は線形のまま描くので、絵も変換しない
+        m0.dispose(); o.castShadow=!o.material.transparent; o.receiveShadow=true; });
+      for(const n of ['wheel_fr','wheel_fl','wheel_rr','wheel_rl']){ const w=g.getObjectByName(n); if(!w) throw new Error('車輪が無い: '+n); w.rotation.order='YXZ'; V.wheels.push(w); V.hub.push(w.position.y); }
+      V.r=V.hub.reduce((a,b)=>a+b,0)/4; g.visible=false; if(TRUCK.m) TRUCK.m.add(g); V.g=g; V.st='ok'; })
+    .catch(e=>{ V.st='fail'; console.warn('[KEI truck の形]',e&&e.message||e); });
+  return V; }
+function truckGlbFree(g){ g.traverse(o=>{ if(!o.isMesh) return; o.geometry.dispose(); const m=o.material; if(m.map) m.map.dispose(); m.dispose(); }); if(g.parent) g.parent.remove(g); }
+function truckGlbDrop(kind){ const V=TRUCK_VIS[kind]; if(!V) return; if(V.g) truckGlbFree(V.g); delete TRUCK_VIS[kind]; } // 使わなくなった形を GPU から外す（直したあとの修理前の形）
+// いま見せる形を選ぶ：直していれば修理後、まだなら修理前。読めていなければコードの仮の形
+function truckVisual(t){ const want=t.repaired?'repaired':'broken', V=truckGlbLoad(want), B0=TRUCK_VIS.broken; let use=V.st==='ok'?V:null, kind=use?want:'code';
+  if(!use&&V.st==='load'&&want==='repaired'&&B0&&B0.st==='ok'){ use=B0; kind='broken'; } // 修理後の形を読み終わるまでは修理前の形のまま（コードの仮の形を一瞬出さない）
+  if(use&&use.g.parent!==TRUCK.m) TRUCK.m.add(use.g);
+  if(TRUCK.visKind!==kind){ const was=TRUCK.visKind; TRUCK.visKind=kind; for(const k in TRUCK_VIS){ const X=TRUCK_VIS[k]; if(X.g) X.g.visible=X===use; } TRUCK.code.visible=!use;
+    TRUCK.wheels=use?use.wheels:TRUCK.codeWheels; TRUCK.hub=use?use.hub:[0.3,0.3,0.3,0.3]; TRUCK.wr=use?use.r:0.3;
+    if(kind==='repaired'&&was==='broken'&&TRUCK.m.visible){ const sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a); for(const [lx,lz] of TRUCK_WHEELS){ const x=TRUCK.x+lx*ca+lz*sa, z=TRUCK.z-lx*sa+lz*ca; spawnParticles(x,groundH(x,z)+0.6,z,4,0xd8d0b8,2); } } } // 直した：形が変わる所に土ぼこり
+  if(want==='repaired'&&V.st!=='load'&&B0) truckGlbDrop('broken'); // 直したら修理前の形は外す（修理後が読めなかったときはコードの仮の形）
+  if(!t.repaired&&stfP().departureDecision) truckGlbLoad('repaired'); // 部品を集めている間に、修理後の形を先に読んでおく（直した瞬間に切り替わる）
+  return use; }
+// ---- 仮の車体（コードで作る。正式モデルを読み終わるまで・読めないときに見せる）----
+function truckModel(){ if(TRUCK.m) return TRUCK.m; const root=new THREE.Group(), g=new THREE.Group(), W=1.48, L=3.4; root.add(g); // root：位置と向き（ばね）。g：コードの仮の形
   const add=(m,ol=0.035)=>{ g.add(ol?outline(m,ol):m); return m; };
   add(mesh(rbox(W,0.42,L,0.08),mat(0xe9e8e1),0,0.62,0)); // 車台
   add(mesh(rbox(W,1.0,1.25,0.14),mat(0xeeede6),0,1.32,L/2-0.66)); // 運転席
@@ -11103,24 +11133,25 @@ function truckModel(){ if(TRUCK.m) return TRUCK.m; const g=new THREE.Group(), W=
   const br=new THREE.Group(); g.add(br);
   for(const [x,y,z,w,h,d] of [[0.62,0.7,0.6,0.08,0.3,0.5],[-0.7,0.66,-0.9,0.06,0.22,0.7],[0.2,1.82,1.0,0.5,0.06,0.4]]) br.add(mesh(G.box,mat(0x7a4b2a),x,y,z,w,h,d));
   const hood=outline(mesh(G.box,mat(0xe4e3dc),0,1.98,L/2-0.22,W*0.9,0.06,0.62),0.03); hood.rotation.x=-0.5; br.add(hood);
-  castAll(g); g.visible=false; scene.add(g); TRUCK.m=g; TRUCK.wheels=wheels; TRUCK.broken=br; return g; }
+  castAll(g); root.visible=false; scene.add(root); TRUCK.m=root; TRUCK.code=g; TRUCK.codeWheels=wheels; TRUCK.wheels=wheels; TRUCK.hub=[0.3,0.3,0.3,0.3]; TRUCK.wr=0.3; TRUCK.visKind='code'; TRUCK.broken=br;
+  for(const k in TRUCK_VIS) if(TRUCK_VIS[k].g) root.add(TRUCK_VIS[k].g); return root; }
 // 置いてある間の当たり（主人公・獣が通り抜けない）。運転している間・別の地域にあるときは外す
 function truckColOff(){ if(TRUCK.col){ try{ gridRemove(TRUCK.col); }catch(err){} TRUCK.col=null; } }
-function truckColOn(){ truckColOff(); TRUCK.col=addOBox(TRUCK.x,TRUCK.z,1.6,3.5,-TRUCK.a,'truck'); }
+function truckColOn(){ truckColOff(); TRUCK.col=addOBox(TRUCK.x,TRUCK.z,2.0,4.1,-TRUCK.a,'truck'); } // 当たり（見た目の形とは別）：正式モデル（幅 約2.1m・全長 約4.1m）に合わせた箱
 function truckUpdate(dt){ truckItemsUpdate(); const show=truckShown()&&!REG.busy; if(!show){ if(TRUCK.m) TRUCK.m.visible=false; truckColOff(); return; }
-  if(!TRUCK.sync) truckLoadPos(); const t=trk(), here=t.region===REG.cur, m=truckModel(); m.visible=here;
+  if(!TRUCK.sync) truckLoadPos(); const t=trk(), here=t.region===REG.cur, m=truckModel(); m.visible=here; truckVisual(t);
   if(!here){ truckColOff(); return; }
   if(!TRUCK.drive&&!TRUCK.col) truckColOn();
   const B=truckSusp(dt); // ばね：車体の高さ・前後と左右の傾き
   if(!TRUCK.drive){ TRUCK.roll*=Math.max(0,1-dt*5); TRUCK.pitch*=Math.max(0,1-dt*5); }
   m.position.set(TRUCK.x,B.Y,TRUCK.z); m.rotation.set(0,TRUCK.a,0); m.rotation.order='YXZ'; m.rotation.x=-Math.atan(B.p)+TRUCK.pitch; m.rotation.z=Math.atan(B.q)+TRUCK.roll; // ばね（坂・段差）＋（運転中の）沈みと傾き
-  TRUCK.wheels.forEach((w,i)=>{ if(i||t.repaired) w.position.y=0.3-B.drop[i]; }); // 浮いた車輪は下へ伸びる
-  TRUCK.broken.visible=!t.repaired; TRUCK.wheels[0].scale.set(1,t.repaired?1:0.7,1); if(!t.repaired) TRUCK.wheels[0].position.y=0.22; }
+  TRUCK.wheels.forEach((w,i)=>{ if(TRUCK.visKind!=='code'||i||t.repaired) w.position.y=TRUCK.hub[i]+B.wo[i]; }); // 車輪は地面に沿って上下する（ばねが縮むと上へ、地面を離れると下へ伸びる）
+  TRUCK.broken.visible=!t.repaired; const cw=TRUCK.codeWheels[0]; cw.scale.set(1,t.repaired?1:0.7,1); if(!t.repaired) cw.position.y=0.22; } // さび・パンク・開いたボンネットはコードの仮の形だけ（正式モデルは修理前の形そのもの）
 // ---- ばね（v0.77、2026-11-17 ユーザー指示「段差で跳ね上がったり少し浮いたりするところも表現して」）----
 // 4つの車輪それぞれのばね（縮むほど押し返す・速く縮むほど強く止める）で、車体の上下・前後の傾き・左右の傾きを動かす。
 // 地面の高さ＋でこぼこ（道・砂利道・草地・畑・田んぼの畦・線路）を車輪ごとに見る。段差でばねが急に縮むと車体は跳ね上がり、
 // 地面が急に下がる所（坂の頂上・段差の下り）では車輪が地面を離れて少し浮く。浮いている間はアクセル・ハンドルが効かない（truckDrive）。
-const TRUCK_WHEELS=[[-0.66,1.05],[0.66,1.05],[-0.66,-1.05],[0.66,-1.05]]; // 車の中の [横（+が左）, 前後（+が前）]。右前・左前・右後ろ・左後ろ（TRUCK.wheels と同じ順）
+const TRUCK_WHEELS=[[-0.879,0.9735],[0.879,0.9735],[-0.829,-0.9735],[0.829,-0.9735]]; // 車の中の [横（+が左）, 前後（+が前）]。右前・左前・右後ろ・左後ろ（TRUCK.wheels と同じ順）。正式モデル（全長 約4.1m）の車輪の位置（2026-11-17）
 function truckSegIdx(list){ const M=new Map(), C=24; for(const it of list){ const p=it.p||it, w=(it.w||0)/2; for(let i=0;i<p.length-1;i++){ const sg=[p[i][0],p[i][1],p[i+1][0],p[i+1][1],w];
     for(let a=Math.floor((Math.min(sg[0],sg[2])-4)/C);a<=Math.floor((Math.max(sg[0],sg[2])+4)/C);a++) for(let b=Math.floor((Math.min(sg[1],sg[3])-4)/C);b<=Math.floor((Math.max(sg[1],sg[3])+4)/C);b++){ const k=a*7919+b; let L=M.get(k); if(!L){ L=[]; M.set(k,L); } L.push(sg); } } }
   return (x,z)=>{ let best=1e9; const L=M.get(Math.floor(x/C)*7919+Math.floor(z/C)); if(L) for(const sg of L){ const d=segDist(x,z,sg[0],sg[1],sg[2],sg[3])-sg[4]; if(d<best) best=d; } return best; }; } // 道の端（線路は中心）までの距離
@@ -11137,10 +11168,10 @@ function truckBumpH(x,z){ const B=TRUCK_CFG.bump, G=truckGroundIdx(); let h=0;
   return h; }
 function truckSusp(dt){ const C=TRUCK_CFG, W=TRUCK_WHEELS, g=9.8;
   const om=2*Math.PI*C.suspHz, kap=om*om/4, del=2*C.suspZeta*om/4, c0=g/(om*om); // 車輪1つあたりのばね・止める強さ、止まっているときの縮み
-  const gAt=(x,z)=>groundH(x,z)+(TRUCK.drive?truckBumpH(x,z):0), R=0.3, d=0.15, drop=d*d/(2*R); // タイヤは丸いので、段差は少し手前から乗り上げ始める（半径0.3m）
+  const gAt=(x,z)=>groundH(x,z)+(TRUCK.drive?truckBumpH(x,z):0), R=C.tireR, d=0.15, drop=d*d/(2*R); // タイヤは丸いので、段差は少し手前から乗り上げ始める
   const wheelsAt=(X,Z,A)=>{ const sa=Math.sin(A), ca=Math.cos(A); return W.map(([lx,lz])=>{ const x=X+lx*ca+lz*sa, z=Z-lx*sa+lz*ca; return Math.max(gAt(x,z),gAt(x+sa*d,z+ca*d)-drop,gAt(x-sa*d,z-ca*d)-drop); }); };
   let U=TRUCK.susp;
-  if(!U||!isFinite(U.Y)){ const h=wheelsAt(TRUCK.x,TRUCK.z,TRUCK.a), p=((h[0]+h[1])-(h[2]+h[3]))/4.2, q=((h[1]+h[3])-(h[0]+h[2]))/2.64; // 置いた所の地面に合わせる
+  if(!U||!isFinite(U.Y)){ const h=wheelsAt(TRUCK.x,TRUCK.z,TRUCK.a), p=((h[0]+h[1])-(h[2]+h[3]))/2/(W[0][1]-W[2][1]), q=((h[1]+h[3])-(h[0]+h[2]))/2/(W[1][0]-W[0][0]); // 置いた所の地面に合わせる
     U=TRUCK.susp={Y:(h[0]+h[1]+h[2]+h[3])/4,p,q,vY:0,vp:0,vq:0,hp:h,air:0,s:[c0,c0,c0,c0],px:TRUCK.x,pz:TRUCK.z,pa:TRUCK.a}; }
   // 前のコマから今のコマまでの道のりを細かく分けて、車輪ごとの地面を見る（速いときに細い畦を飛び越して見落とさない）
   const moved=dist(U.px,U.pz,TRUCK.x,TRUCK.z), n=Math.max(1,Math.ceil(dt/(1/120)),Math.min(24,Math.ceil(moved/0.2))), st=dt/n;
@@ -11157,16 +11188,16 @@ function truckSusp(dt){ const C=TRUCK_CFG, W=TRUCK_WHEELS, g=9.8;
   if(TRUCK.drive&&was>0.15&&!U.air){ const hit=Math.min(1,was*1.8), sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a); S.shake=Math.max(S.shake||0,0.1+0.25*hit); if(hit>0.4) sfx('hit'); // 着地：画面が揺れ、土ぼこり
     for(const [lx,lz] of W){ const x=TRUCK.x+lx*ca+lz*sa, z=TRUCK.z-lx*sa+lz*ca; spawnParticles(x,groundH(x,z)+0.1,z,3,0xb8a888,2); } }
   const lift=Math.max(0,U.Y-(h[0]+h[1]+h[2]+h[3])/4); TRUCK.camLift=(TRUCK.camLift||0)+(lift*0.6-(TRUCK.camLift||0))*Math.min(1,dt*6);
-  return {Y:U.Y,p:U.p,q:U.q,drop:U.s.map(v=>clamp(-v,0,0.12))}; }
+  return {Y:U.Y,p:U.p,q:U.q,wo:U.s.map(v=>clamp(v-c0,-0.18,0.14))}; } // wo：車輪の上下（止まっているときの高さから。ねじれた地面でも4つとも接地して見える）
 // 乗る・降りる
 function truckBoard(){ if(TRUCK.drive||!truckOK()) return; if(f4Busy()) f4DropAll(''); const t=trk();
   if(!stfP().departureComplete&&stfStage()==='sendoff'){ stfSendoff(); return; } // 初めて乗る前に、直した報告と見送り
   TRUCK.drive=true; truckStop(); truckColOff(); P.atk=null; P.dodge=null; P.x=TRUCK.x; P.z=TRUCK.z; P.facing=TRUCK.a; pm.g.visible=false; cam.yaw=TRUCK.a; cam.init=false;
   toast('KEI truck に乗った（移動：運転・E／行動ボタン：降りる）'); }
 function truckExit(quiet){ if(!TRUCK.drive) return; const a=TRUCK.a, t=trk(); TRUCK.drive=false; truckStop(); pm.g.visible=true;
-  const side=[[Math.cos(a)*-1.9,Math.sin(a)*1.9],[Math.cos(a)*1.9,-Math.sin(a)*1.9],[-Math.sin(a)*3,-Math.cos(a)*3],[Math.sin(a)*3,Math.cos(a)*3]];
+  const side=[[Math.cos(a)*-2.05,Math.sin(a)*2.05],[Math.cos(a)*2.05,-Math.sin(a)*2.05],[-Math.sin(a)*3.25,-Math.cos(a)*3.25],[Math.sin(a)*3.25,Math.cos(a)*3.25]]; // 右・左・後ろ・前（正式モデルの大きさ）
   let put=false; for(const [dx,dz] of side){ const x=TRUCK.x+dx, z=TRUCK.z+dz; if(szWalkable(x,z)&&szFree(x,z,0.5)){ P.x=x; P.z=z; put=true; break; } }
-  if(!put){ P.x=TRUCK.x-Math.cos(a)*1.9; P.z=TRUCK.z+Math.sin(a)*1.9; }
+  if(!put){ P.x=TRUCK.x-Math.cos(a)*2.05; P.z=TRUCK.z+Math.sin(a)*2.05; }
   t.x=+TRUCK.x.toFixed(2); t.z=+TRUCK.z.toFixed(2); t.a=+TRUCK.a.toFixed(3); t.region=REG.cur; truckColOn(); if(!quiet) toast('KEI truck を降りた'); }
 // 運転：上下（W・S・スティック）で進む・止まる・下がる、左右（A・D・スティック）で曲がる。速いほどよく曲がり、止まっていると曲がらない
 function truckInput(){ let ix=0,iz=0; if(keys.has('w')||keys.has('arrowup')) iz+=1; if(keys.has('s')||keys.has('arrowdown')) iz-=1; if(keys.has('a')||keys.has('arrowleft')) ix-=1; if(keys.has('d')||keys.has('arrowright')) ix+=1;
@@ -11203,7 +11234,7 @@ function truckDrive(dt){ const C=TRUCK_CFG, {ix,iz}=truckInput();
   P.x=TRUCK.x; P.z=TRUCK.z; P.facing=TRUCK.a; P.iframe=true; P.moveMag=0; P.atk=null; P.dodge=null; pm.g.visible=false;
   const t=trk(); t.x=+TRUCK.x.toFixed(2); t.z=+TRUCK.z.toFixed(2); t.a=+TRUCK.a.toFixed(3); t.region=REG.cur;
   if(Math.abs(v)>1.5&&!(cam.manualT>0)) cam.yaw+=angDiff(cam.yaw,TRUCK.a)*Math.min(1,dt*2.2); // カメラは車の後ろへ
-  TRUCK.wheels.forEach((wh,i)=>{ wh.rotation.order='YXZ'; wh.rotation.x+=v*dt/0.3; if(i<2) wh.rotation.y=TRUCK.steer; }); // 前の車輪はハンドルの向き
+  TRUCK.wheels.forEach((wh,i)=>{ wh.rotation.order='YXZ'; wh.rotation.x+=v*dt/(TRUCK.wr||0.3); if(i<2) wh.rotation.y=TRUCK.steer; }); // 前の車輪はハンドルの向き
   if(TRUCK.slide>1.0&&Math.abs(v)>3&&(TRUCK.dustT=(TRUCK.dustT||0)-dt)<=0){ TRUCK.dustT=0.08; // 横滑りの土ぼこり（後ろの車輪）
     for(const sd of [-1,1]){ const x=TRUCK.x-sb*1.05-cb*sd*0.66, z=TRUCK.z-cb*1.05+sb*sd*0.66; spawnParticles(x,groundH(x,z)+0.15,z,2,0xb8a888,1.5); } } }
 // 地域を移った：運転していれば車も一緒に（着いた所に車を置き、乗ったまま）。読み込みに失敗したら降りる
@@ -11218,7 +11249,7 @@ function truckInteractables(L){ if(!truckShown()) return; const st=stfStage(), t
   if(REG.cur==='komyoji'&&(st==='truck'||st==='sendoff'||st==='away'||stfP().legacyKamishihiAccess)&&stfP().departureDecision===true){
     if(!t.repaired) for(const q of sp.parts){ if(t.parts.includes(q.id)) continue; const d=dist(P.x,P.z,q.x,q.z); if(d<2.2) L.push({d,label:`${TRUCK_CFG.partName}を拾う`,act:()=>{ if(t.parts.includes(q.id)) return; t.parts.push(q.id); sfx('pickup'); toast(`${TRUCK_CFG.partName}を手に入れた（${t.parts.length}/${TRUCK_CFG.parts}）`); saveGame(); }}); }
     if(!t.fueled&&t.fuel<TRUCK_CFG.fuel){ const d=dist(P.x,P.z,sp.fuel.x,sp.fuel.z); if(d<2.2) L.push({d,label:`${TRUCK_CFG.fuelName}を受け取る`,act:()=>{ t.fuel=TRUCK_CFG.fuel; sfx('pickup'); toast(`${TRUCK_CFG.fuelName}を受け取った`); saveGame(); }}); } }
-  if(t.region!==REG.cur) return; const d=dist(P.x,P.z,TRUCK.x,TRUCK.z)-1.4; if(d>2.2) return;
+  if(t.region!==REG.cur) return; const d=dist(P.x,P.z,TRUCK.x,TRUCK.z)-1.55; if(d>2.2) return; // 車の中心から 3.75m 以内
   if(!stfP().departureDecision&&!stfP().legacyKamishihiAccess){ L.push({d,label:'動かなくなった軽トラックが止まっている',act:()=>{}}); return; }
   if(!t.found) L.push({d,label:'軽トラックを調べる',act:truckFind});
   else if(!t.repaired) L.push({d,label:`KEI truck を直す（${truckNeedText(true)}）`,act:truckRepair});
@@ -11226,18 +11257,18 @@ function truckInteractables(L){ if(!truckShown()) return; const st=stfStage(), t
   else L.push({d,label:'KEI truck に乗る',act:truckBoard}); }
 function truckInfo(){ return [[{name:'KEI truck'},'直すのに要る物：'+truckNeedText(false)+(trk().repaired?'':'　／　燃料は直したあとで入れる')]]; }
 function truckFind(){ const t=trk(); t.found=true; saveGame(); queueDialog(stfLines('found').concat(truckInfo())); }
-function truckRepair(){ const t=trk(), m=TRUCK_CFG.mats; const lack=Object.keys(m).some(k=>(inv[k]|0)<m[k])||t.parts.length<TRUCK_CFG.parts;
+function truckRepair(){ const t=trk(), m=TRUCK_CFG.mats; if(t.repaired) return; const lack=Object.keys(m).some(k=>(inv[k]|0)<m[k])||t.parts.length<TRUCK_CFG.parts;
   if(lack){ sfx('deny'); queueDialog(truckInfo()); return; }
   for(const k in m) inv[k]-=m[k]; t.repaired=true; sfx('craft'); toast('KEI truck を直した'+(t.fueled?'':'（あとは燃料）')); saveGame(); if(t.fueled) stfSendoff(); }
-function truckFuel(){ const t=trk(); if(t.fuel<TRUCK_CFG.fuel){ sfx('deny'); queueDialog(truckInfo()); return; } t.fuel-=TRUCK_CFG.fuel; t.fueled=true; sfx('pickup'); toast('KEI truck に燃料を入れた'); saveGame(); if(t.repaired) stfSendoff(); }
+function truckFuel(){ const t=trk(); if(t.fueled) return; if(t.fuel<TRUCK_CFG.fuel){ sfx('deny'); queueDialog(truckInfo()); return; } t.fuel-=TRUCK_CFG.fuel; t.fueled=true; sfx('pickup'); toast('KEI truck に燃料を入れた'); saveGame(); if(t.repaired) stfSendoff(); }
 // 直した報告と見送り（草案）：車のそばに3人が来る → 終わったら KEI truck に乗った状態で、東の出口へ
-function stfTruckSpots(){ const a=TRUCK.a, fx=Math.sin(a), fz=Math.cos(a), sx=Math.cos(a), sz=-Math.sin(a), P0={x:TRUCK.x+sx*2.3,z:TRUCK.z+sz*2.3};
+function stfTruckSpots(){ const a=TRUCK.a, fx=Math.sin(a), fz=Math.cos(a), sx=Math.cos(a), sz=-Math.sin(a), P0={x:TRUCK.x+sx*2.45,z:TRUCK.z+sz*2.45};
   const pt=(k,f)=>{ const x=TRUCK.x+sx*k+fx*f, z=TRUCK.z+sz*k+fz*f; return {x,z,face:Math.atan2(P0.x-x,P0.z-z)}; };
-  return [{x:P0.x,z:P0.z,face:Math.atan2(sx,sz)},pt(4.6,1.3),pt(5.0,0),pt(4.6,-1.3)]; }
+  return [{x:P0.x,z:P0.z,face:Math.atan2(sx,sz)},pt(4.8,1.35),pt(5.2,0),pt(4.8,-1.35)]; }
 async function stfSendoff(){ if(STF.busy) return; STF.busy=true; STF.live=true; keys.clear();
   try{ S.mode='dialog'; await stfFade(true); stfGather(stfTruckSpots()); await stfSettle();
-    const a=TRUCK.a, sx=Math.cos(a), sz=-Math.sin(a), fx=Math.sin(a), fz=Math.cos(a), gy=groundH(TRUCK.x,TRUCK.z), cx=TRUCK.x+sx*3.4, cz=TRUCK.z+sz*3.4;
-    stfCam([cx+fx*7.2,gy+2.3,cz+fz*7.2],[cx-fx*0.3,gy+1.2,cz-fz*0.3],48);
+    const a=TRUCK.a, sx=Math.cos(a), sz=-Math.sin(a), fx=Math.sin(a), fz=Math.cos(a), gy=groundH(TRUCK.x,TRUCK.z), cx=TRUCK.x+sx*3.0, cz=TRUCK.z+sz*3.0; // 正式モデル（全長 約4.1m）が画面に収まるよう少し引く
+    stfCam([cx+fx*8.6,gy+2.6,cz+fz*8.6],[cx-fx*0.3,gy+1.3,cz-fz*0.3],48);
     await stfFade(false); S.mode='playing';
     queueDialog(stfLines('fixed').concat(stfLines('sendoff')),()=>{ stfP().departureComplete=true; saveGame();
       stfSceneEnd(()=>{ truckBoard(); }); });
