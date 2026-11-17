@@ -31,6 +31,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 THREE = open(os.environ.get('THREE_JS', '/home/claude/v010/node_modules/three/build/three.min.js')).read()
 SRC = open(os.path.join(ROOT, 'index.html'), encoding='utf8').read()
 SHOTS = os.environ.get('KTS_SHOTS')
+TRUCK_Z_POST = 68.6 - 3.0  # 車両基地の北の柱の z（基地の中心 68.6、柱は ±3.0）
 HOOK = "window.__ev=s=>eval(s);\n"  # ゲームの中の変数をそのまま読む（テストだけ）
 HTML = SRC.replace('function updateNPCs(dt){', HOOK + 'function updateNPCs(dt){', 1)
 BASE = """() => window.__ev(`(()=>{ prog.bossDefeated=true; prog.stage='cleared'; prog.unlockTrap=true; prog.unlockBoss=true; prog.introSeen=true;
@@ -208,7 +209,7 @@ async def main():
         # ================= ⑤ 車両基地 =================
         await G("(()=>{ Object.assign(inv,{wood:200,stone:100,iron:100,rope:100,hide:100}); })()")
         await close_menus()
-        rc = await G("(()=>{ P.x=157; P.z=68.5; openCraft(); const b=document.getElementById('craft_depotBuild'); return b?{dis:b.disabled}:null; })()")
+        rc = await G("(()=>{ P.x=BENCH.x; P.z=BENCH.z+1.2; openCraft(); const b=document.getElementById('craft_depotBuild'); return b?{dis:b.disabled}:null; })()")
         check(rc is not None and not rc['dis'], f'作業台に「車両基地を建てる」が出る（KEI truck を直したあと）{rc}')
         await G("craft('depotBuild')")
         await close_menus()
@@ -218,15 +219,15 @@ async def main():
         await put_truck(150, 88, math.pi)
         await board()
         await ev(AUTOPILOT)
-        await G("window.__ap([[150,79],[150,72.5],[146,71],[141.5,71.6],[135.5,72]],4)")
+        await G("window.__ap([[150,79],[150,71.5],[153.5,68.6],[158.5,68.6],[164.2,68.6]],4)")  # v0.79：南門から入って右（東）へ
         dn = await until("window.__apDone", 600)
         await wait_game(0.8)
         await G("truckExit(true)")
         r5b = await G("({x:TRUCK.x,z:TRUCK.z,park:depotParked(),log:window.__apLog.filter((p,i)=>i%10===0)})")
         print('   通った所', r5b['log'][:40])
         check(dn is True and r5b['park'], f'南門の外から運転して車両基地の屋根の下に止められる（{r5b["x"]:.1f}, {r5b["z"]:.1f}）')
-        await shot('kts_2_depot', [-8.8, 5.2, -9.6, 0, 1.2, 0])  # 拠点の内側の北東の上から  # 拠点の内側（北東）から
-        await G("(()=>{ P.x=TRUCK_SYS.depot.x+TRUCK_SYS.depot.W/2+0.8; P.z=TRUCK_SYS.depot.z+1.2; })()")
+        await shot('kts_2_depot', [8.8, 5.2, -9.6, 0, 1.2, 0])  # 拠点の内側（北西）の上から
+        await G("(()=>{ P.x=TRUCK_SYS.depot.x-TRUCK_SYS.depot.W/2-0.8; P.z=TRUCK_SYS.depot.z+2.4; })()")
         await pg.wait_for_timeout(400)
         lab = await G("(interactables()||{}).label")
         check(lab and '車両基地（直す' in lab, f'基地のそばで「{lab}」')
@@ -258,9 +259,9 @@ async def main():
         r5d['ch'] = await G("TRUCK.bedG?TRUCK.bedG.children.length:0")
         check(r5d['fac'] == {'bench': 1, 'kiln': 1, 'tower': 1} and r5d['ch'] >= 6, f'荷台の施設3つを作る・荷台に見える {r5d}')
         # 柱にぶつかる
-        await put_truck(143.0, 69.85, -math.pi / 2)
+        await put_truck(153.6, TRUCK_Z_POST, math.pi / 2)  # 基地の入口の北の柱へ東向きに
         await board()
-        await G("(()=>{ window.__h0=trk().hp; TRUCK.vx=-10; TRUCK.vz=0; TRUCK.bumpT=-9; })()")
+        await G("(()=>{ window.__h0=trk().hp; TRUCK.vx=10; TRUCK.vz=0; TRUCK.bumpT=-9; })()")
         await wait_game(1.0)
         bump = await G("({d:window.__h0-trk().hp,x:TRUCK.x,v:TRUCK.v})")
         await G("truckExit(true)")
@@ -309,7 +310,7 @@ async def main():
         await close_menus()
         # 丸太置き場の近くで納める
         yd = await G("({x:F4.yard.x,z:F4.yard.z})")
-        await put_truck(yd['x'] - 6, yd['z'], math.pi / 2)
+        await put_truck(yd['x'] - 7, yd['z'] + 3, math.pi / 2)
         await G("(()=>{ trk().bed.logs=['t','m','k']; window.__w0=inv.wood; window.__d0=prog.f4.delivered; P.x=TRUCK.x-3.5; P.z=TRUCK.z; })()")
         await G("bedDeliverLogs()")
         r6e = await G("({dw:inv.wood-window.__w0,dd:prog.f4.delivered-window.__d0,logs:trk().bed.logs.length})")

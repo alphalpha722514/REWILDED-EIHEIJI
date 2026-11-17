@@ -48,8 +48,8 @@ async def main():
         await pg.wait_for_timeout(6000)
         await pg.screenshot(path=OUT,timeout=300000)
         labs=LABELS or await G("""(()=>{ const L=[], add=(n,x,z,k)=>L.push([n,x,z,k||'f']);
-          add('集会所',150,37.5,'b'); add('資材倉庫',165,66,'b'); add('救護テント',165,42,'b'); add('無線室',135,66,'b'); add('食料庫',STORE.x,41,'b'); add('作業台',157,65.5,'f');
-          add('見張り台（源さん）',156,73,'b'); add('見張り台',144,73,'b'); add('見張り台',169,37,'b'); add('火の見やぐら',CORE.x,CORE.z,'b'); add('井戸',159.5,49,'f'); add('田んぼ',143,60,'f');
+          add('集会所',150,37.5,'b'); { const [sx,sz]=M(STOREHOUSE[0],STOREHOUSE[1]); add('資材倉庫',sx,sz,'b'); } add('救護テント',165,42,'b'); add('無線室',135,66,'b'); add('食料庫',STORE.x,41,'b'); add('作業台',BENCH.x,BENCH.z,'f'); add('田んぼ（米がとれる）',(PADDY.x0+PADDY.x1)/2,(PADDY.z0+PADDY.z1)/2,'f');
+          add('見張り台（源さん）',156,73,'b'); add('見張り台',144,73,'b'); add('見張り台',169,37,'b'); add('火の見やぐら',CORE.x,CORE.z,'b'); add('井戸',159.5,49,'f'); add('共同菜園',F8PLOTS[1].x,F8PLOTS[1].z,'f');
           add('かまど',FAC.kama.pos.x,FAC.kama.pos.z,'f'); add('変換炉',FAC.conv.pos.x,FAC.conv.pos.z,'f'); add('丸太置き場',F4.yard.x,F4.yard.z,'f'); add('物見やぐら（建てる）',SCOUT.x,SCOUT.z,'f'); add('車両基地',TRUCK_SYS.depot.x,TRUCK_SYS.depot.z,'t');
           for(const g of GAPS) add(g.name,g.c.x,g.c.z,'g'); add('裏の木戸',150,34,'g'); add('出発点',PSPAWN.x,PSPAWN.z,'p');
           for(const n of NPCS) if(n.home&&inBase(n.home.x,n.home.z,2)) add(n.name.replace(/^.* /,''),n.home.x,n.home.z,'n');
