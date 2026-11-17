@@ -11319,27 +11319,29 @@ function truckFuel(){ const t=trk(); if(t.fueled) return; if(t.fuel<TRUCK_CFG.fu
 // 2026-11-18 ユーザー承認：燃料は木炭・改修は加速が良くなる・源さんの運搬と台詞2つ・運転席の主人公は0.62倍。数・名前・場所は暫定。保存は chapter2.progress.truck の新しい項目（gas・hp・lv・bed・fac・kiln・tip）と chapter2.progress.depot。旧セーブは初期値で読む
 const TRUCK_SYS={
   gas:{perKm:12,travel:6,coal:25,low:15}, // 燃料（%）：1km 走ると12%・地域を移ると6%減る。木炭1つで25%足す（どこでも。荷台の木炭も使える）。15%以下で知らせる
-  hp:{max:[100,130,165,200],weak:0.3,weakK:0.75,bump:{v:4.5,k:4,cd:0.6},land:{min:0.55,k:20},beast:0.6,tip:25}, // 車体：改修の段階ごとの最大／3割より下で最高速度0.75倍／激突（ぶつかる向きの速さ 4.5m/秒を超えた分×4）／高く跳んだ着地（0.55秒を超えて浮いた分×20）／獣の攻撃は0.6倍／横転で25
+  hp:{max:[100,130,165,200,240,280],weak:0.3,weakK:0.75,bump:{v:4.5,k:4,cd:0.6},land:{min:0.55,k:20},beast:0.6,tip:25}, // 車体：改修の段階ごとの最大／3割より下で最高速度0.75倍／激突（ぶつかる向きの速さ 4.5m/秒を超えた分×4）／高く跳んだ着地（0.55秒を超えて浮いた分×20）／獣の攻撃は0.6倍／横転で25
   tip:{latA:10.5,slope:0.5,hold:0.5,v:9}, // 横転：横向きの加速（m/秒²。平らな所でいっぱいに切っても 約7.7〜8.8 までしか出ない）の割合と、外へ下がる横の傾き（rad）の割合の和が1を超え、9m/秒より速いまま0.5秒続くと倒れる。平らな道では倒れない・外へ 約8°傾いた所でいっぱいに切ると倒れる
-  lv:[{speed:14,acc:3.5},{speed:15.5,acc:4.3,cost:{iron:6,wood:10,rope:4}},{speed:17,acc:5.2,cost:{iron:10,wood:14,hide:6,stone:6}},{speed:18.5,acc:6.2,cost:{iron:16,wood:18,rope:8,stone:10}}], // 改修（初期＋3段階）：最高速度（m/秒）・加速（m/秒²）・費用
+  lv:[{speed:14,acc:3.5},{speed:15.5,acc:4.3,cost:{iron:6,wood:10,rope:4}},{speed:17,acc:5.2,cost:{iron:10,wood:14,hide:6,stone:6}},{speed:18.5,acc:6.2,cost:{iron:16,wood:18,rope:8,stone:10}},
+      {speed:20,acc:7.2,cost:{iron:22,wood:22,rope:10,stone:14,hide:8}},{speed:21.5,acc:8.2,cost:{iron:30,wood:26,rope:12,stone:18,hide:10,charcoal:6}}], // 改修（初期＋5段階。2026-11-18 ユーザー「改修段階を二つ増やしてレベル五まで」）：最高速度（m/秒）・加速（m/秒²）・費用
   repair:{step:20,cost:{iron:1,wood:1}}, field:{to:0.35,cost:{iron:2,wood:2,rope:1}}, // 車両基地で20ずつ直す／応急修理（どこでも。荷台の素材も使える）は最大の35%まで
   bed:{cap:60,log:10,maxLogs:6,near:12,mats:['wood','stone','iron','rope','straw','bamboo','hide','charcoal']}, // 荷台：広さ60。丸太は1本10（6本で満杯）・素材は1つ1。車から12m 以内で作る・建てるときは荷台の素材も使える
-  depot:{x:135.5,z:72,W:7,D:4.6,build:{wood:20,stone:12,iron:8,rope:6},park:3.2}, // 車両基地：拠点の南西の隅（南門から入って西へ）。屋根の下（中心から3.2m 以内）に止めて使う
-  fac:{bench:{lv:1,name:'荷台の作業台',cost:{wood:6,iron:2,rope:2},desc:'車のそばでクラフト・武器の手入れができる（荷台の素材も使える）'},
-       kiln:{lv:2,name:'荷台の炭焼き釜',cost:{stone:6,iron:4,wood:4},desc:'走っている間も木材を焼いて木炭（燃料）を作る。木炭は荷台へ',coal:{wood:3,time:40},maxQ:6},
-       tower:{lv:3,name:'荷台の見張り台',cost:{wood:8,iron:3,rope:4},desc:'運転中・車のそばでは、地図に遠く（90m）の獣まで映る',see:90}},
+  depot:{x:135.5,z:72,rot:0,W:9,D:6.4,build:{wood:20,stone:12,iron:8,rope:6},park:3.2}, // 車両基地：v0.79 で形を機械の整備場にし、9m×6.4m（柱の間 約5.7m）に広げた。rot は向き（0：入口が西）。場所は拠点の配置の見直しで決める（docs/base-layout-plan.md）
+  fac:{ // 荷台の施設。解放の順は 作業台（段階1）→ 見張り台（段階2）→ 炭焼き釜（段階3）（2026-11-18 ユーザー決定）。段階4・5で解放する施設は未定
+       bench:{lv:1,name:'荷台の作業台',cost:{wood:6,iron:2,rope:2},desc:'車のそばでクラフト・武器の手入れができる（荷台の素材も使える）'},
+       tower:{lv:2,name:'荷台の見張り台',cost:{wood:8,iron:3,rope:4},desc:'運転中・車のそばでは、地図に遠く（90m）の獣まで映る',see:90},
+       kiln:{lv:3,name:'荷台の炭焼き釜',cost:{stone:6,iron:4,wood:4},desc:'走っている間も木材を焼いて木炭（燃料）を作る。木炭は荷台へ',coal:{wood:3,time:40},maxQ:6}},
   haul:{walk:2.6,load:1.4,mats:10,near:70}, // 住民の運搬：源さんが荷台と丸太置き場の間を歩いて運ぶ（歩く速さ・積み下ろしの秒・1回に運ぶ素材の数・頼める距離）
 };
 // 車両基地を作業台で建てる（拠点の作業台。KEI truck を直したあとに出る）
 RECIPES.splice(Math.max(0,RECIPES.findIndex(r=>r.id==='cart')),0,{id:'depotBuild',name:'車両基地を建てる',cost:TRUCK_SYS.depot.build,desc:'KEI truck の屋根つきの整備場。拠点の南西の隅に建てる。車を屋根の下に止めると、車体を直す・改修（最高速度・耐久・加速が上がり、荷台に施設を作れるようになる）・荷台の施設を作るができる',
   show:()=>truckShown()&&trk().repaired&&!depotS().built,give:()=>{ depotS().built=1; depotApply(); toast('拠点の南西の隅に車両基地を建てた。KEI truck を屋根の下に止めて使う'); }});
 const TRK_N=new WeakSet();
-function trkSys(t){ if(TRK_N.has(t)) return t; const L=TRUCK_SYS; t.lv=clamp(t.lv|0,0,3); const hm=L.hp.max[t.lv];
+function trkSys(t){ if(TRK_N.has(t)) return t; const L=TRUCK_SYS; t.lv=clamp(t.lv|0,0,L.lv.length-1); const hm=L.hp.max[t.lv];
   if(typeof t.gas!=='number'||!isFinite(t.gas)) t.gas=t.fueled?100:0; t.gas=clamp(t.gas,0,100);
   if(typeof t.hp!=='number'||!isFinite(t.hp)) t.hp=hm; t.hp=clamp(t.hp,0,hm);
   if(!t.bed||typeof t.bed!=='object'||Array.isArray(t.bed)) t.bed={logs:[],mats:{}}; if(!Array.isArray(t.bed.logs)) t.bed.logs=[]; t.bed.logs=t.bed.logs.filter(c=>SIZE_OF[c]).slice(0,L.bed.maxLogs);
   if(!t.bed.mats||typeof t.bed.mats!=='object'||Array.isArray(t.bed.mats)) t.bed.mats={}; for(const k of Object.keys(t.bed.mats)){ const n=Math.floor(+t.bed.mats[k]||0); if(!L.bed.mats.includes(k)||n<=0) delete t.bed.mats[k]; else t.bed.mats[k]=n; }
-  if(!t.fac||typeof t.fac!=='object'||Array.isArray(t.fac)) t.fac={}; for(const k of Object.keys(t.fac)) if(!L.fac[k]) delete t.fac[k]; for(const k in L.fac) t.fac[k]=t.fac[k]&&t.lv>=L.fac[k].lv?1:0;
+  if(!t.fac||typeof t.fac!=='object'||Array.isArray(t.fac)) t.fac={}; for(const k of Object.keys(t.fac)) if(!L.fac[k]) delete t.fac[k]; for(const k in L.fac) t.fac[k]=t.fac[k]?1:0; // 作ってある施設は、解放の段階が変わっても残す（v0.79）
   if(!t.kiln||typeof t.kiln!=='object'||Array.isArray(t.kiln)) t.kiln={q:0,t:0}; t.kiln.q=clamp(t.kiln.q|0,0,L.fac.kiln.maxQ); t.kiln.t=isFinite(+t.kiln.t)?clamp(+t.kiln.t,0,L.fac.kiln.coal.time):0;
   t.tip=t.tip===1||t.tip===-1?t.tip:0; TRK_N.add(t); return t; }
 function trkHpMax(t){ return TRUCK_SYS.hp.max[t.lv|0]; }
@@ -11431,39 +11433,87 @@ function kilnUpdate(dt){ const t=trk(); if(!t.fac.kiln||!t.kiln.q) return; const
   if(bedUnits(t)<TRUCK_SYS.bed.cap) t.bed.mats.charcoal=(t.bed.mats.charcoal||0)+1; else inv.charcoal=(inv.charcoal||0)+1; toast('荷台の炭焼き釜：木炭ができた'); saveGame(); }
 function truckSee(){ if(!truckShown()) return 60; const t=trk(); return t.fac.tower&&t.region===REG.cur&&(TRUCK.drive||truckNear(12))?TRUCK_SYS.fac.tower.see:60; } // 見張り台：地図に映る獣の距離（ふだんは60m）
 // ---- 車両基地（拠点の中に建てる。修理・改修・荷台の施設） ----
-const DEPOT={g:null,cols:[]};
-function depotModel(){ if(DEPOT.g) return DEPOT.g; const D=TRUCK_SYS.depot, g=new THREE.Group(), gy=groundH(D.x,D.z), add=(m,ol=0.03)=>{ g.add(ol?outline(m,ol):m); return m; };
-  add(mesh(G.box,mat(0x9a968c),0,0.03,0,D.W,0.06,D.D),0); // コンクリートの床
-  for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) add(mesh(G.box,mat(0x5a4e40),sx*(D.W/2-0.15),1.6,sz*(D.D/2-0.15),0.22,3.2,0.22)); // 柱
-  const roof=add(mesh(G.box,mat(0x7a7f84),0,3.28,0,D.W+0.6,0.1,D.D+0.6)); roof.rotation.x=0.06; // トタン屋根（少し傾ける）
-  for(let i=-3;i<=3;i++){ const r=add(mesh(G.box,mat(0x676c71),i*1.0,3.35,0,0.06,0.04,D.D+0.6),0); r.rotation.x=0.06; }
-  add(mesh(G.box,mat(0x6a5038),-D.W/2+0.45,0.9,0,0.3,1.8,1.2),0.02); // 西の壁ぎわの道具棚
-  for(let i=0;i<3;i++) add(mesh(G.box,mat(0x8a8e90),-D.W/2+0.62,0.5+i*0.5,0,0.06,0.04,1.0),0);
-  add(mesh(G.cyl8,mat(0x8a3a2a),-D.W/2+0.5,0.45,-D.D/2+0.55,0.3,0.9,0.3),0.02); // 木炭の缶
-  add(mesh(G.box,mat(0x4a4f54),-D.W/2+0.55,0.35,D.D/2-0.6,0.6,0.7,0.6),0.02); // 工具箱
-  add(mesh(G.box,mat(0xf4efe2),D.W/2+0.05,2.6,-D.D/2+0.2,0.04,0.36,1.2),0.02); // 入口の札
-  g.position.set(D.x,gy,D.z); castAll(g); world.add(g); DEPOT.g=g; g.visible=false; return g; }
-function depotApply(){ const on=!!depotS().built; if(!on&&!DEPOT.g) return; const g=depotModel(); g.visible=on; const D=TRUCK_SYS.depot;
-  if(!DEPOT.cols.length){ for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) DEPOT.cols.push(addOBox(D.x+sx*(D.W/2-0.15),D.z+sz*(D.D/2-0.15),0.3,0.3,0,'house',{h:3})); DEPOT.cols.push(addOBox(D.x-D.W/2+0.45,D.z,0.4,1.3,0,'house',{h:1.8})); }
+const DEPOT={g:null,signs:[],cols:[]};
+// v0.79：機械の整備場らしい形（2026-11-18 ユーザー「車両基地はもっとメカニックな見た目に」）。コードで作った仮の形
+// 車の中の向き：x が奥行き（-x が入口）、z が横幅。鉄骨の H 形の柱・トタン屋根・点検ピット・吊り上げ（チェーンブロック）・工具の壁・タイヤ棚・ドラム缶・ボンベ・コンプレッサー・投光器
+function depotLocal(lx,lz){ const D=TRUCK_SYS.depot, c=Math.cos(D.rot||0), s=Math.sin(D.rot||0); return [D.x+lx*c+lz*s, D.z-lx*s+lz*c]; } // 基地の中の座標 → 世界
+function depotToLocal(x,z){ const D=TRUCK_SYS.depot, c=Math.cos(D.rot||0), s=Math.sin(D.rot||0), dx=x-D.x, dz=z-D.z; return [dx*c-dz*s, dx*s+dz*c]; }
+function depotModel(){ if(DEPOT.g) return DEPOT.g; const D=TRUCK_SYS.depot, W=D.W, Dp=D.D, g=new THREE.Group(), gy=groundH(D.x,D.z);
+  const STEEL=0x55606b, STEEL2=0x6d7882, YEL=0xe2b324, BLK=0x2b2b2d, RED=0xb5382c, CON=0x8f8c84, ROOF=0x9aa4aa, ROOF2=0x7f8a90;
+  const add=(m,j)=>{ g.add(j!=null?J(m,j):m); return m; }, box=(c,x,y,z,sx,sy,sz,j)=>add(mesh(G.box,mat(c),x,y,z,sx,sy,sz),j), cyl=(c,x,y,z,r,h,j)=>add(mesh(G.cyl8,mat(c),x,y,z,r,h,r),j);
+  const H=3.6, xs=[-W/2+0.2,0,W/2-0.2], zs=[-Dp/2+0.2,Dp/2-0.2];
+  box(CON,0,0.04,0,W+0.6,0.08,Dp+0.6,0.03); // コンクリートの床
+  for(let k=0;k<9;k++) box(k%2?BLK:YEL,-W/2-0.05,0.085,-Dp/2+0.6+k*((Dp-1.2)/8),0.4,0.012,(Dp-1.2)/8,0.02); // 入口の黄と黒のしま
+  for(const sz of [-1,1]) box(YEL,0,0.085,sz*1.55,W-1.6,0.01,0.09,0.02); // 止める所の線
+  box(0x3a3d40,0.2,0.083,0,3.6,0.012,0.95,0.02); for(let k=0;k<12;k++) box(0x5b6066,0.2-1.65+k*0.3,0.09,0,0.05,0.012,0.9,0.02); // 点検ピットの鉄の格子
+  // 鉄骨（H 形の柱6本・梁）
+  const hcol=(x,z)=>{ box(STEEL,x,H/2,z-0.11,0.28,H,0.04,0.03); box(STEEL,x,H/2,z+0.11,0.28,H,0.04,0.03); box(STEEL2,x,H/2,z,0.04,H,0.2,0.03); box(STEEL,x,0.11,z,0.46,0.06,0.46,0.03); for(const sx of [-1,1]) box(0x9ea6ac,x+sx*0.17,0.15,z+sx*0.17,0.05,0.04,0.05); };
+  for(const x of xs) for(const z of zs) hcol(x,z);
+  for(const z of zs){ box(STEEL,0,H+0.12,z,W+0.2,0.06,0.26,0.03); box(STEEL,0,H-0.12,z,W+0.2,0.06,0.26,0.03); box(STEEL2,0,H,z,W+0.2,0.24,0.04,0.03); } // 長い梁
+  for(const x of xs) box(STEEL2,x,H+0.02,0,0.2,0.2,Dp-0.2,0.03); // 横の梁
+  for(const x of [xs[0],xs[2]]) for(const sz of [-1,1]){ const b=box(STEEL2,x,H-0.55,sz*(Dp/2-0.75),0.07,0.07,1.25,0.03); b.rotation.x=sz*0.75; } // 柱と梁の筋かい
+  // トタン屋根（奥へ少し下がる）
+  const rg=new THREE.Group(); rg.position.set(0,H+0.42,0); rg.rotation.z=-0.05; g.add(rg);
+  rg.add(J(mesh(G.box,mat(ROOF),0,0,0,W+1.0,0.05,Dp+0.9),0.03)); for(let k=0;k<=Math.round((Dp+0.8)/0.28);k++) rg.add(J(mesh(G.box,mat(ROOF2),0,0.04,-Dp/2-0.4+k*0.28,W+1.0,0.04,0.06),0.03));
+  rg.add(J(mesh(G.box,mat(0x6b747a),W/2+0.5,-0.06,0,0.12,0.12,Dp+0.9),0.03)); // 雨どい
+  // 奥の壁（波板）
+  box(0x7b868c,W/2+0.08,H/2+0.05,0,0.08,H,Dp-0.1,0.03); for(let k=0;k<=Math.round((Dp-0.3)/0.26);k++) box(0x69737a,W/2+0.03,H/2+0.05,-Dp/2+0.15+k*0.26,0.04,H,0.06,0.03);
+  // 吊り上げ：チェーンブロックの I 形の梁・台車・鎖・フック
+  box(STEEL,0.6,H-0.32,0,4.6,0.05,0.18); box(STEEL2,0.6,H-0.22,0,4.6,0.16,0.04);
+  box(YEL,1.3,H-0.55,0,0.36,0.32,0.3,0.04); box(BLK,1.3,H-0.55,0.16,0.2,0.06,0.02); cyl(0x9a9fa3,1.3,H-1.3,0,0.025,1.2); cyl(0x9a9fa3,1.38,H-1.0,0,0.02,0.6);
+  add(mesh(G.torus,mat(0x9a9fa3),1.3,H-1.98,0,0.09,0.09,0.12)); box(RED,1.3,H-2.08,0,0.1,0.14,0.06);
+  // 北側（-z）：工具の壁・赤い工具箱・作業台と万力・コンプレッサー
+  const tz=-Dp/2+0.32; box(0x8b7d66,2.0,1.75,tz-0.05,3.0,1.3,0.06,0.04); box(STEEL2,2.0,1.08,tz-0.04,3.1,0.06,0.1);
+  for(let k=0;k<9;k++){ const t=box(k%3===0?RED:0x9aa0a6,0.75+k*0.3,1.62+(k%2)*0.18,tz,0.05,0.42+(k%3)*0.08,0.03); t.rotation.z=(k%2?0.12:-0.1); box(0x9aa0a6,0.75+k*0.3,1.88+(k%2)*0.18,tz,0.13,0.07,0.03); }
+  for(let k=0;k<3;k++){ box(BLK,0.9+k*0.95,2.25,tz,0.6,0.06,0.03); }
+  box(RED,3.55,0.55,tz+0.2,0.9,1.0,0.55,0.04); for(let k=0;k<5;k++){ box(0x7a2219,3.55,0.18+k*0.19,tz+0.48,0.84,0.015,0.01); box(0xc9cdd0,3.55,0.12+k*0.19+0.08,tz+0.49,0.3,0.03,0.02); } // 工具箱の引き出し
+  box(STEEL2,1.0,0.86,tz+0.3,1.8,0.06,0.7,0.03); for(const sx of [-1,1]) for(const sz of [0,1]) box(STEEL,1.0+sx*0.82,0.42,tz+0.02+sz*0.56,0.06,0.84,0.06); // 鉄の作業台
+  box(0x4d5a63,0.35,1.0,tz+0.35,0.22,0.2,0.18,0.04); box(0x4d5a63,0.35,1.0,tz+0.52,0.14,0.12,0.16); cyl(0x9aa0a6,0.35,1.0,tz+0.65,0.02,0.2); // 万力
+  box(RED,-0.6,0.42,tz+0.25,0.8,0.5,0.45,0.04); add(mesh(G.cyl8,mat(0xb8bcc0),-0.6,0.42,tz+0.25,0.2,0.7,0.2),0.03).rotation.z=Math.PI/2; for(const sx of [-1,1]) cyl(BLK,-0.6+sx*0.3,0.06,tz+0.25,0.07,0.06); // コンプレッサー
+  // 奥の南（+z）：タイヤ棚・ドラム缶・ボンベ・木炭の缶
+  const rx=W/2-0.75, rz=Dp/2-0.65; for(const sx of [-1,1]) for(const sz of [-1,1]) box(STEEL,rx+sx*0.4,0.6,rz+sz*0.4,0.05,1.2,0.05); box(STEEL2,rx,0.05,rz,0.9,0.05,0.9); box(STEEL2,rx,0.65,rz,0.9,0.05,0.9);
+  for(let k=0;k<2;k++){ cyl(0x1f1f21,rx,0.2+k*0.21,rz,0.36,0.2,0.05); cyl(0x8d9398,rx,0.2+k*0.21,rz,0.17,0.21); cyl(0x1f1f21,rx,0.8+k*0.21,rz,0.36,0.2,0.05); cyl(0x8d9398,rx,0.8+k*0.21,rz,0.17,0.21); }
+  for(const [x,z,c] of [[W/2-0.45,Dp/2-1.65,0x2f5f9a],[W/2-0.45,Dp/2-2.3,RED]]){ cyl(c,x,0.45,z,0.29,0.9,0.05); for(const y of [0.22,0.68]) cyl(0x1d1f22,x,y,z,0.3,0.03); cyl(0x1d1f22,x,0.905,z,0.27,0.01); }
+  for(const [z,c] of [[-0.3,0x2f7a4a],[0.05,0x8f979c]]){ cyl(c,W/2-0.25,0.68,z,0.12,1.36,0.04); cyl(0x6a6e72,W/2-0.25,1.42,z,0.07,0.14); }
+  box(STEEL,W/2-0.2,1.0,-0.12,0.04,0.04,0.7); // ボンベの鎖止め
+  cyl(0x3e4246,W/2-0.5,0.4,Dp/2-2.95,0.28,0.8,0.04); cyl(0x161616,W/2-0.5,0.81,Dp/2-2.95,0.25,0.04); // 木炭の缶
+  // 入口の柱：投光器・消火器。床のジャッキ
+  for(const z of zs){ const sz=Math.sign(z); box(BLK,xs[0]+0.25,H-0.5,z-sz*0.12,0.28,0.2,0.24,0.03); box(0xfff3c4,xs[0]+0.25,H-0.62,z-sz*0.12,0.24,0.03,0.2,0); }
+  cyl(RED,xs[1],0.75,zs[1]-0.22,0.09,0.5,0.03); box(BLK,xs[1],1.04,zs[1]-0.22,0.08,0.08,0.06);
+  box(RED,-1.2,0.12,1.2,0.9,0.16,0.32,0.04); const hd=box(STEEL2,-1.75,0.38,1.2,0.04,0.7,0.04); hd.rotation.z=0.8;
+  add(mesh(G.cyl8,mat(0x8a9399),-W/2+0.2,H-0.28,0,0.2,Dp-0.5,0.2),0.03).rotation.x=Math.PI/2; for(const z of zs) box(0x6b747a,-W/2+0.32,H/2,z-Math.sign(z)*0.2,0.08,H-0.4,0.08,0.03); // 入口のシャッターの巻き取り箱と溝
+  cyl(0xd23a2a,xs[0],H+0.32,zs[0],0.11,0.2,0.02); cyl(0x2b2b2d,xs[0],H+0.2,zs[0],0.13,0.06); // 回転灯
+  box(0xc9ccc4,W/2-0.02,1.6,-1.2,0.14,0.7,0.5,0.03); box(0xe2b324,W/2-0.1,1.75,-1.2,0.02,0.16,0.16); // 奥の壁の配電盤（黄色の注意の札）
+  g.position.set(D.x,gy,D.z); g.rotation.y=D.rot||0; const m=bake(g,{inkD:0.03}); m.visible=false; world.add(m); DEPOT.g=m;
+  // 入口の上の札（黄色の鉄板）
+  const sg=signBoard([{text:'車両基地',col:'#1e1e1e'},{text:'KEI TRUCK DEPOT',col:'#1e1e1e',size:0.55}],2.6,0.8,{bg:'#e2b324',edge:'#1e1e1e'});
+  const [sx,sz]=depotLocal(-W/2-0.12,0); sg.position.set(sx,gy+H+0.05,sz); sg.rotation.y=(D.rot||0)-Math.PI/2; sg.visible=false; world.add(sg); DEPOT.signs.push(sg);
+  return m; }
+function depotApply(){ const on=!!depotS().built; if(!on&&!DEPOT.g) return; const g=depotModel(); g.visible=on; for(const s of DEPOT.signs) s.visible=on; const D=TRUCK_SYS.depot;
+  if(!DEPOT.cols.length){ const sw=Math.abs(Math.sin(D.rot||0))>0.7, ob=(lx,lz,w,d,h)=>{ const [x,z]=depotLocal(lx,lz); DEPOT.cols.push(addOBox(x,z,sw?d:w,sw?w:d,0,'house',{h})); }; // 向きは 0・±90°・180° だけ
+    for(const x of [-D.W/2+0.2,0,D.W/2-0.2]) for(const z of [-D.D/2+0.2,D.D/2-0.2]) ob(x,z,0.34,0.34,3.6); // 柱
+    ob(D.W/2+0.08,0,0.2,D.D,3.6); // 奥の壁
+    ob(2.0,-D.D/2+0.45,3.4,0.75,1.8); ob(3.55,-D.D/2+0.55,0.95,0.6,1.1); ob(-0.6,-D.D/2+0.57,0.85,0.5,0.7); // 工具の壁・工具箱・コンプレッサー
+    ob(D.W/2-0.75,D.D/2-0.65,0.95,0.95,1.2); ob(D.W/2-0.45,D.D/2-1.95,0.65,1.3,0.9); ob(D.W/2-0.3,-0.12,0.45,0.8,1.4); ob(D.W/2-0.5,D.D/2-2.95,0.6,0.6,0.8); } // タイヤ棚・ドラム缶・ボンベ・木炭の缶
   for(const c of DEPOT.cols) c.active=on; }
 function depotParked(){ const D=TRUCK_SYS.depot, t=trk(); return depotS().built&&t.region==='komyoji'&&REG.cur==='komyoji'&&!TRUCK.drive&&dist(TRUCK.x,TRUCK.z,D.x,D.z)<D.park; }
 function truckRepairStep(all){ const t=trk(), L=TRUCK_SYS.repair, hm=trkHpMax(t); let k=0; while(t.hp<hm&&bedAfford(L.cost)){ bedPay(L.cost); t.hp=Math.min(hm,t.hp+L.step); k++; if(!all) break; }
   if(!k){ sfx('deny'); toast(t.hp>=hm?'車体は傷んでいない':`素材が足りない（${L.step}ごとに ${facCostText(L.cost)}）`,true); return; } sfx('craft'); toast(`KEI truck を直した（車体 ${Math.round(t.hp)}/${hm}）`); saveGame(); }
-function truckUpgrade(){ const t=trk(), L=TRUCK_SYS; if(t.lv>=3) return; const nx=L.lv[t.lv+1]; if(!bedAfford(nx.cost)){ sfx('deny'); toast(`素材が足りない（${facCostText(nx.cost)}）`,true); return; }
+function truckUpgrade(){ const t=trk(), L=TRUCK_SYS; if(t.lv>=L.lv.length-1) return; const nx=L.lv[t.lv+1]; if(!bedAfford(nx.cost)){ sfx('deny'); toast(`素材が足りない（${facCostText(nx.cost)}）`,true); return; }
   bedPay(nx.cost); const before=trkHpMax(t); t.lv++; t.hp=Math.min(trkHpMax(t),t.hp+trkHpMax(t)-before); sfx('craft'); const F=Object.values(L.fac).find(f=>f.lv===t.lv);
-  banner(`KEI truck 改修 段階${t.lv}`,`最高速度 約${Math.round(nx.speed*3.6)}km/時・耐久 ${trkHpMax(t)}・加速 ${nx.acc}m/秒²。荷台に「${F.name}」を作れる`); saveGame(); }
+  banner(`KEI truck 改修 段階${t.lv}`,`最高速度 約${Math.round(nx.speed*3.6)}km/時・耐久 ${trkHpMax(t)}・加速 ${nx.acc}m/秒²${F?`。荷台に「${F.name}」を作れる`:''}`); saveGame(); }
 function truckFacBuild(id){ const t=trk(), F=TRUCK_SYS.fac[id]; if(t.fac[id]||t.lv<F.lv) return; if(!bedAfford(F.cost)){ sfx('deny'); toast(`素材が足りない（${facCostText(F.cost)}）`,true); return; }
   bedPay(F.cost); t.fac[id]=1; sfx('craft'); toast(`${F.name}を荷台に作った：${F.desc}`); saveGame(); }
 function depotMenu(){ const t=trk(), L=TRUCK_SYS, hm=trkHpMax(t), ch=[];
   if(!depotParked()){ toast('車両基地：KEI truck を屋根の下に止めると、直す・改修・荷台の施設を作るができる'); return; }
   if(t.tip){ toast('先に KEI truck を起こす',true); return; }
   if(t.hp<hm){ ch.push({label:`車体を直す（+${L.repair.step}：${facCostText(L.repair.cost)}）　今 ${Math.round(t.hp)}/${hm}`,act:()=>truckRepairStep(false)}); ch.push({label:'直せるだけ直す',act:()=>truckRepairStep(true)}); }
-  if(t.lv<3){ const nx=L.lv[t.lv+1], F=Object.values(L.fac).find(f=>f.lv===t.lv+1); ch.push({label:`改修 段階${t.lv+1}（${facCostText(nx.cost)}）：最高速度 約${Math.round(nx.speed*3.6)}km/時・耐久 ${L.hp.max[t.lv+1]}・加速 ${nx.acc}。荷台に${F.name}を作れるようになる`,act:truckUpgrade}); }
+  if(t.lv<L.lv.length-1){ const nx=L.lv[t.lv+1], F=Object.values(L.fac).find(f=>f.lv===t.lv+1); ch.push({label:`改修 段階${t.lv+1}（${facCostText(nx.cost)}）：最高速度 約${Math.round(nx.speed*3.6)}km/時・耐久 ${L.hp.max[t.lv+1]}・加速 ${nx.acc}${F?`。荷台に${F.name}を作れるようになる`:''}`,act:truckUpgrade}); }
   for(const id in L.fac){ const F=L.fac[id]; if(t.fac[id]) continue; ch.push(t.lv>=F.lv?{label:`${F.name}を作る（${facCostText(F.cost)}）：${F.desc}`,act:()=>truckFacBuild(id)}:{label:`${F.name}（改修 段階${F.lv}で作れる）`,act:()=>{ sfx('deny'); toast(`${F.name}は改修 段階${F.lv}で作れる`,true); }}); }
   if(t.gas<100&&bedHaveAll('charcoal')>0) ch.push({label:`木炭で燃料を入るだけ足す（今 ${Math.round(t.gas)}%）`,act:()=>truckRefuel(0)});
   if(!ch.length){ toast(`車両基地：KEI truck 段階${t.lv}・車体 ${Math.round(t.hp)}/${hm}・燃料 ${Math.round(t.gas)}%。いまできることはない`); return; }
   chooseDefense(`車両基地　KEI truck 段階${t.lv}・車体 ${Math.round(t.hp)}/${hm}・燃料 ${Math.round(t.gas)}%`,ch,true); }
-function depotInteractables(L){ if(!depotS().built||REG.cur!=='komyoji') return; const D=TRUCK_SYS.depot, d=Math.hypot(Math.max(0,Math.abs(P.x-D.x)-D.W/2),Math.max(0,Math.abs(P.z-D.z)-D.D/2)); if(d>1.6) return;
+function depotInteractables(L){ if(!depotS().built||REG.cur!=='komyoji') return; const D=TRUCK_SYS.depot, [lx,lz]=depotToLocal(P.x,P.z), d=Math.hypot(Math.max(0,Math.abs(lx)-D.W/2),Math.max(0,Math.abs(lz)-D.D/2)); if(d>1.6) return;
   L.push({d:d+0.6,label:depotParked()?'車両基地（直す・改修・荷台の施設）':'車両基地（KEI truck を屋根の下に止めて使う）',act:depotMenu}); }
 // ---- 住民の運搬：車の入れない所・置き場までの残りを、源さんが歩いて運ぶ（荷台の丸太→丸太置き場、素材→持ち物）----
 // 車が拠点の外なら、近い門（南門・東口・沢口）を通る。引っかかって2.5秒進めないときは、次の経由点へ移る（運ぶのは止めない）

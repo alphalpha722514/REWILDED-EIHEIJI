@@ -213,7 +213,7 @@ async def main():
         await G("craft('depotBuild')")
         await close_menus()
         r5 = await G("({b:depotS().built,vis:!!DEPOT.g&&DEPOT.g.visible,cols:DEPOT.cols.filter(c=>c.active).length,inv:{wood:inv.wood,stone:inv.stone,iron:inv.iron,rope:inv.rope}})")
-        check(r5['b'] == 1 and r5['vis'] and r5['cols'] == 5 and r5['inv'] == {'wood': 180, 'stone': 88, 'iron': 92, 'rope': 94}, f'建てると基地の形・柱の当たりが出る・素材を引く {r5}')
+        check(r5['b'] == 1 and r5['vis'] and r5['cols'] == 14 and r5['inv'] == {'wood': 180, 'stone': 88, 'iron': 92, 'rope': 94}, f'建てると基地の形・当たり（柱6本・奥の壁・道具）が出る・素材を引く {r5}')
         # 南門の外から運転して屋根の下へ
         await put_truck(150, 88, math.pi)
         await board()
@@ -241,13 +241,16 @@ async def main():
         r5c = await G("({hp:trk().hp,iron:inv.iron})")
         check(r5c['hp'] == 100 and r5c['iron'] == 92 - 3, f'直せるだけ直す（20ずつ・屑鉄1と木材1）{r5c}')
         pf = []
-        for lv in range(1, 4):
+        uo = await G("Object.fromEntries(Object.entries(TRUCK_SYS.fac).map(([k,f])=>[k,f.lv]))")
+        check(uo == {'bench': 1, 'tower': 2, 'kiln': 3}, f'荷台の施設は 作業台（段階1）→ 見張り台（段階2）→ 炭焼き釜（段階3）の順に解放（2026-11-18）{uo}')
+        for lv in range(1, 6):
             await G("truckUpgrade()")
             pf.append(await G("(()=>{ const t=trk(), f=truckPerf(); return {lv:t.lv,speed:f.speed,acc:f.acc,hp:t.hp,max:trkHpMax(t)}; })()"))
         await close_menus()
         print('   改修', pf)
-        check([x['lv'] for x in pf] == [1, 2, 3] and [x['speed'] for x in pf] == [15.5, 17, 18.5] and [x['max'] for x in pf] == [130, 165, 200] and pf[-1]['hp'] == 200,
-              '改修 段階1〜3：最高速度・耐久・加速が上がる（直っていれば耐久の増えた分も満たす）')
+        check([x['lv'] for x in pf] == [1, 2, 3, 4, 5] and [x['speed'] for x in pf] == [15.5, 17, 18.5, 20, 21.5] and [x['max'] for x in pf] == [130, 165, 200, 240, 280] and pf[-1]['hp'] == 280
+              and all(pf[i]['acc'] < pf[i + 1]['acc'] for i in range(4)),
+              '改修 段階1〜5（2026-11-18 に段階4・5を足した）：最高速度・耐久・加速が上がる（直っていれば耐久の増えた分も満たす）')
         for fid in ('bench', 'kiln', 'tower'):
             await G(f"truckFacBuild('{fid}')")
         r5d = await G("({fac:trk().fac,ch:TRUCK.bedG?TRUCK.bedG.children.length:0})")
