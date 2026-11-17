@@ -32,7 +32,7 @@ HOOK = ("window.__s={get curInter(){return curInter},get P(){return P},get S(){r
         "winEvent:()=>winEvent(),regionTravel,stfAnchor:()=>stfAnchor(),stfStage:()=>stfStage(),stfMeetStage:()=>stfMeetStage(),stfTravelOK:()=>stfTravelOK(),truckTravelOK:()=>truckTravelOK(),stfRoom:()=>stfRoom(),"
         "trk:()=>trk(),truckSpots:()=>truckSpots(),truckPos:()=>truckPos(),objective:()=>objective(),interactables:()=>interactables(),stfNoSave:()=>stfNoSave(),"
         "damageEnemy:(e,d,k,a)=>damageEnemy(e,d,k,a),saveGame:()=>saveGame(),retryFromBase:()=>retryFromBase(),kamiMutantOK:()=>kamiMutantOK(),szWalkable:(x,z)=>szWalkable(x,z),szFree:(x,z,r)=>szFree(x,z,r),szSave:()=>szSave(),"
-        "get TRUCK_CFG(){return TRUCK_CFG},setState:(e,s)=>setState(e,s),stfCutOn:()=>stfCutOn(),chapter2State:(a,b)=>chapter2State(a,b),f31MaxHp:l=>f31MaxHp(l),get XP(){return XP},get WEAPONS(){return WEAPONS}};\n")
+        "get TRUCK_CFG(){return TRUCK_CFG},setCam:a=>setCam(a),setState:(e,s)=>setState(e,s),stfCutOn:()=>stfCutOn(),chapter2State:(a,b)=>chapter2State(a,b),f31MaxHp:l=>f31MaxHp(l),get XP(){return XP},get WEAPONS(){return WEAPONS}};\n")
 HTML = SRC.replace('function updateNPCs(dt){', HOOK + 'function updateNPCs(dt){', 1)
 DLG = "() => { const d = document.getElementById('dialog'); return d.hidden ? null : {name: document.getElementById('dlgName').textContent, text: document.getElementById('dlgText').textContent, draft: !document.getElementById('dlgTag').hidden}; }"
 BASE = """(kind) => { const T = window.__s, prog = T.prog, P = T.P; prog.bossDefeated = true; prog.stage = 'cleared'; prog.unlockTrap = true; prog.unlockBoss = true; prog.introSeen = true;
@@ -151,6 +151,8 @@ async def main():
         await ev(BASE, 'win')
         st = await ev("() => { const T = window.__s, p = T.prog.chapter2.progress; return {r: p.radioHeard, d: p.departureDecision, c: p.departureComplete, stage: T.stfStage(), walk: T.stfTravelOK()}; }")
         check(st['r'] is False and st['d'] is False and st['c'] is False and st['stage'] == 'radio' and st['walk'] is False, f'防衛戦に勝つと作業F の記録が付き、上志比へはまだ行けない {st}')
+        pre = await ev("() => { const I = window.__s.TRUCK.items || {}; return Object.fromEntries(['p1', 'p2', 'fuel'].map(k => [k, !!(I[k] && I[k].visible)])); }")
+        check(not any(pre.values()), f'相談の前は、部品・燃料の形は出ない {pre}')
         win = await read_all(quiet=0.6, timeout=30)
         radio = await until(DLG, 300)
         bn = await ev("() => window.__s.bannerT")
@@ -196,6 +198,18 @@ async def main():
         rp = await ev("() => window.__s.trk().repaired")
         check(rp is False and len(info) == 1 and all(f' 0/{v}' in info[0]['text'] for v in MATS.values()), f'素材・部品が足りないと直せず、要る物を出す {info and info[0]["text"]}')
         sp = await ev("() => window.__s.truckSpots()")
+        vis = await ev("() => { const I = window.__s.TRUCK.items || {}; return Object.fromEntries(['p1', 'p2', 'fuel'].map(k => [k, !!(I[k] && I[k].visible)])); }")
+        check(all(vis.values()), f'相談のあと、部品（木箱）2つと燃料（赤い携行缶）の仮の形が地面に見える {vis}')
+        await ev("(q) => { const T = window.__s; T.P.x = q.x + 3.2; T.P.z = q.z + 3.0; T.P.facing = Math.atan2(q.x - T.P.x, q.z - T.P.z); T.setCam(T.P.facing); }", sp['parts'][0])
+        await pg.wait_for_timeout(2500)
+        await shot('2b_items')
+        await pg.keyboard.press('g')  # 大きい地図：部品・燃料・KEI truck の印
+        mo = await until("() => !document.getElementById('mapOv').hidden ? true : null", 30)
+        await pg.wait_for_timeout(1500)
+        await shot('2c_map')
+        await pg.keyboard.press('g')
+        mc = await until("() => document.getElementById('mapOv').hidden && window.__s.S.mode === 'playing' ? true : null", 30)
+        check(bool(mo) and bool(mc) and not errs, f'地図を開いて閉じられる（部品・燃料・車の印を描いてもエラーなし）{errs[:2]}')
         for q in sp['parts']:
             await ev("(q) => { const T = window.__s; T.P.x = q.x + 0.7; T.P.z = q.z; }", q)
             await pg.wait_for_timeout(700)
@@ -205,6 +219,9 @@ async def main():
         await press_e('を受け取る')
         got = await ev("() => { const T = window.__s, t = T.trk(); return {parts: t.parts.length, fuel: t.fuel, reg: T.REG.cur}; }")
         check(got['parts'] == 2 and got['fuel'] == 1 and got['reg'] == 'komyoji', f'部品と燃料は光明寺で手に入る（上志比へ行かずに）{got}')
+        await until("() => { const I = window.__s.TRUCK.items || {}; return Object.values(I).every(m => !m.visible) ? true : null; }", 20)  # 次のコマで消える
+        hid = await ev("() => { const I = window.__s.TRUCK.items || {}; return Object.fromEntries(['p1', 'p2', 'fuel'].map(k => [k, !!(I[k] && I[k].visible)])); }")
+        check(not any(hid.values()), f'拾うと木箱・携行缶の形は消える {hid}')
         await ev("(tp) => { const T = window.__s; for (const k in T.TRUCK_CFG.mats) T.inv[k] = T.TRUCK_CFG.mats[k]; T.P.x = tp.x - 2.6; T.P.z = tp.z + 0.3; }", tp)
         await pg.wait_for_timeout(800)
         await press_e('KEI truck を直す')

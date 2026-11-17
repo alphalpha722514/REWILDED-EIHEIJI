@@ -2883,7 +2883,7 @@ function drawMap(){ const cv=$('mapCv'); if(!cv||$('mapOv').hidden) return; cons
   CLOSURES.forEach((cl,i)=>{ if(f4.closures[i]) return; const x=X(cl.x), y=Z(cl.z); c.strokeStyle='#ff6a40'; c.lineWidth=3; c.beginPath(); c.moveTo(x-5,y-5); c.lineTo(x+5,y+5); c.moveTo(x+5,y-5); c.lineTo(x-5,y+5); c.stroke(); });
   // 拠点の施設：掲示板・作業台・丸太置き場・一輪車
   G4BOARDS.forEach((b,i)=>{ icon(X(b.x),Z(b.z),'#f0a8bc','掲',8); lab(i===0?'掲示板（拠点）':'掲示板（駅前）',X(b.x)+10,Z(b.z)+4,'#ffd6e0'); });
-  icon(X(157),Z(66.5),'#d8b04a','作',7); if(F4.yard) icon(X(F4.yard.x),Z(F4.yard.z),'#b08458','木',7);
+  icon(X(157),Z(66.5),'#d8b04a','作',7); if(F4.yard) icon(X(F4.yard.x),Z(F4.yard.z),'#b08458','木',7); truckMapIcons(icon,lab,X,Z); // v0.77
   if(f4.cart&&!f4.cart.push){ c.fillStyle='#7ab0c8'; c.fillRect(X(f4.cart.x)-3,Z(f4.cart.z)-3,6,6); }
   for(const l of f4.logs){ c.fillStyle='#c89a60'; c.fillRect(X(l[0])-2,Z(l[1])-2,4,4); }
   // 手掛かり（探す段階のときだけ、だいたいの範囲を出す）
@@ -9599,7 +9599,7 @@ function drawMini(){
     if(!inside){ const a=Math.atan2(tz-H/2,tx-W/2); const k=Math.min((W/2-8)/Math.abs(Math.cos(a)||1e-6),(H/2-8)/Math.abs(Math.sin(a)||1e-6)); tx=W/2+Math.cos(a)*k; tz=H/2+Math.sin(a)*k;
       c.save(); c.translate(tx,tz); c.rotate(a); c.fillStyle='#f0c34a'; c.beginPath(); c.moveTo(6,0); c.lineTo(-4,-5); c.lineTo(-4,5); c.closePath(); c.fill(); c.restore(); }
     else { c.beginPath(); c.moveTo(tx,tz-5); c.lineTo(tx+5,tz); c.lineTo(tx,tz+5); c.lineTo(tx-5,tz); c.closePath(); c.stroke(); } }
-  g4Mini(c,X,Z);
+  g4Mini(c,X,Z); truckMini(c,X,Z); // v0.77：KEI truck の部品・燃料・車
   c.save(); c.translate(W/2,H/2); c.rotate(-P.facing+Math.PI); c.fillStyle='#ffffff'; c.beginPath(); c.moveTo(0,-5); c.lineTo(3.5,4); c.lineTo(-3.5,4); c.closePath(); c.fill(); c.restore();
 }
 function updateLabels(dt){
@@ -10998,9 +10998,42 @@ function truckNeedText(short){ const t=trk(), m=TRUCK_CFG.mats, N=k=>RNAME[k]||F
   if(!t.repaired){ for(const k in m) out.push(`${N(k)} ${Math.min(inv[k]|0,m[k])}/${m[k]}`); out.push(`${short?'部品':TRUCK_CFG.partName} ${Math.min(t.parts.length,TRUCK_CFG.parts)}/${TRUCK_CFG.parts}`); }
   if(!t.fueled) out.push(`${short?'燃料':TRUCK_CFG.fuelName} ${Math.min(t.fuel,TRUCK_CFG.fuel)}/${TRUCK_CFG.fuel}`); return out.join('・'); }
 // 部品と燃料の場所（光明寺の中。上志比へ行かなくても手に入る）：資材倉庫の前と、国道416号の脇（暫定）
-function truckSpots(){ const [sx,sz]=M(-15,40), rz=roadZAt('国道416号',380)??160;
-  return {parts:[{id:'p1',x:sx-2.6,z:sz-4.2},{id:'p2',x:380,z:rz-6}],fuel:{x:sx+2.2,z:sz-4.2}}; }
+function truckSpots(){ if(TRUCK.spots) return TRUCK.spots; const [sx,sz]=M(-15,40), rz=roadZAt('国道416号',380)??160, here=REG.cur==='komyoji', used=[];
+  // 置きたい所が建物・丸太などと重なるときは、近くの空いた所へずらす（v0.77：見える形を置くため。光明寺の当たりで1回だけ決める）
+  const ok=(x,z)=>!isWater(x,z)&&f4Free(x,z,0.9)&&used.every(u=>dist(x,z,u[0],u[1])>2.2);
+  const fit=(x,z)=>{ let r0=[x,z]; if(here&&!ok(x,z)){ found: for(let r=0.6;r<=6;r+=0.6) for(let k=0;k<16;k++){ const a=k/16*TAU, X=x+Math.cos(a)*r, Z=z+Math.sin(a)*r; if(ok(X,Z)){ r0=[X,Z]; break found; } } } used.push(r0); return r0; };
+  const [p1,fu,p2]=[fit(sx-2.6,sz-4.2),fit(sx+2.2,sz-4.2),fit(380,rz-6)];
+  const out={parts:[{id:'p1',x:p1[0],z:p1[1]},{id:'p2',x:p2[0],z:p2[1]}],fuel:{x:fu[0],z:fu[1]}}; if(here) TRUCK.spots=out; return out; }
 function truckNextTarget(){ const t=trk(), sp=truckSpots(); if(t.fuel<TRUCK_CFG.fuel&&!t.fueled) return sp.fuel; for(const q of sp.parts) if(!t.parts.includes(q.id)&&!t.repaired) return q; return truckPos(); }
+// ---- 部品と燃料の仮の形（地面に置き、拾うと消える。2026-11-17 ユーザー指示「見えるように木箱や携行缶の仮の形を置く」）----
+// 出す条件は「拾う」と同じ（光明寺・相談のあと・まだ拾っていない／直していない）。木箱（タイヤと部品）・赤い携行缶と、遠くから見つける目印の黄色い旗
+function truckPickups(){ const out=[]; if(REG.cur!=='komyoji'||!truckShown()) return out; const st=stfStage(), p=stfP(), t=trk(), sp=truckSpots();
+  if(p.departureDecision!==true||!(st==='truck'||st==='sendoff'||st==='away'||p.legacyKamishihiAccess)) return out;
+  if(!t.repaired) for(const q of sp.parts) if(!t.parts.includes(q.id)) out.push({kind:'part',id:q.id,x:q.x,z:q.z});
+  if(!t.fueled&&t.fuel<TRUCK_CFG.fuel) out.push({kind:'fuel',id:'fuel',x:sp.fuel.x,z:sp.fuel.z});
+  return out; }
+function truckItemModel(kind){ const g=new THREE.Group(), add=(m,ol=0.03)=>{ g.add(ol?outline(m,ol):m); return m; };
+  if(kind==='part'){ add(mesh(G.box,mat(0x9a7448),0,0.25,0,0.8,0.5,0.55)); // 木箱
+    for(const y of [0.1,0.4]) add(mesh(G.box,mat(0x6e4f2e),0,y,0,0.82,0.06,0.57),0); // 箱の帯
+    const tire=add(mesh(G.cyl8,mat(0x26282a),0.56,0.27,0.05,0.26,0.14,0.26)); tire.rotation.z=Math.PI/2-0.25; // 立てかけたタイヤ
+    const hub=add(mesh(G.cyl8,mat(0x9aa0a6),0.575,0.27,0.05,0.12,0.15,0.12),0); hub.rotation.z=Math.PI/2-0.25;
+    add(mesh(G.box,mat(0x8c949c),-0.08,0.56,0,0.3,0.12,0.2)); // 箱の上の部品
+    const sh=add(mesh(G.cyl8,mat(0x5a6068),0.2,0.55,0.08,0.05,0.34,0.05),0); sh.rotation.z=Math.PI/2; }
+  else { add(mesh(G.box,mat(0xc8352c),0,0.22,0,0.34,0.44,0.17)); // 赤い携行缶
+    add(mesh(G.box,mat(0x2a2c2e),0,0.47,0,0.2,0.05,0.06),0); // 取っ手
+    const sp=add(mesh(G.cyl8,mat(0x3a3a3a),0.12,0.5,0,0.035,0.12,0.035),0); sp.rotation.z=-0.5; // 注ぎ口
+    add(mesh(G.box,mat(0xe8e2d0),0,0.24,0.088,0.2,0.12,0.005),0); } // 白い札
+  add(mesh(G.cyl8,mat(0xd8d0c0),-0.55,0.85,-0.1,0.03,1.7,0.03),0); add(mesh(G.box,mat(0xf0c34a),-0.33,1.56,-0.1,0.42,0.26,0.014),0.015); // 目印の旗
+  g.scale.setScalar(1.2); return g; }
+function truckItemsUpdate(){ const L=truckPickups(), keep=new Set(L.map(o=>o.id)); if(!TRUCK.items) TRUCK.items={};
+  for(const o of L){ let m=TRUCK.items[o.id]; if(!m){ m=TRUCK.items[o.id]=truckItemModel(o.kind); m.rotation.y=hash2(o.x,o.z)*TAU; scene.add(m); } m.position.set(o.x,groundH(o.x,o.z),o.z); m.visible=true; }
+  for(const id in TRUCK.items) if(!keep.has(id)) TRUCK.items[id].visible=false; }
+function truckHideAll(){ if(TRUCK.m) TRUCK.m.visible=false; for(const id in (TRUCK.items||{})) TRUCK.items[id].visible=false; } // タイトルへ戻るとき
+// 地図の印（部品＝茶・燃料＝赤・KEI truck＝白）
+function truckMini(c,X,Z){ for(const o of truckPickups()){ c.fillStyle=o.kind==='part'?'#c89a60':'#e0473c'; c.strokeStyle='#111'; c.lineWidth=1; c.fillRect(X(o.x)-3,Z(o.z)-3,6,6); c.strokeRect(X(o.x)-3,Z(o.z)-3,6,6); }
+  if(REG.cur==='komyoji'&&truckShown()&&trk().region==='komyoji'&&!TRUCK.drive){ const tp=truckPos(); c.fillStyle='#f4f0e4'; c.strokeStyle='#111'; c.fillRect(X(tp.x)-4,Z(tp.z)-2.5,8,5); c.strokeRect(X(tp.x)-4,Z(tp.z)-2.5,8,5); } }
+function truckMapIcons(icon,lab,X,Z){ for(const o of truckPickups()){ const part=o.kind==='part'; icon(X(o.x),Z(o.z),part?'#c89a60':'#e0473c',part?'部':'燃',7); lab(part?TRUCK_CFG.partName:TRUCK_CFG.fuelName,X(o.x)+9,Z(o.z)+4,part?'#f0d8b0':'#ffc0b8'); }
+  if(REG.cur==='komyoji'&&truckShown()&&trk().region==='komyoji'){ const tp=truckPos(); icon(X(tp.x),Z(tp.z),'#f4f0e4','車',7); lab('KEI truck',X(tp.x)+9,Z(tp.z)+4,'#ffffff'); } }
 // ---- 仮の車体（コードで作る。正式な形はユーザーが Tripo で作る予定：docs/asset-registry.md）----
 function truckModel(){ if(TRUCK.m) return TRUCK.m; const g=new THREE.Group(), W=1.48, L=3.4;
   const add=(m,ol=0.035)=>{ g.add(ol?outline(m,ol):m); return m; };
@@ -11023,7 +11056,7 @@ function truckModel(){ if(TRUCK.m) return TRUCK.m; const g=new THREE.Group(), W=
 // 置いてある間の当たり（主人公・獣が通り抜けない）。運転している間・別の地域にあるときは外す
 function truckColOff(){ if(TRUCK.col){ try{ gridRemove(TRUCK.col); }catch(err){} TRUCK.col=null; } }
 function truckColOn(){ truckColOff(); TRUCK.col=addOBox(TRUCK.x,TRUCK.z,1.6,3.5,-TRUCK.a,'truck'); }
-function truckUpdate(dt){ const show=truckShown()&&!REG.busy; if(!show){ if(TRUCK.m) TRUCK.m.visible=false; truckColOff(); return; }
+function truckUpdate(dt){ truckItemsUpdate(); const show=truckShown()&&!REG.busy; if(!show){ if(TRUCK.m) TRUCK.m.visible=false; truckColOff(); return; }
   if(!TRUCK.sync) truckLoadPos(); const t=trk(), here=t.region===REG.cur, m=truckModel(); m.visible=here;
   if(!here){ truckColOff(); return; }
   if(!TRUCK.drive&&!TRUCK.col) truckColOn();
@@ -11274,7 +11307,7 @@ $('btnPerf').onclick=()=>f11Toggle(); $('btnPerfRec').onclick=()=>{ f11RecStart(
 $('btnShadow').onclick=()=>{ applyShadow(!shadowPref); toast(shadowPref?'影をオンにした（描画が重くなります）':'影をオフにした'); };
 $('btnShadow').textContent='高画質の影：'+(renderer.shadowMap.enabled?'オン':'オフ');
 $('btnSave').onclick=()=>{ saveGame(); toast(storageOK?(ev.kind||bossActive?'セーブした（戦闘中は開始前の状態で記録）':'セーブした'):'このブラウザでは保存できない',!storageOK); };
-$('btnToTitle').onclick=()=>{ saveGame(); regionResetHome(); if(SZ.m) SZ.m.g.visible=false; /* v0.70 */ hideAllOv(); $('hud').hidden=true; S.mode='title'; lightMode='dusk'; snapLight(); P.x=158; P.z=22; $('title').hidden=false; $('btnContinue').hidden=!readSave(); for(const f of floats) f.d.style.display='none'; for(const b of hpBars) b.style.display='none'; for(const [,b] of barkEls){b.t=0;b.d.style.display='none';} };
+$('btnToTitle').onclick=()=>{ saveGame(); regionResetHome(); if(SZ.m) SZ.m.g.visible=false; /* v0.70 */ truckHideAll(); /* v0.77 */ hideAllOv(); $('hud').hidden=true; S.mode='title'; lightMode='dusk'; snapLight(); P.x=158; P.z=22; $('title').hidden=false; $('btnContinue').hidden=!readSave(); for(const f of floats) f.d.style.display='none'; for(const b of hpBars) b.style.display='none'; for(const [,b] of barkEls){b.t=0;b.d.style.display='none';} };
 $('btnCraftClose').onclick=closeOverlay; $('btnStoreClose').onclick=closeOverlay; $('btnNpcClose').onclick=closeOverlay; mapPtr(); $('objective').addEventListener('pointerdown',e=>{ e.stopPropagation(); objOpen.pin=!objOpen.pin; if(!objOpen.pin) objOpen.t=0; }); $('btnQuestClose').onclick=closeOverlay;
 $('btnInvClose').onclick=closeOverlay;
 $('btnRetry').onclick=retryFromBase;
