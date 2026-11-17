@@ -53,5 +53,45 @@ reset(0); drive(0, -1, 1.5); drive(1, -1, 1.5); check(TRUCK.v < 0 && TRUCK.a > 0
 // 9) 車体は曲がる外側へ傾き、ブレーキで前へ沈む
 reset(10); drive(1, 0.5, 1); check(TRUCK.roll < -0.02, `右へ曲がると車体は外（左）へ傾く（${TRUCK.roll.toFixed(3)}rad）`);
 reset(12); drive(0, -1, 0.5); check(TRUCK.pitch > 0.01, `ブレーキで前へ沈む（${TRUCK.pitch.toFixed(3)}rad）`);
+// 10) 浮いている（前の車輪が地面にない）間はハンドルを切っても向きは変わらない
+reset(10); TRUCK.gf = 0; TRUCK.gr = 0; drive(1, 1, 0.5); const a10 = TRUCK.a; TRUCK.gf = 1; TRUCK.gr = 1;
+check(Math.abs(a10) < 1e-6, `宙に浮いている間はハンドルもアクセルも効かない（向き ${a10.toFixed(4)}・速さ ${TRUCK.v.toFixed(1)}m/秒）`);
+
+// ---- ばね（段差で跳ね上がる・少し浮く）。truckSusp をそのまま動かす ----
+const suspSrc = cut('const TRUCK_WHEELS=', '\nfunction truckSegIdx') + '\n' + cut('function truckSusp(dt){', '// 乗る・降りる');
+let ground = () => 0;
+const SU = new Function('getGround', `
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), dist=(a,b,c,d)=>Math.hypot(a-c,b-d), angDiff=(a,b)=>{ let d=b-a; while(d>Math.PI) d-=2*Math.PI; while(d<-Math.PI) d+=2*Math.PI; return d; }; const S={shake:0}; const sfx=()=>{}, spawnParticles=()=>{}, truckBumpH=()=>0;
+  const groundH=(x,z)=>getGround()(x,z);
+  const TRUCK={x:0,z:0,a:0,drive:true,susp:null};
+  ${cfgSrc}
+  ${suspSrc}
+  return {TRUCK, truckSusp};`)(() => ground);
+function ride(groundFn, speed, secs, z0 = 0) { ground = groundFn; Object.assign(SU.TRUCK, {x: 0, z: z0, a: 0, susp: null});
+  const r = {maxUp: 0, air: 0, maxAir: 0, gfMin: 1, end: null}; let airT = 0;
+  for (let k = 0; k < Math.round(secs / dt); k++) { SU.TRUCK.z += speed * dt; const B = SU.truckSusp(dt); const U = SU.TRUCK.susp;
+    const gAvg = [-1.05, 1.05].reduce((a, lz) => a + ground(0, SU.TRUCK.z + lz), 0) / 2; r.maxUp = Math.max(r.maxUp, U.vY); r.lift = Math.max(r.lift || 0, B.Y - gAvg);
+    if (U.air > 0) { airT += dt; r.maxAir = Math.max(r.maxAir, U.air); } r.gfMin = Math.min(r.gfMin, SU.TRUCK.gf); r.end = {vY: U.vY, Y: B.Y, g: gAvg, p: B.p}; }
+  r.air = airT; return r; }
+// 11) 平らな所に止めておくと、動かない
+let r = ride(() => 0, 0, 3); check(Math.abs(r.end.Y) < 0.003 && Math.abs(r.end.vY) < 0.01 && r.air === 0, `平らな所では車体は沈みも浮きもしない（高さ ${r.end.Y.toFixed(4)}）`);
+// 12) 15cm の段差を 36km/時で上る：跳ね上がって少し浮き、すぐ収まる
+r = ride((x, z) => z > 5 ? 0.15 : 0, 10, 3);
+check(r.maxUp > 0.5 && r.lift > 0.05, `15cm の段差を 36km/時で上ると跳ね上がる（上向きの速さ 最大 ${r.maxUp.toFixed(2)}m/秒・地面より ${(r.lift * 100).toFixed(0)}cm 上がる）`);
+check(r.maxAir > 0.02, `そのとき少し浮く（最長 ${r.maxAir.toFixed(2)}秒）`);
+check(Math.abs(r.end.vY) < 0.05 && Math.abs(r.end.Y - 0.15) < 0.02, `2秒ほどで揺れが収まる（高さ ${r.end.Y.toFixed(3)}m）`);
+// 13) ゆっくり（7km/時）なら同じ段差でも浮かない
+r = ride((x, z) => z > 3 ? 0.15 : 0, 2, 4);
+check(r.air === 0, `ゆっくりなら同じ段差でも浮かない（浮いた時間 ${r.air.toFixed(2)}秒）`);
+// 14) 坂（30%）を上りきった頂上を 50km/時で越えると浮く（坂の頂上で地面が下がっていくため）
+r = ride((x, z) => z < 2 ? 0 : z < 8 ? (z - 2) * 0.3 : 1.8, 14, 3);
+check(r.maxAir > 0.1, `坂（30%）の頂上を 50km/時で越えると浮く（最長 ${r.maxAir.toFixed(2)}秒・地面より ${(r.lift * 100).toFixed(0)}cm）`);
+// 14b) 細い畦（幅0.5m・高さ12cm）を 50km/時で越える：1コマが長くても（0.05秒＝0.7m）見落とさずに跳ねる
+{ ground = (x, z) => (z > 6 && z < 6.5) ? 0.12 : 0; Object.assign(SU.TRUCK, {x: 0, z: 0, a: 0, susp: null}); let up = 0;
+  for (let k = 0; k < 40; k++) { SU.TRUCK.z += 14 * 0.05; SU.truckSusp(0.05); up = Math.max(up, SU.TRUCK.susp.vY); }
+  check(up > 0.3, `細い畦を 50km/時で越えると、コマが粗くても跳ねる（上向きの速さ 最大 ${up.toFixed(2)}m/秒）`); }
+// 15) 20cm 下がる段差：前の車輪が一瞬地面から離れる
+r = ride((x, z) => z > 5 ? -0.2 : 0, 8, 2);
+check(r.gfMin < 1, `20cm 下がる段差で前の車輪が一瞬浮く（前の車輪の接地 最小 ${r.gfMin}）`);
 console.log(ok ? 'PASS: truck physics' : 'FAILED');
 process.exit(ok ? 0 : 1);
