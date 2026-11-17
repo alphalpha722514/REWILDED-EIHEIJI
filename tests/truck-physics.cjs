@@ -13,6 +13,8 @@ const sandbox = new Function('getInput', `
   const P={}, pm={g:{}}, cam={yaw:0}, REG={cur:'komyoji'}, SAVE={};
   const trk=()=>SAVE, truckWalk=()=>true, resolve=()=>{}, groundH=()=>0, spawnParticles=()=>{};
   const truckInput=()=>getInput();
+  const TRUCK_SYS={gas:{perKm:12},hp:{bump:{v:4.5,k:4,cd:0.6}}}, S={time:0}, sfx=()=>{}, truckDamage=()=>{}, truckBurn=()=>{}, truckTipCheck=()=>false; // v0.78：燃料・傷み・横転はこのテストでは見ない（tests/kei-truck-systems-browser.py）
+  const truckPerf=()=>({speed:TRUCK_CFG.speed,acc:TRUCK_CFG.acc});
   ${cfgSrc}
   ${driveSrc.replace(/function truckInput\(\)[\s\S]*?\n(?=function truckWalk)/, '').replace(/function truckWalk\([\s\S]*?\n(?=function truckDrive)/, '')}
   return {TRUCK, TRUCK_CFG, truckDrive, truckStop};`)(() => input);
@@ -61,7 +63,7 @@ check(Math.abs(a10) < 1e-6, `宙に浮いている間はハンドルもアクセ
 const suspSrc = cut('const TRUCK_WHEELS=', '\nfunction truckSegIdx') + '\n' + cut('function truckSusp(dt){', '// 乗る・降りる');
 let ground = () => 0;
 const SU = new Function('getGround', `
-  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), dist=(a,b,c,d)=>Math.hypot(a-c,b-d), angDiff=(a,b)=>{ let d=b-a; while(d>Math.PI) d-=2*Math.PI; while(d<-Math.PI) d+=2*Math.PI; return d; }; const S={shake:0}; const sfx=()=>{}, spawnParticles=()=>{}, truckBumpH=()=>0;
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), dist=(a,b,c,d)=>Math.hypot(a-c,b-d), angDiff=(a,b)=>{ let d=b-a; while(d>Math.PI) d-=2*Math.PI; while(d<-Math.PI) d+=2*Math.PI; return d; }; const S={shake:0}; const sfx=()=>{}, spawnParticles=()=>{}, truckBumpH=()=>0; const TRUCK_SYS={hp:{land:{min:0.55,k:20}}}; let landDmg=0; const truckDamage=n=>{ landDmg+=n; }; // v0.78：高く跳んだ着地の傷み
   const groundH=(x,z)=>getGround()(x,z);
   const TRUCK={x:0,z:0,a:0,drive:true,susp:null};
   ${cfgSrc}

@@ -80,6 +80,8 @@
 | `radioHeard` | **v0.77（作業ブランチ）**：救援無線を聞いた。防衛戦の勝利で `false` が付き、聞くと `true`。**キーが無い＝作業F の記録が無い**（v0.76 以前・試験の開放）＝今までどおり |
 | `departureDecision` | v0.77：出発の相談をした |
 | `truck` | v0.77：KEI truck `{found,repaired,fueled,fuel,parts,trips,region,x,z,a}`（見つけた・直した・燃料を入れた・持っている燃料・拾った部品 ID・上志比へ運転して行った回数・置いてある地域と場所と向き）。不正な値は `trk()` が直す |
+| `truck`（v0.78 で足した項目） | `gas`（燃料 0〜100%。無い旧セーブは燃料を入れていれば100）・`hp`（車体。無い旧セーブは満タン）・`lv`（改修の段階 0〜3）・`bed:{logs:[丸太の太さ 't'/'m'/'k'…6本まで],mats:{素材:数}}`（荷台）・`fac:{bench,kiln,tower}`（荷台の施設 0/1。段階が足りないものは0に直す）・`kiln:{q,t}`（荷台の炭焼き釜の待ち・経過秒）・`tip`（横転の向き 0/1/-1）。不正な値は `trkSys()` が直す（`docs/kei-truck-systems.md`） |
+| `depot` | v0.78：車両基地 `{built:0/1}`（拠点の南西の隅。作業台で建てる） |
 | `departureComplete` | v0.77：直した報告と見送りが済んだ（このあと KEI truck で上志比へ） |
 | `legacyKamishihiAccess` | v0.77：旧セーブの移動権。防衛戦は済み・`radioHeard` が無い保存を読み込むと `true`（ほかに `radioHeard:false` など）。歩いて上志比へ行けるまま、無線が1回鳴る。新しい保存には付かない（`stfNormalize()`、`docs/p2-story-f.md`） |
 

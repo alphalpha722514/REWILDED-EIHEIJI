@@ -23,7 +23,7 @@ const PRESETS = {
   C: { label: 'C 十分な準備', level: 4, weapon: 'spear', armor: { head: 'forest_head', chest: 'forest_chest', legs: 'forest_legs', feet: 'forest_feet' }, food: { onigiri: 3, bento: 2 } },
   D: { label: 'D 青鱗＋鱗の槍', level: 5, weapon: 'scSpear', armor: { head: 'blue_head', chest: 'blue_chest', legs: 'blue_legs', feet: 'blue_feet' }, food: { onigiri: 3, bento: 2 } }, // v0.63
   E: { label: 'E 変異鱗＋鱗の槍', level: 5, weapon: 'scSpear', armor: { head: 'raw_head', chest: 'raw_chest', legs: 'raw_legs', feet: 'raw_feet' }, food: { onigiri: 3, bento: 2 } }, // v0.63
-  // v0.78：鱗の武器の違い（蒼鱗＝防御、変異鱗＝機動力・衝撃波・最大体力の代償）
+  // v0.78：鱗の武器の違い（蒼鱗＝防御、変異鱗＝機動力・強い強攻撃（1回でスタミナをすべて使う）・最大体力の代償。2026-11-17 22:21 の直しで武器の衝撃波は無し）
   F: { label: 'F 蒼鱗一式＋変異鱗の槍', level: 5, weapon: 'rwSpear', armor: { head: 'blue_head', chest: 'blue_chest', legs: 'blue_legs', feet: 'blue_feet' }, food: { onigiri: 3, bento: 2 } },
   G: { label: 'G 変異一式＋変異鱗の槍', level: 5, weapon: 'rwSpear', armor: { head: 'raw_head', chest: 'raw_chest', legs: 'raw_legs', feet: 'raw_feet' }, food: { onigiri: 3, bento: 2 } },
   H: { label: 'H 山守一式＋蒼鱗の槍', level: 5, weapon: 'scSpear', armor: { head: 'forest_head', chest: 'forest_chest', legs: 'forest_legs', feet: 'forest_feet' }, food: { onigiri: 3, bento: 2 } },

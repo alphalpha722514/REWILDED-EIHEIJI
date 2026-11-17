@@ -8,7 +8,7 @@
 - 鱗の飛去来器：投げると飛んで戻る。当たると傷を与える。飛んでいる間にもう一度攻撃すると、周りの獣を押し出して傷を与える。
   投げるたびに耐久が1減り、0で投げられない。手入れ（加工した鱗1）で戻る。飛んでいる間は持ち替えられない
 - 蒼鱗の防具：4部位で被ダメージ -30%。形（金属の板に鱗）が出て、鱗と継ぎ目から光の粒が出る
-- 変異した鱗の防具：最大体力0.7倍・移動+30%。衝撃波は自動では出ず、力がたまってからボタン（F）で放つ（ダメージなし）
+- 変異した鱗の防具：最大体力0.7倍・移動+30%・被ダメージ -30%（v0.78：蒼鱗と同じ）。衝撃波は自動では出ず、力がたまってから（v0.78：8秒）ボタン（F）で放つ（ダメージなし）
 - 保存：変換炉・かまど・木炭・加工した鱗・武器・防具。項目がない旧セーブも読める
 - エラーなし
 使い方：THREE_JS=…/three.min.js python3 tests/scale-gear-browser.py   （SCALE_SHOTS=フォルダ で画面を撮る）
@@ -169,9 +169,9 @@ async def main():
 
         # ---- 変異した鱗の防具 ----
         rw = await pg.evaluate("""() => { const T = window.__t, P = T.P; const before = T.f31MaxHp(T.prog.level); for (const s of ['head', 'chest', 'legs', 'feet']) { T.craft('gear_raw_' + s); T.f47Equip(s, 'raw_' + s); }
-          return {before, max: P.maxHp, hp: P.hp, speed: Math.round(T.f47Stats().speed * 100) / 100, name: T.G47.raw_chest.name}; }""")
+          return {before, max: P.maxHp, hp: P.hp, speed: Math.round(T.f47Stats().speed * 100) / 100, cut: Math.round(T.f47Stats().cut * 1000) / 1000, name: T.G47.raw_chest.name}; }""")
         print('変異した鱗：', rw)
-        check(rw['max'] == round(rw['before'] * 0.7) and rw['hp'] <= rw['max'] and rw['speed'] == 0.3, '変異した鱗の4部位で最大体力0.7倍・移動+30%')
+        check(rw['max'] == round(rw['before'] * 0.7) and rw['hp'] <= rw['max'] and rw['speed'] == 0.3 and rw['cut'] == 0.3, f'変異した鱗の4部位で最大体力0.7倍・移動+30%・被ダメージ -30%（v0.78：蒼鱗と同じ）{rw}')
         check(rw['name'] == '変異した鱗の胸部装甲', '名前：変異した鱗（ユーザー決定）')
         sw = await pg.evaluate("""() => { const T = window.__t, P = T.P; for (const e of [...T.enemies]) T.removeEnemy(e); P.x = 150; P.z = 52;
           const e = T.spawnEnemy('monkey', P.x + 2.2, P.z + 0.4, 'field', {aggro: true}); const hp0 = e.hp; T.SCALE_FX.charge = 0; T.SCALE_FX.smoke.forEach(s => s.visible = false); T.SCALE_FX.pool.forEach(s => s.visible = false);
@@ -184,7 +184,7 @@ async def main():
           T.SCALE_FX.charge = 3; const s2 = T.SCALE_FX.charge; T.scaleWaveBtn(); out.early = T.SCALE_FX.charge === s2; return out; }""")
         print('衝撃波（防具）：', sw)
         check(sw['maxAuto'] < 3.0, '衝撃波は自動では出ない（ユーザー決定：ボタンで出す）')
-        check(sw['charged'] >= 10 and sw['fired'] and sw['after'] > 5.0 and sw['hp'] == sw['hp0'], f'力がたまったらボタンで放ち、獣を押し出す（{sw["after"]:.1f}m・ダメージなし）')
+        check(sw['charged'] >= 8 and sw['fired'] and sw['after'] > 5.0 and sw['hp'] == sw['hp0'], f'力がたまったらボタンで放ち、獣を押し出す（{sw["after"]:.1f}m・ダメージなし）')
         check(sw['early'], 'たまる前に押しても出ない')
         check(sw['embers'] > 0, '青緑の火の粉が立ちのぼる（v0.76。前は暗い紫のもや）')
         check(sw['btnShown'] and sw['btnReady'], 'スマホの「衝撃」ボタンが一式のときに出て、たまると光る')

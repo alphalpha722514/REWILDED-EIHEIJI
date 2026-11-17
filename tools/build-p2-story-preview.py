@@ -9,7 +9,7 @@
   ・KEI truck を直したところから（直して燃料も入れ、見送りも済み。国道416号で運転席に乗った状態。2026-11-17 ユーザー依頼）
   ・上志比の山王の手前から（見送りまで済み・KEI truck で一度来た。東へ少し歩くと初遭遇）
   ・旧セーブを読み込む（防衛戦は済み・作業F の記録なし → 歩いて上志比へ行ける権利を残したまま、光明寺で無線から）
-- 遊んでいる間、画面の上にボタン：素材を足す・KEI truck の前へ・山王の手前へ・回復・進み（いまの記録を出す）
+- 遊んでいる間、画面の上にボタン：素材を足す・車の素材を足す（v0.78：車両基地・改修・荷台の施設・燃料に使う木材・石・屑鉄・縄・獣素材・木炭）・KEI truck の前へ・山王の手前へ・回復・進み（いまの記録を出す）
 本編を更新したら、このスクリプトを実行し直して作り直す。
 使い方：python3 tools/build-p2-story-preview.py
 """
@@ -72,10 +72,11 @@ async function fstTest(kind){
 { const on0=(id,k)=>{ const b=document.getElementById(id); if(b) b.addEventListener('click',()=>fstTest(k)); }; on0('btnFRadio','radio'); on0('btnFTruck','truck'); on0('btnFDrive','drive'); on0('btnFSanno','sanno'); on0('btnFLegacy','legacy');
   const bar=document.createElement('div'); bar.id='p2fbar'; bar.style.cssText='position:fixed;top:calc(6px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:30;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 16px)';
   const B=(id,t)=>`<button id="${id}" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.88">${t}</button>`;
-  bar.innerHTML=B('fsa','素材を足す')+B('fsb','KEI truck の前へ')+B('fse','山王の手前へ')+B('fsc','回復')+B('fsd','進み');
+  bar.innerHTML=B('fsa','素材を足す')+B('fsg','車の素材を足す')+B('fsb','KEI truck の前へ')+B('fse','山王の手前へ')+B('fsc','回復')+B('fsd','進み');
   document.body.appendChild(bar); bar.hidden=true;
   const on=(id,f)=>document.getElementById(id).addEventListener('click',e=>{ e.stopPropagation(); f(); cv.focus(); });
   on('fsa',()=>{ const m=TRUCK_CFG.mats; for(const k in m) inv[k]=(inv[k]|0)+m[k]; toast('試遊：KEI truck の修理に使う素材を1台分足した（'+Object.keys(m).map(k=>(RNAME[k]||k)+m[k]).join('・')+'。数は暫定）'); });
+  on('fsg',()=>{ const m={wood:40,stone:20,iron:30,rope:15,hide:10,charcoal:6}; for(const k in m) inv[k]=(inv[k]|0)+m[k]; toast('試遊：KEI truck の仕組みに使う素材を足した（'+Object.keys(m).map(k=>(RNAME[k]||k)+m[k]).join('・')+'）'); });
   on('fsb',async()=>{ if(P.dead||REG.busy||STF.busy||TRUCK.drive) return; const t=trk(); if(!truckShown()){ toast('試遊：KEI truck はまだ出ていない（防衛戦のあと）',true); return; }
     if(t.region!==REG.cur){ const ok=await regionTravel(t.region,null,{force:true}); if(!ok) return; } fstAtTruck(); toast('試遊：KEI truck の前'); });
   on('fse',async()=>{ if(P.dead||REG.busy||STF.busy) return; if(!stfP().defenseComplete){ toast('試遊：先にタイトルのボタンで始めてください',true); return; }

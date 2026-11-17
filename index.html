@@ -577,7 +577,7 @@ body.touchmode #items .hslot{width:min(var(--hbMax),calc((100vw - var(--hbL) - v
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.77 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.78 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -2866,7 +2866,7 @@ function f5Interactables(L){
 function renderArms(){ const box=$('invArms'); if(!box) return; box.innerHTML='';
   for(const id of armList()){ const w=WEAPONS[id]; const d=document.createElement('div'); d.className='rc'+(id===P.weapon?' done':'');
     const nm=document.createElement('div'); nm.className='nm'; nm.textContent=w.name+(w.grade?`（${w.grade}）`:''); d.appendChild(nm);
-    const ds=document.createElement('div'); ds.className='ds'; ds.textContent=`通常 ${w.light}／強 ${w.heavy}／間合い ${w.range}／耐久 ${Math.ceil(armDur(id))}/${w.maxDur}　木を切る力 ${w.chop?('×'+w.chop):'—（切れない）'}`+(w.boomer?'':w.scale==='blue'?'　持つ間：被ダメージ-15%':w.scale==='raw'?'　持つ間：移動+12%・回避の消費-15%・衝撃波（F）・最大体力-15%':''); d.appendChild(ds);
+    const ds=document.createElement('div'); ds.className='ds'; ds.textContent=`通常 ${w.light}／強 ${w.heavy}／間合い ${w.range}／耐久 ${Math.ceil(armDur(id))}/${w.maxDur}　木を切る力 ${w.chop?('×'+w.chop):'—（切れない）'}`+(w.boomer?'':w.scale==='blue'?'　持つ間：被ダメージ-15%':w.scale==='raw'?'　持つ間：移動+12%・回避の消費-15%・最大体力-15%。強攻撃は1回でスタミナをすべて使う':''); d.appendChild(ds);
     const b=document.createElement('button'); b.textContent=id===P.weapon?'持っている':'持つ'; b.disabled=id===P.weapon; b.id='arm_'+id; b.addEventListener('click',()=>{ equipArm(id); renderArms(); }); d.appendChild(f31MastEl(id)); d.appendChild(b); box.appendChild(d); }
   const tl=Object.keys(prog.f5.tools).filter(k=>TOOLS[k]); if(tl.length){ const h=document.createElement('div'); h.className='lbl'; h.textContent='採集道具（岩を割るときに自動で使う）'; box.appendChild(h);
     for(const id of tl){ const t=TOOLS[id]; const d=document.createElement('div'); d.className='rc'; const nm=document.createElement('div'); nm.className='nm'; nm.textContent=`${t.name}（${t.grade}）`; d.appendChild(nm);
@@ -2932,7 +2932,7 @@ function drawMap(){ const cv=$('mapCv'); if(!cv||$('mapOv').hidden) return; cons
   // 調査位置だけ表示し、追跡中の獣は元の位置表示からも隠す。
   trk36Map(c,X,Z,lab);
   // 近くの獣
-  for(const e of enemies){ if(e.state==='dead'||e.removed||trk36MapTargetHidden(e)) continue; if(e.mode==='field'&&dist(e.x,e.z,P.x,P.z)>60) continue; c.fillStyle=e.type==='boss'?'#ff6040':'#e0533c'; c.beginPath(); c.arc(X(e.x),Z(e.z),e.type==='boss'?6:3.5,0,TAU); c.fill(); }
+  for(const e of enemies){ if(e.state==='dead'||e.removed||trk36MapTargetHidden(e)) continue; if(e.mode==='field'&&dist(e.x,e.z,P.x,P.z)>truckSee()) continue; c.fillStyle=e.type==='boss'?'#ff6040':'#e0533c'; c.beginPath(); c.arc(X(e.x),Z(e.z),e.type==='boss'?6:3.5,0,TAU); c.fill(); }
   // 依頼と目的
   const ql=questHere()&&questLine(); if(ql&&ql[1]){ const x=X(ql[1].x), y=Z(ql[1].z); c.strokeStyle='#7ad0e0'; c.lineWidth=3; c.beginPath(); c.arc(x,y,9,0,TAU); c.stroke(); lab('依頼',x+11,y-8,'#9fe6f0'); }
   const [ot,tg]=objective(); if(tg){ const x=X(tg.x), y=Z(tg.z); c.fillStyle='#f0c34a'; c.strokeStyle='#1b1d1e'; c.lineWidth=2; c.beginPath(); c.moveTo(x,y-10); c.lineTo(x+8,y); c.lineTo(x,y+10); c.lineTo(x-8,y); c.closePath(); c.fill(); c.stroke(); lab('目的',x+11,y+4,'#ffe08a',13); }
@@ -2974,20 +2974,17 @@ const SCALE_ARMS={scNata:'nata3',scAxe:'axeIron',scClub:'club',scSpear:'spear',r
 const SCALE_ARM_COST={scNata:{procScale:3,iron:3,hide:4},scAxe:{procScale:3,iron:4,wood:2},scClub:{procScale:3,wood:4,hide:3},scSpear:{procScale:4,wood:4,hide:4},
   rwNata:{mutScale:3,iron:3,hide:4},rwAxe:{mutScale:3,iron:4,wood:2},rwClub:{mutScale:3,wood:4,hide:3},rwSpear:{mutScale:4,wood:4,hide:4}}; // 暫定
 const SCALE_FX={glow:[],glowRaw:[],pool:[],smoke:[],tex:null,ring:null,ringT:9,charge:0,v:null,emit:{blue:[],raw:[]}}; // 鱗の光（光の粒・暗いもや・衝撃波の輪・防具の吹き出し口）
-const SCALE_WAVE={charge:10,radius:6.5,push:{boss:0.6,bear:2.2},pushDef:4.5}; // 変異した鱗の一式：力がたまる秒数・届く距離・押し出す距離（すべて暫定）。v0.64：ボタン（F）で放つ
-// v0.78：鱗の武器の違い（2026-11-17 ユーザー決定。docs/mutant-scale-uses.md）。持っている間だけ効く。数はすべて暫定
+const SCALE_WAVE={charge:8,radius:6.5,push:{boss:0.6,bear:2.2},pushDef:4.5}; // 変異した鱗の一式：力がたまる秒数・届く距離・押し出す距離（すべて暫定）。v0.64：ボタン（F）で放つ。v0.78：たまるのは8秒（2026-11-17 22:21 ユーザー決定。前は10秒）
+// v0.78：鱗の武器の違い（2026-11-17 20:57 ユーザー決定、22:21 に直し。docs/mutant-scale-uses.md）。持っている間だけ効く。数はすべて暫定
 //  蒼鱗の武器：通常の機動力・高い防御（被ダメージ -15%）。代償なし・衝撃波なし
-//  変異鱗の武器：高い機動力（移動 +12%・回避の消費 -15%）・衝撃波（F。8秒でたまる。周り5の獣を押し出し、強攻撃の6割の傷）。代償は最大体力 -15%
-//  変異した鱗の防具一式と重ねると、衝撃波は防具の届く距離・押し出しで、武器の傷が乗り、たまるのが6秒になる
-const SCALE_WPN={blue:{def:0.15},raw:{speed:0.12,dodge:0.15,hpLoss:0.15,waveR:5,waveD:3.5,waveK:0.6,charge:8,both:6}};
+//  変異鱗の武器：高い機動力（移動 +12%・回避の消費 -15%）・強攻撃が蒼鱗の1.5倍（WEAPONS の rw〜の heavy）。ただし強攻撃は1回でスタミナをすべて使う。衝撃波は無い。代償は最大体力 -15%
+const SCALE_WPN={blue:{def:0.15},raw:{speed:0.12,dodge:0.15,hpLoss:0.15,heavyK:1.5,drain:true}};
 function f78WpnSet(){ const w=P.weapon&&WEAPONS[P.weapon]; return w&&!w.boomer&&w.scale||null; } // 飛去来器（蒼鱗の鱗を使う）は除く
 function f78Wpn(){ return SCALE_WPN[f78WpnSet()]||null; }
 function f78HpSync(){ const k=f78WpnSet()||''; if(SCALE_FX.wk===k) return; const was=SCALE_FX.wk; SCALE_FX.wk=k; if(was!=='raw'&&k!=='raw') return; // 変異鱗の武器を持つ・手放すときだけ最大体力を測り直す
   const mh=f31MaxHp(prog.level||1); if(mh!==P.maxHp){ P.maxHp=mh; P.hp=Math.min(P.hp,mh); } }
-// 衝撃波の元：変異した鱗の防具一式・変異鱗の武器。null＝放てない
-function scaleWaveSrc(){ const arm=f47Count('raw')===4, wr=f78WpnSet()==='raw'; if(!arm&&!wr) return null; const W=SCALE_WPN.raw;
-  return {arm,wr,R:arm?SCALE_WAVE.radius:W.waveR,D:arm?SCALE_WAVE.pushDef:W.waveD,charge:arm&&wr?W.both:arm?SCALE_WAVE.charge:W.charge,dmg:wr?Math.round(WEAPONS[P.weapon].heavy*W.waveK):0,
-    name:arm&&wr?'変異した鱗':arm?'変異した鱗':'変異鱗の武器'}; }
+// 衝撃波の元：変異した鱗の防具一式だけ（v0.78 22:21：変異鱗の武器の衝撃波は無くした）。null＝放てない。dmg：傷（防具の衝撃波は押し出すだけ）
+function scaleWaveSrc(){ if(f47Count('raw')!==4) return null; return {arm:true,R:SCALE_WAVE.radius,D:SCALE_WAVE.pushDef,charge:SCALE_WAVE.charge,dmg:0,name:'変異した鱗'}; }
 const BOOMER={range:12,rangeH:16,speed:20,back:22,hit:18,waveR:4.5,waveD:3.5,waveHit:20,stamH:15}; // v0.64：鱗の飛去来器（すべて暫定）
 const WSPD={nata1:1,nata2:1,nata3:1.05,axeStone:0.9,axeIron:0.95,club:1,bamboo:1.05,spear:1,scNata:1.05,scAxe:0.95,scClub:1,scSpear:1,rwNata:1.05,rwAxe:0.95,rwClub:1,rwSpear:1,boomer:1};
 const WPOISE={nata1:1,nata2:1.1,nata3:1.2,axeStone:1.6,axeIron:1.9,club:1.5,bamboo:0.9,spear:1.1,scNata:1.3,scAxe:2.0,scClub:1.7,scSpear:1.25,rwNata:1.3,rwAxe:2.0,rwClub:1.7,rwSpear:1.25,boomer:0.6};
@@ -3673,6 +3670,7 @@ function renderNPC(){ const n=f9Cur; if(!n) return; $('npcName').textContent=n.n
   else f9Btn(bx,'npc_talk','話す',()=>f9Talk(n),{pri:f9Story(n)});
   if(n===npcTome&&f9Has('D')) f9TomePanel(st);
   if(n===npcGen&&f9Has('D')) f9GenPanel(st,bx);
+  if(n===npcGen) haulPanel(st,bx); // v0.78：KEI truck の荷を運んでもらう
   if(n===npcEshin){ if(f9Has('C')) f9EshinPanel(st,bx); else f9El('div','nl',ev.kind?'いまは柵の修理に出ている（戦いの間）':'戦いの間は、傷んだ柵を直しに行く',st); }
   if(n===npcYone&&f9Has('B')) f9YonePanel(st,bx);
   renderTownDelivery(n,bx);
@@ -6105,7 +6103,7 @@ function scalePush(cx,cz,R,D,fn){ let n=0; for(const e of enemies){ if(e.removed
     const a=d>0.01?Math.atan2(e.x-cx,e.z-cz):P.facing, k=e.type==='boss'?0.13:e.type==='bear'?0.5:1, v=D*k*6; e.pushV={vx:Math.sin(a)*v,vz:Math.cos(a)*v}; n++; if(fn) fn(e,a); } return n; } // 押し出す速さ＝距離×6（毎秒6の割合で弱まるので、ほぼその距離だけ動く）
 // 変異した鱗の一式：力がたまったらボタン（F／スマホ「衝撃」）で放つ（v0.64 ユーザー決定。ダメージなし）
 function scaleWave(){ const src=scaleWaveSrc(); if(!src) return 0; SCALE_FX.charge=0; const buff=P.buffT>0?1.3:1;
-  const n=scalePush(P.x,P.z,src.R,src.D,src.dmg?(e,a)=>damageEnemy(e,src.dmg*buff,'heavy',a,{mv:MOVES.BTW,weapon:P.weapon}):null); // v0.78：変異鱗の武器の衝撃波は傷を与える
+  const n=scalePush(P.x,P.z,src.R,src.D,src.dmg?(e,a)=>damageEnemy(e,src.dmg*buff,'heavy',a,{mv:MOVES.BTW,weapon:P.weapon}):null);
   scaleRing(P.x,P.z,0xb070e0,src.R); const gy=groundH(P.x,P.z);
   for(let i=0;i<16;i++){ const a=i/16*TAU; scaleMote(P.x,gy+0.5,P.z,0x2a1038,0.3,1.0,0.6,Math.sin(a)*6,Math.cos(a)*6,true); }
   floatText(P.x,2.5,P.z,'衝撃波','#c9a0ff',true); sfx('stun'); S.shake=Math.max(S.shake,0.35); return n; }
@@ -6128,7 +6126,7 @@ function scaleFxUpdate(dt){
   // 防具：埋め込んだ鱗と継ぎ目から、蒼鱗は青い光があふれ、変異した鱗は暗い紫のもやが立ちのぼる
   const nb=f47Count('blue'), nr=f47Count('raw'); if(nb||nr) saFxUpdate(); // v0.76：鱗の防具の光・ゆらぎ・光の筋
   if(nb&&Math.random()<dt*nb*4.5){ const o=scaleEmitter('blue'); if(o){ o.getWorldPosition(v); scaleMote(v.x+(Math.random()-0.5)*0.06,v.y,v.z+(Math.random()-0.5)*0.06,0x6fd8ff,0.45,0.9,0.14); } }
-  const src=scaleWaveSrc(); if(src) SCALE_FX.charge=Math.min(src.charge,SCALE_FX.charge+dt); else SCALE_FX.charge=0; // v0.78：変異鱗の武器でもたまる
+  const src=scaleWaveSrc(); if(src) SCALE_FX.charge=Math.min(src.charge,SCALE_FX.charge+dt); else SCALE_FX.charge=0;
   if(nr){ const full=nr===4&&!!src&&SCALE_FX.charge>=src.charge;
     if(Math.random()<dt*(nr*4+(full?6:0))){ const o=scaleEmitter('raw'); if(o){ o.getWorldPosition(v); scaleMote(v.x+(Math.random()-0.5)*0.08,v.y,v.z+(Math.random()-0.5)*0.08,full?0x6affd8:0x38e0b4,0.55,0.9,full?0.17:0.12,(Math.random()-0.5)*0.2,(Math.random()-0.5)*0.2); } } } // v0.76：青緑の火の粉（前は暗い紫のもや。2026-11-16 指示書）
 }
@@ -6679,11 +6677,11 @@ const G47={
  blue_chest:{slot:'chest',name:'蒼鱗の胸部装甲',set:'blue',desc:'被ダメージ -8%（胸当て・腰の帯・肩当て・籠手）。埋め込んだ鱗と継ぎ目から青い光があふれる。',cut:.08,capUp:.0375,cost:{procScale:4,hide:4,iron:2,rope:2},vis:()=>inv.procScale>0||!!prog.conv?.built},
  blue_legs:{slot:'legs',name:'蒼鱗の脚部装甲',set:'blue',desc:'被ダメージ -6%。埋め込んだ鱗と継ぎ目から青い光があふれる。',cut:.06,capUp:.0375,cost:{procScale:3,hide:3,rope:2},vis:()=>inv.procScale>0||!!prog.conv?.built},
  blue_feet:{slot:'feet',name:'蒼鱗の足部装甲',set:'blue',desc:'被ダメージ -5%。埋め込んだ鱗と継ぎ目から青い光があふれる。',cut:.05,capUp:.0375,cost:{procScale:2,hide:2,rope:2},vis:()=>inv.procScale>0||!!prog.conv?.built,setNote:'蒼鱗の4部位がそろうと、4部位の軽減の上限が15%から30%に上がる。'},
- // 変異鱗：変異した鱗をそのまま使う。体力を吸われる（1部位で最大体力 -7.5%、4部位で0.7倍）が、身のこなしが大きく上がり、4部位そろうと力をためて衝撃波を放つ
- raw_head:{slot:'head',name:'変異した鱗の頭部装甲',set:'raw',desc:'最大体力 -7.5%・通常移動 +5%・回避消費 -5%。青緑の炎のようなオーラが揺らめく。',cut:.02,speed:.05,dodge:.05,hpLoss:.075,cost:{mutScale:2,hide:2,rope:1},vis:()=>inv.mutScale>0},
- raw_chest:{slot:'chest',name:'変異した鱗の胸部装甲',set:'raw',desc:'最大体力 -7.5%・通常移動 +5%・回避消費 -5%。青緑の炎のようなオーラが揺らめく。',cut:.02,speed:.05,dodge:.05,hpLoss:.075,cost:{mutScale:3,hide:3,rope:2},vis:()=>inv.mutScale>0},
- raw_legs:{slot:'legs',name:'変異した鱗の脚部装甲',set:'raw',desc:'最大体力 -7.5%・通常移動 +5%・回避消費 -5%。青緑の炎のようなオーラが揺らめく。',cut:.02,speed:.05,dodge:.05,hpLoss:.075,cost:{mutScale:2,hide:2,rope:1},vis:()=>inv.mutScale>0},
- raw_feet:{slot:'feet',name:'変異した鱗の足部装甲',set:'raw',desc:'最大体力 -7.5%・通常移動 +5%・回避消費 -5%。青緑の炎のようなオーラが揺らめく。',cut:.02,speed:.05,dodge:.05,hpLoss:.075,cost:{mutScale:2,hide:2,rope:1},vis:()=>inv.mutScale>0,setNote:'変異した鱗の4部位がそろうと、10秒で力がたまり、F（スマホは「衝撃」ボタン）で衝撃波を放って周りの獣を吹き飛ばす（ダメージはない）。'},
+ // 変異鱗：変異した鱗をそのまま使う。体力を吸われる（1部位で最大体力 -7.5%、4部位で0.7倍）が、身のこなしが大きく上がり、4部位そろうと力をためて衝撃波を放つ。v0.78（2026-11-17 22:21 ユーザー決定）：防御は蒼鱗と同じ（前は1部位 -2%）。衝撃波は8秒でたまる
+ raw_head:{slot:'head',name:'変異した鱗の頭部装甲',set:'raw',desc:'被ダメージ -5%（蒼鱗と同じ）・通常移動 +5%・回避消費 -5%。代償：最大体力 -7.5%。青緑の炎のようなオーラが揺らめく。',cut:.05,capUp:.0375,speed:.05,dodge:.05,hpLoss:.075,cost:{mutScale:2,hide:2,rope:1},vis:()=>inv.mutScale>0},
+ raw_chest:{slot:'chest',name:'変異した鱗の胸部装甲',set:'raw',desc:'被ダメージ -8%（蒼鱗と同じ）・通常移動 +5%・回避消費 -5%。代償：最大体力 -7.5%。青緑の炎のようなオーラが揺らめく。',cut:.08,capUp:.0375,speed:.05,dodge:.05,hpLoss:.075,cost:{mutScale:3,hide:3,rope:2},vis:()=>inv.mutScale>0},
+ raw_legs:{slot:'legs',name:'変異した鱗の脚部装甲',set:'raw',desc:'被ダメージ -6%（蒼鱗と同じ）・通常移動 +5%・回避消費 -5%。代償：最大体力 -7.5%。青緑の炎のようなオーラが揺らめく。',cut:.06,capUp:.0375,speed:.05,dodge:.05,hpLoss:.075,cost:{mutScale:2,hide:2,rope:1},vis:()=>inv.mutScale>0},
+ raw_feet:{slot:'feet',name:'変異した鱗の足部装甲',set:'raw',desc:'被ダメージ -5%（蒼鱗と同じ）・通常移動 +5%・回避消費 -5%。代償：最大体力 -7.5%。青緑の炎のようなオーラが揺らめく。',cut:.05,capUp:.0375,speed:.05,dodge:.05,hpLoss:.075,cost:{mutScale:2,hide:2,rope:1},vis:()=>inv.mutScale>0,setNote:'変異した鱗の4部位がそろうと、軽減の上限が蒼鱗と同じく30%に上がり、8秒で力がたまって、F（スマホは「衝撃」ボタン）で衝撃波を放ち周りの獣を吹き飛ばす（ダメージはない）。'},
  legacy1_chest:{slot:'chest',name:'旧式の籠手付き作業着',set:'legacy1',desc:'引き継いだ籠手。被ダメージ -15%。',cut:.15},
  legacy2_chest:{slot:'chest',name:'旧式の鉄籠手付き作業着',set:'legacy2',desc:'引き継いだ鉄籠手。被ダメージ -25%。',cut:.25}
 };
@@ -6792,11 +6790,11 @@ const WEAPONS={
  scAxe:{name:'蒼鱗の斧',grade:'蒼鱗の斧',light:22,heavy:60,range:2.6,maxDur:300,chop:3.5,wear:0.12,scale:'blue'},
  scClub:{name:'蒼鱗の棍棒',light:20,heavy:52,range:2.8,maxDur:240,chop:0,scale:'blue'},
  scSpear:{name:'蒼鱗の槍',light:30,heavy:78,range:3.4,maxDur:360,chop:0,scale:'blue'},
- // v0.64：変異鱗の武器（変異した鱗をそのまま使う。暗いもやをまとう）。代償は後で決める（ユーザー）。それまで威力は蒼鱗と同じ（暫定）
- rwNata:{name:'変異鱗の鉈',light:26,heavy:64,range:2.7,maxDur:260,chop:1,scale:'raw'},
- rwAxe:{name:'変異鱗の斧',grade:'変異鱗の斧',light:22,heavy:60,range:2.6,maxDur:300,chop:3.5,wear:0.12,scale:'raw'},
- rwClub:{name:'変異鱗の棍棒',light:20,heavy:52,range:2.8,maxDur:240,chop:0,scale:'raw'},
- rwSpear:{name:'変異鱗の槍',light:30,heavy:78,range:3.4,maxDur:360,chop:0,scale:'raw'},
+ // v0.64：変異鱗の武器（変異した鱗をそのまま使う。暗いもやをまとう）。v0.78（2026-11-17 22:21 ユーザー決定）：強攻撃は蒼鱗より強い（1.5倍・暫定）が、1回でスタミナをすべて使う
+ rwNata:{name:'変異鱗の鉈',light:26,heavy:96,range:2.7,maxDur:260,chop:1,scale:'raw'},
+ rwAxe:{name:'変異鱗の斧',grade:'変異鱗の斧',light:22,heavy:90,range:2.6,maxDur:300,chop:3.5,wear:0.12,scale:'raw'},
+ rwClub:{name:'変異鱗の棍棒',light:20,heavy:78,range:2.8,maxDur:240,chop:0,scale:'raw'},
+ rwSpear:{name:'変異鱗の槍',light:30,heavy:117,range:3.4,maxDur:360,chop:0,scale:'raw'},
  // v0.64：鱗の飛去来器（投げると戻る。飛んでいる間にもう一度攻撃で、周りに衝撃波。耐久10＝約10回。数値は暫定）
  boomer:{name:'鱗の飛去来器',light:18,heavy:18,range:2,maxDur:10,chop:0,scale:'blue',boomer:1},
 };
@@ -7514,6 +7512,7 @@ function startAttack(kind,aimSnapshot=null){
   if(!chop&&mv.stam>0&&P.st<f31Stam(mv)){ staminaDeny(); P.buffer=null; return false; }
   if(P.atk) endAttack(P.atk);
   if(!chop&&mv.stam) spendSt(f31Stam(mv)); // v0.31 熟練度「慣れ」でスタミナ-2
+  if(!chop&&kind==='heavy'&&mv.kind==='heavy'&&f78Wpn()?.drain){ spendSt(P.st); if(!F6X.rwHint){ F6X.rwHint=1; toast('変異鱗の強攻撃は、1回でスタミナをすべて使う（息切れのあいだは回避できない）',true); } } // v0.78：変異鱗の武器の強攻撃は、1回でスタミナをすべて使う（息切れになる）
   P.atk=makeAtk(id,chop?1:(WSPD[P.weapon]||1));
   let counterFacing=null;
   if(mv.counter){ P.ctrT=0; const f=nearestFoe(5); if(f) counterFacing=Math.atan2(f.x-P.x,f.z-P.z); const w=equippedWeapon(); const reach=Math.max(0.9,(w?w.range:1.45)-0.6); P.atk.lungeD=f?clamp(dist(P.x,P.z,f.x,f.z)-f.r-reach,0,1.5):0; P.atk.counterFacing=counterFacing; } // 素手にも安全な短い間合いを設定。反撃対象の向きは攻撃中も保持
@@ -7583,6 +7582,7 @@ function healPlayer(n){ const before=P.hp; P.hp=Math.min(P.maxHp,P.hp+n); if(P.h
 function hurtPlayer(dmg,fx,fz,knock=6,src=null){
   if(TGV.on) return szHurt(dmg,fx,fz,knock,src); // v0.70：スズキを相手にしている敵の攻撃
   if(P.dead) return false; dmg=f11InvDmg(dmg,src); // v0.30：侵攻の獣だけ
+  if(TRUCK.drive){ truckDamage(dmg*TRUCK_SYS.hp.beast); return false; } // v0.78：運転中の攻撃は KEI truck の車体が受ける（主人公は傷まない）
   if(P.iframe){ if(perfectOK(src)) perfectDodge(src); return false; } // 見切りは回避の最初の0.18秒だけ
   dmg=f31Armor(dmg); P.hp=Math.max(0,P.hp-dmg); P.lastHurt=S.time; // v0.31 防具は最後（基礎値→侵攻×1.1→回避で無効→防具） f4DropAll('hurt');
   const a=Math.atan2(P.x-fx,P.z-fz); P.kx=Math.sin(a)*knock*(1-f47Stats().knock); P.kz=Math.cos(a)*knock*(1-f47Stats().knock);
@@ -8583,8 +8583,8 @@ function talkTo(n){
 
 // ================= インタラクト =================
 let curInter=null; const objOpen={t:0,pin:false,last:null,lastQ:null};
-function chooseDefense(title,options){
-  if(!options.length)return;if(options.length===1){options[0].act();return;}
+function chooseDefense(title,options,keep){
+  if(!options.length)return;if(options.length===1&&!keep){options[0].act();return;} // v0.78：keep のときは1つでも一覧を出す（荷台・車両基地の状態を見せる）
   const old=document.getElementById('defenseChoice');if(old)old.remove();
   const wrap=document.createElement('div');wrap.id='defenseChoice';wrap.tabIndex=-1;
   wrap.style.cssText='position:fixed;inset:0;z-index:99998;background:#0009;display:flex;align-items:center;justify-content:center;padding:18px;box-sizing:border-box';
@@ -8671,8 +8671,8 @@ function placeFence(g,type){
   inv[k]--;setFence(g,type);toast(g.name+'に'+(type==='stake'?'杭柵':type==='spike'?'トゲ柵':'木柵')+'を設置した');sfx('wood');saveGame();
 }
 function repairFence(g,cost,full){
-  if(inv.wood<cost){ toast(`木材が足りない（必要 ${cost}）`,true); sfx('deny'); return; }
-  inv.wood-=cost; const f=g.fence;
+  if(bedHaveAll('wood')<cost){ toast(`木材が足りない（必要 ${cost}）`,true); sfx('deny'); return; }
+  bedTakeAll('wood',cost); const f=g.fence; // v0.78：近くの KEI truck の荷台の木材も使う
   if(full){ f.broken=false; f.hp=f.max; } else f.hp=Math.min(f.max,f.hp+60);
   g.col.active=true; fenceVisual(g); toast(`${g.name}の柵を${full?'再建':'修理'}した`); sfx('wood');
 }
@@ -8707,8 +8707,9 @@ function rearmTrap(t){
 }
 function buildScoutTower(){
   if(prog.scoutTower)return;
-  if(inv.wood<10||inv.rope<4){toast('見張り台：木材10と縄4が必要',true);sfx('deny');return;}
-  inv.wood-=10;inv.rope-=4;prog.scoutTower=true;scoutVisual();sfx('wood');
+  if(!bedAfford({wood:10,rope:4})){toast('見張り台：木材10と縄4が必要',true);sfx('deny');return;}
+  bedPay({wood:10,rope:4});prog.scoutTower=true; // v0.78：近くの KEI truck の荷台の素材も使う
+  scoutVisual();sfx('wood');
   toast('見張り台が完成した。群れの接近を早く知らせられる！');saveGame();
 }
 
@@ -8734,7 +8735,7 @@ const RECIPES=[
  {id:'club',name:'木の棍棒',cost:{wood:3},desc:'太い枝を削った棍棒。間合いが少し長い。木は切れない。耐久70',show:()=>prog.arms.club==null,give:()=>{armGain('club',true);}},
  {id:'bamboo',name:'竹槍',cost:{bamboo:3,rope:1},desc:'竹の先を斜めに削いで尖らせた槍。間合いが長い（3.4）。木は切れない。耐久40',show:()=>prog.arms.bamboo==null,lock:()=>prog.arms.axeStone==null&&prog.arms.axeIron==null,lockMsg:'穂先を削るのに石の手斧が要る',give:()=>{armGain('bamboo',true);}},
  {id:'axeIron',name:'鉄の斧（良質な斧）',cost:{iron:4,wood:2,rope:1},desc:'壊れた家のがれきから集めた屑鉄を打ち直した斧。木を切る力は鉈の3倍（太い杉も4回で倒れる）。武器としても強い。耐久120で減りにくい',show:()=>prog.arms.axeIron==null,lock:()=>prog.arms.axeStone==null,lockMsg:'まず石の手斧を作って、斧の形を覚える',give:()=>{ delete prog.arms.axeStone; if(P.weapon==='axeStone'){ P.weapon='axeIron'; P.dur=WEAPONS.axeIron.maxDur; } prog.arms.axeIron=WEAPONS.axeIron.maxDur; refreshWeaponMesh(); }},
- ...Object.entries(SCALE_ARMS).map(([id,base])=>{ const raw=WEAPONS[id].scale==='raw'; return {id,name:WEAPONS[id].name,cost:SCALE_ARM_COST[id],desc:raw?`${WEAPONS[base].name}に変異した鱗を加工せずに打ち込む。通常${WEAPONS[id].light}／強${WEAPONS[id].heavy}・リーチ${WEAPONS[id].range}・耐久${WEAPONS[id].maxDur}。持つ間：移動+12%・回避の消費-15%・衝撃波（F）。代償：最大体力-15%。まがまがしい暗いもやをまとう。${WEAPONS[base].name}はこの武器に変わる`:`${WEAPONS[base].name}に加工した鱗を打ち込んで鍛え直す。通常${WEAPONS[id].light}／強${WEAPONS[id].heavy}・リーチ${WEAPONS[id].range}・耐久${WEAPONS[id].maxDur}。持つ間：被ダメージ-15%。青い光をまとう。${WEAPONS[base].name}はこの武器に変わる`,
+ ...Object.entries(SCALE_ARMS).map(([id,base])=>{ const raw=WEAPONS[id].scale==='raw'; return {id,name:WEAPONS[id].name,cost:SCALE_ARM_COST[id],desc:raw?`${WEAPONS[base].name}に変異した鱗を加工せずに打ち込む。通常${WEAPONS[id].light}／強${WEAPONS[id].heavy}・リーチ${WEAPONS[id].range}・耐久${WEAPONS[id].maxDur}。持つ間：移動+12%・回避の消費-15%。強攻撃は蒼鱗より強い（1.5倍）が、1回でスタミナをすべて使う。代償：最大体力-15%。まがまがしい暗いもやをまとう。${WEAPONS[base].name}はこの武器に変わる`:`${WEAPONS[base].name}に加工した鱗を打ち込んで鍛え直す。通常${WEAPONS[id].light}／強${WEAPONS[id].heavy}・リーチ${WEAPONS[id].range}・耐久${WEAPONS[id].maxDur}。持つ間：被ダメージ-15%。青い光をまとう。${WEAPONS[base].name}はこの武器に変わる`,
    show:()=>prog.arms[base]!=null&&(raw?inv.mutScale>0:(inv.procScale>0||!!prog.conv?.built)),give:()=>{armUpgrade(base,id);}}; }), // v0.63：蒼鱗の武器、v0.64：変異鱗の武器（暫定）
  {id:'boomer',name:'鱗の飛去来器',cost:{procScale:3,iron:3,wood:2},desc:'加工した鱗をはめた投げ具。投げると手元に戻る（強攻撃で遠くへ）。飛んでいる間にもう一度攻撃すると、飛去来器の周りに衝撃波が起きて獣を押し出す。当たり18・衝撃波20。耐久10（投げるたびに1減る）',show:()=>prog.arms.boomer==null&&(inv.procScale>0||!!prog.conv?.built),give:()=>{armGain('boomer',false); toast('鱗の飛去来器：持ち替え（R／持ち物）で持つ');}}, // v0.64（暫定）
  {id:'boomerFix',name:'飛去来器の手入れ',cost:{procScale:1},desc:'鱗の飛去来器の耐久を全回復する（加工した鱗1）',show:()=>prog.arms.boomer!=null&&armDur('boomer')<WEAPONS.boomer.maxDur,give:()=>{ setArmDur('boomer',WEAPONS.boomer.maxDur); }}, // v0.64（暫定）
@@ -8748,15 +8749,17 @@ const RECIPES=[
  {id:'toolRepair',name:'採集道具の手入れ',cost:{wood:1},desc:'石の槌・鉄のつるはしの耐久を全回復する',show:()=>Object.keys(prog.f5.tools).some(k=>TOOLS[k]&&prog.f5.tools[k]<TOOLS[k].maxDur),give:()=>{ for(const k in prog.f5.tools) if(TOOLS[k]) prog.f5.tools[k]=TOOLS[k].maxDur; }},
  {id:'repair',name:'武器の手入れ',cost:{wood:1},desc:'武器の耐久を全回復する',show:()=>!!equippedWeapon()&&!equippedWeapon().boomer,give:()=>{ const w=equippedWeapon(); if(w) P.dur=w.maxDur; }}, // v0.45：素手では非表示
 ];
+const CRAFT={at:'bench'}, CRAFT_BASE=new Set(['convBuild','kamaBuild','cart','depotBuild','fenceFix']); // v0.78：荷台の作業台（拠点の外）では拠点に建てる・直す物を出さない
+function craftHere(r){ return !(CRAFT.at==='truck'&&REG.cur!=='komyoji'&&CRAFT_BASE.has(r.id)); }
 function canAfford(c){ for(const k in c) if((FOODS[k]?f7Have(k):(inv[k]||0))<c[k]) return false; return true; } // 食べ物は作業台で食料庫の分も使える
 function craft(id){
   const r=RECIPES.find(x=>x.id===id); if(!r) return;
-  if(r.lock&&r.lock()) return; if(r.show&&!r.show()) return;
+  if(r.lock&&r.lock()) return; if(r.show&&!r.show()) return; if(!craftHere(r)) return;
   if(r.id==='repair'&&(!equippedWeapon()||P.dur>=equippedWeapon().maxDur)){ toast(equippedWeapon()?'武器は傷んでいない':'手入れする武器がない'); return; } // v0.45
-  if(!canAfford(r.cost)){ sfx('deny'); toast('素材が足りない',true); return; }
-  f7Flush(); if(!canAfford(r.cost)){ sfx('deny'); toast('素材が足りない',true); renderCraft(); return; }
-  let fromStore=[]; for(const k in r.cost){ if(FOODS[k]){ const u=f7CraftTake(k,r.cost[k]); if(u.store>0) fromStore.push(`${FOODS[k].name}${u.store}`); } else inv[k]-=r.cost[k]; }
-  r.give(); stats.crafts++; g4CheckQuests(); sfx('craft'); toast(`${r.name}を作った`+(fromStore.length?`（食料庫から${fromStore.join('・')}を使った）`:''));
+  if(!bedAfford(r.cost)){ sfx('deny'); toast('素材が足りない',true); return; }
+  f7Flush(); if(!bedAfford(r.cost)){ sfx('deny'); toast('素材が足りない',true); renderCraft(); return; }
+  let fromStore=[], fromBed=0; for(const k in r.cost){ if(FOODS[k]){ const u=f7CraftTake(k,r.cost[k]); if(u.store>0) fromStore.push(`${FOODS[k].name}${u.store}`); } else { fromBed+=Math.max(0,r.cost[k]-(inv[k]||0)); bedTakeAll(k,r.cost[k]); } } // v0.78：足りない分は KEI truck の荷台から（車のそばだけ）
+  r.give(); stats.crafts++; g4CheckQuests(); sfx('craft'); toast(`${r.name}を作った`+(fromStore.length?`（食料庫から${fromStore.join('・')}を使った）`:'')+(fromBed?`（荷台の素材を${fromBed}こ使った）`:''));
   if(r.id==='nata2'||r.id==='nata3'||r.id==='spear'||r.id==='axeStone'||r.id==='axeIron'||r.id==='club'||r.id==='bamboo'||SCALE_ARMS[r.id]) banner(WEAPONS[r.id]?WEAPONS[r.id].name:(equippedWeapon()?.name||'素手'),r.id==='axeStone'||r.id==='axeIron'?'木を切る力 ×'+WEAPONS[r.id].chop+'　持ち替えは R ／ 持ち物':'新しい武器を手に入れた　持ち替えは R ／ 持ち物',2.2);
   saveGame(); renderCraft();
 }
@@ -8767,15 +8770,15 @@ function renderCraft(){
   const equipped=equippedWeapon();
   f7Flush(); $('craftHave').textContent=`所持：木材 ${inv.wood}／食料 ${inv.food}${F7.store&&f7Count('food','store')?`（食料庫 ${f7Count('food','store')}）`:''}／獣素材 ${inv.hide}／藁 ${inv.straw}／縄 ${inv.rope}／石 ${inv.stone}／竹 ${inv.bamboo}／屑鉄 ${inv.iron}${inv.fang?`／ヌシの牙 ${inv.fang}`:''}${inv.mutScale?`／変異した鱗 ${inv.mutScale}`:''}${inv.procScale?`／加工した鱗 ${inv.procScale}`:''}${inv.charcoal?`／木炭 ${inv.charcoal}`:''}　｜　武器：${equipped?`${equipped.name}（耐久 ${Math.ceil(P.dur)}/${equipped.maxDur}）`:'素手'} `;
   for(const r of RECIPES){
-    if(r.show&&!r.show()) continue;
+    if(r.show&&!r.show()) continue; if(!craftHere(r)) continue;
     const locked=r.lock&&r.lock();
     const d=document.createElement('div'); d.className='rc'+(locked?' lock':'');
     const nm=document.createElement('div'); nm.className='nm'; nm.textContent=r.name; d.appendChild(nm);
     const ds=document.createElement('div'); ds.className='ds'; ds.textContent=locked?`🔒 ${r.lockMsg}`:r.desc; d.appendChild(ds);
     const cs=document.createElement('div'); cs.className='cs';
-    cs.innerHTML='必要：'+Object.entries(r.cost).map(([k,v])=>{ if(FOODS[k]){ const h=f7Count(k,'hand'), s=F7.store?f7Count(k,'store'):0, ok=h+s>=v; return `<span class="${ok?'':'lack'}">${RNAME[k]} ${v}（${h+s}${s?`：手持ち ${h}＋食料庫 ${s}`:''}）</span>`; } const ok=(inv[k]||0)>=v; return `<span class="${ok?'':'lack'}">${RNAME[k]} ${v}（${inv[k]||0}）</span>`; }).join('　');
+    cs.innerHTML='必要：'+Object.entries(r.cost).map(([k,v])=>{ if(FOODS[k]){ const h=f7Count(k,'hand'), s=F7.store?f7Count(k,'store'):0, ok=h+s>=v; return `<span class="${ok?'':'lack'}">${RNAME[k]} ${v}（${h+s}${s?`：手持ち ${h}＋食料庫 ${s}`:''}）</span>`; } const bd=bedHave(k), ok=(inv[k]||0)+bd>=v; return `<span class="${ok?'':'lack'}">${RNAME[k]} ${v}（${inv[k]||0}${bd?`＋荷台 ${bd}`:''}）</span>`; }).join('　');
     d.appendChild(cs);
-    const b=document.createElement('button'); b.textContent=locked?'未解放':'作る'; const equipped=equippedWeapon(); b.disabled=locked||!canAfford(r.cost)||(r.id==='repair'&&(!equipped||P.dur>=equipped.maxDur)); b.id='craft_'+r.id;
+    const b=document.createElement('button'); b.textContent=locked?'未解放':'作る'; const equipped=equippedWeapon(); b.disabled=locked||!bedAfford(r.cost)||(r.id==='repair'&&(!equipped||P.dur>=equipped.maxDur)); b.id='craft_'+r.id;
     b.addEventListener('click',()=>craft(r.id)); d.appendChild(b);
     if(r.id==='rope'&&!locked){ const n=Math.min(5,Math.floor((inv.straw||0)/3)); const b5=document.createElement('button'); b5.id='craft_rope5'; b5.textContent=n>=2?`まとめて ${n}本（藁${n*3}）`:'まとめて（最大5本）'; b5.disabled=n<2; b5.addEventListener('click',()=>craftRope(5)); d.appendChild(b5); }
     list.appendChild(d);
@@ -8786,7 +8789,7 @@ function renderCraft(){
 function hideAllOv(){ for(const id of ['title','howto','pause','craft','inv','dead','result','quests','mapOv','store','npcOv']) $(id).hidden=true; const c=document.getElementById('defenseChoice');if(c)c.remove(); }
 function openPause(){ if(S.mode!=='playing') return; S.mode='paused'; keys.clear(); $('pause').hidden=false; f11Pause(); f31Pause();
   $('pauseInfo').textContent=`経過 ${fmtTime(stats.time)}　撃退 ${stats.kills}　見切り ${stats.perfect}`; }
-function openCraft(){ stopBeastVoices51(); S.mode='menu'; keys.clear(); renderCraft(); $('craft').hidden=false; }
+function openCraft(at){ CRAFT.at=at==='truck'?'truck':'bench'; stopBeastVoices51(); S.mode='menu'; keys.clear(); renderCraft(); $('craft').hidden=false; }
 function renderHuntRecords(){
   const list=$('invHuntRecords'); list.innerHTML='';
   for(const type of HUNT_TYPES){
@@ -9070,7 +9073,7 @@ function resetWorld(extra){
   for(const k of TRK36)scene.remove(k.m);
   TRK36.length=0;
   trk36Reset();
-  trackSpawns.length=0; trackShow=null; g4Apply(); f4Apply(); f5Apply(); f7Apply(); f8Apply(); facApply(); boomerReset(); f9Reset(); f10Apply();
+  trackSpawns.length=0; trackShow=null; g4Apply(); f4Apply(); f5Apply(); f7Apply(); f8Apply(); facApply(); boomerReset(); haulStop(true); f9Reset(); f10Apply(); depotApply(); // v0.78：運搬・車両基地
   spawnFieldEnemies();
   GAPS.forEach((g,i)=>{ const f=extra&&extra.fences[i]; if(f&&(f.type==='wood'||f.type==='stake'||f.type==='spike')) setFence(g,f.type,num(f.hp,0,0,999)); else setFence(g,null); });
   traps.forEach((t,i)=>restoreTrap(t,extra&&extra.traps[i]));
@@ -9458,7 +9461,7 @@ function updateNPCs(dt){
   let yr=null;
   for(const n of NPCS){
     n.phase+=dt;
-    const m=n.m; const gy=n.y||groundH(n.x,n.z);
+    const m=n.m; const gy=(n===npcGen&&HAUL.on)?groundH(n.x,n.z):(n.y||groundH(n.x,n.z)); // v0.78：運んでいる間の源さんは見張り台から下りて地面を歩く
     m.g.position.set(n.x,gy,n.z);
     let walking=false, expr=null;
     m.armR.rotation.order='YXZ';
@@ -9475,8 +9478,9 @@ function updateNPCs(dt){
     } else if(n===npcYone&&(yr=f9Yone(n,dt))){ walking=yr.w; expr=yr.e; m.armR.rotation.set(walking?Math.sin(n.phase*10)*0.5:-0.15,0,-0.1); m.armL.rotation.set(walking?-Math.sin(n.phase*10)*0.5:0,0,0.15); if(yr.work) f9YonePose(m,n.phase); }
     else {
       const pd=dist(n.x,n.z,P.x,P.z); const want=pd<7?Math.atan2(P.x-n.x,P.z-n.z):(n.f9want!=null?n.f9want:Math.PI);
-      n.face+=clamp(angDiff(n.face,want),-4*dt,4*dt);
-      if(n===npcGen&&F9.st>='D'&&(expr=f9GenPose(n,m,dt))){ }
+      if(!(n===npcGen&&HAUL.on)) n.face+=clamp(angDiff(n.face,want),-4*dt,4*dt);
+      if(n===npcGen&&HAUL.on){ walking=haulPose(n,m); expr='calm'; } // v0.78：KEI truck の荷を運んでいる
+      else if(n===npcGen&&F9.st>='D'&&(expr=f9GenPose(n,m,dt))){ }
       else if(n===npcGen){ if(ev.kind){ m.armR.rotation.set(-2.6+Math.sin(n.phase*12)*0.5,0,0); m.armL.rotation.set(-2.4+Math.sin(n.phase*12+1)*0.5,0,0); expr='surprised'; } else { m.armR.rotation.set(-0.3,0,0); m.armL.rotation.set(-0.3,0,0.2); expr='worried'; } }
       else if(n===npcTome){ if(F9.st>='D') f9TomePose(n,m,dt); m.body.rotation.x=0.13; m.head.rotation.x=-0.1; m.armR.rotation.set(0.32,0,-0.12); m.armL.rotation.set(0.32,0,0.12); expr=pd<4?'happy':'calm'; } // 少し背を丸め、手を後ろで組む
       else if(n===npcYone){ m.armR.rotation.set(-0.15,0,-0.1); m.armL.rotation.set(Math.sin(n.phase*1.2)*0.1,0,0.15); expr=ev.kind?'worried':'happy'; }
@@ -9579,7 +9583,7 @@ function updateHUD(dt){
   if(P.full!==hudPrev.full){ hudPrev.t=4; hudPrev.full=P.full; } // v0.45：満腹の変化でだけ展開（耐久は手持ちバーの下へ移した）
   hudPrev.t=Math.max(0,hudPrev.t-dt); $('stats').classList.toggle('compact',hudPrev.t<=0);
   hbRefresh();
-  setTxt('buffTxt',(P.buffT>0?`精進の力 攻撃+30%（${Math.ceil(P.buffT)}秒）　`:'')+((ws=>ws?`${ws.name}：衝撃波 ${SCALE_FX.charge>=ws.charge?(touchMode?'放てる（衝撃）':'放てる（F）'):'あと'+Math.ceil(ws.charge-SCALE_FX.charge)+'秒'}　`:'')(scaleWaveSrc()))+ // v0.63
+  setTxt('buffTxt',truckStatusText()+(P.buffT>0?`精進の力 攻撃+30%（${Math.ceil(P.buffT)}秒）　`:'')+((ws=>ws?`${ws.name}：衝撃波 ${SCALE_FX.charge>=ws.charge?(touchMode?'放てる（衝撃）':'放てる（F）'):'あと'+Math.ceil(ws.charge-SCALE_FX.charge)+'秒'}　`:'')(scaleWaveSrc()))+ // v0.63
     (P.full<=0?'空腹：自然回復しない':P.full<60||touchMode?'':'満腹：体力が少しずつ回復')); // スマホでは平常時の説明を省く
   setTxt('rWood',inv.wood); setTxt('rFood',inv.food); setTxt('rHide',inv.hide); setTxt('rFence',inv.fenceKit); setTxt('rTrap',inv.trapKit); setTxt('rSpike',inv.spikeKit); setTxt('rPit',inv.pitKit); setTxt('rStake',inv.stakeKit); setTxt('rFang',inv.fang); setTxt('rMutScale',inv.mutScale); setTxt('rRaw',`${inv.meat||0}・${inv.veg||0}・${inv.rice||0}`); setTxt('rProcScale',inv.procScale); setTxt('rCharcoal',inv.charcoal);
   { // v0.33：0の行は隠す。0→増えた瞬間は一瞬光る
@@ -9647,7 +9651,7 @@ function drawMini(){
   for(const g of GAPS){ if(g.fence.type){ c.fillStyle=g.fence.broken?'#c9503c':'#d8b04a'; c.fillRect(X(g.c.x)-3,Z(g.c.z)-3,6,6); } }
   c.fillStyle='#d8b04a'; c.beginPath(); c.arc(X(CORE.x),Z(CORE.z),3,0,TAU); c.fill();
   if(prog.scoutTower){c.fillStyle='#91d7ab';c.fillRect(X(SCOUT.x)-2,Z(SCOUT.z)-2,4,4);}
-  for(const e of enemies){ if(e.state==='dead') continue; if(e.mode==='field'&&dist(e.x,e.z,P.x,P.z)>60) continue; c.fillStyle=e.type==='boss'?'#ff6040':'#e0533c'; c.beginPath(); c.arc(X(e.x),Z(e.z),e.type==='boss'?4:2.4,0,TAU); c.fill(); }
+  for(const e of enemies){ if(e.state==='dead') continue; if(e.mode==='field'&&dist(e.x,e.z,P.x,P.z)>truckSee()) continue; c.fillStyle=e.type==='boss'?'#ff6040':'#e0533c'; c.beginPath(); c.arc(X(e.x),Z(e.z),e.type==='boss'?4:2.4,0,TAU); c.fill(); }
   const [,tg]=objective();
   if(tg){ let tx=X(tg.x),tz=Z(tg.z); const inside=tx>6&&tx<W-6&&tz>6&&tz<H-6; c.strokeStyle='#f0c34a'; c.lineWidth=2;
     if(!inside){ const a=Math.atan2(tz-H/2,tx-W/2); const k=Math.min((W/2-8)/Math.abs(Math.cos(a)||1e-6),(H/2-8)/Math.abs(Math.sin(a)||1e-6)); tx=W/2+Math.cos(a)*k; tz=H/2+Math.sin(a)*k;
@@ -9883,6 +9887,7 @@ let gateArmed=false;
 function regionGateKomyoji(){ if(S.mode!=='playing'||REG.busy||P.dead) return; const d=dist(P.x,P.z,KOMYOJI_EAST.x,KOMYOJI_EAST.z); if(d>19) gateArmed=true; if(d>11||!gateArmed) return;
   if(TRUCK.drive?!truckTravelOK():(!kamishihiOpen()||!stfTravelOK())){ if(stats.time-gateNoteT>8){ gateNoteT=stats.time; toast('この先は上志比。まだ行く時ではない'); } return; } // v0.77：初回は直した KEI truck で（旧セーブの移動権・一度 KEI truck で行ったあとは歩いても行ける）
   if(!regionCanTravel()){ if(stats.time-gateNoteT>8){ gateNoteT=stats.time; toast('今は光明寺を離れられない',true); } return; }
+  if(TRUCK.drive&&trk().gas<TRUCK_SYS.gas.travel){ if(stats.time-gateNoteT>8){ gateNoteT=stats.time; toast(`KEI truck の燃料が足りない（上志比へは${TRUCK_SYS.gas.travel}%要る。木炭で足せる）`,true); } return; } // v0.78
   gateArmed=false; regionTravel('kamishihi'); }
 regionDefine('kamishihi',{name:'上志比', load:()=>loadScriptTry(KAMI_SRC,()=>!!window.KAMISHIHI_MAP).then(()=>{ kamiGrid(); }),
   bounds:()=>Object.assign({},window.KAMISHIHI_MAP.play), homeArrival:KOMYOJI_EAST_ARRIVE, build:kamishihiBuild});
@@ -10017,7 +10022,7 @@ function kamishihiBuild(ctx){
     c2.globalAlpha=0.92; c2.imageSmoothingEnabled=true; c2.drawImage(cv,sx,sz,sw,sh,0,0,W,H); c2.globalAlpha=1;
     const km=K.nx/TW; c2.drawImage(mk,sx*km,sz*km,sw*km,sh*km,0,0,W,H);
     const X=x=>(x-P.x)/MINI_M+W/2, Z=z=>(z-P.z)/MINI_M+H/2;
-    for(const e of enemies){ if(e.state==='dead'||dist(e.x,e.z,P.x,P.z)>60) continue; c2.fillStyle='#e0533c'; c2.beginPath(); c2.arc(X(e.x),Z(e.z),2.4,0,TAU); c2.fill(); }
+    for(const e of enemies){ if(e.state==='dead'||dist(e.x,e.z,P.x,P.z)>truckSee()) continue; c2.fillStyle='#e0533c'; c2.beginPath(); c2.arc(X(e.x),Z(e.z),2.4,0,TAU); c2.fill(); }
     const ex=D.exitWest; c2.fillStyle='#f0c34a'; c2.fillRect(X(ex.x)-3,Z(ex.z)-3,6,6);
     c2.save(); c2.translate(W/2,H/2); c2.rotate(-P.facing+Math.PI); c2.fillStyle='#ffffff'; c2.beginPath(); c2.moveTo(0,-5); c2.lineTo(3.5,4); c2.lineTo(-3.5,4); c2.closePath(); c2.fill(); c2.restore(); };
   // ---- 全体地図（地面の絵をそのまま使う） ----
@@ -11049,7 +11054,7 @@ const TRUCK_CFG={mats:{wood:10,iron:6,rope:4,stone:6,bamboo:3}, parts:2, // 素�
   bump:{paved:0.006,track:0.03,grass:0.035,farm:0.045,forest:0.06,paddy:0.03,ridge:0.12,rail:0.08,bed:0.1}}; // 地面のでこぼこ（m）：舗装・砂利道・草地・畑・林・田んぼ・畦（田んぼの縁の段差）・線路・線路の砂利
 function trk(){ const p=stfP(); let t=p.truck; if(!t||typeof t!=='object'||Array.isArray(t)){ t={}; if(prog.chapter2) p.truck=t; }
   if(!Array.isArray(t.parts)) t.parts=[]; t.found=!!t.found; t.repaired=!!t.repaired; t.fueled=!!t.fueled; t.fuel=Math.max(0,t.fuel|0); t.trips=Math.max(0,t.trips|0);
-  if(t.region!=='kamishihi') t.region='komyoji'; return t; }
+  if(t.region!=='kamishihi') t.region='komyoji'; return trkSys(t); } // v0.78：燃料・車体・荷台・改修（trkSys）
 function truckShown(){ const p=stfP(); return !!(prog.bossDefeated&&p.defenseComplete&&p.radioHeard!==undefined); } // 作業F の記録があるときだけ置く（第1章・試験の開放だけでは出さない）
 function truckHome(){ const z=roadZAt('国道416号',TRUCK_CFG.parkX)??160, z2=roadZAt('国道416号',TRUCK_CFG.parkX+6)??z; return {x:TRUCK_CFG.parkX,z:z+1.2,a:Math.atan2(6,z2-z)}; }
 function truckPos(){ if(!TRUCK.sync) truckLoadPos(); return {x:TRUCK.x,z:TRUCK.z}; }
@@ -11174,13 +11179,14 @@ function truckModel(){ if(TRUCK.m) return TRUCK.m; const root=new THREE.Group(),
 // 置いてある間の当たり（主人公・獣が通り抜けない）。運転している間・別の地域にあるときは外す
 function truckColOff(){ if(TRUCK.col){ try{ gridRemove(TRUCK.col); }catch(err){} TRUCK.col=null; } }
 function truckColOn(){ truckColOff(); TRUCK.col=addOBox(TRUCK.x,TRUCK.z,2.0,4.1,-TRUCK.a,'truck'); } // 当たり（見た目の形とは別）：正式モデル（幅 約2.1m・全長 約4.1m）に合わせた箱
-function truckUpdate(dt){ truckItemsUpdate(); const show=truckShown()&&!REG.busy; if(!show){ if(TRUCK.m) TRUCK.m.visible=false; truckColOff(); return; }
+function truckUpdate(dt){ truckItemsUpdate(); const show=truckShown()&&!REG.busy; if(!show){ if(TRUCK.m) TRUCK.m.visible=false; truckColOff(); if(HAUL.on) haulStop(true); haulVis(); return; }
   if(!TRUCK.sync) truckLoadPos(); const t=trk(), here=t.region===REG.cur, m=truckModel(); m.visible=here; truckVisual(t);
-  if(!here){ truckColOff(); return; }
+  if(!here){ truckColOff(); if(trk().repaired&&S.mode==='playing') kilnUpdate(dt); if(HAUL.on) haulStop(true); haulVis(); return; } // 別の地域にあっても炭焼き釜は進む
   if(!TRUCK.drive&&!TRUCK.col) truckColOn();
   const B=truckSusp(dt); // ばね：車体の高さ・前後と左右の傾き
   if(!TRUCK.drive){ TRUCK.roll*=Math.max(0,1-dt*5); TRUCK.pitch*=Math.max(0,1-dt*5); }
   m.position.set(TRUCK.x,B.Y,TRUCK.z); m.rotation.set(0,TRUCK.a,0); m.rotation.order='YXZ'; m.rotation.x=-Math.atan(B.p)+TRUCK.pitch; m.rotation.z=Math.atan(B.q)+TRUCK.roll; // ばね（坂・段差）＋（運転中の）沈みと傾き
+  TRUCK.lastB=B; truckSysUpdate(dt); truckTipVis(m); // v0.78：横転の判定に使う横の傾き・炭焼き・運搬・荷台の見た目・横転した姿
   TRUCK.wheels.forEach((w,i)=>{ if(TRUCK.visKind!=='code'||i||t.repaired) w.position.y=TRUCK.hub[i]+B.wo[i]; }); // 車輪は地面に沿って上下する（ばねが縮むと上へ、地面を離れると下へ伸びる）
   TRUCK.broken.visible=!t.repaired; const cw=TRUCK.codeWheels[0]; cw.scale.set(1,t.repaired?1:0.7,1); if(!t.repaired) cw.position.y=0.22;
   truckDoorsUpdate(dt);
@@ -11223,12 +11229,12 @@ function truckSusp(dt){ const C=TRUCK_CFG, W=TRUCK_WHEELS, g=9.8;
   U.p=clamp(U.p,-0.6,0.6); U.q=clamp(U.q,-0.5,0.5); const lo=Math.min(...h)-0.4; if(U.Y<lo){ U.Y=lo; U.vY=Math.max(0,U.vY); }
   U.hp=h; U.px=TRUCK.x; U.pz=TRUCK.z; U.pa=TRUCK.a; const on=U.s.map(v=>v>0), was=U.air;
   TRUCK.gf=(on[0]+on[1])/2; TRUCK.gr=(on[2]+on[3])/2; U.air=on.some(v=>v)?0:U.air+dt; TRUCK.air=U.air;
-  if(TRUCK.drive&&was>0.15&&!U.air){ const hit=Math.min(1,was*1.8), sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a); S.shake=Math.max(S.shake||0,0.1+0.25*hit); if(hit>0.4) sfx('hit'); // 着地：画面が揺れ、土ぼこり
+  if(TRUCK.drive&&was>0.15&&!U.air){ const hit=Math.min(1,was*1.8), sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a), Ld=TRUCK_SYS.hp.land; S.shake=Math.max(S.shake||0,0.1+0.25*hit); if(hit>0.4) sfx('hit'); if(was>Ld.min) truckDamage((was-Ld.min)*Ld.k); // 着地：画面が揺れ、土ぼこり。v0.78：高く跳ぶと車体が傷む
     for(const [lx,lz] of W){ const x=TRUCK.x+lx*ca+lz*sa, z=TRUCK.z-lx*sa+lz*ca; spawnParticles(x,groundH(x,z)+0.1,z,3,0xb8a888,2); } }
   const lift=Math.max(0,U.Y-(h[0]+h[1]+h[2]+h[3])/4); TRUCK.camLift=(TRUCK.camLift||0)+(lift*0.6-(TRUCK.camLift||0))*Math.min(1,dt*6);
   return {Y:U.Y,p:U.p,q:U.q,wo:U.s.map(v=>clamp(v-c0,-0.18,0.14))}; } // wo：車輪の上下（止まっているときの高さから。ねじれた地面でも4つとも接地して見える）
 // 乗る・降りる
-function truckBoard(){ if(TRUCK.drive||!truckOK()) return; if(f4Busy()) f4DropAll(''); const t=trk();
+function truckBoard(){ if(TRUCK.drive||!truckOK()||trk().tip) return; if(HAUL.on) haulStop(); if(f4Busy()) f4DropAll(''); const t=trk();
   if(!stfP().departureComplete&&stfStage()==='sendoff'){ stfSendoff(); return; } // 初めて乗る前に、直した報告と見送り
   TRUCK.drive=true; truckStop(); truckColOff(); P.atk=null; P.dodge=null; P.x=TRUCK.x; P.z=TRUCK.z; P.facing=TRUCK.a; truckSeatPose(); truckDoorOpen('r'); // 運転席のドアが開いて閉まる cam.yaw=TRUCK.a; cam.init=false;
   toast('KEI truck に乗った（移動：運転・E／行動ボタン：降りる）'); }
@@ -11247,12 +11253,12 @@ function truckStop(){ Object.assign(TRUCK,{v:0,vx:0,vz:0,yr:0,steer:0,slide:0,su
 //  ・ハンドルは少しずつ切れ、離すと戻る。曲がり方は「前向きの速さ÷前後の車輪の間×tan(切れ角)」で、止まっていると曲がらない
 //  ・タイヤが横に踏ん張れるのは grip まで（遠心力）。速いほど曲がれる半径は大きく、急に切ると外へ膨らんで滑り、速さが落ちる
 //  ・車体は曲がる外側へ傾き、ブレーキで前へ沈む（見た目だけ）
-function truckDrive(dt){ const C=TRUCK_CFG, {ix,iz}=truckInput();
+function truckDrive(dt){ const C=TRUCK_CFG, {ix,iz}=truckInput(), pf=truckPerf(), x0=TRUCK.x, z0=TRUCK.z; // v0.78：最高速度・加速は改修の段階・傷み・燃料で変わる（truckPerf）
   const sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a); // 前 F=(sin a, cos a)・右 R=(-cos a, sin a)
   let u=TRUCK.vx*sa+TRUCK.vz*ca, w=-TRUCK.vx*ca+TRUCK.vz*sa; const u0=u; // 前向きの速さ・右向きの速さ
   const gf=TRUCK.gf??1, gr=TRUCK.gr??1, gc=(gf+gr)/2; // 地面に着いている車輪（前・後ろ・全体の割合）。浮いている間はアクセル・ハンドル・踏ん張りが効かない
-  if(iz>0.05) u=u<-0.3?Math.min(0,u+C.brake*iz*gc*dt):Math.min(C.speed,u+C.acc*iz*gc*Math.max(0.35,1-u/C.speed)*dt); // 速いほど伸びにくい
-  else if(iz<-0.05) u=u>0.3?Math.max(0,u+C.brake*iz*gc*dt):Math.max(-C.rev,u+C.acc*0.6*iz*gc*dt);
+  if(iz>0.05) u=u<-0.3?Math.min(0,u+C.brake*iz*gc*dt):Math.min(Math.max(u,pf.speed),u+pf.acc*iz*gc*Math.max(0.35,1-u/pf.speed)*dt); // 速いほど伸びにくい（傷んで最高速度が落ちたときは、超えた分は転がる抵抗で落ちる）
+  else if(iz<-0.05) u=u>0.3?Math.max(0,u+C.brake*iz*gc*dt):Math.max(-C.rev,u+pf.acc*0.6*iz*gc*dt);
   else u-=Math.sign(u)*Math.min(Math.abs(u),C.coast*Math.max(0.15,gc)*dt); // エンジンブレーキと転がる抵抗
   const smax=Math.min(C.steerMax,Math.atan(C.grip*C.steerGrip*C.wheelbase/Math.max(1,u*u))); // 速いほど切れる角度は小さい（曲がれる半径は速さの2乗で大きくなる）
   const target=-ix*smax; // 画面の右へ切ると向きの角度が減る
@@ -11265,7 +11271,9 @@ function truckDrive(dt){ const C=TRUCK_CFG, {ix,iz}=truckInput();
   if(slide) u-=Math.sign(u)*Math.min(Math.abs(u),C.scrub*Math.min(1,Math.abs(w)/2)*dt); TRUCK.slide=slide?Math.abs(w):0; // 大きく滑るほど速さが落ちる
   vx=sb*u-cb*w; vz=cb*u+sb*w;
   const nx=TRUCK.x+vx*dt, nz=TRUCK.z+vz*dt;
-  if(truckWalk(nx,nz)){ const tmp={x:nx,z:nz,r:C.r}; resolve(tmp,false); if(dist(tmp.x,tmp.z,nx,nz)>0.02){ const k=Math.pow(0.05,dt*4); vx*=k; vz*=k; TRUCK.yr*=k; } if(truckWalk(tmp.x,tmp.z)){ TRUCK.x=tmp.x; TRUCK.z=tmp.z; } else { vx=0; vz=0; } } else { vx=0; vz=0; TRUCK.yr=0; }
+  if(truckWalk(nx,nz)){ const tmp={x:nx,z:nz,r:C.r}; resolve(tmp,false); const pd=dist(tmp.x,tmp.z,nx,nz); if(pd>0.02){ const vin=-(vx*(tmp.x-nx)+vz*(tmp.z-nz))/pd, Bp=TRUCK_SYS.hp.bump; // v0.78：激突（ぶつかる向きの速さ）で車体が傷む
+      if(vin>Bp.v&&S.time-(TRUCK.bumpT||-9)>Bp.cd){ TRUCK.bumpT=S.time; truckDamage((vin-Bp.v)*Bp.k); sfx('hit'); S.shake=Math.max(S.shake||0,Math.min(0.5,0.12+vin*0.03)); spawnParticles(tmp.x,groundH(tmp.x,tmp.z)+0.8,tmp.z,6,0xd8d0b8,2.5); }
+      const k=Math.pow(0.05,dt*4); vx*=k; vz*=k; TRUCK.yr*=k; } if(truckWalk(tmp.x,tmp.z)){ TRUCK.x=tmp.x; TRUCK.z=tmp.z; } else { vx=0; vz=0; } } else { vx=0; vz=0; TRUCK.yr=0; }
   TRUCK.vx=vx; TRUCK.vz=vz; const v=TRUCK.v=vx*sb+vz*cb;
   const latA=v*TRUCK.yr, lonA=(v-u0)/Math.max(dt,1e-3);
   TRUCK.roll+=(clamp(latA*C.rollK,-0.09,0.09)-TRUCK.roll)*Math.min(1,dt*6); TRUCK.pitch+=(clamp(-lonA*C.pitchK,-0.05,0.05)-TRUCK.pitch)*Math.min(1,dt*6);
@@ -11274,11 +11282,13 @@ function truckDrive(dt){ const C=TRUCK_CFG, {ix,iz}=truckInput();
   if(Math.abs(v)>1.5&&!(cam.manualT>0)) cam.yaw+=angDiff(cam.yaw,TRUCK.a)*Math.min(1,dt*2.2); // カメラは車の後ろへ
   TRUCK.wheels.forEach((wh,i)=>{ wh.rotation.order='YXZ'; wh.rotation.x+=v*dt/(TRUCK.wr||0.3); if(i<2) wh.rotation.y=TRUCK.steer; }); // 前の車輪はハンドルの向き
   if(TRUCK.slide>1.0&&Math.abs(v)>3&&(TRUCK.dustT=(TRUCK.dustT||0)-dt)<=0){ TRUCK.dustT=0.08; // 横滑りの土ぼこり（後ろの車輪）
-    for(const sd of [-1,1]){ const x=TRUCK.x-sb*1.05-cb*sd*0.66, z=TRUCK.z-cb*1.05+sb*sd*0.66; spawnParticles(x,groundH(x,z)+0.15,z,2,0xb8a888,1.5); } } }
+    for(const sd of [-1,1]){ const x=TRUCK.x-sb*1.05-cb*sd*0.66, z=TRUCK.z-cb*1.05+sb*sd*0.66; spawnParticles(x,groundH(x,z)+0.15,z,2,0xb8a888,1.5); } }
+  truckBurn(dist(x0,z0,TRUCK.x,TRUCK.z)/1000*TRUCK_SYS.gas.perKm); // v0.78：走った道のりで燃料が減る
+  truckTipCheck(dt,latA,v); } // v0.78：急に曲がる・傾いた所で横転（倒れたら降りる。この後に主人公の位置を動かさない）
 // 地域を移った：運転していれば車も一緒に（着いた所に車を置き、乗ったまま）。読み込みに失敗したら降りる
 function truckAfterTravel(ok){ if(!TRUCK.drive) { TRUCK.sync=false; truckColOff(); return; } const t=trk();
   if(ok===false){ truckExit(true); TRUCK.sync=false; return; }
-  t.region=REG.cur; TRUCK.x=P.x; TRUCK.z=P.z; TRUCK.a=P.facing; truckStop(); if(REG.cur==='kamishihi') t.trips=(t.trips|0)+1; t.x=+P.x.toFixed(2); t.z=+P.z.toFixed(2); t.a=+P.facing.toFixed(3); truckColOff(); }
+  t.region=REG.cur; TRUCK.x=P.x; TRUCK.z=P.z; TRUCK.a=P.facing; truckStop(); truckBurn(Math.min(t.gas,TRUCK_SYS.gas.travel)); if(REG.cur==='kamishihi') t.trips=(t.trips|0)+1; t.x=+P.x.toFixed(2); t.z=+P.z.toFixed(2); t.a=+P.facing.toFixed(3); truckColOff(); }
 // KEI truck で上志比へ行けるか（光明寺の東の出口に運転して入ったとき）
 function truckTravelOK(){ const p=stfP(); return kamishihiOpen()&&truckOK()&&(p.departureComplete===true||!!p.legacyKamishihiAccess); }
 async function truckGo(id,at){ if(TRUCK.drive) truckStop(); return regionTravel(id,at); }
@@ -11287,18 +11297,224 @@ function truckInteractables(L){ if(!truckShown()) return; const st=stfStage(), t
   if(REG.cur==='komyoji'&&(st==='truck'||st==='sendoff'||st==='away'||stfP().legacyKamishihiAccess)&&stfP().departureDecision===true){
     if(!t.repaired) for(const q of sp.parts){ if(t.parts.includes(q.id)) continue; const d=dist(P.x,P.z,q.x,q.z); if(d<2.2) L.push({d,label:`${TRUCK_CFG.partName}を拾う`,act:()=>{ if(t.parts.includes(q.id)) return; t.parts.push(q.id); sfx('pickup'); toast(`${TRUCK_CFG.partName}を手に入れた（${t.parts.length}/${TRUCK_CFG.parts}）`); saveGame(); }}); }
     if(!t.fueled&&t.fuel<TRUCK_CFG.fuel){ const d=dist(P.x,P.z,sp.fuel.x,sp.fuel.z); if(d<2.2) L.push({d,label:`${TRUCK_CFG.fuelName}を受け取る`,act:()=>{ t.fuel=TRUCK_CFG.fuel; sfx('pickup'); toast(`${TRUCK_CFG.fuelName}を受け取った`); saveGame(); }}); } }
+  depotInteractables(L); // v0.78：車両基地
   if(t.region!==REG.cur) return; const d=dist(P.x,P.z,TRUCK.x,TRUCK.z)-1.55; if(d>2.2) return; // 車の中心から 3.75m 以内
   if(!stfP().departureDecision&&!stfP().legacyKamishihiAccess){ L.push({d,label:'動かなくなった軽トラックが止まっている',act:()=>{}}); return; }
   if(!t.found) L.push({d,label:'軽トラックを調べる',act:truckFind});
   else if(!t.repaired) L.push({d,label:`KEI truck を直す（${truckNeedText(true)}）`,act:truckRepair});
   else if(!t.fueled) L.push({d,label:`KEI truck に燃料を入れる（${truckNeedText(true)}）`,act:truckFuel});
-  else L.push({d,label:'KEI truck に乗る',act:truckBoard}); }
+  else if(t.tip) L.push({d,label:'横転した KEI truck を起こす',act:truckRight}); // v0.78
+  else { const sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a), dc=dist(P.x,P.z,TRUCK.x+sa*0.95,TRUCK.z+ca*0.95)-1.3, db=dist(P.x,P.z,TRUCK.x-sa*1.0,TRUCK.z-ca*1.0)-1.3; // 運転席の近く・荷台の近く
+    L.push({d:Math.max(0,dc),label:`KEI truck に乗る${truckLabelNote(t)}`,act:truckBoard});
+    if(db<2.2){ const c=prog.f4.carry&&REG.cur==='komyoji'&&bedRoomLog(t); L.push({d:Math.max(0,db)-(c?0.3:0),label:c?`担いでいる丸太を荷台に積む（${t.bed.logs.length}/${TRUCK_SYS.bed.maxLogs}）`:`KEI truck の荷台（積む・下ろす・燃料${t.fac.bench||t.fac.kiln?'・施設':''}）`,act:c?bedLoadCarry:bedMenu}); } } }
 function truckInfo(){ return [[{name:'KEI truck'},'直すのに要る物：'+truckNeedText(false)+(trk().repaired?'':'　／　燃料は直したあとで入れる')]]; }
 function truckFind(){ const t=trk(); t.found=true; saveGame(); queueDialog(stfLines('found').concat(truckInfo())); }
 function truckRepair(){ const t=trk(), m=TRUCK_CFG.mats; if(t.repaired) return; const lack=Object.keys(m).some(k=>(inv[k]|0)<m[k])||t.parts.length<TRUCK_CFG.parts;
   if(lack){ sfx('deny'); queueDialog(truckInfo()); return; }
   for(const k in m) inv[k]-=m[k]; t.repaired=true; sfx('craft'); toast('KEI truck を直した'+(t.fueled?'':'（あとは燃料）')); saveGame(); if(t.fueled) stfSendoff(); }
-function truckFuel(){ const t=trk(); if(t.fueled) return; if(t.fuel<TRUCK_CFG.fuel){ sfx('deny'); queueDialog(truckInfo()); return; } t.fuel-=TRUCK_CFG.fuel; t.fueled=true; sfx('pickup'); toast('KEI truck に燃料を入れた'); saveGame(); if(t.repaired) stfSendoff(); }
+function truckFuel(){ const t=trk(); if(t.fueled) return; if(t.fuel<TRUCK_CFG.fuel){ sfx('deny'); queueDialog(truckInfo()); return; } t.fuel-=TRUCK_CFG.fuel; t.fueled=true; t.gas=100; sfx('pickup'); toast('KEI truck に燃料を入れた'); saveGame(); if(t.repaired) stfSendoff(); }
+// ================= v0.78：KEI truck の燃料・車体の傷み・横転・車両基地・荷台・改修・住民の運搬（docs/kei-truck-systems.md） =================
+// 2026-11-17 20:57 ユーザー決定：燃料は走ると減る（減り方・足す場所は任せる）／激突・横転・獣の攻撃で壊れ、拠点に建てる車両基地で直す／
+// 改修で最高速度・耐久・加速が上がり、それに伴って荷台に作れる施設（装備）が増える／荷台は丸太6本ほど（ほかの量は任せる）／住民の運搬とのつなぎは任せる。
+// 数・名前・場所・台詞はすべて暫定。保存は chapter2.progress.truck の新しい項目（gas・hp・lv・bed・fac・kiln・tip）と chapter2.progress.depot。旧セーブは初期値で読む
+const TRUCK_SYS={
+  gas:{perKm:12,travel:6,coal:25,low:15}, // 燃料（%）：1km 走ると12%・地域を移ると6%減る。木炭1つで25%足す（どこでも。荷台の木炭も使える）。15%以下で知らせる
+  hp:{max:[100,130,165,200],weak:0.3,weakK:0.75,bump:{v:4.5,k:4,cd:0.6},land:{min:0.55,k:20},beast:0.6,tip:25}, // 車体：改修の段階ごとの最大／3割より下で最高速度0.75倍／激突（ぶつかる向きの速さ 4.5m/秒を超えた分×4）／高く跳んだ着地（0.55秒を超えて浮いた分×20）／獣の攻撃は0.6倍／横転で25
+  tip:{latA:10.5,slope:0.5,hold:0.5,v:9}, // 横転：横向きの加速（m/秒²。平らな所でいっぱいに切っても 約7.7〜8.8 までしか出ない）の割合と、外へ下がる横の傾き（rad）の割合の和が1を超え、9m/秒より速いまま0.5秒続くと倒れる。平らな道では倒れない・外へ 約8°傾いた所でいっぱいに切ると倒れる
+  lv:[{speed:14,acc:3.5},{speed:15.5,acc:4.3,cost:{iron:6,wood:10,rope:4}},{speed:17,acc:5.2,cost:{iron:10,wood:14,hide:6,stone:6}},{speed:18.5,acc:6.2,cost:{iron:16,wood:18,rope:8,stone:10}}], // 改修（初期＋3段階）：最高速度（m/秒）・加速（m/秒²）・費用
+  repair:{step:20,cost:{iron:1,wood:1}}, field:{to:0.35,cost:{iron:2,wood:2,rope:1}}, // 車両基地で20ずつ直す／応急修理（どこでも。荷台の素材も使える）は最大の35%まで
+  bed:{cap:60,log:10,maxLogs:6,near:12,mats:['wood','stone','iron','rope','straw','bamboo','hide','charcoal']}, // 荷台：広さ60。丸太は1本10（6本で満杯）・素材は1つ1。車から12m 以内で作る・建てるときは荷台の素材も使える
+  depot:{x:135.5,z:72,W:7,D:4.6,build:{wood:20,stone:12,iron:8,rope:6},park:3.2}, // 車両基地：拠点の南西の隅（南門から入って西へ）。屋根の下（中心から3.2m 以内）に止めて使う
+  fac:{bench:{lv:1,name:'荷台の作業台',cost:{wood:6,iron:2,rope:2},desc:'車のそばでクラフト・武器の手入れができる（荷台の素材も使える）'},
+       kiln:{lv:2,name:'荷台の炭焼き釜',cost:{stone:6,iron:4,wood:4},desc:'走っている間も木材を焼いて木炭（燃料）を作る。木炭は荷台へ',coal:{wood:3,time:40},maxQ:6},
+       tower:{lv:3,name:'荷台の見張り台',cost:{wood:8,iron:3,rope:4},desc:'運転中・車のそばでは、地図に遠く（90m）の獣まで映る',see:90}},
+  haul:{walk:2.6,load:1.4,mats:10,near:70}, // 住民の運搬：源さんが荷台と丸太置き場の間を歩いて運ぶ（歩く速さ・積み下ろしの秒・1回に運ぶ素材の数・頼める距離）
+};
+// 車両基地を作業台で建てる（拠点の作業台。KEI truck を直したあとに出る）
+RECIPES.splice(Math.max(0,RECIPES.findIndex(r=>r.id==='cart')),0,{id:'depotBuild',name:'車両基地を建てる',cost:TRUCK_SYS.depot.build,desc:'KEI truck の屋根つきの整備場。拠点の南西の隅に建てる。車を屋根の下に止めると、車体を直す・改修（最高速度・耐久・加速が上がり、荷台に施設を作れるようになる）・荷台の施設を作るができる',
+  show:()=>truckShown()&&trk().repaired&&!depotS().built,give:()=>{ depotS().built=1; depotApply(); toast('拠点の南西の隅に車両基地を建てた。KEI truck を屋根の下に止めて使う'); }});
+const TRK_N=new WeakSet();
+function trkSys(t){ if(TRK_N.has(t)) return t; const L=TRUCK_SYS; t.lv=clamp(t.lv|0,0,3); const hm=L.hp.max[t.lv];
+  if(typeof t.gas!=='number'||!isFinite(t.gas)) t.gas=t.fueled?100:0; t.gas=clamp(t.gas,0,100);
+  if(typeof t.hp!=='number'||!isFinite(t.hp)) t.hp=hm; t.hp=clamp(t.hp,0,hm);
+  if(!t.bed||typeof t.bed!=='object'||Array.isArray(t.bed)) t.bed={logs:[],mats:{}}; if(!Array.isArray(t.bed.logs)) t.bed.logs=[]; t.bed.logs=t.bed.logs.filter(c=>SIZE_OF[c]).slice(0,L.bed.maxLogs);
+  if(!t.bed.mats||typeof t.bed.mats!=='object'||Array.isArray(t.bed.mats)) t.bed.mats={}; for(const k of Object.keys(t.bed.mats)){ const n=Math.floor(+t.bed.mats[k]||0); if(!L.bed.mats.includes(k)||n<=0) delete t.bed.mats[k]; else t.bed.mats[k]=n; }
+  if(!t.fac||typeof t.fac!=='object'||Array.isArray(t.fac)) t.fac={}; for(const k of Object.keys(t.fac)) if(!L.fac[k]) delete t.fac[k]; for(const k in L.fac) t.fac[k]=t.fac[k]&&t.lv>=L.fac[k].lv?1:0;
+  if(!t.kiln||typeof t.kiln!=='object'||Array.isArray(t.kiln)) t.kiln={q:0,t:0}; t.kiln.q=clamp(t.kiln.q|0,0,L.fac.kiln.maxQ); t.kiln.t=isFinite(+t.kiln.t)?clamp(+t.kiln.t,0,L.fac.kiln.coal.time):0;
+  t.tip=t.tip===1||t.tip===-1?t.tip:0; TRK_N.add(t); return t; }
+function trkHpMax(t){ return TRUCK_SYS.hp.max[t.lv|0]; }
+function depotS(){ const p=stfP(); let d=p.depot; if(!d||typeof d!=='object'||Array.isArray(d)){ d={built:0}; if(prog.chapter2) p.depot=d; } d.built=d.built?1:0; return d; }
+// ---- 走る力：改修の段階・傷み・燃料 ----
+function truckPerf(){ const t=trk(), L=TRUCK_SYS, b=L.lv[t.lv|0]; let speed=b.speed, acc=b.acc;
+  if(t.hp<=0||t.gas<=0||t.tip) acc=0; else if(t.hp<trkHpMax(t)*L.hp.weak) speed*=L.hp.weakK; return {speed,acc}; }
+function truckBurn(m){ if(!(m>0)) return; const t=trk(), was=t.gas, low=TRUCK_SYS.gas.low; t.gas=Math.max(0,t.gas-m);
+  if(was>low&&t.gas<=low&&t.gas>0) toast(`KEI truck の燃料が少ない（${Math.ceil(t.gas)}%）。木炭で足せる`,true);
+  if(was>0&&t.gas<=0){ toast('KEI truck の燃料が切れた。木炭を入れると動く',true); saveGame(); } }
+function truckRefuel(n){ const t=trk(), L=TRUCK_SYS.gas; const want=Math.ceil((100-t.gas)/L.coal-1e-6), have=bedHaveAll('charcoal'); const k=Math.min(n||want,want,have);
+  if(k<=0){ sfx('deny'); toast(t.gas>=100?'燃料は満タン':'木炭がない（かまど・荷台の炭焼き釜で焼ける）',true); return; }
+  bedTakeAll('charcoal',k); t.gas=Math.min(100,t.gas+k*L.coal); sfx('craft'); toast(`木炭${k}つで燃料を足した（${Math.round(t.gas)}%）`); saveGame(); }
+// ---- 傷み ----
+function truckDamage(n){ const t=trk(); if(!(n>0)||t.hp<=0) return; const was=t.hp, L=TRUCK_SYS.hp, hm=trkHpMax(t); t.hp=Math.max(0,Math.round((t.hp-n)*10)/10);
+  floatText(TRUCK.x,2.8,TRUCK.z,`車体 -${Math.max(1,Math.round(n))}`,'#f0b060',false); TRUCK.dmgT=S.time;
+  if(was>=hm*L.weak&&t.hp<hm*L.weak&&t.hp>0) toast('KEI truck がひどく傷んだ（速さが落ちる）。車両基地で直せる',true);
+  if(t.hp<=0){ toast('KEI truck が壊れて動かなくなった。応急修理か、車両基地で直す',true); sfx('break'); saveGame(); } }
+function truckFieldFix(){ const t=trk(), L=TRUCK_SYS.field, to=Math.round(trkHpMax(t)*L.to); if(t.hp>=to){ toast('応急修理では、これ以上直せない（車両基地で直す）'); return; }
+  if(!bedAfford(L.cost)){ sfx('deny'); toast(`素材が足りない（${facCostText(L.cost)}）`,true); return; }
+  bedPay(L.cost); t.hp=to; sfx('craft'); toast(`応急修理をした（車体 ${to}/${trkHpMax(t)}）`); saveGame(); }
+// 横転：起こすまで動けない。t.tip は倒れた向き（1＝右・-1＝左）。見た目は truckTipVis（倒れる側の車輪の線を軸に横へ回す）
+function truckTipOver(side){ const t=trk(); if(t.tip) return; t.tip=side; TRUCK.tipSide=side; if(TRUCK.drive) truckExit(true);
+  truckStop(); TRUCK.tipT=0; truckDamage(TRUCK_SYS.hp.tip); sfx('hit'); S.shake=Math.max(S.shake||0,0.6); spawnParticles(TRUCK.x,groundH(TRUCK.x,TRUCK.z)+0.5,TRUCK.z,14,0xb8a888,3);
+  const ca=Math.cos(TRUCK.a), sa=Math.sin(TRUCK.a), k=-side*3.0, x=TRUCK.x+ca*k, z=TRUCK.z-sa*k; if(szWalkable(x,z)&&szFree(x,z,0.5)){ P.x=x; P.z=z; } // 主人公は上になった側へ這い出る
+  toast('KEI truck が横転した。そばで「起こす」',true); saveGame(); }
+function truckRight(){ const t=trk(); if(!t.tip) return; t.tip=0; sfx('wood'); S.shake=Math.max(S.shake||0,0.25); toast('KEI truck を起こした'); saveGame(); }
+function truckTipCheck(dt,latA,v,dry){ const C=TRUCK_SYS.tip, B=TRUCK.lastB; const q=B?Math.atan(B.q):0;
+  const lean=latA/C.latA+q/C.slope; // 右へ倒れようとする量（+）・左（-）。左へ曲がると外（右）へ、右が低い坂でも右へ
+  if(Math.abs(lean)>1&&Math.abs(v)>C.v&&!TRUCK.air){ TRUCK.tipT=(TRUCK.tipT||0)+dt; if(TRUCK.tipT>C.hold){ if(!dry) truckTipOver(lean>0?1:-1); return true; } } else TRUCK.tipT=0; return false; }
+function truckTipCheckDry(dt,latA,v){ return truckTipCheck(dt,latA,v,true); } // 確かめる用（倒さずに判定だけ）
+// ---- 荷台 ----
+function bedUnits(t){ let n=t.bed.logs.length*TRUCK_SYS.bed.log; for(const k in t.bed.mats) n+=t.bed.mats[k]; return n; }
+function bedMatN(t){ let n=0; for(const k in t.bed.mats) n+=t.bed.mats[k]; return n; }
+function truckNear(r){ if(!truckShown()) return false; const t=trk(); return t.repaired&&t.region===REG.cur&&!REG.busy&&dist(P.x,P.z,TRUCK.x,TRUCK.z)<r; }
+function bedHave(k){ return truckNear(TRUCK_SYS.bed.near)?(trk().bed.mats[k]||0):0; } // 車のそばだけ、荷台の素材を直接使える
+function bedHaveAll(k){ return (inv[k]||0)+bedHave(k); }
+function bedTakeAll(k,n){ const a=Math.min(inv[k]||0,n); inv[k]=(inv[k]||0)-a; n-=a; if(n>0){ const t=trk(); t.bed.mats[k]=(t.bed.mats[k]||0)-n; if(t.bed.mats[k]<=0) delete t.bed.mats[k]; } } // 持ち物から先に使い、足りない分を荷台から
+function bedAfford(c){ for(const k in c) if((FOODS[k]?f7Have(k):bedHaveAll(k))<c[k]) return false; return true; }
+function bedPay(c){ for(const k in c) bedTakeAll(k,c[k]); }
+function bedLoadMats(){ const t=trk(), L=TRUCK_SYS.bed; let room=L.cap-bedUnits(t), k=0;
+  for(const m of L.mats){ if(room<=0) break; const n=Math.min(room,inv[m]||0); if(n<=0) continue; inv[m]-=n; t.bed.mats[m]=(t.bed.mats[m]||0)+n; room-=n; k+=n; }
+  if(!k){ sfx('deny'); toast(room<=0?'荷台がいっぱい':'積める素材を持っていない',true); return; } truckDoorOpen('tg',1.6); sfx('pickup'); toast(`素材を${k}こ荷台に積んだ（${bedUnits(t)}/${L.cap}）`); saveGame(); }
+function bedUnloadMats(){ const t=trk(); let k=0; for(const m in t.bed.mats){ inv[m]=(inv[m]||0)+t.bed.mats[m]; k+=t.bed.mats[m]; } t.bed.mats={};
+  if(!k) return; truckDoorOpen('tg',1.6); sfx('pickup'); toast(`荷台の素材${k}こを持ち物へ移した`); saveGame(); }
+function bedRoomLog(t){ const L=TRUCK_SYS.bed; return t.bed.logs.length<L.maxLogs&&bedUnits(t)+L.log<=L.cap; }
+function bedAddLog(code){ const t=trk(); t.bed.logs.push(code); truckDoorOpen('tg',1.6); sfx('wood'); toast(`丸太を荷台に積んだ（${t.bed.logs.length}/${TRUCK_SYS.bed.maxLogs}）`); saveGame(); }
+function regionLogs(){ return REG.cur==='kamishihi'?(REG.live&&REG.live.kw?REG.live.kw.logs:null):prog.f4.logs; } // 上志比の丸太も積める（光明寺の丸太置き場に納めると、その場で割るより木材が多い）
+function regionLogsDirty(){ if(REG.cur==='kamishihi') kamiLogsDirty(); else f4LogsDirty(); }
+function bedNearLog(){ const LL=regionLogs(); if(!LL) return -1; let b=-1, bd=5.5; LL.forEach((l,i)=>{ const d=dist(TRUCK.x,TRUCK.z,l[0],l[1]); if(d<bd&&dist(P.x,P.z,l[0],l[1])<7){ bd=d; b=i; } }); return b; }
+function bedTakeGroundLog(){ const t=trk(), LL=regionLogs(), i=bedNearLog(); if(i<0||!bedRoomLog(t)) return; const l=LL.splice(i,1)[0]; regionLogsDirty(); bedAddLog(l[3]); }
+function bedDropLog(){ const t=trk(); const c=t.bed.logs.pop(); if(!c) return; const LL=regionLogs(); const sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a), x=TRUCK.x-sa*3.6, z=TRUCK.z-ca*3.6;
+  if(LL){ LL.push([x,z,TRUCK.a+Math.PI/2,c]); regionLogsDirty(); } truckDoorOpen('tg',1.6); sfx('wood'); toast('丸太を1本下ろした（車の後ろ）'); saveGame(); }
+function bedYardNear(){ return REG.cur==='komyoji'&&F4.yard&&dist(TRUCK.x,TRUCK.z,F4.yard.x,F4.yard.z)<14; }
+function bedDeliverLogs(){ const t=trk(), f=prog.f4; if(!t.bed.logs.length) return; let n=0, wood=0; for(const c of t.bed.logs){ n++; wood+=TSIZE[SIZE_OF[c]].wpl; } t.bed.logs=[];
+  inv.wood+=wood; f.delivered=(f.delivered|0)+n; f.yard=(f.yard|0)+n; f4LogsDirty(); truckDoorOpen('tg',1.6); sfx('craft'); toast(`荷台の丸太${n}本を納めた：木材 +${wood}`); if(F4.yard) floatText(F4.yard.x,1.8,F4.yard.z,`木材+${wood}`,'#f0dca0'); g4CheckQuests(); saveGame(); }
+function bedMenu(){ const t=trk(), L=TRUCK_SYS.bed, G=TRUCK_SYS.gas, ch=[];
+  if(prog.f4.carry&&REG.cur==='komyoji'&&bedRoomLog(t)) ch.push({label:`担いでいる丸太を積む（${t.bed.logs.length}/${L.maxLogs}）`,act:bedLoadCarry});
+  if(bedNearLog()>=0&&bedRoomLog(t)) ch.push({label:`近くの丸太を積む（${t.bed.logs.length}/${L.maxLogs}）`,act:bedTakeGroundLog});
+  if(t.bed.logs.length&&bedYardNear()) ch.push({label:`荷台の丸太を丸太置き場に納める（${t.bed.logs.length}本）`,act:bedDeliverLogs});
+  if(t.bed.logs.length) ch.push({label:'丸太を1本下ろす',act:bedDropLog});
+  if(L.mats.some(m=>(inv[m]||0)>0)&&bedUnits(t)<L.cap) ch.push({label:`持ち物の素材を積む（入るだけ。今 ${bedUnits(t)}/${L.cap}）`,act:bedLoadMats});
+  if(bedMatN(t)) ch.push({label:`荷台の素材を持ち物へ（${bedMatN(t)}こ）`,act:bedUnloadMats});
+  if(t.gas<100&&bedHaveAll('charcoal')>0) ch.push({label:`木炭で燃料を足す（木炭1つで+${G.coal}%。今 ${Math.round(t.gas)}%）`,act:()=>truckRefuel(1)});
+  if(t.gas<100-G.coal&&bedHaveAll('charcoal')>1) ch.push({label:'木炭で燃料を入るだけ足す',act:()=>truckRefuel(0)});
+  if(t.hp<Math.round(trkHpMax(t)*TRUCK_SYS.field.to)) ch.push({label:`応急修理（${facCostText(TRUCK_SYS.field.cost)}。最大の35%まで）`,act:truckFieldFix});
+  if(t.fac.bench) ch.push({label:'荷台の作業台を使う（クラフト・武器の手入れ）',act:()=>openCraft('truck')});
+  if(t.fac.kiln) ch.push({label:`荷台の炭焼き釜に木材${TRUCK_SYS.fac.kiln.coal.wood}を入れる（${kilnState(t)}）`,act:kilnPut});
+  truckDoorOpen('tg',1.2);
+  if(!ch.length){ toast(`KEI truck の荷台：丸太 ${t.bed.logs.length}/${L.maxLogs}・素材 ${bedMatN(t)}（${bedUnits(t)}/${L.cap}）・燃料 ${Math.round(t.gas)}%。いまできることはない`); return; }
+  chooseDefense(`KEI truck の荷台　丸太 ${t.bed.logs.length}/${L.maxLogs}・素材 ${bedMatN(t)}（${bedUnits(t)}/${L.cap}）・燃料 ${Math.round(t.gas)}%・車体 ${Math.round(t.hp)}/${trkHpMax(t)}`,ch,true); }
+function bedLoadCarry(){ const t=trk(), c=prog.f4.carry; if(!c||!bedRoomLog(t)) return; prog.f4.carry=0; f4LogsDirty(); bedAddLog(c); }
+// 荷台の見た目：丸太（6本まで。3本ずつ2段）・素材の木箱（20こごとに1つ。3つまで）・施設
+function truckBedSig(t){ return t.bed.logs.join('')+'|'+Math.min(3,Math.ceil(bedMatN(t)/20))+'|'+t.fac.bench+t.fac.kiln+t.fac.tower+'|'+(t.repaired?1:0); }
+function truckBedVis(){ const t=trk(), root=TRUCK.m; if(!root) return; let g=TRUCK.bedG; if(!g){ g=TRUCK.bedG=new THREE.Group(); g.name='bed'; root.add(g); }
+  while(g.children.length) g.remove(g.children[0]); TRUCK.bedSig=truckBedSig(t); if(!t.repaired) return;
+  const B=TRUCK_BED, y=B.y, zc=(B.z0+B.z1)/2; const logMat=mat(0x8a6a44);
+  t.bed.logs.forEach((c,i)=>{ const r=TSIZE[SIZE_OF[c]].r*0.9, col=i%3, row=Math.floor(i/3); const m=mesh(G.cyl8,logMat,(col-1)*0.56,y+r+row*0.44,zc-0.05,r,1.5,r); m.rotation.x=Math.PI/2; g.add(outline(m,0.02)); });
+  const nb=Math.min(3,Math.ceil(bedMatN(t)/20)); for(let i=0;i<nb;i++) g.add(outline(mesh(rbox(0.5,0.38,0.42,0.03),mat(0x9a7a4c),0.6-i*0.55,y+0.19+(t.bed.logs.length?0.9:0),B.z1-0.3),0.02));
+  if(t.fac.bench){ g.add(outline(mesh(G.box,mat(0x6a5038),-0.58,y+0.28,B.z1-0.35,0.55,0.56,0.42),0.02)); g.add(mesh(G.box,mat(0x4a4f54),-0.58,y+0.58,B.z1-0.35,0.6,0.05,0.46)); }
+  if(t.fac.kiln){ g.add(outline(mesh(G.cyl8,mat(0x3e4246),0.58,y+0.4,B.z0+0.32,0.26,0.8,0.26),0.02)); g.add(mesh(G.cyl8,mat(0x2a2c2e),0.58,y+1.05,B.z0+0.32,0.06,0.5,0.06)); }
+  if(t.fac.tower){ for(const px of [-0.78,0.78]) g.add(mesh(G.cyl8,mat(0x6a5038),px,y+0.95,B.z0+0.12,0.045,1.9,0.045)); g.add(outline(mesh(G.box,mat(0x7a5a3c),0,y+1.9,B.z0+0.12,1.7,0.07,0.45),0.02)); }
+  castAll(g); }
+// ---- 荷台の炭焼き釜（段階2）：遊んでいる間ずっと進む（運転中・別の地域にいる間も）。できた木炭は荷台へ（いっぱいなら持ち物へ） ----
+function kilnState(t){ const k=t.kiln, C=TRUCK_SYS.fac.kiln; return k.q?`焼いている 残り${Math.ceil(C.coal.time-k.t)}秒・あと${k.q}つ`:'止まっている'; }
+function kilnPut(){ const t=trk(), C=TRUCK_SYS.fac.kiln; if(t.kiln.q>=C.maxQ){ sfx('deny'); toast('炭焼き釜がいっぱい',true); return; } if(bedHaveAll('wood')<C.coal.wood){ sfx('deny'); toast(`木材が足りない（木炭1つに${C.coal.wood}）`,true); return; }
+  bedTakeAll('wood',C.coal.wood); t.kiln.q++; sfx('craft'); toast(`荷台の炭焼き釜に木材を入れた（木炭1つ・${C.coal.time}秒）`); saveGame(); }
+function kilnUpdate(dt){ const t=trk(); if(!t.fac.kiln||!t.kiln.q) return; const C=TRUCK_SYS.fac.kiln; t.kiln.t+=dt; if(t.kiln.t<C.coal.time) return; t.kiln.t=0; t.kiln.q--;
+  if(bedUnits(t)<TRUCK_SYS.bed.cap) t.bed.mats.charcoal=(t.bed.mats.charcoal||0)+1; else inv.charcoal=(inv.charcoal||0)+1; toast('荷台の炭焼き釜：木炭ができた'); saveGame(); }
+function truckSee(){ if(!truckShown()) return 60; const t=trk(); return t.fac.tower&&t.region===REG.cur&&(TRUCK.drive||truckNear(12))?TRUCK_SYS.fac.tower.see:60; } // 見張り台：地図に映る獣の距離（ふだんは60m）
+// ---- 車両基地（拠点の中に建てる。修理・改修・荷台の施設） ----
+const DEPOT={g:null,cols:[]};
+function depotModel(){ if(DEPOT.g) return DEPOT.g; const D=TRUCK_SYS.depot, g=new THREE.Group(), gy=groundH(D.x,D.z), add=(m,ol=0.03)=>{ g.add(ol?outline(m,ol):m); return m; };
+  add(mesh(G.box,mat(0x9a968c),0,0.03,0,D.W,0.06,D.D),0); // コンクリートの床
+  for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) add(mesh(G.box,mat(0x5a4e40),sx*(D.W/2-0.15),1.6,sz*(D.D/2-0.15),0.22,3.2,0.22)); // 柱
+  const roof=add(mesh(G.box,mat(0x7a7f84),0,3.28,0,D.W+0.6,0.1,D.D+0.6)); roof.rotation.x=0.06; // トタン屋根（少し傾ける）
+  for(let i=-3;i<=3;i++){ const r=add(mesh(G.box,mat(0x676c71),i*1.0,3.35,0,0.06,0.04,D.D+0.6),0); r.rotation.x=0.06; }
+  add(mesh(G.box,mat(0x6a5038),-D.W/2+0.45,0.9,0,0.3,1.8,1.2),0.02); // 西の壁ぎわの道具棚
+  for(let i=0;i<3;i++) add(mesh(G.box,mat(0x8a8e90),-D.W/2+0.62,0.5+i*0.5,0,0.06,0.04,1.0),0);
+  add(mesh(G.cyl8,mat(0x8a3a2a),-D.W/2+0.5,0.45,-D.D/2+0.55,0.3,0.9,0.3),0.02); // 木炭の缶
+  add(mesh(G.box,mat(0x4a4f54),-D.W/2+0.55,0.35,D.D/2-0.6,0.6,0.7,0.6),0.02); // 工具箱
+  add(mesh(G.box,mat(0xf4efe2),D.W/2+0.05,2.6,-D.D/2+0.2,0.04,0.36,1.2),0.02); // 入口の札
+  g.position.set(D.x,gy,D.z); castAll(g); world.add(g); DEPOT.g=g; g.visible=false; return g; }
+function depotApply(){ const on=!!depotS().built; if(!on&&!DEPOT.g) return; const g=depotModel(); g.visible=on; const D=TRUCK_SYS.depot;
+  if(!DEPOT.cols.length){ for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) DEPOT.cols.push(addOBox(D.x+sx*(D.W/2-0.15),D.z+sz*(D.D/2-0.15),0.3,0.3,0,'house',{h:3})); DEPOT.cols.push(addOBox(D.x-D.W/2+0.45,D.z,0.4,1.3,0,'house',{h:1.8})); }
+  for(const c of DEPOT.cols) c.active=on; }
+function depotParked(){ const D=TRUCK_SYS.depot, t=trk(); return depotS().built&&t.region==='komyoji'&&REG.cur==='komyoji'&&!TRUCK.drive&&dist(TRUCK.x,TRUCK.z,D.x,D.z)<D.park; }
+function truckRepairStep(all){ const t=trk(), L=TRUCK_SYS.repair, hm=trkHpMax(t); let k=0; while(t.hp<hm&&bedAfford(L.cost)){ bedPay(L.cost); t.hp=Math.min(hm,t.hp+L.step); k++; if(!all) break; }
+  if(!k){ sfx('deny'); toast(t.hp>=hm?'車体は傷んでいない':`素材が足りない（${L.step}ごとに ${facCostText(L.cost)}）`,true); return; } sfx('craft'); toast(`KEI truck を直した（車体 ${Math.round(t.hp)}/${hm}）`); saveGame(); }
+function truckUpgrade(){ const t=trk(), L=TRUCK_SYS; if(t.lv>=3) return; const nx=L.lv[t.lv+1]; if(!bedAfford(nx.cost)){ sfx('deny'); toast(`素材が足りない（${facCostText(nx.cost)}）`,true); return; }
+  bedPay(nx.cost); const before=trkHpMax(t); t.lv++; t.hp=Math.min(trkHpMax(t),t.hp+trkHpMax(t)-before); sfx('craft'); const F=Object.values(L.fac).find(f=>f.lv===t.lv);
+  banner(`KEI truck 改修 段階${t.lv}`,`最高速度 約${Math.round(nx.speed*3.6)}km/時・耐久 ${trkHpMax(t)}・加速 ${nx.acc}m/秒²。荷台に「${F.name}」を作れる`); saveGame(); }
+function truckFacBuild(id){ const t=trk(), F=TRUCK_SYS.fac[id]; if(t.fac[id]||t.lv<F.lv) return; if(!bedAfford(F.cost)){ sfx('deny'); toast(`素材が足りない（${facCostText(F.cost)}）`,true); return; }
+  bedPay(F.cost); t.fac[id]=1; sfx('craft'); toast(`${F.name}を荷台に作った：${F.desc}`); saveGame(); }
+function depotMenu(){ const t=trk(), L=TRUCK_SYS, hm=trkHpMax(t), ch=[];
+  if(!depotParked()){ toast('車両基地：KEI truck を屋根の下に止めると、直す・改修・荷台の施設を作るができる'); return; }
+  if(t.tip){ toast('先に KEI truck を起こす',true); return; }
+  if(t.hp<hm){ ch.push({label:`車体を直す（+${L.repair.step}：${facCostText(L.repair.cost)}）　今 ${Math.round(t.hp)}/${hm}`,act:()=>truckRepairStep(false)}); ch.push({label:'直せるだけ直す',act:()=>truckRepairStep(true)}); }
+  if(t.lv<3){ const nx=L.lv[t.lv+1], F=Object.values(L.fac).find(f=>f.lv===t.lv+1); ch.push({label:`改修 段階${t.lv+1}（${facCostText(nx.cost)}）：最高速度 約${Math.round(nx.speed*3.6)}km/時・耐久 ${L.hp.max[t.lv+1]}・加速 ${nx.acc}。荷台に${F.name}を作れるようになる`,act:truckUpgrade}); }
+  for(const id in L.fac){ const F=L.fac[id]; if(t.fac[id]) continue; ch.push(t.lv>=F.lv?{label:`${F.name}を作る（${facCostText(F.cost)}）：${F.desc}`,act:()=>truckFacBuild(id)}:{label:`${F.name}（改修 段階${F.lv}で作れる）`,act:()=>{ sfx('deny'); toast(`${F.name}は改修 段階${F.lv}で作れる`,true); }}); }
+  if(t.gas<100&&bedHaveAll('charcoal')>0) ch.push({label:`木炭で燃料を入るだけ足す（今 ${Math.round(t.gas)}%）`,act:()=>truckRefuel(0)});
+  if(!ch.length){ toast(`車両基地：KEI truck 段階${t.lv}・車体 ${Math.round(t.hp)}/${hm}・燃料 ${Math.round(t.gas)}%。いまできることはない`); return; }
+  chooseDefense(`車両基地　KEI truck 段階${t.lv}・車体 ${Math.round(t.hp)}/${hm}・燃料 ${Math.round(t.gas)}%`,ch,true); }
+function depotInteractables(L){ if(!depotS().built||REG.cur!=='komyoji') return; const D=TRUCK_SYS.depot, d=Math.hypot(Math.max(0,Math.abs(P.x-D.x)-D.W/2),Math.max(0,Math.abs(P.z-D.z)-D.D/2)); if(d>1.6) return;
+  L.push({d:d+0.6,label:depotParked()?'車両基地（直す・改修・荷台の施設）':'車両基地（KEI truck を屋根の下に止めて使う）',act:depotMenu}); }
+// ---- 住民の運搬：車の入れない所・置き場までの残りを、源さんが歩いて運ぶ（荷台の丸太→丸太置き場、素材→持ち物）----
+// 車が拠点の外なら、近い門（南門・東口・沢口）を通る。引っかかって2.5秒進めないときは、次の経由点へ移る（運ぶのは止めない）
+const HAUL={on:false,st:'',t:0,load:null,path:null,wi:0,stuck:0,mesh:null,walk:false,face:0};
+function haulCan(){ if(!truckShown()) return false; const t=trk(); return REG.cur==='komyoji'&&t.region==='komyoji'&&t.repaired&&!t.tip&&!TRUCK.drive&&!ev.kind&&F4.yard&&(t.bed.logs.length>0||bedMatN(t)>0)&&dist(TRUCK.x,TRUCK.z,F4.yard.x,F4.yard.z)<TRUCK_SYS.haul.near; }
+function haulRear(){ const sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a); return {x:TRUCK.x-sa*3.3,z:TRUCK.z-ca*3.3}; }
+function haulRoute(toYard){ const a=haulRear(), b={x:F4.yard.x,z:F4.yard.z+1.6}; let mid=[];
+  if(!inBase(a.x,a.z,0)){ let best=null, bd=1e9; for(const g of GAPS){ const d=dist(a.x,a.z,g.out.x,g.out.z)+dist(g.in.x,g.in.z,b.x,b.z); if(d<bd){ bd=d; best=g; } } mid=[{x:best.out.x,z:best.out.z},{x:best.in.x,z:best.in.z}]; }
+  return toYard?[...mid,b]:[...mid.reverse(),a]; }
+function haulStart(){ if(HAUL.on||!haulCan()) return; const n=npcGen; Object.assign(HAUL,{on:true,st:'toTruck',load:null,stuck:0,t:0,wi:0}); HAUL.path=haulRoute(false); if(n.col) n.col.active=false;
+  closeOverlay(); queueDialog([[npcGen,'荷台の荷やな。置き場まで運んどくで']]); }
+function haulStop(quiet){ const n=npcGen; const was=HAUL.on; HAUL.on=false; HAUL.load=null; HAUL.walk=false; if(HAUL.mesh) HAUL.mesh.visible=false;
+  if(was&&n){ n.x=n.home.x; n.z=n.home.z; if(n.col) n.col.active=true; if(!quiet) saveGame(); } }
+function haulUpdate(dt){ if(!HAUL.on) return; const n=npcGen, t=trk(), H=TRUCK_SYS.haul; HAUL.walk=false;
+  if(!n||REG.cur!=='komyoji'||ev.kind||TRUCK.drive||t.region!=='komyoji'||t.tip||!F4.yard){ haulStop(); return; }
+  if(HAUL.t>0){ HAUL.t-=dt; if(HAUL.t>0) return; // 積み下ろし
+    if(HAUL.st==='toTruck'){ if(t.bed.logs.length) HAUL.load={log:t.bed.logs.pop()};
+      else if(bedMatN(t)){ const m={}; let k=H.mats; for(const key of Object.keys(t.bed.mats)){ const a=Math.min(k,t.bed.mats[key]); m[key]=a; t.bed.mats[key]-=a; if(t.bed.mats[key]<=0) delete t.bed.mats[key]; k-=a; if(k<=0) break; } HAUL.load={mats:m}; }
+      else { haulStop(); toast('源さん：荷台は空になったで'); return; }
+      truckDoorOpen('tg',2); HAUL.st='toYard'; HAUL.path=haulRoute(true); HAUL.wi=0; saveGame(); }
+    else { const L=HAUL.load; if(L&&L.log){ const w=TSIZE[SIZE_OF[L.log]].wpl; inv.wood+=w; prog.f4.delivered=(prog.f4.delivered|0)+1; prog.f4.yard=(prog.f4.yard|0)+1; f4LogsDirty(); floatText(F4.yard.x,1.8,F4.yard.z,`木材+${w}`,'#f0dca0'); g4CheckQuests(); }
+      else if(L&&L.mats){ let k=0; for(const key in L.mats){ inv[key]=(inv[key]||0)+L.mats[key]; k+=L.mats[key]; } floatText(F4.yard.x,1.8,F4.yard.z,`素材+${k}`,'#f0dca0'); }
+      HAUL.load=null; HAUL.st='toTruck'; HAUL.path=haulRoute(false); HAUL.wi=0; saveGame(); } return; }
+  if(!HAUL.path||HAUL.wi>=HAUL.path.length){ HAUL.t=H.load; return; }
+  const tg=HAUL.path[HAUL.wi], d=dist(n.x,n.z,tg.x,tg.z);
+  if(d<0.6){ HAUL.wi++; HAUL.stuck=0; if(HAUL.wi>=HAUL.path.length) HAUL.t=H.load; return; }
+  const a=Math.atan2(tg.x-n.x,tg.z-n.z), sp=Math.min(d,H.walk*dt*(HAUL.load&&HAUL.load.log?0.8:1)); const e={x:n.x+Math.sin(a)*sp,z:n.z+Math.cos(a)*sp,r:0.4}; resolve(e,false);
+  const moved=dist(e.x,e.z,n.x,n.z); n.x=e.x; n.z=e.z; HAUL.face=a; HAUL.walk=true;
+  HAUL.stuck=moved<sp*0.3?HAUL.stuck+dt:0; if(HAUL.stuck>2.5){ n.x=tg.x; n.z=tg.z; HAUL.stuck=0; } }
+function haulPose(n,m){ const L=HAUL.load; n.face+=clamp(angDiff(n.face,HAUL.face),-0.25,0.25);
+  if(L){ m.armR.rotation.set(-2.5,0,-0.35); m.armL.rotation.set(-2.5,0,0.35); } else { const s=HAUL.walk?Math.sin(n.phase*9)*0.5:0; m.armR.rotation.set(s,0,0); m.armL.rotation.set(-s,0,0); }
+  return HAUL.walk; }
+function haulVis(){ const n=npcGen, L=HAUL.load; if(!HAUL.on||!n||!L){ if(HAUL.mesh) HAUL.mesh.visible=false; return; }
+  if(!HAUL.mesh){ const g=new THREE.Group(); g.add(outline(mesh(G.cyl8,mat(0x8a6a44),0,0,0,1,1,1),0.02)); g.add(outline(mesh(rbox(1,1,1,0.05),mat(0x9a7a4c)),0.02)); castAll(g); scene.add(g); HAUL.mesh=g; }
+  const g=HAUL.mesh, [lg,bx]=g.children; lg.visible=!!L.log; bx.visible=!L.log; g.visible=true;
+  if(L.log){ const r=TSIZE[SIZE_OF[L.log]].r; lg.scale.set(r,1.5,r); lg.rotation.set(0,0,Math.PI/2); } else bx.scale.set(0.5,0.36,0.4);
+  g.position.set(n.x,groundH(n.x,n.z)+2.05,n.z); g.rotation.set(0,n.face,0); }
+function haulPanel(st,bx){ if(!truckShown()) return; const t=trk(); if(!t.repaired) return;
+  if(HAUL.on){ f9El('div','nl',`KEI truck の荷を丸太置き場へ運んでいる（荷台 丸太${t.bed.logs.length}本・素材${bedMatN(t)}こ）`,st); f9Btn(bx,'npc_haulStop','運ぶのをやめてもらう',()=>{ haulStop(); closeOverlay(); }); return; }
+  if(haulCan()) f9Btn(bx,'npc_haul',`KEI truck の荷を置き場へ運んでもらう（丸太${t.bed.logs.length}本・素材${bedMatN(t)}こ）`,haulStart);
+  else if(t.region==='komyoji'&&(t.bed.logs.length||bedMatN(t))) f9El('div','nl',`KEI truck を丸太置き場から${TRUCK_SYS.haul.near}m 以内に止めると、荷台の荷を運んでもらえる`,st); }
+// ---- 毎コマ：炭焼き・運搬・横転の見た目・傷んだ煙 ----
+function truckSysUpdate(dt){ if(!truckShown()) return; const t=trk(); if(S.mode==='playing'){ kilnUpdate(dt); haulUpdate(dt); } haulVis();
+  if(TRUCK.m&&TRUCK.bedSig!==truckBedSig(t)) truckBedVis();
+  const want=t.tip?1.45:0; TRUCK.tipA=TRUCK.tipA||0; TRUCK.tipA+=clamp(want-TRUCK.tipA,-dt*1.6,dt*3.2); if(t.tip) TRUCK.tipSide=t.tip;
+  if(t.repaired&&t.hp<trkHpMax(t)*TRUCK_SYS.hp.weak&&t.region===REG.cur&&!REG.busy&&(TRUCK.smokeT=(TRUCK.smokeT||0)-dt)<=0){ TRUCK.smokeT=TRUCK.drive?0.22:0.7; const sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a), gy=groundH(TRUCK.x,TRUCK.z); puff(TRUCK.x+sa*1.7,gy+1.4,TRUCK.z+ca*1.7,rr(-0.2,0.2),1.1,rr(-0.2,0.2),0.32,t.hp<=0?0x3a3836:0x5a5650,1.3); } } // 傷んでいると、ボンネットから黒い煙
+function truckTipVis(m){ const A=TRUCK.tipA||0; if(A<=0.001) return; const s=TRUCK.tipSide||1, w=0.95; // 倒れる側の車輪の線（車の中の x=∓0.95）を軸に回す。s=1：右へ
+  m.rotation.z+=s*A; const lat=-s*w*(1-Math.cos(A)), sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a); m.position.x+=lat*ca; m.position.z+=-lat*sa; m.position.y+=w*Math.sin(A); }
+function truckStatusText(){ if(!truckShown()) return ''; const t=trk(); if(!t.repaired||!t.fueled||t.region!==REG.cur||!(TRUCK.drive||truckNear(8))) return '';
+  return `KEI truck 燃料 ${Math.round(t.gas)}%・車体 ${Math.round(t.hp)}/${trkHpMax(t)}${t.tip?'（横転）':t.hp<=0?'（動かない）':''}${t.lv?`・段階${t.lv}`:''}　`; }
+function truckLabelNote(t){ return t.tip?'':t.hp<=0?'（壊れて動かない）':t.gas<=0?'（燃料切れ）':''; }
 // 直した報告と見送り（草案）：車のそばに3人が来る → 終わったら KEI truck に乗った状態で、東の出口へ
 function stfTruckSpots(){ const a=TRUCK.a, fx=Math.sin(a), fz=Math.cos(a), sx=Math.cos(a), sz=-Math.sin(a), P0={x:TRUCK.x+sx*2.45,z:TRUCK.z+sz*2.45};
   const pt=(k,f)=>{ const x=TRUCK.x+sx*k+fx*f, z=TRUCK.z+sz*k+fz*f; return {x,z,face:Math.atan2(P0.x-x,P0.z-z)}; };
