@@ -23,6 +23,11 @@ const PRESETS = {
   C: { label: 'C 十分な準備', level: 4, weapon: 'spear', armor: { head: 'forest_head', chest: 'forest_chest', legs: 'forest_legs', feet: 'forest_feet' }, food: { onigiri: 3, bento: 2 } },
   D: { label: 'D 青鱗＋鱗の槍', level: 5, weapon: 'scSpear', armor: { head: 'blue_head', chest: 'blue_chest', legs: 'blue_legs', feet: 'blue_feet' }, food: { onigiri: 3, bento: 2 } }, // v0.63
   E: { label: 'E 変異鱗＋鱗の槍', level: 5, weapon: 'scSpear', armor: { head: 'raw_head', chest: 'raw_chest', legs: 'raw_legs', feet: 'raw_feet' }, food: { onigiri: 3, bento: 2 } }, // v0.63
+  // v0.78：鱗の武器の違い（蒼鱗＝防御、変異鱗＝機動力・衝撃波・最大体力の代償）
+  F: { label: 'F 蒼鱗一式＋変異鱗の槍', level: 5, weapon: 'rwSpear', armor: { head: 'blue_head', chest: 'blue_chest', legs: 'blue_legs', feet: 'blue_feet' }, food: { onigiri: 3, bento: 2 } },
+  G: { label: 'G 変異一式＋変異鱗の槍', level: 5, weapon: 'rwSpear', armor: { head: 'raw_head', chest: 'raw_chest', legs: 'raw_legs', feet: 'raw_feet' }, food: { onigiri: 3, bento: 2 } },
+  H: { label: 'H 山守一式＋蒼鱗の槍', level: 5, weapon: 'scSpear', armor: { head: 'forest_head', chest: 'forest_chest', legs: 'forest_legs', feet: 'forest_feet' }, food: { onigiri: 3, bento: 2 } },
+  I: { label: 'I 山守一式＋変異鱗の槍', level: 5, weapon: 'rwSpear', armor: { head: 'forest_head', chest: 'forest_chest', legs: 'forest_legs', feet: 'forest_feet' }, food: { onigiri: 3, bento: 2 } },
 };
 function arg(name, def) { const i = process.argv.indexOf('--' + name); return i >= 0 ? process.argv[i + 1] : def; }
 
@@ -34,7 +39,7 @@ function instrument(html) {
     'get WEAPONS(){return WEAPONS},get XP(){return XP},get MUT(){return MUT},get ET(){return ET},get PSPAWN(){return PSPAWN},' +
     'freshState:()=>freshState(),resetWorld:x=>resetWorld(x),hideAllOv:()=>hideAllOv(),chapter2State:(a,b)=>chapter2State(a,b),' +
     'f11Sim:d=>f11Sim(d),tryAttack:(k,a)=>tryAttack(k,a),tryDodge:()=>tryDodge(),eat:k=>eat(k),f31MaxHp:l=>f31MaxHp(l),' +
-    'f47ApplyVisual:()=>f47ApplyVisual(),foodAdd:(k,n)=>foodAdd(k,n),f7Flush:()=>f7Flush(),removeEnemy:e=>removeEnemy(e),spawnEnemy:(...a)=>spawnEnemy(...a),spawnMutant:(x,z,o)=>spawnMutant(x,z,o),mutantLoad:()=>mutantLoad()};\n';
+    'f47ApplyVisual:()=>f47ApplyVisual(),foodAdd:(k,n)=>foodAdd(k,n),f7Flush:()=>f7Flush(),removeEnemy:e=>removeEnemy(e),spawnEnemy:(...a)=>spawnEnemy(...a),spawnMutant:(x,z,o)=>spawnMutant(x,z,o),mutantLoad:()=>mutantLoad(),scaleWaveSrc:()=>(typeof scaleWaveSrc==="function"?scaleWaveSrc():null),scaleWaveReady:()=>scaleWaveReady(),scaleWave:()=>scaleWave(),get SCALE_FX(){return SCALE_FX}};\n';
   return rep(html, '// ================= NPC =================', hook + '// ================= NPC =================');
 }
 
@@ -69,6 +74,8 @@ function think(e, dodgeP){
     if (d < reach && P.st >= 25 && Math.random() < dodgeP) { const s = (B.flip = -B.flip || 1); const da = a + s * Math.PI / 2; bot.mv = {x:Math.sin(da), z:Math.cos(da), mag:1}; g.tryDodge(); B.dodges++; return; } }
   const w = g.WEAPONS[P.weapon] || {range:2};
   if (e.state === 'flee' || e.state === 'dead') return;
+  // v0.78：衝撃波を放てるなら、相手が届く所にいるときに放つ（WAVE=0 で使わない）
+  if (B.wave) { const src = g.scaleWaveSrc(); if (src && g.scaleWaveReady() && d < src.R + e.r - 0.5 && !P.atk && !P.dodge) { g.scaleWave(); B.waves++; return; } }
   if (d > w.range + e.r + 0.5) { bot.mv = {x:Math.sin(a), z:Math.cos(a), mag:1}; return; }
   P.facing = a;
   if (!P.atk && !P.dodge) { const heavy = OPEN.has(e.state); g.tryAttack(heavy ? 'heavy' : 'light', a); if (heavy) B.heavy++; else B.light++; }
@@ -77,7 +84,8 @@ window.__duel = async function(c, seed, mode, dodgeP, maxT, mut, et, foe, at){
   const g = __g; await g.mutantLoad();
   if (!window.__mutOrig) window.__mutOrig = {mut: JSON.parse(JSON.stringify(g.MUT)), et: JSON.parse(JSON.stringify(g.ET.mutant))};
   Object.assign(g.MUT, window.__mutOrig.mut, mut || {}); Object.assign(g.ET.mutant, window.__mutOrig.et, et || {});
-  __seedRandom(seed); Object.assign(B, {ate:0, dodges:0, heavy:0, light:0, judged:-1, flip:1});
+  __seedRandom(seed); Object.assign(B, {ate:0, dodges:0, heavy:0, light:0, judged:-1, flip:1, waves:0, wave:window.__useWave !== false});
+  if (g.SCALE_FX) { g.SCALE_FX.charge = 0; g.SCALE_FX.wk = undefined; }
   const e = await setup(c, mode, foe, at); let t = 0, dmg = 0, lastHp = g.P.hp, hits = 0, lastSn = -1; const ent = {};
   while (t < maxT) {
     for (let k = 0; k < 200 && t < maxT; k++) {
@@ -89,7 +97,7 @@ window.__duel = async function(c, seed, mode, dodgeP, maxT, mut, et, foe, at){
       if (done || g.S.mode === 'dead' || g.P.dead) {
         const win = done && !(g.S.mode === 'dead' || g.P.dead);
         return {result: win ? (mode === 'flee' ? 'repel' : 'kill') : 'lose', time: +t.toFixed(1), dmg: Math.round(dmg), hits, hp: Math.round(g.P.hp), maxHp: g.P.maxHp,
-          ate: B.ate, dodges: B.dodges, heavy: B.heavy, light: B.light, mutHp: Math.round(e.hp), ent}; } }
+          ate: B.ate, dodges: B.dodges, heavy: B.heavy, light: B.light, waves: B.waves, mutHp: Math.round(e.hp), ent}; } }
     await new Promise(r => setTimeout(r, 0)); }
   return {result: 'timeout', time: +t.toFixed(1), dmg: Math.round(dmg), hits, hp: Math.round(g.P.hp), maxHp: g.P.maxHp, ate: B.ate, dodges: B.dodges, mutHp: Math.round(e.hp)};
 };`;
@@ -115,6 +123,7 @@ async function main() {
   await page.goto('http://game.local/', { waitUntil: 'load', timeout: 240000 });
   await page.waitForFunction(() => window.__g && window.__g.S, null, { timeout: 120000 });
   await page.evaluate(PAGE_CODE);
+  if (process.env.WAVE === '0') await page.evaluate(() => { window.__useWave = false; });
   // v0.65：防具の服（着替え）は初めて着たときに作られ、そのとき乱数が進む。測定の乱数の種に影響しないよう、先に全部作っておく
   // v0.66：落とし物の形も、初めて落ちたときに作られて乱数が進む（肉を足したので作られる順が変わる）。先に作っておく
   await page.evaluate(() => { for (const k of ['hide', 'food', 'meat', 'wood', 'fang', 'mutScale']) window.__g.dropGeo(k); });
@@ -127,7 +136,7 @@ async function main() {
     const rs = [];
     for (let i = 0; i < runs; i++) rs.push(await page.evaluate(([p, s, m, d, t, a, b, f, x]) => window.__duel(p, s, m, d, t, a, b, f, x), [PRESETS[c], seed0 + i, mode, dp, maxT, mut, et, foe, at]));
     const win = rs.filter(r => r.result === 'repel' || r.result === 'kill');
-    console.log(`${PRESETS[c].label.padEnd(10)} ${String(dp).padStart(4)}  ${String(Math.round(win.length / rs.length * 100) + '%').padStart(4)}  ${String(rs.filter(r => r.result === 'lose').length).padStart(4)}  ${String(rs.filter(r => r.result === 'timeout').length).padStart(6)}    ${String(med(win.map(r => r.time))).padStart(6)}s     ${String(med(rs.map(r => r.dmg))).padStart(6)}      ${String(med(rs.map(r => r.hits))).padStart(4)}    ${win.length ? med(win.map(r => r.hp)) + '/' + rs[0].maxHp : '-'}   ${med(rs.map(r => r.ate))}    ${med(rs.map(r => r.dodges))}`);
+    console.log(`${PRESETS[c].label.padEnd(10)} ${String(dp).padStart(4)}  ${String(Math.round(win.length / rs.length * 100) + '%').padStart(4)}  ${String(rs.filter(r => r.result === 'lose').length).padStart(4)}  ${String(rs.filter(r => r.result === 'timeout').length).padStart(6)}    ${String(med(win.map(r => r.time))).padStart(6)}s     ${String(med(rs.map(r => r.dmg))).padStart(6)}      ${String(med(rs.map(r => r.hits))).padStart(4)}    ${win.length ? med(win.map(r => r.hp)) + '/' + rs[0].maxHp : '-'}   ${med(rs.map(r => r.ate))}    ${med(rs.map(r => r.dodges))}    衝撃波 ${med(rs.map(r => r.waves || 0))}`);
     if (process.env.DUEL_DETAIL) { const sum = {}; for (const r of rs) for (const [k, v] of Object.entries(r.ent || {})) sum[k] = (sum[k] || 0) + v;
       console.log('    状態に入った回数（1戦あたり）:', Object.entries(sum).map(([k, v]) => `${k} ${(v / rs.length).toFixed(1)}`).join('  '), `  強攻撃 ${med(rs.map(r => r.heavy))}・通常 ${med(rs.map(r => r.light))}`); }
   }

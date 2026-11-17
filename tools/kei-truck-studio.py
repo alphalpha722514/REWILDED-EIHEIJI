@@ -6,6 +6,7 @@ mode:
   parts：車体だけ（車輪を外す）・車輪だけ（色分け）— 車輪を切り分けた所の確認
   spin：車輪を60°回し、前の車輪を切った姿（ゲームで回したとき）
   person：主人公くらいの高さ（1.7m）の棒と並べる（大きさの確認）
+  open：ドア2枚を開き（60°）、あおりを下ろした姿（v0.78。斜め前・右・左の後ろ・後ろ）と、ドア・あおりだけ（色分け）
 """
 import asyncio, base64, os, sys
 from playwright.async_api import async_playwright
@@ -47,13 +48,18 @@ JS = r"""async ([b64s, mode, S]) => { const T = THREE;
       for (const w of wheels) w.visible = true; root.getObjectByName('body').visible = false; const ws = root.getObjectByName('windshield'); if (ws) ws.visible = false;
       const cols = [0xd04040, 0x40a040, 0x4060d0, 0xd0a020]; wheels.forEach((w, i) => w.traverse(o => { if (o.isMesh) o.material = new T.MeshLambertMaterial({color: cols[i]}); }));
       shot([D * 0.72, H + 1.2, D * 0.72], [0, 0.5, 0]); shot([-D * 0.72, H + 0.6, D * 0.5], [0, 0.4, 0]); }
+    if (mode === 'open') { const dr = root.getObjectByName('door_r'), dl = root.getObjectByName('door_l'), tg = root.getObjectByName('tailgate');
+      if (dr) dr.rotation.y = 1.05; if (dl) dl.rotation.y = -1.05; if (tg) tg.rotation.x = -1.5;
+      shot([-D * 0.72, H + 1.2, D * 0.62], [0, 1.0, 0.3]); shot([-D * 0.9, H + 0.4, 1.2], [0, 1.1, 0.6], 24); shot([D * 0.55, H + 1.6, -D * 0.75], [0, 1.0, -0.6]); shot([0, H + 1.4, -D], [0, 1.0, -1.0], 26);
+      const cols = {door_r: 0xd04040, door_l: 0x40a040, tailgate: 0x4060d0}; for (const n in cols) { const o = root.getObjectByName(n); if (o) o.traverse(q => { if (q.isMesh) q.material = new T.MeshLambertMaterial({color: cols[n], side: T.DoubleSide}); }); }
+      shot([-D * 0.72, H + 1.2, D * 0.62], [0, 1.0, 0.3]); shot([D * 0.55, H + 1.6, -D * 0.75], [0, 1.0, -0.6]); }
     if (mode === 'spin') { for (const w of wheels) { w.rotation.order = 'YXZ'; w.rotation.x = Math.PI / 3; if (/^wheel_f/.test(w.name)) w.rotation.y = 0.4; }
       shot([D * 0.72, H + 1.2, D * 0.72], [0, 0.8, 0]); shot([D * 0.55, 0.6, D * 0.2], [0, 0.4, 0.8], 24); shot([0, 2.5, 6], [0, 0.4, 0.9], 30); shot([-D * 0.6, 0.7, D * 0.1], [0, 0.4, -0.85], 24); }
     rows.push(imgs);
   }
   return rows; }"""
 LAB = {'views': ['正面', '背面', '左', '右', '斜め前45°', '斜め後ろ45°', '上'], 'person': ['正面', '背面', '左', '右', '斜め前45°', '斜め後ろ45°', '上'],
-       'parts': ['車体だけ（斜め前）', '車体だけ（右の下）', '車輪だけ（斜め前）', '車輪だけ（右の下）'], 'spin': ['車輪を60°回し前を切る', '右前の近く', '前から', '左後ろの近く']}
+       'parts': ['車体だけ（斜め前）', '車体だけ（右の下）', '車輪だけ（斜め前）', '車輪だけ（右の下）'], 'spin': ['車輪を60°回し前を切る', '右前の近く', '前から', '左後ろの近く'], 'open': ['ドアとあおりを開く（斜め前）', '右のドアの近く', '左後ろから', '後ろから', '開いた部分を色分け（斜め前）', '開いた部分を色分け（左後ろ）']}
 
 
 async def main():

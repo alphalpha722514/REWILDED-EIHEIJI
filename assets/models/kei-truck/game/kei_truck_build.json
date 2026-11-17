@@ -8,8 +8,8 @@
    "src": "assets/models/kei-truck/src/kei_truck_broken_tripo_original.glb",
    "srcSha256": "8983b26d9a9c7bf0e1ee04f0dce64614c0869e92011c70bd59587db2bb96294f",
    "out": "assets/models/kei-truck/game/kei_truck_broken.glb",
-   "bytes": 694328,
-   "sha256": "f087d4e23e9a14ad3c66b89e6bf4bae16b40aa9299a9d15cd2771bd19b408ae0",
+   "bytes": 761664,
+   "sha256": "cfc444940a79d44c1212d193941ef90100330abe1e7ebdce5d2463342cde085c",
    "scale": 4.2044,
    "zShiftSrc": 0.0086,
    "size": {
@@ -18,7 +18,7 @@
     "z": 4.125
    },
    "trisSrc": 23079,
-   "trisBody": 11090,
+   "trisBody": 10991,
    "trisWheels": [
     842,
     689,
@@ -26,7 +26,38 @@
     719
    ],
    "trisGlass": 0,
-   "trisTotal": 14005,
+   "trisParts": {
+    "door_r": 390,
+    "door_l": 505,
+    "tailgate": 1026
+   },
+   "parts": [
+    {
+     "name": "door_r",
+     "hinge": [
+      -0.9,
+      1.2,
+      1.19
+     ]
+    },
+    {
+     "name": "door_l",
+     "hinge": [
+      0.9,
+      1.2,
+      1.19
+     ]
+    },
+    {
+     "name": "tailgate",
+     "hinge": [
+      0,
+      0.98,
+      -1.86
+     ]
+    }
+   ],
+   "trisTotal": 15827,
    "wheels": [
     {
      "name": "wheel_fr",
@@ -73,8 +104,8 @@
    "src": "assets/models/kei-truck/src/kei_truck_repaired_tripo_original.glb",
    "srcSha256": "ab5bf207a0ba928f6e1d5bb28f0e0263ea3c6eb8cdcb8bae933b537f4fc4aad4",
    "out": "assets/models/kei-truck/game/kei_truck_repaired.glb",
-   "bytes": 747736,
-   "sha256": "967b0b306f5e66d2cb2643e2f1bd75cc44f3f52299f840972debbf50ae9e0ab1",
+   "bytes": 823780,
+   "sha256": "c7904d92f62fe451ba9e85272d2440fa1634798fb56ed954cc036f6bebc15638",
    "scale": 4.2061,
    "zShiftSrc": 0.0089,
    "size": {
@@ -83,7 +114,7 @@
     "z": 4.125
    },
    "trisSrc": 23464,
-   "trisBody": 11549,
+   "trisBody": 11724,
    "trisWheels": [
     881,
     745,
@@ -91,7 +122,38 @@
     948
    ],
    "trisGlass": 144,
-   "trisTotal": 15157,
+   "trisParts": {
+    "door_r": 509,
+    "door_l": 557,
+    "tailgate": 677
+   },
+   "parts": [
+    {
+     "name": "door_r",
+     "hinge": [
+      -0.9,
+      1.2,
+      1.19
+     ]
+    },
+    {
+     "name": "door_l",
+     "hinge": [
+      0.9,
+      1.2,
+      1.19
+     ]
+    },
+    {
+     "name": "tailgate",
+     "hinge": [
+      0,
+      0.98,
+      -1.86
+     ]
+    }
+   ],
+   "trisTotal": 17075,
    "wheels": [
     {
      "name": "wheel_fr",

@@ -2330,6 +2330,7 @@ function g4Update(dt){ f4Update(dt); const g=prog.g4; let ch=false;
   if(!g.board&&S.mode==='playing'&&prog.stage!=='talk'&&!g.hint&&G4BOARDS[0]&&dist(P.x,P.z,G4BOARDS[0].x,G4BOARDS[0].z)<14){ g.hint=1; say(npcTome,'門の掲示板に町の依頼を貼っとるで。手が空いたら見ておくれ。'); }
 }
 // 目的欄の下の「依頼」行と、ミニマップの印
+function questHere(){ return !REG.cur||REG.cur==='komyoji'; } // 依頼（掲示板）の場所は光明寺の座標。ほかの地域では方角・距離・地図の印を出さない
 function questLine(){ const g=prog.g4; if(prog.stage==='talk') return null;
   if(!g.board) return G4BOARDS[0]?['依頼：拠点の門前の掲示板を見る',G4BOARDS[0]]:null;
   const i=g.track; if(i<0||g.qdone[i]) return null; const q=QUESTS[i]; return [`依頼：${q.name}　${questProg(i)}/${q.goal}`,questTarget(i)]; }
@@ -2347,7 +2348,7 @@ function g4Mini(c,X,Z){ const g=prog.g4;
   if(!g.board){ const b=G4BOARDS[0]; if(b&&prog.stage!=='talk'){ c.fillStyle='#f0c34a'; c.font='bold 12px sans-serif'; c.fillText('!',X(b.x)-2,Z(b.z)+4); } return; }
   G4FENCES.forEach((f,i)=>{ c.strokeStyle=g.fences[i]?'#8fd07a':'#e0533c'; c.lineWidth=2.5; const dx=Math.cos(f.ry)*4, dz=-Math.sin(f.ry)*4; c.beginPath(); c.moveTo(X(f.x-dx),Z(f.z-dz)); c.lineTo(X(f.x+dx),Z(f.z+dz)); c.stroke(); });
   G4FIELDS.forEach((f,i)=>{ const st=g.fields[i][0]; c.fillStyle=st===0?'#8a6a44':st===1?'#6aa04a':'#e8e0b0'; c.fillRect(X(f.x)-3,Z(f.z)-3,6,6); });
-  const ql=questLine(); const tg=ql&&ql[1]; if(tg){ const W=150,H=196; let tx=X(tg.x),tz=Z(tg.z); c.strokeStyle='#7ad0e0'; c.fillStyle='#7ad0e0'; c.lineWidth=2;
+  const ql=questHere()&&questLine(); const tg=ql&&ql[1]; if(tg){ const W=150,H=196; let tx=X(tg.x),tz=Z(tg.z); c.strokeStyle='#7ad0e0'; c.fillStyle='#7ad0e0'; c.lineWidth=2;
     if(tx>6&&tx<W-6&&tz>6&&tz<H-6){ c.beginPath(); c.arc(tx,tz,4.5,0,TAU); c.stroke(); }
     else { const a=Math.atan2(tz-H/2,tx-W/2); const k=Math.min((W/2-8)/Math.abs(Math.cos(a)||1e-6),(H/2-8)/Math.abs(Math.sin(a)||1e-6)); c.save(); c.translate(W/2+Math.cos(a)*k,H/2+Math.sin(a)*k); c.rotate(a); c.beginPath(); c.moveTo(5,0); c.lineTo(-3,-4); c.lineTo(-3,4); c.closePath(); c.fill(); c.restore(); } } }
 // ---- 依頼の一覧（掲示板） ----
@@ -2865,7 +2866,7 @@ function f5Interactables(L){
 function renderArms(){ const box=$('invArms'); if(!box) return; box.innerHTML='';
   for(const id of armList()){ const w=WEAPONS[id]; const d=document.createElement('div'); d.className='rc'+(id===P.weapon?' done':'');
     const nm=document.createElement('div'); nm.className='nm'; nm.textContent=w.name+(w.grade?`（${w.grade}）`:''); d.appendChild(nm);
-    const ds=document.createElement('div'); ds.className='ds'; ds.textContent=`通常 ${w.light}／強 ${w.heavy}／間合い ${w.range}／耐久 ${Math.ceil(armDur(id))}/${w.maxDur}　木を切る力 ${w.chop?('×'+w.chop):'—（切れない）'}`; d.appendChild(ds);
+    const ds=document.createElement('div'); ds.className='ds'; ds.textContent=`通常 ${w.light}／強 ${w.heavy}／間合い ${w.range}／耐久 ${Math.ceil(armDur(id))}/${w.maxDur}　木を切る力 ${w.chop?('×'+w.chop):'—（切れない）'}`+(w.boomer?'':w.scale==='blue'?'　持つ間：被ダメージ-15%':w.scale==='raw'?'　持つ間：移動+12%・回避の消費-15%・衝撃波（F）・最大体力-15%':''); d.appendChild(ds);
     const b=document.createElement('button'); b.textContent=id===P.weapon?'持っている':'持つ'; b.disabled=id===P.weapon; b.id='arm_'+id; b.addEventListener('click',()=>{ equipArm(id); renderArms(); }); d.appendChild(f31MastEl(id)); d.appendChild(b); box.appendChild(d); }
   const tl=Object.keys(prog.f5.tools).filter(k=>TOOLS[k]); if(tl.length){ const h=document.createElement('div'); h.className='lbl'; h.textContent='採集道具（岩を割るときに自動で使う）'; box.appendChild(h);
     for(const id of tl){ const t=TOOLS[id]; const d=document.createElement('div'); d.className='rc'; const nm=document.createElement('div'); nm.className='nm'; nm.textContent=`${t.name}（${t.grade}）`; d.appendChild(nm);
@@ -2933,7 +2934,7 @@ function drawMap(){ const cv=$('mapCv'); if(!cv||$('mapOv').hidden) return; cons
   // 近くの獣
   for(const e of enemies){ if(e.state==='dead'||e.removed||trk36MapTargetHidden(e)) continue; if(e.mode==='field'&&dist(e.x,e.z,P.x,P.z)>60) continue; c.fillStyle=e.type==='boss'?'#ff6040':'#e0533c'; c.beginPath(); c.arc(X(e.x),Z(e.z),e.type==='boss'?6:3.5,0,TAU); c.fill(); }
   // 依頼と目的
-  const ql=questLine(); if(ql&&ql[1]){ const x=X(ql[1].x), y=Z(ql[1].z); c.strokeStyle='#7ad0e0'; c.lineWidth=3; c.beginPath(); c.arc(x,y,9,0,TAU); c.stroke(); lab('依頼',x+11,y-8,'#9fe6f0'); }
+  const ql=questHere()&&questLine(); if(ql&&ql[1]){ const x=X(ql[1].x), y=Z(ql[1].z); c.strokeStyle='#7ad0e0'; c.lineWidth=3; c.beginPath(); c.arc(x,y,9,0,TAU); c.stroke(); lab('依頼',x+11,y-8,'#9fe6f0'); }
   const [ot,tg]=objective(); if(tg){ const x=X(tg.x), y=Z(tg.z); c.fillStyle='#f0c34a'; c.strokeStyle='#1b1d1e'; c.lineWidth=2; c.beginPath(); c.moveTo(x,y-10); c.lineTo(x+8,y); c.lineTo(x,y+10); c.lineTo(x-8,y); c.closePath(); c.fill(); c.stroke(); lab('目的',x+11,y+4,'#ffe08a',13); }
   // 自分（向き）と、カメラが見ている向き
   const px=X(P.x), pz=Z(P.z); c.fillStyle='rgba(255,255,255,.18)'; c.beginPath(); c.moveTo(px,pz); c.arc(px,pz,46,-Math.PI/2-0.5,-Math.PI/2+0.5); c.closePath();
@@ -2957,7 +2958,7 @@ function mapPtr(){ const cv=$('mapCv');
   window.addEventListener('resize',()=>{ if(!$('mapOv').hidden){ sizeMap(); drawMap(); } }); }
 // 目的の帯の先頭：目的地の方角（画面の上＝カメラの向き）と距離
 let dirCache='';
-function updateObjDir(){ const el=$('objDir'); if(!el) return; const [,tg0]=objective(); let tg=tg0; if(!tg){ const ql=questLine(); tg=ql&&ql[1]; }
+function updateObjDir(){ const el=$('objDir'); if(!el) return; const [,tg0]=objective(); let tg=tg0; if(!tg&&questHere()){ const ql=questLine(); tg=ql&&ql[1]; } // v0.78：光明寺の依頼の場所は光明寺にいるときだけ（上志比で「5990m」と出ていた）
   if(!tg||S.mode!=='playing'){ if(dirCache!=='none'){ dirCache='none'; el.style.display='none'; } return; }
   const d=dist(P.x,P.z,tg.x,tg.z); if(d<5){ if(dirCache!=='here'){ dirCache='here'; el.style.display=''; el.firstChild.style.transform='none'; el.firstChild.textContent='●'; el.lastChild.textContent='ここ'; } return; }
   const a=Math.atan2(tg.x-P.x,tg.z-P.z); const deg=Math.round(-angDiff(cam.yaw,a)*180/Math.PI/5)*5; const dm=d<100?Math.round(d/5)*5:Math.round(d/10)*10; const key=deg+'|'+dm;
@@ -2974,6 +2975,19 @@ const SCALE_ARM_COST={scNata:{procScale:3,iron:3,hide:4},scAxe:{procScale:3,iron
   rwNata:{mutScale:3,iron:3,hide:4},rwAxe:{mutScale:3,iron:4,wood:2},rwClub:{mutScale:3,wood:4,hide:3},rwSpear:{mutScale:4,wood:4,hide:4}}; // 暫定
 const SCALE_FX={glow:[],glowRaw:[],pool:[],smoke:[],tex:null,ring:null,ringT:9,charge:0,v:null,emit:{blue:[],raw:[]}}; // 鱗の光（光の粒・暗いもや・衝撃波の輪・防具の吹き出し口）
 const SCALE_WAVE={charge:10,radius:6.5,push:{boss:0.6,bear:2.2},pushDef:4.5}; // 変異した鱗の一式：力がたまる秒数・届く距離・押し出す距離（すべて暫定）。v0.64：ボタン（F）で放つ
+// v0.78：鱗の武器の違い（2026-11-17 ユーザー決定。docs/mutant-scale-uses.md）。持っている間だけ効く。数はすべて暫定
+//  蒼鱗の武器：通常の機動力・高い防御（被ダメージ -15%）。代償なし・衝撃波なし
+//  変異鱗の武器：高い機動力（移動 +12%・回避の消費 -15%）・衝撃波（F。8秒でたまる。周り5の獣を押し出し、強攻撃の6割の傷）。代償は最大体力 -15%
+//  変異した鱗の防具一式と重ねると、衝撃波は防具の届く距離・押し出しで、武器の傷が乗り、たまるのが6秒になる
+const SCALE_WPN={blue:{def:0.15},raw:{speed:0.12,dodge:0.15,hpLoss:0.15,waveR:5,waveD:3.5,waveK:0.6,charge:8,both:6}};
+function f78WpnSet(){ const w=P.weapon&&WEAPONS[P.weapon]; return w&&!w.boomer&&w.scale||null; } // 飛去来器（蒼鱗の鱗を使う）は除く
+function f78Wpn(){ return SCALE_WPN[f78WpnSet()]||null; }
+function f78HpSync(){ const k=f78WpnSet()||''; if(SCALE_FX.wk===k) return; const was=SCALE_FX.wk; SCALE_FX.wk=k; if(was!=='raw'&&k!=='raw') return; // 変異鱗の武器を持つ・手放すときだけ最大体力を測り直す
+  const mh=f31MaxHp(prog.level||1); if(mh!==P.maxHp){ P.maxHp=mh; P.hp=Math.min(P.hp,mh); } }
+// 衝撃波の元：変異した鱗の防具一式・変異鱗の武器。null＝放てない
+function scaleWaveSrc(){ const arm=f47Count('raw')===4, wr=f78WpnSet()==='raw'; if(!arm&&!wr) return null; const W=SCALE_WPN.raw;
+  return {arm,wr,R:arm?SCALE_WAVE.radius:W.waveR,D:arm?SCALE_WAVE.pushDef:W.waveD,charge:arm&&wr?W.both:arm?SCALE_WAVE.charge:W.charge,dmg:wr?Math.round(WEAPONS[P.weapon].heavy*W.waveK):0,
+    name:arm&&wr?'変異した鱗':arm?'変異した鱗':'変異鱗の武器'}; }
 const BOOMER={range:12,rangeH:16,speed:20,back:22,hit:18,waveR:4.5,waveD:3.5,waveHit:20,stamH:15}; // v0.64：鱗の飛去来器（すべて暫定）
 const WSPD={nata1:1,nata2:1,nata3:1.05,axeStone:0.9,axeIron:0.95,club:1,bamboo:1.05,spear:1,scNata:1.05,scAxe:0.95,scClub:1,scSpear:1,rwNata:1.05,rwAxe:0.95,rwClub:1,rwSpear:1,boomer:1};
 const WPOISE={nata1:1,nata2:1.1,nata3:1.2,axeStone:1.6,axeIron:1.9,club:1.5,bamboo:0.9,spear:1.1,scNata:1.3,scAxe:2.0,scClub:1.7,scSpear:1.25,rwNata:1.3,rwAxe:2.0,rwClub:1.7,rwSpear:1.25,boomer:0.6};
@@ -3204,7 +3218,7 @@ function updateF6C(dt){ P.ctrT=Math.max(0,(P.ctrT||0)-dt);
   else ctrRing.visible=false;
   const gold=P.ctrT>0; document.body.classList.toggle('ctrOn',gold);
   const sw=$('tbSwap'); if(sw){ const n=armList().length; const show=n>=2; if(sw.hidden===show) sw.hidden=!show; sw.classList.toggle('ready',show&&swapOpen()); }
-  const wv=$('tbWave'); if(wv){ const show=f47Count('raw')===4; if(wv.hidden===show) wv.hidden=!show; wv.classList.toggle('ready',show&&scaleWaveReady()); } } // v0.64
+  const wv=$('tbWave'); if(wv){ const show=!!scaleWaveSrc(); if(wv.hidden===show) wv.hidden=!show; wv.classList.toggle('ready',show&&scaleWaveReady()); } } // v0.64
 function swapOpen(){ return S.time<(P.swT||0)&&S.time>=(P.swCD||0); }
 // 持ち替えてよいか（回避できる時点と同じ。強攻撃の振り始め〜有効終わりは不可）と、切り替え技の受付
 function swapAllowed(){ const a=P.atk; return !(a&&!a.chop&&a.t<a.cancelT); }
@@ -4233,7 +4247,7 @@ const F31={on:true};
 // ---- 育成：レベル ----
 const XP={kill:{deer:14,weasel:8,monkey:10,boar:15,bear:40,boss:150,mutant:60},quest:20,harvest:5,clue:15,lv:[0,100,250,450,700],max:5,hpStep:10};
 function f31LvOf(exp){ let lv=1; for(let i=1;i<XP.lv.length;i++) if(exp>=XP.lv[i]) lv=i+1; return Math.min(XP.max,lv); }
-function f31MaxHp(lv){ return Math.round((100+XP.hpStep*((lv||1)-1))*f47HpMul()); } // v0.63：変異鱗の防具で体力が吸われる
+function f31MaxHp(lv){ return Math.round((100+XP.hpStep*((lv||1)-1))*f47HpMul()*(1-(f78Wpn()?.hpLoss||0))); } // v0.63：変異鱗の防具で体力が吸われる。v0.78：変異鱗の武器を持つ間も
 function f47HpMul(){ const g=typeof prog!=='undefined'&&prog&&prog.gear; if(!g) return 1; let l=0; for(const slot of G47S) l+=G47[g.equip[slot]]?.hpLoss||0; return Math.max(0.1,1-l); }
 function f47Count(set){ const g=prog&&prog.gear; if(!g) return 0; let n=0; for(const slot of G47S) if(G47[g.equip[slot]]?.set===set) n++; return n; }
 function f31Xp(n,why){ if(!(n>0)||!prog) return; const before=prog.level||1; prog.exp=Math.min(XP.lv[XP.max-1],(prog.exp||0)+n); const lv=f31LvOf(prog.exp);
@@ -4254,7 +4268,7 @@ function f31MastEl(id){ const f=f31Fam(id), s=f31Mast(f), c=(prog.mastery&&prog.
   d.textContent=`熟練度（${FAM_NAME[f]}）：${MAST_NAME[s]}（当てた回数 ${c}${s<2?`／次は${s?MAST.t2:MAST.t1}`:''}）${s>=1?'　スタミナ-2':''}${s>=2?'・体勢削り+10%':''}`; return d; }
 // ---- 防具（籠手）：被ダメージの最後に掛ける。強い方だけ有効 ----
 const ARMOR=[{name:'なし',cut:0},{name:'籠手',cut:0.15},{name:'鉄の籠手',cut:0.25}];
-function f31Armor(dmg){return Math.round(dmg*(1-f47Stats().cut));}
+function f31Armor(dmg){return Math.round(dmg*(1-f47Stats().cut)*(1-(f78Wpn()?.def||0)));} // v0.78：蒼鱗の武器を持つ間は被ダメージがさらに減る（防具の上限とは別）
 const ARMV={L:null,R:null};
 function f31ArmorVis(){f47ApplyVisual();}
 function f31BuildArmor(){f47ApplyVisual();}
@@ -6090,12 +6104,13 @@ function scaleRing(x,z,col,R){ if(!SCALE_FX.ring){ const m=new THREE.Mesh(new TH
 function scalePush(cx,cz,R,D,fn){ let n=0; for(const e of enemies){ if(e.removed||e.state==='dead') continue; const d=dist(e.x,e.z,cx,cz); if(d-e.r>R) continue;
     const a=d>0.01?Math.atan2(e.x-cx,e.z-cz):P.facing, k=e.type==='boss'?0.13:e.type==='bear'?0.5:1, v=D*k*6; e.pushV={vx:Math.sin(a)*v,vz:Math.cos(a)*v}; n++; if(fn) fn(e,a); } return n; } // 押し出す速さ＝距離×6（毎秒6の割合で弱まるので、ほぼその距離だけ動く）
 // 変異した鱗の一式：力がたまったらボタン（F／スマホ「衝撃」）で放つ（v0.64 ユーザー決定。ダメージなし）
-function scaleWave(){ SCALE_FX.charge=0; const n=scalePush(P.x,P.z,SCALE_WAVE.radius,SCALE_WAVE.pushDef);
-  scaleRing(P.x,P.z,0xb070e0,SCALE_WAVE.radius); const gy=groundH(P.x,P.z);
+function scaleWave(){ const src=scaleWaveSrc(); if(!src) return 0; SCALE_FX.charge=0; const buff=P.buffT>0?1.3:1;
+  const n=scalePush(P.x,P.z,src.R,src.D,src.dmg?(e,a)=>damageEnemy(e,src.dmg*buff,'heavy',a,{mv:MOVES.BTW,weapon:P.weapon}):null); // v0.78：変異鱗の武器の衝撃波は傷を与える
+  scaleRing(P.x,P.z,0xb070e0,src.R); const gy=groundH(P.x,P.z);
   for(let i=0;i<16;i++){ const a=i/16*TAU; scaleMote(P.x,gy+0.5,P.z,0x2a1038,0.3,1.0,0.6,Math.sin(a)*6,Math.cos(a)*6,true); }
   floatText(P.x,2.5,P.z,'衝撃波','#c9a0ff',true); sfx('stun'); S.shake=Math.max(S.shake,0.35); return n; }
-function scaleWaveReady(){ return f47Count('raw')===4&&SCALE_FX.charge>=SCALE_WAVE.charge; }
-function scaleWaveBtn(){ if(S.mode!=='playing'||P.dead||f47Count('raw')!==4) return; if(!scaleWaveReady()){ sfx('deny'); toast(`変異した鱗の力がまだたまっていない（あと${Math.ceil(SCALE_WAVE.charge-SCALE_FX.charge)}秒）`,true); return; } scaleWave(); }
+function scaleWaveReady(){ const src=scaleWaveSrc(); return !!src&&SCALE_FX.charge>=src.charge; }
+function scaleWaveBtn(){ const src=scaleWaveSrc(); if(S.mode!=='playing'||P.dead||!src) return; if(!scaleWaveReady()){ sfx('deny'); toast(`${src.name}の力がまだたまっていない（あと${Math.ceil(src.charge-SCALE_FX.charge)}秒）`,true); return; } scaleWave(); }
 function scaleFxUpdate(dt){
   for(const pool of [SCALE_FX.pool,SCALE_FX.smoke]) for(const s of pool){ if(!s.visible) continue; const u=s.userData.m; u.t+=dt; if(u.t>=u.life){ s.visible=false; continue; }
     s.position.x+=u.vx*dt; s.position.y+=u.vy*dt; s.position.z+=u.vz*dt; u.vx*=Math.exp(-3*dt); u.vz*=Math.exp(-3*dt); const k=u.t/u.life;
@@ -6105,6 +6120,7 @@ function scaleFxUpdate(dt){
   wglbGlow(); // v0.75：GLB の武器の光
   if(SCALE_FX.ring&&SCALE_FX.ring.visible){ SCALE_FX.ringT+=dt; const k=Math.min(1,SCALE_FX.ringT/0.45); SCALE_FX.ring.scale.setScalar(0.6+(SCALE_FX.ring.userData.R||6)*k); SCALE_FX.ring.material.opacity=0.85*(1-k); if(k>=1) SCALE_FX.ring.visible=false; }
   if(S.mode!=='playing'||P.dead){ return; }
+  f78HpSync(); // v0.78：変異鱗の武器を持つ・手放すと最大体力が変わる
   // 乱数は鱗の装備があるときだけ使う（防衛戦の測定と同じ結果を保つため）
   const w=WEAPONS[P.weapon], v=(SCALE_FX.v||(SCALE_FX.v=new THREE.Vector3()));
   if(w&&w.scale&&!w.boomer&&weaponMesh&&weaponMesh.visible){ const raw=w.scale==='raw';
@@ -6112,9 +6128,9 @@ function scaleFxUpdate(dt){
   // 防具：埋め込んだ鱗と継ぎ目から、蒼鱗は青い光があふれ、変異した鱗は暗い紫のもやが立ちのぼる
   const nb=f47Count('blue'), nr=f47Count('raw'); if(nb||nr) saFxUpdate(); // v0.76：鱗の防具の光・ゆらぎ・光の筋
   if(nb&&Math.random()<dt*nb*4.5){ const o=scaleEmitter('blue'); if(o){ o.getWorldPosition(v); scaleMote(v.x+(Math.random()-0.5)*0.06,v.y,v.z+(Math.random()-0.5)*0.06,0x6fd8ff,0.45,0.9,0.14); } }
-  if(nr){ if(nr===4) SCALE_FX.charge=Math.min(SCALE_WAVE.charge,SCALE_FX.charge+dt); const full=nr===4&&SCALE_FX.charge>=SCALE_WAVE.charge;
+  const src=scaleWaveSrc(); if(src) SCALE_FX.charge=Math.min(src.charge,SCALE_FX.charge+dt); else SCALE_FX.charge=0; // v0.78：変異鱗の武器でもたまる
+  if(nr){ const full=nr===4&&!!src&&SCALE_FX.charge>=src.charge;
     if(Math.random()<dt*(nr*4+(full?6:0))){ const o=scaleEmitter('raw'); if(o){ o.getWorldPosition(v); scaleMote(v.x+(Math.random()-0.5)*0.08,v.y,v.z+(Math.random()-0.5)*0.08,full?0x6affd8:0x38e0b4,0.55,0.9,full?0.17:0.12,(Math.random()-0.5)*0.2,(Math.random()-0.5)*0.2); } } } // v0.76：青緑の火の粉（前は暗い紫のもや。2026-11-16 指示書）
-  if(nr!==4) SCALE_FX.charge=0;
 }
 function scaleEmitter(set){ const L=SCALE_FX.emit[set]; let n=0, pick=null; for(const o of L){ if(!o.userData.layer.visible) continue; n++; if(Math.random()*n<1) pick=o; } return pick; } // 見えている吹き出し口から1つ選ぶ
 // ---- v0.64：鱗の飛去来器（投げると戻る。飛んでいる間にもう一度攻撃で、飛去来器の周りに衝撃波。耐久が尽きると投げられない） ----
@@ -7527,8 +7543,9 @@ function tryDodge(fromBuf){
   if(bossCinema52()) return;
   if(P.dead||P.dodge) return;
   if(P.dodgeCD>0||(P.atk&&P.atk.t<P.atk.cancelT)){ if(!fromBuf&&!P.dbuf) P.dbuf=S.time; return; } // まだ回避できない：少しだけ予約
-  if(P.st<STAM.dodge*(1-f47Stats().dodge)){ P.dbuf=0; staminaDeny(); return; }
-  P.dbuf=0; spendSt(STAM.dodge*(1-f47Stats().dodge));
+  const dk=Math.max(0.3,1-f47Stats().dodge-(f78Wpn()?.dodge||0)); // v0.78：変異鱗の武器で回避の消費が減る
+  if(P.st<STAM.dodge*dk){ P.dbuf=0; staminaDeny(); return; }
+  P.dbuf=0; spendSt(STAM.dodge*dk);
   f4DropAll('dodge');
   if(P.atk) endAttack(P.atk);
   const iw=inputWorld(); let dx=iw.x, dz=iw.z;
@@ -8717,7 +8734,7 @@ const RECIPES=[
  {id:'club',name:'木の棍棒',cost:{wood:3},desc:'太い枝を削った棍棒。間合いが少し長い。木は切れない。耐久70',show:()=>prog.arms.club==null,give:()=>{armGain('club',true);}},
  {id:'bamboo',name:'竹槍',cost:{bamboo:3,rope:1},desc:'竹の先を斜めに削いで尖らせた槍。間合いが長い（3.4）。木は切れない。耐久40',show:()=>prog.arms.bamboo==null,lock:()=>prog.arms.axeStone==null&&prog.arms.axeIron==null,lockMsg:'穂先を削るのに石の手斧が要る',give:()=>{armGain('bamboo',true);}},
  {id:'axeIron',name:'鉄の斧（良質な斧）',cost:{iron:4,wood:2,rope:1},desc:'壊れた家のがれきから集めた屑鉄を打ち直した斧。木を切る力は鉈の3倍（太い杉も4回で倒れる）。武器としても強い。耐久120で減りにくい',show:()=>prog.arms.axeIron==null,lock:()=>prog.arms.axeStone==null,lockMsg:'まず石の手斧を作って、斧の形を覚える',give:()=>{ delete prog.arms.axeStone; if(P.weapon==='axeStone'){ P.weapon='axeIron'; P.dur=WEAPONS.axeIron.maxDur; } prog.arms.axeIron=WEAPONS.axeIron.maxDur; refreshWeaponMesh(); }},
- ...Object.entries(SCALE_ARMS).map(([id,base])=>{ const raw=WEAPONS[id].scale==='raw'; return {id,name:WEAPONS[id].name,cost:SCALE_ARM_COST[id],desc:raw?`${WEAPONS[base].name}に変異した鱗を加工せずに打ち込む。通常${WEAPONS[id].light}／強${WEAPONS[id].heavy}・リーチ${WEAPONS[id].range}・耐久${WEAPONS[id].maxDur}。まがまがしい暗いもやをまとう。${WEAPONS[base].name}はこの武器に変わる`:`${WEAPONS[base].name}に加工した鱗を打ち込んで鍛え直す。通常${WEAPONS[id].light}／強${WEAPONS[id].heavy}・リーチ${WEAPONS[id].range}・耐久${WEAPONS[id].maxDur}。青い光をまとう。${WEAPONS[base].name}はこの武器に変わる`,
+ ...Object.entries(SCALE_ARMS).map(([id,base])=>{ const raw=WEAPONS[id].scale==='raw'; return {id,name:WEAPONS[id].name,cost:SCALE_ARM_COST[id],desc:raw?`${WEAPONS[base].name}に変異した鱗を加工せずに打ち込む。通常${WEAPONS[id].light}／強${WEAPONS[id].heavy}・リーチ${WEAPONS[id].range}・耐久${WEAPONS[id].maxDur}。持つ間：移動+12%・回避の消費-15%・衝撃波（F）。代償：最大体力-15%。まがまがしい暗いもやをまとう。${WEAPONS[base].name}はこの武器に変わる`:`${WEAPONS[base].name}に加工した鱗を打ち込んで鍛え直す。通常${WEAPONS[id].light}／強${WEAPONS[id].heavy}・リーチ${WEAPONS[id].range}・耐久${WEAPONS[id].maxDur}。持つ間：被ダメージ-15%。青い光をまとう。${WEAPONS[base].name}はこの武器に変わる`,
    show:()=>prog.arms[base]!=null&&(raw?inv.mutScale>0:(inv.procScale>0||!!prog.conv?.built)),give:()=>{armUpgrade(base,id);}}; }), // v0.63：蒼鱗の武器、v0.64：変異鱗の武器（暫定）
  {id:'boomer',name:'鱗の飛去来器',cost:{procScale:3,iron:3,wood:2},desc:'加工した鱗をはめた投げ具。投げると手元に戻る（強攻撃で遠くへ）。飛んでいる間にもう一度攻撃すると、飛去来器の周りに衝撃波が起きて獣を押し出す。当たり18・衝撃波20。耐久10（投げるたびに1減る）',show:()=>prog.arms.boomer==null&&(inv.procScale>0||!!prog.conv?.built),give:()=>{armGain('boomer',false); toast('鱗の飛去来器：持ち替え（R／持ち物）で持つ');}}, // v0.64（暫定）
  {id:'boomerFix',name:'飛去来器の手入れ',cost:{procScale:1},desc:'鱗の飛去来器の耐久を全回復する（加工した鱗1）',show:()=>prog.arms.boomer!=null&&armDur('boomer')<WEAPONS.boomer.maxDur,give:()=>{ setArmDur('boomer',WEAPONS.boomer.maxDur); }}, // v0.64（暫定）
@@ -9133,7 +9150,7 @@ function updatePlayer(dt){
     if(P.buffer&&!a.chop&&a.t>=a.chainT&&a.t<a.dur){ const b=takeBuffer(); if(b) startAttack(b.k,b.aim); }
     else if(a.t>=a.dur){ endAttack(a); const b=takeBuffer(); if(b) startAttack(b.k,b.aim); }
   } else {
-    spd=(keys.has('shift')?1.65:6.2)*(P.full<=0?0.85:1)*mag*ml*f4SpeedMul()*(1+f47Stats().speed);
+    spd=(keys.has('shift')?1.65:6.2)*(P.full<=0?0.85:1)*mag*ml*f4SpeedMul()*(1+f47Stats().speed+(f78Wpn()?.speed||0)); // v0.78：変異鱗の武器で速く
     if(P.vegT>0) spd*=1+VEG_SPEED_BONUS*Math.min(P.vegT,dt)/dt;
     const drive=1-Math.exp(-dt*(ml?18:24));
     P.lvx48=lerp(P.lvx48||0,mx*spd,drive);P.lvz48=lerp(P.lvz48||0,mz*spd,drive);
@@ -9562,7 +9579,7 @@ function updateHUD(dt){
   if(P.full!==hudPrev.full){ hudPrev.t=4; hudPrev.full=P.full; } // v0.45：満腹の変化でだけ展開（耐久は手持ちバーの下へ移した）
   hudPrev.t=Math.max(0,hudPrev.t-dt); $('stats').classList.toggle('compact',hudPrev.t<=0);
   hbRefresh();
-  setTxt('buffTxt',(P.buffT>0?`精進の力 攻撃+30%（${Math.ceil(P.buffT)}秒）　`:'')+(f47Count('raw')===4?`変異した鱗：衝撃波 ${SCALE_FX.charge>=SCALE_WAVE.charge?(touchMode?'放てる（衝撃）':'放てる（F）'):'あと'+Math.ceil(SCALE_WAVE.charge-SCALE_FX.charge)+'秒'}　`:'')+ // v0.63
+  setTxt('buffTxt',(P.buffT>0?`精進の力 攻撃+30%（${Math.ceil(P.buffT)}秒）　`:'')+((ws=>ws?`${ws.name}：衝撃波 ${SCALE_FX.charge>=ws.charge?(touchMode?'放てる（衝撃）':'放てる（F）'):'あと'+Math.ceil(ws.charge-SCALE_FX.charge)+'秒'}　`:'')(scaleWaveSrc()))+ // v0.63
     (P.full<=0?'空腹：自然回復しない':P.full<60||touchMode?'':'満腹：体力が少しずつ回復')); // スマホでは平常時の説明を省く
   setTxt('rWood',inv.wood); setTxt('rFood',inv.food); setTxt('rHide',inv.hide); setTxt('rFence',inv.fenceKit); setTxt('rTrap',inv.trapKit); setTxt('rSpike',inv.spikeKit); setTxt('rPit',inv.pitKit); setTxt('rStake',inv.stakeKit); setTxt('rFang',inv.fang); setTxt('rMutScale',inv.mutScale); setTxt('rRaw',`${inv.meat||0}・${inv.veg||0}・${inv.rice||0}`); setTxt('rProcScale',inv.procScale); setTxt('rCharcoal',inv.charcoal);
   { // v0.33：0の行は隠す。0→増えた瞬間は一瞬光る
@@ -10860,7 +10877,7 @@ function stfNoSave(){ return !!(STF.enc&&STF.enc.phase!=='wait'); } // 初遭遇
 function stfNormalize(){ const p=stfP(); if(!prog.bossDefeated||!p.defenseComplete||p.radioHeard!==undefined) return;
   Object.assign(p,{radioHeard:false,departureDecision:false,departureComplete:false,legacyKamishihiAccess:true}); }
 function stfFresh(){ if(STF.live){ try{ stfAbort(); stfUngather(); const el=document.getElementById('stfFade'); if(el) el.style.opacity='0'; stfCamOff(); document.body.classList.remove('cinema52'); }catch(err){ console.error(err); } }
-  if(TRUCK.drive&&typeof pm!=='undefined'&&pm) pm.g.visible=true; truckColOff(); Object.assign(TRUCK,{drive:false,sync:false}); truckStop();
+  if(TRUCK.drive&&typeof pm!=='undefined'&&pm) truckSeatOff(); truckColOff(); Object.assign(TRUCK,{drive:false,sync:false}); truckStop();
   Object.assign(STF,{live:false,busy:false,radioT:0,pre:false,enc:null,sz:null,cut:null,npc:null,camOwn:false}); STF.hold.length=0; }
 function stfObjective(){ const p=stfP(), st=stfStage();
   if(REG.cur==='komyoji'){
@@ -11085,7 +11102,7 @@ function truckMapIcons(icon,lab,X,Z){ for(const o of truckPickups()){ const part
 const TRUCK_GLB={broken:'assets/models/kei-truck/game/kei_truck_broken.glb', repaired:'assets/models/kei-truck/game/kei_truck_repaired.glb'};
 const TRUCK_VIS={}; // 形の種類 → {st:'load'|'ok'|'fail', g, wheels:[], hub:[車軸の高さ], r:車輪の半径}
 // 運転席と荷台の位置（車の中の座標。+x が左・+z が前。正式モデルから測った。暫定）：運転席は右（日本の車）。荷台の床（荷台に積む見た目・物を置く所に使う予定）
-const TRUCK_SEAT={x:-0.4,y:1.49,z:0.5}, TRUCK_BED={x0:-0.88,x1:0.88,z0:-1.71,z1:-0.11,y:1.09,wall:0.33};
+const TRUCK_SEAT={x:-0.4,y:1.31,z:0.6}, TRUCK_BED={x0:-0.88,x1:0.88,z0:-1.71,z1:-0.11,y:1.09,wall:0.33}; // v0.78：運転席は腰の位置（座面 1.28・背もたれ z 0.45 を測った）
 function truckGlbLoad(kind){ let V=TRUCK_VIS[kind]; if(V) return V; V=TRUCK_VIS[kind]={st:'load',g:null,wheels:[],hub:[],r:0.38};
   wglbLib().then(()=>new Promise((res,rej)=>{ let i=0; const L=new THREE.GLTFLoader(); const next=()=>{ if(i>=WG_BASE.length) return rej(new Error('GLB を読めない: '+kind)); L.load(WG_BASE[i++]+TRUCK_GLB[kind],res,undefined,next); }; next(); }))
     .then(gl=>{ const g=gl.scene; if(TRUCK_VIS[kind]!==V){ truckGlbFree(g); return; }
@@ -11094,11 +11111,36 @@ function truckGlbLoad(kind){ let V=TRUCK_VIS[kind]; if(V) return V; V=TRUCK_VIS[
         else { const map=m0.map; if(map){ map.encoding=THREE.LinearEncoding; map.anisotropy=4; } o.material=new THREE.MeshToonMaterial({color:0xffffff,map,gradientMap:toneTex}); } // 武器の GLB と同じ：画面は線形のまま描くので、絵も変換しない
         m0.dispose(); o.castShadow=!o.material.transparent; o.receiveShadow=true; });
       for(const n of ['wheel_fr','wheel_fl','wheel_rr','wheel_rl']){ const w=g.getObjectByName(n); if(!w) throw new Error('車輪が無い: '+n); w.rotation.order='YXZ'; V.wheels.push(w); V.hub.push(w.position.y); }
+      V.doors={r:g.getObjectByName('door_r'),l:g.getObjectByName('door_l'),tg:g.getObjectByName('tailgate')}; // v0.78：開け閉めする所（1枚の板なので裏も描く）
+      for(const k in V.doors){ const o=V.doors[k]; if(o) o.traverse(q=>{ if(q.isMesh) q.material.side=THREE.DoubleSide; }); }
       V.r=V.hub.reduce((a,b)=>a+b,0)/4; g.visible=false; if(TRUCK.m) TRUCK.m.add(g); V.g=g; V.st='ok'; })
     .catch(e=>{ V.st='fail'; console.warn('[KEI truck の形]',e&&e.message||e); });
   return V; }
 function truckGlbFree(g){ g.traverse(o=>{ if(!o.isMesh) return; o.geometry.dispose(); const m=o.material; if(m.map) m.map.dispose(); m.dispose(); }); if(g.parent) g.parent.remove(g); }
 function truckGlbDrop(kind){ const V=TRUCK_VIS[kind]; if(!V) return; if(V.g) truckGlbFree(V.g); delete TRUCK_VIS[kind]; } // 使わなくなった形を GPU から外す（直したあとの修理前の形）
+// v0.78：ドア2枚と荷台のあおりの開け閉め（2026-11-17 ユーザー決定）。開く角度（rad）・速さ。乗り降りで運転席のドアが開いて閉まる、荷台を使う間はあおりが下りる
+const TRUCK_DOOR={open:{r:1.1,l:1.1,tg:1.5},spd:{r:3.2,l:3.2,tg:2.4},hold:0.75};
+function truckDoorOpen(k,sec){ TRUCK.doorUntil=TRUCK.doorUntil||{}; TRUCK.doorUntil[k]=Math.max(TRUCK.doorUntil[k]||0,S.time+(sec??TRUCK_DOOR.hold)); }
+function truckDoorsUpdate(dt){ const A=TRUCK.doorA||(TRUCK.doorA={r:0,l:0,tg:0}), U=TRUCK.doorUntil||{}; const V=TRUCK_VIS[TRUCK.visKind], D=V&&V.doors;
+  for(const k of ['r','l','tg']){ const want=(S.time<(U[k]||0)||(k==='tg'&&TRUCK.tgOpen))?TRUCK_DOOR.open[k]:0, sp=TRUCK_DOOR.spd[k]*dt; const was=A[k];
+    A[k]=was<want?Math.min(want,was+sp):Math.max(want,was-sp); if(was>0.05&&A[k]===0&&want===0&&k!=='tg'&&TRUCK.m&&TRUCK.m.visible) sfx('trap'); // 閉まる音（仮）
+    const o=D&&D[k]; if(o){ if(k==='r') o.rotation.y=A[k]; else if(k==='l') o.rotation.y=-A[k]; else o.rotation.x=-A[k]; } } }
+// v0.78：運転中は主人公を運転席に座らせる（2026-11-17 ユーザー決定）。腰を座面に置き、腿を前へ・膝を曲げ・両手をハンドルへ。体の作りは変えない（姿勢だけ）
+// 主人公（頭の大きい体）は座ると高さ 約1.26m あり、運転席（座面 1.28〜天井 約2.08）に入らないので、座っている間だけ 0.62倍で見せ、少し背もたれに寄りかからせる（暫定。体の作りは変えない）
+const SEAT_POSE={lean:-0.22,leg:-1.2,legZ:0.07,knee:1.42,armX:-1.3,armZ:-0.2,elbow:0.55,ch:0.04,hd:0.12,scale:0.62};
+const _seatV=new THREE.Vector3(), _seatH=new THREE.Vector3(), _seatQ=new THREE.Quaternion();
+function truckSeatPose(){ if(typeof pm==='undefined'||!pm||!TRUCK.m) return; const Q=SEAT_POSE;
+  pm.root.position.y=0; pm.body.rotation.set(Q.lean,0,0); pm.body.position.set(0,pm.restHip,0); pm.body.scale.set(1,1,1);
+  if(pm.chest) pm.chest.rotation.set(Q.ch,0,0); pm.head.rotation.set(Q.hd,0,0);
+  pm.armL.rotation.set(Q.armX,0,Q.armZ); pm.armR.rotation.order='YXZ'; pm.armR.rotation.set(Q.armX,0,-Q.armZ);
+  pm.legs[0].rotation.set(Q.leg,0,Q.legZ); pm.legs[1].rotation.set(Q.leg,0,-Q.legZ);
+  softPose(pm,0,{elbow:Q.elbow,knee:0.06,kneeAdd:[Q.knee,Q.knee]});
+  if(!pm.seatHip){ pm.g.position.set(0,0,0); pm.g.quaternion.identity(); pm.g.scale.setScalar(1); pm.g.updateMatrixWorld(true); // 腰（両脚の付け根の真ん中）の位置を体の中の座標で測る
+    pm.legs[0].getWorldPosition(_seatV); pm.legs[1].getWorldPosition(_seatH); pm.seatHip=_seatV.add(_seatH).multiplyScalar(0.5).clone(); }
+  TRUCK.m.updateMatrixWorld(true); _seatV.set(TRUCK_SEAT.x,TRUCK_SEAT.y,TRUCK_SEAT.z); TRUCK.m.localToWorld(_seatV); TRUCK.m.getWorldQuaternion(_seatQ);
+  pm.g.scale.setScalar(Q.scale); pm.g.quaternion.copy(_seatQ); _seatH.copy(pm.seatHip).multiplyScalar(Q.scale).applyQuaternion(_seatQ); pm.g.position.copy(_seatV).sub(_seatH);
+  weaponPivot.visible=false; pm.g.visible=TRUCK.m.visible; }
+function truckSeatOff(){ if(typeof pm==='undefined'||!pm) return; pm.g.rotation.set(0,P.facing,0); pm.g.scale.setScalar(1); weaponPivot.visible=true; pm.g.visible=true; } // 降りたら立った姿に戻す（毎コマの動きが姿勢を作り直す）
 // いま見せる形を選ぶ：直していれば修理後、まだなら修理前。読めていなければコードの仮の形
 function truckVisual(t){ const want=t.repaired?'repaired':'broken', V=truckGlbLoad(want), B0=TRUCK_VIS.broken; let use=V.st==='ok'?V:null, kind=use?want:'code';
   if(!use&&V.st==='load'&&want==='repaired'&&B0&&B0.st==='ok'){ use=B0; kind='broken'; } // 修理後の形を読み終わるまでは修理前の形のまま（コードの仮の形を一瞬出さない）
@@ -11140,7 +11182,9 @@ function truckUpdate(dt){ truckItemsUpdate(); const show=truckShown()&&!REG.busy
   if(!TRUCK.drive){ TRUCK.roll*=Math.max(0,1-dt*5); TRUCK.pitch*=Math.max(0,1-dt*5); }
   m.position.set(TRUCK.x,B.Y,TRUCK.z); m.rotation.set(0,TRUCK.a,0); m.rotation.order='YXZ'; m.rotation.x=-Math.atan(B.p)+TRUCK.pitch; m.rotation.z=Math.atan(B.q)+TRUCK.roll; // ばね（坂・段差）＋（運転中の）沈みと傾き
   TRUCK.wheels.forEach((w,i)=>{ if(TRUCK.visKind!=='code'||i||t.repaired) w.position.y=TRUCK.hub[i]+B.wo[i]; }); // 車輪は地面に沿って上下する（ばねが縮むと上へ、地面を離れると下へ伸びる）
-  TRUCK.broken.visible=!t.repaired; const cw=TRUCK.codeWheels[0]; cw.scale.set(1,t.repaired?1:0.7,1); if(!t.repaired) cw.position.y=0.22; } // さび・パンク・開いたボンネットはコードの仮の形だけ（正式モデルは修理前の形そのもの）
+  TRUCK.broken.visible=!t.repaired; const cw=TRUCK.codeWheels[0]; cw.scale.set(1,t.repaired?1:0.7,1); if(!t.repaired) cw.position.y=0.22;
+  truckDoorsUpdate(dt);
+  if(TRUCK.drive) truckSeatPose(); } // v0.78：運転席に座った主人公・ドアとあおり // さび・パンク・開いたボンネットはコードの仮の形だけ（正式モデルは修理前の形そのもの）
 // ---- ばね（v0.77、2026-11-17 ユーザー指示「段差で跳ね上がったり少し浮いたりするところも表現して」）----
 // 4つの車輪それぞれのばね（縮むほど押し返す・速く縮むほど強く止める）で、車体の上下・前後の傾き・左右の傾きを動かす。
 // 地面の高さ＋でこぼこ（道・砂利道・草地・畑・田んぼの畦・線路）を車輪ごとに見る。段差でばねが急に縮むと車体は跳ね上がり、
@@ -11186,9 +11230,9 @@ function truckSusp(dt){ const C=TRUCK_CFG, W=TRUCK_WHEELS, g=9.8;
 // 乗る・降りる
 function truckBoard(){ if(TRUCK.drive||!truckOK()) return; if(f4Busy()) f4DropAll(''); const t=trk();
   if(!stfP().departureComplete&&stfStage()==='sendoff'){ stfSendoff(); return; } // 初めて乗る前に、直した報告と見送り
-  TRUCK.drive=true; truckStop(); truckColOff(); P.atk=null; P.dodge=null; P.x=TRUCK.x; P.z=TRUCK.z; P.facing=TRUCK.a; pm.g.visible=false; cam.yaw=TRUCK.a; cam.init=false;
+  TRUCK.drive=true; truckStop(); truckColOff(); P.atk=null; P.dodge=null; P.x=TRUCK.x; P.z=TRUCK.z; P.facing=TRUCK.a; truckSeatPose(); truckDoorOpen('r'); // 運転席のドアが開いて閉まる cam.yaw=TRUCK.a; cam.init=false;
   toast('KEI truck に乗った（移動：運転・E／行動ボタン：降りる）'); }
-function truckExit(quiet){ if(!TRUCK.drive) return; const a=TRUCK.a, t=trk(); TRUCK.drive=false; truckStop(); pm.g.visible=true;
+function truckExit(quiet){ if(!TRUCK.drive) return; const a=TRUCK.a, t=trk(); TRUCK.drive=false; truckStop(); truckSeatOff(); truckDoorOpen('r');
   const side=[[Math.cos(a)*-2.05,Math.sin(a)*2.05],[Math.cos(a)*2.05,-Math.sin(a)*2.05],[-Math.sin(a)*3.25,-Math.cos(a)*3.25],[Math.sin(a)*3.25,Math.cos(a)*3.25]]; // 右・左・後ろ・前（正式モデルの大きさ）
   let put=false; for(const [dx,dz] of side){ const x=TRUCK.x+dx, z=TRUCK.z+dz; if(szWalkable(x,z)&&szFree(x,z,0.5)){ P.x=x; P.z=z; put=true; break; } }
   if(!put){ P.x=TRUCK.x-Math.cos(a)*2.05; P.z=TRUCK.z+Math.sin(a)*2.05; }
@@ -11225,7 +11269,7 @@ function truckDrive(dt){ const C=TRUCK_CFG, {ix,iz}=truckInput();
   TRUCK.vx=vx; TRUCK.vz=vz; const v=TRUCK.v=vx*sb+vz*cb;
   const latA=v*TRUCK.yr, lonA=(v-u0)/Math.max(dt,1e-3);
   TRUCK.roll+=(clamp(latA*C.rollK,-0.09,0.09)-TRUCK.roll)*Math.min(1,dt*6); TRUCK.pitch+=(clamp(-lonA*C.pitchK,-0.05,0.05)-TRUCK.pitch)*Math.min(1,dt*6);
-  P.x=TRUCK.x; P.z=TRUCK.z; P.facing=TRUCK.a; P.iframe=true; P.moveMag=0; P.atk=null; P.dodge=null; pm.g.visible=false;
+  P.x=TRUCK.x; P.z=TRUCK.z; P.facing=TRUCK.a; P.iframe=true; P.moveMag=0; P.atk=null; P.dodge=null; // v0.78：主人公は運転席に座って見える（truckUpdate の truckSeatPose）
   const t=trk(); t.x=+TRUCK.x.toFixed(2); t.z=+TRUCK.z.toFixed(2); t.a=+TRUCK.a.toFixed(3); t.region=REG.cur;
   if(Math.abs(v)>1.5&&!(cam.manualT>0)) cam.yaw+=angDiff(cam.yaw,TRUCK.a)*Math.min(1,dt*2.2); // カメラは車の後ろへ
   TRUCK.wheels.forEach((wh,i)=>{ wh.rotation.order='YXZ'; wh.rotation.x+=v*dt/(TRUCK.wr||0.3); if(i<2) wh.rotation.y=TRUCK.steer; }); // 前の車輪はハンドルの向き
