@@ -31,7 +31,7 @@ const localStorage={setItem:(key,value)=>{stored={key,value};}};
 let prog={bossDefeated:false,arms:{nata1:120},stage:'talk'};
 const P={weapon:'nata1',dur:83,full:75};
 const inv={wood:9},stats={kills:3},GAPS=[],traps=[],NODES=[];
-const checkpointStage=()=>prog.stage; const saveTrap=x=>x;
+const checkpointStage=()=>prog.stage; const saveTrap=x=>x; const stfNoSave=()=>false, stfNormalize=()=>{}; // v0.77：作業F（tests/story-f-browser.py で確かめる）
 const f31SaveProg=()=>({level:2});
 const f5Save=()=>({}),f4Save=f5Save,f7Save=f5Save,f8Save=f5Save,f9Save=f5Save,f10Save=f5Save,facSave=id=>({v:1,built:0,id}),kamaSave=()=>({v:1,built:0,q:[],t:0,out:{}}),kamiSave=()=>({v:1,n:{},r:{},sc:[],f:[],sp:{},g:{},st:{},fm:{}}),szSave=()=>({v:1,joined:false}); // v0.63：変換炉・v0.64：かまど（v0.66 で形を変えた）・v0.67：上志比・v0.73：スズキ
 ${save}

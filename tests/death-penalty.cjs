@@ -21,6 +21,7 @@ let bossActive=false;
 const f9Reset=()=>{}, clearRaidEnemies=()=>{}, setNight=()=>{}, setDusk=()=>{}, fenceVisual=()=>{}, setupBoss=()=>{}, setBarrier=()=>{},
   setCam=()=>{}, resetCombat=()=>{}, setState=(e,s)=>{e.state=s}, hideAllOv=()=>{}, toast=t=>toasts.push(t), saveGame=()=>{saves++};
 let szRetries=0; const szAfterRetry=()=>{szRetries++}; // v0.72：スズキの扱い（tests/suzuki-rescue-browser.py で確かめる）
+const stfAfterRetry=()=>{}; // v0.77：作業F の初遭遇の途中で倒れたとき（tests/story-f-browser.py で確かめる）
 const $=()=>({hidden:false});
 ${html.slice(start, end)}
 `, ctx);

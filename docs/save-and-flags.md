@@ -76,7 +76,14 @@
 | `openingStarted` | 光明寺防衛戦を始めた |
 | `defenseComplete` | 光明寺防衛戦を完了した（章クリアとは別。失わない） |
 | `defenseRewarded` | 初回クリアの報酬を受け取った（v0.55）。これがない勝利で1回だけ報酬が出る |
-| `mutantMet` | **予約（v0.67）**：変異したサルと初遭遇した。作業F（初遭遇）で立てる予定で、今は立てる所がない。立つと、上志比の町の群れに変異したサルが加わる（`kamiMutantOK()`） |
+| `mutantMet` | 変異したサルと初遭遇した（v0.67 で予約）。**v0.77（作業F・作業ブランチ）**：山王の初遭遇のあと、スズキとの会話を終えて仲間になったとき（`suzuki.joined` と同時）に立つ。立つと、上志比の町の群れに変異したサルが加わる（`kamiMutantOK()`） |
+| `radioHeard` | **v0.77（作業ブランチ）**：救援無線を聞いた。防衛戦の勝利で `false` が付き、聞くと `true`。**キーが無い＝作業F の記録が無い**（v0.76 以前・試験の開放）＝今までどおり |
+| `departureDecision` | v0.77：出発の相談をした |
+| `truck` | v0.77：KEI truck `{found,repaired,fueled,fuel,parts,trips,region,x,z,a}`（見つけた・直した・燃料を入れた・持っている燃料・拾った部品 ID・上志比へ運転して行った回数・置いてある地域と場所と向き）。不正な値は `trk()` が直す |
+| `departureComplete` | v0.77：直した報告と見送りが済んだ（このあと KEI truck で上志比へ） |
+| `legacyKamishihiAccess` | v0.77：旧セーブの移動権。防衛戦は済み・`radioHeard` が無い保存を読み込むと `true`（ほかに `radioHeard:false` など）。歩いて上志比へ行けるまま、無線が1回鳴る。新しい保存には付かない（`stfNormalize()`、`docs/p2-story-f.md`） |
+
+v0.77 の初遭遇（山王のカット・戦い）の途中は保存しない（`stfNoSave()`）。
 
 ## 4. 進行段階（`prog.stage`）
 
