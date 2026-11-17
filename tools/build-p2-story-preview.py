@@ -6,6 +6,7 @@
 - タイトル画面の右上のボタン：
   ・防衛戦を終えたところから（光明寺。勝利の会話 → 救援無線 → 相談 → KEI truck を探す）
   ・KEI truck を直すところから（相談まで済み。部品と燃料は光明寺で拾う。素材は上のボタンで足せる）
+  ・KEI truck を直したところから（直して燃料も入れ、見送りも済み。国道416号で運転席に乗った状態。2026-11-17 ユーザー依頼）
   ・上志比の山王の手前から（見送りまで済み・KEI truck で一度来た。東へ少し歩くと初遭遇）
   ・旧セーブを読み込む（防衛戦は済み・作業F の記録なし → 歩いて上志比へ行ける権利を残したまま、光明寺で無線から）
 - 遊んでいる間、画面の上にボタン：素材を足す・KEI truck の前へ・山王の手前へ・回復・進み（いまの記録を出す）
@@ -39,6 +40,7 @@ s = rep(s, '    <div class="tact">',
         'justify-content:flex-end;z-index:5;display:flex;flex-wrap:wrap;gap:6px;max-width:calc(100% - 16px)">'
         f'<button id="btnFRadio" {BTN}>テスト：防衛戦を終えたところから</button>'
         f'<button id="btnFTruck" {BTN}>テスト：KEI truck を直すところから</button>'
+        f'<button id="btnFDrive" {BTN}>テスト：KEI truck を直したところから（すぐ運転）</button>'
         f'<button id="btnFSanno" {BTN}>テスト：上志比の山王の手前から</button>'
         f'<button id="btnFLegacy" {BTN}>テスト：旧セーブを読み込む</button></div>\n    <div class="tact">')
 test_code = r"""
@@ -56,6 +58,10 @@ async function fstTest(kind){
  if(kind==='radio'){ fstBase(); ev.kind='chapter2'; ev.ended=false; winEvent(); toast('試遊：会話のあと、救援無線 → 相談'); return; }
  if(kind==='truck'){ const p=fstBase(); Object.assign(p,{defenseComplete:true,defenseRewarded:true,radioHeard:true,departureDecision:true,departureComplete:false}); TRUCK.sync=false;
    banner('試遊：KEI truck を直す','国道416号の東の出口の手前に軽トラックがある。部品は資材倉庫の前と国道416号の脇、燃料は資材倉庫の前。素材（木材・屑鉄・縄・石・竹）は上の「素材を足す」で1台分足せる',8); saveGame(); return; }
+ if(kind==='drive'){ const p=fstBase(); Object.assign(p,{defenseComplete:true,defenseRewarded:true,radioHeard:true,departureDecision:true,departureComplete:true});
+   const t=trk(); Object.assign(t,{found:true,repaired:true,fueled:true,fuel:TRUCK_CFG.fuel,parts:['p1','p2'],region:'komyoji'}); delete t.x; delete t.z; delete t.a; TRUCK.sync=false;
+   truckModel(); truckPos(); fstAtTruck(); truckBoard();
+   banner('試遊：KEI truck を直したところ','直して燃料も入れた KEI truck に乗っている。移動の操作で運転、E／行動ボタンで降りる。東の出口（国道416号）へ運転すると上志比へ',8); saveGame(); return; }
  if(kind==='sanno'){ const p=fstBase(); Object.assign(p,{defenseComplete:true,defenseRewarded:true,radioHeard:true,departureDecision:true,departureComplete:true});
    const t=trk(); Object.assign(t,{found:true,repaired:true,fueled:true,parts:['p1','p2'],trips:1}); TRUCK.sync=false;
    const ok=await regionTravel('kamishihi',null,{force:true}); if(!ok){ toast('上志比を読み込めませんでした',true); return; }
@@ -63,7 +69,7 @@ async function fstTest(kind){
    fstNearSanno(56); banner('試遊：山王の手前','山王の駅（東）へ少し歩くと、スズキと変異したサルの場面が始まります',6); saveGame(); return; }
  if(kind==='legacy'){ const p=fstBase(); Object.assign(p,{defenseComplete:true,defenseRewarded:true}); saveGame(); continueGame();
    toast('試遊：旧セーブ（防衛戦は済み・作業F の記録なし）として読み直した。歩いて上志比へ行けるまま、光明寺で無線から'); } }
-{ const on0=(id,k)=>{ const b=document.getElementById(id); if(b) b.addEventListener('click',()=>fstTest(k)); }; on0('btnFRadio','radio'); on0('btnFTruck','truck'); on0('btnFSanno','sanno'); on0('btnFLegacy','legacy');
+{ const on0=(id,k)=>{ const b=document.getElementById(id); if(b) b.addEventListener('click',()=>fstTest(k)); }; on0('btnFRadio','radio'); on0('btnFTruck','truck'); on0('btnFDrive','drive'); on0('btnFSanno','sanno'); on0('btnFLegacy','legacy');
   const bar=document.createElement('div'); bar.id='p2fbar'; bar.style.cssText='position:fixed;top:calc(6px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:30;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 16px)';
   const B=(id,t)=>`<button id="${id}" style="font-size:12px;padding:5px 9px;min-height:0;opacity:.88">${t}</button>`;
   bar.innerHTML=B('fsa','素材を足す')+B('fsb','KEI truck の前へ')+B('fse','山王の手前へ')+B('fsc','回復')+B('fsd','進み');

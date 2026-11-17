@@ -11071,7 +11071,7 @@ function truckUpdate(dt){ truckItemsUpdate(); const show=truckShown()&&!REG.busy
   TRUCK.broken.visible=!t.repaired; TRUCK.wheels[0].scale.set(1,t.repaired?1:0.7,1); TRUCK.wheels[0].position.y=t.repaired?0.3:0.22; }
 // 乗る・降りる
 function truckBoard(){ if(TRUCK.drive||!truckOK()) return; if(f4Busy()) f4DropAll(''); const t=trk();
-  if(!stfP().departureComplete&&stfStage()==='sendoff'){ stfSendoff(); return; } // 初めて乗る前に、直した報告と見送り（草案）
+  if(!stfP().departureComplete&&stfStage()==='sendoff'){ stfSendoff(); return; } // 初めて乗る前に、直した報告と見送り
   TRUCK.drive=true; truckStop(); truckColOff(); P.atk=null; P.dodge=null; P.x=TRUCK.x; P.z=TRUCK.z; P.facing=TRUCK.a; pm.g.visible=false; cam.yaw=TRUCK.a; cam.init=false;
   toast('KEI truck に乗った（移動：運転・E／行動ボタン：降りる）'); }
 function truckExit(quiet){ if(!TRUCK.drive) return; const a=TRUCK.a, t=trk(); TRUCK.drive=false; truckStop(); pm.g.visible=true;
