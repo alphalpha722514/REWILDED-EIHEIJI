@@ -89,6 +89,7 @@ assert.match(html,/prog\.chapter2=chapter2State\(null,false\)/);
   assert.deepEqual(L({v:1,hq:{sv:[1,'a',0],talk:0,plan:0}}).hq.sv,[1,1,0],'truthy values become 1');
   assert.deepEqual(L({v:1,hq:{plan:1}}).hq.sv,[1,1,1],'plan started: surveys and talk are done');
   assert.equal(L({v:1,hq:{plan:1}}).hq.talk,1);
+  assert.deepEqual(L({v:1,hq:{sv:[1,1,1],talk:1,plan:0}}).hq,{sv:[1,1,1],talk:0,plan:0,beasts:0,visited:0},'closed during the founding talk: the talk plays again');
   assert.deepEqual(L({v:1,hq:{plan:1},rep:{storage:[1,0,0],workshop:[1,1,0]}}).rep.workshop,[0,0,0],'workshop needs storage first');
   assert.deepEqual(L({v:1,hq:{plan:1},rep:{storage:[1,1,1],workshop:[1,0,1]}}).rep.workshop,[1,0,1]);
   assert.equal(L({v:1,got:{yardHits:-5}}).got.yardHits,0);

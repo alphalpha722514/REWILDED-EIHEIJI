@@ -10486,7 +10486,7 @@ function p3Load(q){ const p=p3Fresh(); if(!q||typeof q!=='object'||q.v!==1) retu
   if(Array.isArray(h.sv)) p.hq.sv=[0,1,2].map(i=>b(h.sv[i])); for(const k of ['talk','plan','beasts','visited']) p.hq[k]=b(h[k]);
   for(const f of ['storage','workshop']) if(q.rep&&Array.isArray(q.rep[f])) p.rep[f]=[0,1,2].map(i=>b(q.rep[f][i]));
   const g=q.got||{}; p.got.gen=b(g.gen); p.got.yardTruck=b(g.yardTruck); p.got.yardHits=num(g.yardHits,0,0,99);
-  if(p.hq.plan) p.hq.talk=1; if(p.hq.talk) p.hq.sv=[1,1,1]; if(p.rep.workshop.some(Boolean)&&!p.rep.storage.every(Boolean)) p.rep.workshop=[0,0,0]; return p; }
+  if(p.hq.plan) p.hq.talk=1; else p.hq.talk=0; /* 会話の途中で閉じたときは、次に入ったときに会話をやり直す */ if(p.hq.talk) p.hq.sv=[1,1,1]; if(p.rep.workshop.some(Boolean)&&!p.rep.storage.every(Boolean)) p.rep.workshop=[0,0,0]; return p; }
 function p3bState(){ return prog.p3||(prog.p3=p3Fresh()); }
 function p3bDone(f){ return p3bState().rep[f].every(Boolean); }
 function p3bHas(k){ return (inv[k]||0)>0; }
@@ -10545,7 +10545,7 @@ function p3bSurvey(i,quiet){ const p=p3bState(); if(p.hq.talk||p.hq.sv[i]) retur
   const n=p.hq.sv.filter(Boolean).length; if(n<3){ setTimeout(()=>{ if(S.mode==='playing') toast(`調べた所 ${n}/3`); },2600); } p3bRebuildSoon(); saveGame(); p3bTalkCheck(true); }
 function p3bSzInside(){ return typeof szHere==='function'&&szHere()&&SZ.x>P3A_IN.x-60&&!SZ.down; }
 function p3bTalkCheck(say){ const p=p3bState(); if(p.hq.talk||!p.hq.sv.every(Boolean)||!P3A.inside||P3A.busy) return;
-  if(!p3bSzInside()||dist(SZ.x,SZ.z,P.x,P.z)>14){ if(say) setTimeout(()=>toast('スズキがいない。外へ出て「ついて来て」と声をかけ、一緒に見に来よう',true),2800); return; }
+  if(!p3bSzInside()||dist(SZ.x,SZ.z,P.x,P.z)>14){ if(say&&!(typeof szHere==='function'&&szHere()&&SZ.x>P3A_IN.x-60)) setTimeout(()=>toast('スズキがいない。外へ出て「ついて来て」と声をかけ、一緒に見に来よう',true),2800); else if(say&&SZ.down) setTimeout(()=>toast('スズキが倒れている。助け起こしてから、一緒に見よう',true),2800); return; }
   if(S.mode!=='playing') return; p.hq.talk=1; saveGame(); queueDialog(P3B_TALK.map(([w,t])=>[w==='S'?STF_SZW:w==='H'?STF_HERO:null,t]),()=>{ p.hq.plan=1; saveGame(); p3bRebuildSoon(); banner('上志比復興計画を開始','まずは倉庫と総合作業場を直そう',3.4); }); }
 async function p3bRepair(f,i){ const p=p3bState(), F=P3B.rep[f], sp=F.spots[i]; if(p.rep[f][i]||P3A.busy) return;
   if(!bedAfford(sp.cost)){ sfx('deny'); toast(`${F.name}：${sp.name}　素材が足りない（${p3bNeedText(sp.cost)}）`,true); return; }
