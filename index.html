@@ -654,7 +654,7 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.79.3 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.80 デモ版　第二章・光明寺防衛戦と上志比（P3-A 試作）</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -10178,7 +10178,7 @@ function p3aBuildHQ(ctx){ const H=P3A.HQ, L=H.L, W=H.W, c=Math.cos(H.rot), s=Mat
   gb.box(-L/2-1.0,fh+2.6,8,2.2,0.1,5,cc(0x7a6a5a)); // 崩れかけた庇
   const geo=gb.geo(); const m=new THREE.Mesh(ctx.own(geo),vcMat); m.castShadow=true; m.receiveShadow=true; ctx.add(m);
   const ink=new THREE.Mesh(ctx.own(inkGeo(geo,0.07)),inkMat); ink.raycast=()=>{}; ctx.add(ink);
-  ctx.obox(H.x,H.z,L+0.5,W+0.5,H.rot,'house',{h:y0+top+rise});
+  ctx.obox(H.x,H.z,L+0.5,W+0.5,H.rot,'house',{h:y0+top+rise,p3a:1});
   // 外回り：北の前庭（ひびの入ったコンクリート）、パレット・ドラム缶・タイヤ、放置された軽トラ
   const yd=new GB(); yd.frame(H.x,0,H.z,H.rot); yd.seed=9; yd.jit=0.05; const WX=(lx,lz)=>[H.x+lx*c-lz*s,H.z+lx*s+lz*c];
   for(let i=0;i<8;i++) for(let k=0;k<6;k++){ const lx=L/2+1+i*1.5, lz=-W/2+3+k*5.2, [wx,wz]=WX(lx+0.75,lz); const hh=kamiH(wx,wz); yd.box(lx+0.75,hh+0.04,lz,1.5,0.08,5.2,cc(hash2(i,k)<0.15?0x86827a:0x9d998f)); if(hash2(k,i)<0.25) yd.box(lx+0.75,hh+0.085,lz+(hash2(i*3,k)-0.5)*3,1.4,0.01,0.06,cc(0x55524c)); }
@@ -10189,7 +10189,7 @@ function p3aBuildHQ(ctx){ const H=P3A.HQ, L=H.L, W=H.W, c=Math.cos(H.rot), s=Mat
     for(const dx of [-1,1]) for(const dz of [-0.62,0.62]) yd.box(L/2+9+dx*1.05,h+0.25,9+dz,0.5,0.5,0.2,cc(0x1c1c1c)); yd.box(L/2+8.2,h+1.06,9,1.6,0.04,1.4,cc(0x8a6a4c)); });
   for(let k=0;k<5;k++) prop(-L/2-2-k*0.6,-W/2+2+k*1.3,h=>{ yd.box(-L/2-2-k*0.6,h+0.18,-W/2+2+k*1.3,0.62,0.36,0.62,cc(0x1f1f1f)); }); // 積み上げたタイヤ
   const ym=new THREE.Mesh(ctx.own(yd.geo()),vcMat); ym.receiveShadow=true; ym.castShadow=true; ctx.add(ym);
-  { const [wx,wz]=WX(L/2+9,9); ctx.obox(wx,wz,3.4,1.6,H.rot,'car',{h:kamiH(wx,wz)+1.8}); }
+  { const [wx,wz]=WX(L/2+9,9); ctx.obox(wx,wz,3.4,1.6,H.rot,'car',{h:kamiH(wx,wz)+1.8,p3a:1}); }
   // 入口（半開きのシャッターの前）
   { const [dx,dz]=WX(L/2+1.4,-8.5); P3A.doors.push({id:'hq',x:dx,z:dz,label:'拠点本部の候補：中へ入る（試作）'}); }
   return {x:H.x,z:H.z}; }
@@ -10226,7 +10226,7 @@ function p3aHouse(ctx,gb,yd,b,type,rnd){ const [x,z,l0,w0,rot]=b; const L=Math.m
     { const kx=-L/2-2.5, kz=-W/2+2.9, KL=4.4, KW=5.0, KH=5.0; gb.box(kx,fh/2,kz,KL+0.2,fh,KW+0.2,cc(0x8a8478)); gb.box(kx,fh+KH/2,kz,KL,KH,KW,cc(0xe9e5d8)); gb.box(kx,fh+0.9,kz,KL+0.04,1.8,KW+0.04,cc(BOARD));
       gb.box(kx,fh+KH*0.7,kz+KW/2+0.05,0.8,0.8,0.08,cc(0x2a2522)); gb.frame(x+kx*c-kz*s,y0,z+kx*s+kz*c,rot+Math.PI/2); roofGable(gb,KW,KL,fh+KH,KL*0.32,0.5,cc(TILE),cc(UNDER)); ridge(gb,KW+1,fh+KH+KL*0.32,cc(TILE)); gb.frame(x,y0,z,rot);
       for(const sz of [-1,1]) gb.tri([kx-sz*KL/2,fh+KH,kz+sz*(KW/2+0.02)],[kx+sz*KL/2,fh+KH,kz+sz*(KW/2+0.02)],[kx,fh+KH+KL*0.32,kz+sz*(KW/2+0.02)],cc(0xe9e5d8));
-      const [wx,wz]=P_(kx,kz); ctx.obox(wx,wz,KL+0.3,KW+0.3,rot,'house',{h:y0+fh+KH+KL*0.32}); }
+      const [wx,wz]=P_(kx,kz); ctx.obox(wx,wz,KL+0.3,KW+0.3,rot,'house',{h:y0+fh+KH+KL*0.32,p3a:1}); }
     for(const sx of [-1,1]){ gb.box(sx*(L/2+0.85),E-0.05,0,0.14,0.12,W+1.8,cc(0x6d6f70)); for(const sz of [-1,1]) gb.box(sx*(L/2+0.85),(E-0.05)/2,sz*(W/2+0.75),0.1,E-0.05,0.1,cc(0x6d6f70)); } // 雨樋（軒は横の面）
     p3aVine(gb,L/2,fh,-W*0.1,W*0.5,2.4,2,rnd);
     // 庭：松・灯油タンク・耕運機・稲架・置き去りの軽トラ・石垣
@@ -10287,7 +10287,7 @@ function p3aHouse(ctx,gb,yd,b,type,rnd){ const [x,z,l0,w0,rot]=b; const L=Math.m
     gb.box(L/2-0.8,fh+0.9,W/2+1.0,0.9,1.8,0.75,cc(0xc83a2a)); gb.box(L/2-0.8,fh+1.2,W/2+1.38,0.7,0.9,0.02,cc(0x9fd4e0)); // 自販機
     p3aGutter(gb,L,W,fh+h1+h2-0.05,0.55); door.lx=0;
   }
-  ctx.obox(x,z,L+0.3,W+0.3,rot,'house',{h:y0+top});
+  ctx.obox(x,z,L+0.3,W+0.3,rot,'house',{h:y0+top,p3a:1});
   const [dx,dz]=P_(door.face===2?door.lx+1.2:door.lx,door.face===2?0:door.lz+1.2);
   P3A.doors.push({id:'house'+b.idx,x:dx,z:dz,type,label:'（家の中の探索は P3-E。入口の位置だけ決めた）',future:true});
   return y0+top; }
@@ -10437,7 +10437,7 @@ function p3aBuildForest(ctx){ const F=P3A.FOREST, rnd=p3aRng(2718), M=p3aMats();
   // 林床：落ち葉（杉の赤茶・広葉樹の黄茶・竹の枯れ葉）を地面に重ねる、岩・倒木・切り株、獣道
   const pr=new GB(); pr.jit=0.1;
   { const RK=[]; for(let n=0;n<10;n++){ const a=rnd()*TAU, rr=8+rnd()*(F.r-12), x=F.x+Math.sin(a)*rr, z=F.z+Math.cos(a)*rr; if(near(x,z)<3) continue; const big=0.7+rnd()*1.4, h=kamiH(x,z); RK.push({x,y:h-0.15*big,z,s:big*1.5,rot:rnd()*TAU,col:0x77746b,col2:0x6b685f,moss:true}); ctx.circle(x,z,big*0.8,'rock',{h:h+big}); } p3aRockMesh(ctx,RK); }
-  for(let n=0;n<5;n++){ const a=rnd()*TAU, rr=10+rnd()*(F.r-16), x=F.x+Math.sin(a)*rr, z=F.z+Math.cos(a)*rr; if(near(x,z)<4) continue; const h=kamiH(x,z), Lg=6+rnd()*5, ang=rnd()*TAU; pr.frame(x,h+0.3,z,ang); pr.box(0,0,0,Lg,0.5,0.5,cc(0x5e4a3a)); pr.box(-Lg/2-0.3,0.2,0,0.8,1.2,1.4,cc(0x6a5440)); pr.box(Lg*0.2,0.3,0,0.8,0.18,0.5,cc(0x4f6e36)); ctx.obox(x,z,Lg,0.6,ang,'log',{h:h+0.8}); } // 倒木（苔つき）
+  for(let n=0;n<5;n++){ const a=rnd()*TAU, rr=10+rnd()*(F.r-16), x=F.x+Math.sin(a)*rr, z=F.z+Math.cos(a)*rr; if(near(x,z)<4) continue; const h=kamiH(x,z), Lg=6+rnd()*5, ang=rnd()*TAU; pr.frame(x,h+0.3,z,ang); pr.box(0,0,0,Lg,0.5,0.5,cc(0x5e4a3a)); pr.box(-Lg/2-0.3,0.2,0,0.8,1.2,1.4,cc(0x6a5440)); pr.box(Lg*0.2,0.3,0,0.8,0.18,0.5,cc(0x4f6e36)); ctx.obox(x,z,Lg,0.6,ang,'log',{h:h+0.8,p3a:1}); } // 倒木（苔つき）
   for(let n=0;n<9;n++){ const a=rnd()*TAU, rr=6+rnd()*(F.r-8), x=F.x+Math.sin(a)*rr, z=F.z+Math.cos(a)*rr; if(near(x,z)<3) continue; const h=kamiH(x,z); pr.frame(x,h,z,rnd()); pr.box(0,0.25,0,0.6,0.5,0.6,cc(0x6a5440)); pr.box(0,0.51,0,0.5,0.02,0.5,cc(0xc8a878)); } // 切り株（杉の手入れの跡）
   // 獣道：林道から斜面へ、踏まれた細い筋（土色）。途中に足跡のくぼみ
   { const gx=F.x+6, gz=F.z-4; let x=gx, z=gz, ang=0.6; for(let k=0;k<22;k++){ ang+=(rnd()-0.5)*0.6; const nx=x+Math.sin(ang)*1.8, nz=z+Math.cos(ang)*1.8; if(dist(nx,nz,F.x,F.z)>F.r-4) break; pr.frame((x+nx)/2,kamiH((x+nx)/2,(z+nz)/2)+0.07,(z+nz)/2,Math.atan2(nz-z,nx-x)); pr.box(0,0,0,1.95,0.04,0.55,cc(0x6a5a44)); if(k%3===1){ pr.box(0.3,0.03,0.08,0.14,0.02,0.1,cc(0x3e3426)); pr.box(-0.2,0.03,-0.08,0.14,0.02,0.1,cc(0x3e3426)); } x=nx; z=nz; } P3A.gameTrail={x:gx,z:gz}; }

@@ -25,7 +25,7 @@ SRC = open(os.path.join(ROOT, 'index.html'), encoding='utf8').read()
 DATA = open(os.path.join(ROOT, 'data', 'kamishihi', 'kamishihi-map.js'), encoding='utf8').read()
 SHOTS = os.environ.get('KAMI_SHOTS')
 HOOK = ("window.__r={REG,renderer,scene,boxes,circles,oboxes,cgrid,BOUNDS,groundH,clsAt,get KOMYOJI_EAST(){return KOMYOJI_EAST},get KOMYOJI_EAST_ARRIVE(){return KOMYOJI_EAST_ARRIVE},get regionTravel(){return regionTravel},camera,"
-        "get P(){return P},get S(){return S},get prog(){return prog},get KAMI(){return KAMI},saveGame,openMap:()=>{ if(S.mode==='playing') openMap(); else { sizeMap(); drawMap(); } }};\n")
+        "get P(){return P},get S(){return S},get prog(){return prog},get KAMI(){return KAMI},get P3A(){return typeof P3A!=='undefined'?P3A:null},saveGame,openMap:()=>{ if(S.mode==='playing') openMap(); else { sizeMap(); drawMap(); } }};\n")
 HTML = SRC.replace('function updateNPCs(dt){', HOOK + 'function updateNPCs(dt){', 1)
 
 SNAP = """() => { const R = window.__r; let cells = 0; for (const a of R.cgrid.values()) cells += a.length;
@@ -116,11 +116,12 @@ async def main():
                     print('console errors:', cons[:5])
                 K = await pg.evaluate("""() => { const R = window.__r, D = R.KAMI.D, x = R.P.x, z = R.P.z;
                   let best = 1e9; for (const r of D.roads) if (r.n === '国道416号') for (const q of r.p) best = Math.min(best, Math.hypot(q[0] - x, q[1] - z));
-                  return {road: best, cls: R.clsAt(x, z), play: D.play, trees: R.REG.live.treeCount, bld: D.bld.length}; }""")
+                  const A = R.P3A, p3aSkip = A && A.on ? A.skip.size : 0, p3aObox = R.oboxes.filter(o => o.p3a).length; // v0.80：P3-A の試作は建物を差し替える（差し替えた分を引き、試作の当たりを除いて数える）
+                  return {road: best, cls: R.clsAt(x, z), play: D.play, trees: R.REG.live.treeCount, bld: D.bld.length, p3aSkip, p3aObox}; }""")
                 print('着いた所：', K)
                 check(cur == 'kamishihi' and a['px'] > 5000 and a['mode'] == 'playing', '東の出口から上志比へ移った')
                 check(K['road'] < 12, f'国道416号の近くに着いた（{K["road"]:.1f}）')
-                check(a['oboxes'] - base['oboxes'] - a['barri'] == K['bld'] and a['circles'] > base['circles'] + 1000, f'建物 {K["bld"]} 軒と木 {a["circles"] - base["circles"]} 本の当たり判定')
+                check(a['oboxes'] - base['oboxes'] - a['barri'] - K['p3aObox'] == K['bld'] - K['p3aSkip'] and a['circles'] > base['circles'] + 1000, f'建物 {K["bld"]} 軒（うち P3-A の試作で差し替え {K["p3aSkip"]}・試作の当たり {K["p3aObox"]}）と木 {a["circles"] - base["circles"]} 本の当たり判定')
                 check(abs(a['ph']) < 300 and a['bounds'] != base['bounds'], '上志比の地面の高さと範囲')
                 W = await pg.evaluate("""async () => { const R = window.__r, K = R.KAMI, D = K.D; let wx = null, wz = null;
                   for (let k = 40; k < K.ny - 40 && wx === null; k += 3) for (let i = 40; i < K.nx - 40; i += 3) if (K.C[k * K.nx + i] === 2 && K.C[k * K.nx + i - 6] === 2 && K.C[(k + 6) * K.nx + i] === 2) { wx = K.X0 + i * K.GS; wz = K.Z0 + k * K.GS; break; }
