@@ -655,7 +655,7 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.79.1 防衛戦テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.79.2 防衛戦テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -11853,8 +11853,12 @@ function gearIconObj(id){ const a=G47[id]; if(!a||!G47S.includes(a.slot)) return
   let F=GEAR_FRAME[a.slot]; if(!bx.isEmpty()){ const c=bx.getCenter(new THREE.Vector3()), z=bx.getSize(new THREE.Vector3()); F=[c.x,c.y,c.z,Math.max(z.x,z.y*1.0,0.12)*0.56]; }
   m.g.userData.iconFrame=F; return m.g; }
 const GEAR_FRAME={head:[0,1.75,0,0.3],chest:[0,1.1,0,0.4],legs:[0,0.44,0,0.46],feet:[0,0.09,0.03,0.19]}; // 写す中心（x,y,z）と半径（m）
+let ICON_FLAT_SPIN=0.785, ICON_FLAT_TILT=0.3; // 飛去来器の絵：画面の中での回し方・手前へ倒す角度（ラジアン）
 function makeIconObj(id){
   if(id.startsWith('gear_')&&G47[id.slice(5)]){ try{ const o=gearIconObj(id.slice(5)); if(o) return o; }catch(e){} }
+  if(id==='boomer'){ try{ const g=new THREE.Group(); // v0.79.2：飛去来器は手に持つ向き（立てる）ではなく、平らな面を正面に向けて「くの字」が見えるように撮る（2026-11-18 ユーザー）
+      if(wglbOk('boomer')){ const r=WG.files.boomer; g.add(new THREE.Mesh(r.geo,r.mat)); } else g.add(boomerShape(new THREE.Group())); // 読めないときはコードの形（飛ぶときと同じ平らな向き）
+      g.userData.flat=true; return g; }catch(e){ return null; } }
   if(WEAPONS[id]){ try{ return makeWeapon(id,{noSwap:true}); }catch(e){ return null; } } // v0.75：GLB が読めていればその形（読めたらアイコンを描き直す）
   const g=new THREE.Group(); const M=c=>new THREE.MeshLambertMaterial({color:c});
   const B=(c,sx,sy,sz,x,y,z,rz)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),M(c));m.position.set(x,y,z);if(rz)m.rotation.z=rz;g.add(m);return m;};
@@ -11957,7 +11961,9 @@ function iconOf(id){
     _isc.userData.amb.intensity=F?0.42:0.85; _isc.userData.dl.intensity=F?0.62:0.7;
     if(F){ _icam.position.set(F[0]+F[3]*1.1,F[1]+F[3]*0.6,F[2]+F[3]*3.2); _icam.lookAt(F[0],F[1],F[2]); }
     else { const dir=new THREE.Vector3(1.05,0.8,1.3).normalize();
-      if(WEAPONS[id]){ obj.quaternion.setFromAxisAngle(dir,Math.PI*0.75); obj.updateMatrixWorld(true); } // 武器は画面の斜め（左下が柄・右上が刃や穂先）に置いて大きく見せる
+      if(obj.userData.flat){ const rt0=new THREE.Vector3(0,1,0).cross(dir).normalize(); // 平らな面（y）をカメラへ向け、少しだけ倒して厚みも見せる
+        obj.quaternion.setFromAxisAngle(rt0,-ICON_FLAT_TILT).multiply(new THREE.Quaternion().setFromAxisAngle(dir,ICON_FLAT_SPIN)).multiply(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),dir)); obj.updateMatrixWorld(true); }
+      else if(WEAPONS[id]){ obj.quaternion.setFromAxisAngle(dir,Math.PI*0.75); obj.updateMatrixWorld(true); } // 武器は画面の斜め（左下が柄・右上が刃や穂先）に置いて大きく見せる
       // v0.79：形の頂点が画面に収まるように、向きはそのままで距離と中心を合わせる（前は大きい物の端が切れていた）
       const pts=[], v=new THREE.Vector3(); obj.traverse(o=>{ const pa=o.isMesh&&o.geometry&&o.geometry.attributes.position; if(!pa||!o.visible) return; const st=Math.max(1,Math.floor(pa.count/1500));
         for(let i=0;i<pa.count;i+=st) pts.push(v.fromBufferAttribute(pa,i).applyMatrix4(o.matrixWorld).clone()); });
