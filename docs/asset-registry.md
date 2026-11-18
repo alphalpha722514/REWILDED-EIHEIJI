@@ -26,7 +26,7 @@
 | 無線機（作業F） | なし（無線室の建物を映すだけ。小物は作っていない） | — | — |
 | KEI truck のドア2枚・荷台のあおり | 正式 GLB（ゲーム用のコピー）から切り分けた別の形（`door_r`・`door_l`・`tailgate`。原点は蝶番） | `tools/models/kei_truck_build.mjs`（`parts`）・`truckDoorsUpdate` | v0.78。元の GLB（`src/`）は変えていない（`docs/kei-truck-glb.md` §5） |
 | 車両基地・荷台に積んだ物（丸太・木箱）・荷台の施設（作業台・見張り台・炭焼き釜・救急箱・保冷箱・投光器）・源さんが運ぶ荷 | コードで生成 | `depotModel()`・`truckBedVis()`・`truckLightVis()`・`haulVis()` | v0.78。v0.79 で車両基地を鉄骨の整備場の形（9m×6.4m）に作り直し、荷台の施設を3つ足した。**仮**（`docs/kei-truck-systems.md`・`docs/base-layout-plan.md`。正式な形が要るかは未定） |
-| 作業台・車両基地の画面のアイテムの絵 | コードで生成（128×128 の画像に描く） | `iconOf()`・`makeIconObj()`・`iconDesign()`・`gearIconObj()` | v0.79。素材・道具・建物・荷台の施設などは単純な立体を組んだ絵。防具は主人公の体に着せて写す。武器・KEI truck は正式な GLB を写す（`docs/base-layout-plan.md` §5） |
+| 作業台・車両基地の画面のアイテムの絵 | コードで生成（128×128 の画像に描く） | `iconOf()`・`makeIconObj()`・`iconDesign()`・`gearIconObj()` | v0.79。素材・道具・建物・荷台の施設などは単純な立体を組んだ絵。防具は主人公の体に着せて写す。武器・KEI truck は正式な GLB を写す（v0.79.1：まだ持っていない武器の GLB も作業台を開いたときに読んで写す。GLB の無い石の手斧・竹槍と、読めないときはコードの形。`docs/base-layout-plan.md` §5） |
 | 鱗の防具（蒼鱗・変異した鱗） | コードで生成（体を測って沿わせる厚みのある板＋立体の鱗。体と同じ骨で動く skinning） | `saEnsure`・`SA_DESIGN` | v0.76。改修指示書（2026-11-16）どおり作り直し、ユーザーの修正指示（蒼鱗の兜で髪を残す・脚の後ろ）を反映（`docs/scale-armor-v2.md`） |
 
 ## これから必要になる見込み（ユーザー・ChatGPT と確定するまで候補）

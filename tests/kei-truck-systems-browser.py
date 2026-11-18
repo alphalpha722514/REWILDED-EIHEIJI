@@ -213,12 +213,14 @@ async def main():
         check(rc is not None and not rc['dis'], f'作業台の「建てる」に「車両基地を建てる」が出る（KEI truck を直したあと）{rc}')
         # v0.79：作業台の画面（タブ・絵と名前のカード・詳しい説明）
         ui = await G("""(async()=>{ const icw=async()=>{ for(let i=0;i<600&&document.querySelector('img[data-ic]');i++) await new Promise(r=>setTimeout(r,50)); }; const tabs=[...document.querySelectorAll('#craftTabs .wkTab')].map(b=>b.textContent.replace(/[0-9/]+$/,'')); const out={tabs};
-          for(const b of document.querySelectorAll('#craftTabs .wkTab')){ b.click(); await icw(); const cards=[...document.querySelectorAll('#craftList .wkCard')]; out[b.id]={n:cards.length,img:cards.filter(c=>{ const i=c.querySelector('img.wkIc'); return i&&i.src.startsWith('data:image/png'); }).length,det:!!document.querySelector('#craftDet h3')}; }
+          for(const b of document.querySelectorAll('#craftTabs .wkTab')){ b.click(); await icw(); const cards=[...document.querySelectorAll('#craftList .wkCard')]; out[b.id]={n:cards.length,img:cards.filter(c=>{ const i=c.querySelector('img.wkIc'); return i&&i.src.startsWith('data:image/png'); }).length,det:!!document.querySelector('#craftDet h3')};
+            if(b.id==='craftTab_weapon') out.glb=cards.map(c=>c.id.slice(10)).filter(id=>WGLB[id]).map(id=>[id,WG.files[WGLB[id].f]?.st]); }
           return out; })()""")
         print('   作業台の画面', ui)
         cats = [k for k in ui if k.startswith('craftTab_')]
         check(set(['craftTab_weapon', 'craftTab_armor', 'craftTab_tool', 'craftTab_build', 'craftTab_care']) <= set(cats) and all(ui[k]['n'] > 0 and ui[k]['img'] == ui[k]['n'] and ui[k]['det'] for k in cats),
               '作業台の画面：武器・防具・道具と罠・建てる・手入れのタブに分かれ、どのカードにも絵と名前、選ぶと詳しい説明')
+        check(len(ui['glb']) >= 3 and all(st == 'ok' for _, st in ui['glb']), f'作業台の武器の絵は正式な形（GLB）を読んでから撮る（まだ持っていない武器も）{ui["glb"]}')
         await G("craft('depotBuild')")
         await close_menus()
         r5 = await G("({b:depotS().built,vis:!!DEPOT.g&&DEPOT.g.visible,cols:DEPOT.cols.filter(c=>c.active).length,inv:{wood:inv.wood,stone:inv.stone,iron:inv.iron,rope:inv.rope}})")
