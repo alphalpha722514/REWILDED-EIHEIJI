@@ -525,6 +525,7 @@ body.touchmode #items .hslot{width:min(var(--hbMax),calc((100vw - var(--hbL) - v
 .wkCard.lock{opacity:.55;}
 .wkCard.short .wkIc{filter:saturate(.6) brightness(.85);}
 .wkIc{width:72px;height:72px;object-fit:contain;}
+img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
 .wkIc.ph{display:flex;align-items:center;justify-content:center;font-size:30px;color:var(--washi-dim);}
 .wkNm{font-weight:700;font-size:13px;line-height:1.35;text-wrap:balance;}
 .wkCs{display:flex;flex-wrap:wrap;justify-content:center;gap:3px;}
@@ -653,7 +654,7 @@ body.touchmode #items .hslot{width:min(var(--hbMax),calc((100vw - var(--hbL) - v
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.78 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.79 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -8883,7 +8884,12 @@ function craftCat(r){ const id=r.id; if(WEAPONS[id]||SCALE_ARMS[id]) return 'wea
 const CRAFT_ICON={fence:'fenceKit',trap:'trapKit',spikeFence:'spikeKit',pitTrap:'pitKit',bait:'baitKit',stake:'stakeKit',rope:'mat_rope'};
 function craftIcon(r){ return CRAFT_ICON[r.id]||r.id; }
 function matIcon(k){ return FOODS[k]?k:'mat_'+k; }
-function icImg(id,cls){ const u=iconOf(id); return u?`<img class="${cls||''}" src="${u}" alt="">`:`<span class="${cls||''} ph">？</span>`; }
+// 絵は描いてあればすぐ出し、まだなら空の枠を出して、1コマに少しずつ描いて差し替える（防具の絵は体に着せて写すので、まとめて描くとスマホで一瞬止まるため）
+const IC_Q=[], IC_BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; let IC_T=0;
+function icImg(id,cls){ const u=ICONS[id]; if(u) return `<img class="${cls||''}" src="${u}" alt="">`; if(!IC_Q.includes(id)) IC_Q.push(id); icPump(); return `<img class="${cls||''} ld" data-ic="${id}" src="${IC_BLANK}" alt="">`; }
+function icPump(){ if(IC_T) return; IC_T=setTimeout(function step(){ IC_T=0; const t0=performance.now();
+  while(IC_Q.length&&performance.now()-t0<14){ const id=IC_Q.shift(), u=iconOf(id); for(const im of document.querySelectorAll(`img[data-ic="${id}"]`)){ im.removeAttribute('data-ic'); im.classList.remove('ld'); if(u) im.src=u; else{ const sp=document.createElement('span'); sp.className=im.className+' ph'; sp.textContent='？'; im.replaceWith(sp); } } }
+  if(IC_Q.length) IC_T=setTimeout(step,16); },0); }
 const WK_MATS=['wood','stone','iron','rope','straw','bamboo','hide','charcoal','procScale','mutScale','fang','food'];
 function wkHave(k){ return FOODS[k]?f7Have(k):(inv[k]||0); }
 function wkMatsHtml(){ return WK_MATS.filter(k=>wkHave(k)>0||bedHave(k)>0||['wood','stone','iron','rope'].includes(k)).map(k=>{ const bd=FOODS[k]?0:bedHave(k); return `<span class="wkMat" title="${RNAME[k]}">${icImg(matIcon(k))}${RNAME[k]} <b>${wkHave(k)}</b>${bd?`<span class="bd">＋荷台${bd}</span>`:''}</span>`; }).join(''); }
@@ -11615,8 +11621,10 @@ function truckLightVis(){ const t=trk(), root=TRUCK.m; if(!root) return; const w
     const cv=document.createElement('canvas'); cv.width=cv.height=128; const c=cv.getContext('2d'), gr=c.createRadialGradient(64,64,4,64,64,64); gr.addColorStop(0,'rgba(255,244,205,0.95)'); gr.addColorStop(0.55,'rgba(255,236,180,0.35)'); gr.addColorStop(1,'rgba(255,236,180,0)'); c.fillStyle=gr; c.fillRect(0,0,128,128);
     const pool=new THREE.Mesh(new THREE.PlaneGeometry(7,len*0.95),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,opacity:0.55,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));
     pool.rotation.x=-Math.PI/2; pool.position.set(0,0.12,2.2+len*0.5); L.add(pool);
-    for(const sx of [-1,1]){ const geo=new THREE.ConeGeometry(2.4,len,18,1,true); geo.translate(0,-len/2,0); geo.rotateX(-Math.PI/2);
-      const beam=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0xfff0c0,transparent:true,opacity:0.07,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false}));
+    for(const sx of [-1,1]){ const geo=new THREE.ConeGeometry(2.4,len,18,1,true); geo.translate(0,-len/2,0);
+      const pa=geo.attributes.position, cl=new Float32Array(pa.count*3); for(let i=0;i<pa.count;i++){ const k=Math.max(0,1+pa.getY(i)/len); cl[i*3]=cl[i*3+1]=cl[i*3+2]=k*k; } geo.setAttribute('color',new THREE.BufferAttribute(cl,3)); // 根もとが明るく、先へ行くほど消える
+      geo.rotateX(-Math.PI/2);
+      const beam=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0xfff0c0,vertexColors:true,transparent:true,opacity:0.1,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false}));
       beam.position.set(sx*0.42,B.y+1.38,B.z1+0.02); beam.rotation.x=0.13; L.add(beam); }
     root.add(L); }
   L.visible=want; }
@@ -11715,7 +11723,7 @@ function truckFacBuild(id){ const t=trk(), F=TRUCK_SYS.fac[id]; if(t.fac[id]||t.
   bedPay(F.cost); t.fac[id]=1; sfx('craft'); toast(`${F.name}を荷台に作った：${F.desc}`); saveGame(); }
 function depotMenu(){ openDepot(); } // v0.79：車両基地の画面（修理・改修・荷台の施設・燃料のタブ）
 function depotInteractables(L){ if(!depotS().built||REG.cur!=='komyoji') return; const D=TRUCK_SYS.depot, [lx,lz]=depotToLocal(P.x,P.z), d=Math.hypot(Math.max(0,Math.abs(lx)-D.W/2),Math.max(0,Math.abs(lz)-D.D/2)); if(d>1.6) return;
-  L.push({d:d+0.6,label:depotParked()?'車両基地（直す・改修・荷台の施設）':'車両基地（KEI truck を屋根の下に止めて使う）',act:depotMenu}); }
+  L.push({d:d+0.6,label:depotParked()?'車両基地（直す・改修・荷台の施設・燃料）':'車両基地（KEI truck を屋根の下に止めて使う）',act:depotMenu}); }
 // ---- 住民の運搬：車の入れない所・置き場までの残りを、源さんが歩いて運ぶ（荷台の丸太→丸太置き場、素材→持ち物）----
 // 車が拠点の外なら、近い門（南門・東口・沢口）を通る。引っかかって2.5秒進めないときは、次の経由点へ移る（運ぶのは止めない）
 const HAUL={on:false,st:'',t:0,load:null,path:null,wi:0,stuck:0,mesh:null,walk:false,face:0};

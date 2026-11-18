@@ -25,7 +25,8 @@
 | KEI truck の部品・燃料（作業ブランチ `v077-story-f`） | コードで生成（木箱・タイヤ・部品／赤い携行缶／黄色い目印の旗） | `truckItemModel()` | v0.77。**仮**（2026-11-17 ユーザー指示で見えるように置いた。正式な形は未定） |
 | 無線機（作業F） | なし（無線室の建物を映すだけ。小物は作っていない） | — | — |
 | KEI truck のドア2枚・荷台のあおり | 正式 GLB（ゲーム用のコピー）から切り分けた別の形（`door_r`・`door_l`・`tailgate`。原点は蝶番） | `tools/models/kei_truck_build.mjs`（`parts`）・`truckDoorsUpdate` | v0.78。元の GLB（`src/`）は変えていない（`docs/kei-truck-glb.md` §5） |
-| 車両基地・荷台に積んだ物（丸太・木箱）・荷台の施設（作業台・炭焼き釜・見張り台）・源さんが運ぶ荷 | コードで生成 | `depotModel()`・`truckBedVis()`・`haulVis()` | v0.78。**仮**（`docs/kei-truck-systems.md`。正式な形が要るかは未定） |
+| 車両基地・荷台に積んだ物（丸太・木箱）・荷台の施設（作業台・見張り台・炭焼き釜・救急箱・保冷箱・投光器）・源さんが運ぶ荷 | コードで生成 | `depotModel()`・`truckBedVis()`・`truckLightVis()`・`haulVis()` | v0.78。v0.79 で車両基地を鉄骨の整備場の形（9m×6.4m）に作り直し、荷台の施設を3つ足した。**仮**（`docs/kei-truck-systems.md`・`docs/base-layout-plan.md`。正式な形が要るかは未定） |
+| 作業台・車両基地の画面のアイテムの絵 | コードで生成（128×128 の画像に描く） | `iconOf()`・`makeIconObj()`・`iconDesign()`・`gearIconObj()` | v0.79。素材・道具・建物・荷台の施設などは単純な立体を組んだ絵。防具は主人公の体に着せて写す。武器・KEI truck は正式な GLB を写す（`docs/base-layout-plan.md` §5） |
 | 鱗の防具（蒼鱗・変異した鱗） | コードで生成（体を測って沿わせる厚みのある板＋立体の鱗。体と同じ骨で動く skinning） | `saEnsure`・`SA_DESIGN` | v0.76。改修指示書（2026-11-16）どおり作り直し、ユーザーの修正指示（蒼鱗の兜で髪を残す・脚の後ろ）を反映（`docs/scale-armor-v2.md`） |
 
 ## これから必要になる見込み（ユーザー・ChatGPT と確定するまで候補）
@@ -70,6 +71,7 @@
 
 | 日付 | 対象 | 内容 | コミット |
 |---|---|---|---|
+| 2026-11-18 | 車両基地（コード）・アイテムの絵 | 車両基地を鉄骨の整備場の形に作り直し、拠点の南東へ。荷台の救急箱・保冷箱・投光器を足した。作業台・車両基地の画面の絵を作った（防具は体に着せて写す・KEI truck は GLB を写す） | v0.79 |
 | 2026-11-17 | KEI truck のドア・あおり・車両基地 | ゲーム用の GLB を作り直し、ドア2枚とあおりを面で切り分けた別の形に（修理前 15,827・修理後 17,075 三角形）。車両基地・荷台の物はコードの仮の形。v0.78 | v0.78 |
 | 2026-11-17 | KEI truck（正式・GLB） | 修理前 `off-road vehicle 3d model.glb`（23,079 三角形）・修理後 `offroad vehicle 3d model.glb`（23,464）を受領・**正式採用**（統合指示書）。元を `src/kei_truck_{broken,repaired}_tripo_original.glb` に保存（sha256 `8983b26d…`・`ab5bf207…`）。ゲーム用 `game/kei_truck_{broken,repaired}.glb`：全長 4.125m（最初 3.75m、同日ユーザー「もう少し大きく」「1.1倍に」で1.1倍）・原点は前後の車輪の真ん中・車輪4つを分ける・修理後はフロントガラスを足す（元に無い）・色の絵 1024 JPEG 1枚・車体 55%（14,005／15,157 三角形、694KB／748KB）。`tools/models/kei_truck_build.mjs`・`docs/kei-truck-glb.md`。**main 未反映** | ブランチ `v077-story-f` |
 | 2026-11-17 | KEI truck（仮） | 作業F 用にコードの仮車体を作成（乗る・運転・地域の移動の確認用）。正式モデルの【3Dモデル制作依頼】を `docs/p2-story-f.md` §7 に。**main 未反映** | ブランチ `v077-story-f` |

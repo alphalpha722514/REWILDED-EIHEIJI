@@ -147,7 +147,7 @@ async def main():
         await pg.wait_for_timeout(300)
         r4 = await pg.evaluate("() => { const btn = [...document.querySelectorAll('#defenseChoice button')].map(b => b.textContent); const back = [...document.querySelectorAll('#defenseChoice button')].find(b => b.textContent === '戻る'); if (back) back.click(); return btn; }")
         check(r3 == 'スズキに指示する' and 'ここで待て（いまの指示）' in r4, f'倒れていないスズキには、E の短押しでこれまでどおり指示できる {r3} {r4}')
-        await pg.evaluate("() => { const W = window.__w; W.P.x = 157; W.P.z = 64.6; W.SZ.x = 150; W.SZ.z = 40; W.SZ.wx = 150; W.SZ.wz = 40; W.S.mode = 'playing'; }")
+        await pg.evaluate("() => { const W = window.__w; W.P.x = 157.5; W.P.z = 62.3; W.SZ.x = 150; W.SZ.z = 40; W.SZ.wx = 150; W.SZ.wz = 40; W.S.mode = 'playing'; }")
         lab = await ready_inter('作業台')
         await pg.keyboard.press('e')
         await pg.wait_for_timeout(400)

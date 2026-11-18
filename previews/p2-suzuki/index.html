@@ -254,7 +254,7 @@ button:disabled{opacity:.4;cursor:not-allowed;}
 .ctl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:14px;}
 .ctl kbd{font-family:var(--body);background:#2b3132;border:1px solid var(--line);border-radius:3px;padding:1px 7px;font-size:13px;white-space:nowrap;}
 
-#craftList{display:grid;gap:8px;}
+
 /* F9 町民の画面（v0.27） */
 .npcRole{font-size:13px;color:var(--washi-dim);margin:-6px 0 8px!important;}
 #npcStat{display:grid;gap:4px;margin:6px 0 10px;font-size:14px;}
@@ -497,6 +497,83 @@ body.touchmode #items .hslot{width:min(var(--hbMax),calc((100vw - var(--hbL) - v
 @media (max-width:760px) and (max-height:640px) and (orientation:portrait){
   body.touchmode #prompt{bottom:calc(306px + env(safe-area-inset-bottom,0px));}
 }
+
+/* ===== v0.79 作業台・車両基地の画面（種類ごとのタブ・絵と名前のカード・右に詳しい説明。2026-11-18 ユーザー指示） ===== */
+.wk{max-width:1000px;width:100%;height:min(88vh,760px);max-height:88vh;display:flex;flex-direction:column;padding:16px 18px 14px;overflow:hidden;}
+.wk .wkHead{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+.wk .wkHead h2{margin:0;font-size:24px;}
+.wk .wkHead .wkSub{font-size:12px;color:var(--washi-dim);flex:1;min-width:0;}
+.wk .wkHead .wkX{padding:6px 12px;font-size:13px;}
+.wkMats{display:flex;flex-wrap:wrap;gap:4px 6px;margin-bottom:8px;}
+@media (max-width:760px){ .wkMats{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin;} .wkMat{flex:none;} }
+.wkMat{display:inline-flex;align-items:center;gap:3px;font-size:12px;padding:2px 7px 2px 3px;border:1px solid rgba(240,226,200,.16);border-radius:12px;background:rgba(255,255,255,.04);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.wkMat img{width:20px;height:20px;}
+.wkMat .bd{color:var(--dur);font-size:11px;}
+.wkTabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line);margin-bottom:10px;flex:none;}
+.wkTabs::-webkit-scrollbar{display:none;}
+.wkTab{flex:none;display:flex;align-items:center;gap:6px;border:1px solid transparent;border-bottom:none;border-radius:6px 6px 0 0;background:transparent;padding:7px 12px 8px;font-size:14px;color:var(--washi-dim);}
+.wkTab img{width:22px;height:22px;}
+.wkTab .n{font-size:11px;background:rgba(255,255,255,.08);border-radius:9px;padding:0 6px;}
+.wkTab .n.ok{background:var(--gold);color:#1b1d1e;font-weight:700;}
+.wkTab.on{color:var(--washi);background:rgba(255,255,255,.06);border-color:var(--line);font-weight:700;}
+.wkBody{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px;}
+.wkGrid{overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;align-content:start;padding:2px 4px 8px 2px;min-width:0;}
+.wkCard{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:10px 8px 8px;border:1px solid rgba(240,226,200,.18);border-radius:8px;background:rgba(255,255,255,.035);cursor:pointer;min-width:0;}
+.wkCard:hover{background:rgba(255,255,255,.07);}
+.wkCard.sel{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset;background:rgba(216,176,74,.08);}
+.wkCard.can::after{content:"作れる";position:absolute;top:6px;left:6px;font-size:10px;font-weight:700;color:#1b1d1e;background:var(--moss);border-radius:8px;padding:1px 6px;}
+.wkCard.lock{opacity:.55;}
+.wkCard.short .wkIc{filter:saturate(.6) brightness(.85);}
+.wkIc{width:72px;height:72px;object-fit:contain;}
+img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
+.wkIc.ph{display:flex;align-items:center;justify-content:center;font-size:30px;color:var(--washi-dim);}
+.wkNm{font-weight:700;font-size:13px;line-height:1.35;text-wrap:balance;}
+.wkCs{display:flex;flex-wrap:wrap;justify-content:center;gap:3px;}
+.wkChip{display:inline-flex;align-items:center;gap:2px;font-size:11px;padding:1px 5px 1px 2px;border-radius:9px;background:rgba(255,255,255,.06);white-space:nowrap;font-variant-numeric:tabular-nums;}
+.wkChip img{width:16px;height:16px;}
+.wkChip.lack{color:#ffb4a6;background:rgba(224,83,60,.18);}
+.wkCard>button{margin-top:auto;padding:5px 10px;font-size:12px;width:100%;}
+.wkDet{overflow:auto;border:1px solid var(--line);border-radius:8px;background:rgba(0,0,0,.18);padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0;}
+.wkDet .bigIc{width:132px;height:132px;align-self:center;object-fit:contain;}
+.wkDet h3{margin:0;font-size:18px;text-wrap:balance;}
+.wkDet .tag{font-size:11px;color:var(--washi-dim);letter-spacing:.08em;}
+.wkDet .ds{font-size:13px;line-height:1.7;color:var(--washi);}
+.wkDet .need{display:grid;gap:4px;}
+.wkDet .needRow{display:flex;align-items:center;gap:6px;font-size:13px;}
+.wkDet .needRow img{width:24px;height:24px;}
+.wkDet .needRow .have{margin-left:auto;color:var(--washi-dim);font-variant-numeric:tabular-nums;}
+.wkDet .needRow.lack .have{color:#ffb4a6;font-weight:700;}
+.wkDet .go{position:sticky;bottom:0;box-shadow:0 -8px 12px rgba(20,16,12,.6);margin-top:4px;padding:11px;font-size:16px;}
+.wkDet .back{display:none;}
+.wkStats{display:grid;grid-template-columns:auto 1fr auto;gap:3px 8px;align-items:center;font-size:12px;}
+.wkStats .bar{display:block;position:relative;padding:0;border:0;min-width:0;height:7px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;}
+.wkStats .bar i{display:block;height:100%;background:var(--gold);border-radius:4px;}
+.wkStats .bar i.nx{background:var(--moss);}
+.wkStats .v{font-variant-numeric:tabular-nums;color:var(--washi-dim);}
+.wkEmpty{grid-column:1/-1;font-size:13px;color:var(--washi-dim);padding:20px;text-align:center;}
+.wkFoot{display:flex;gap:8px;justify-content:flex-end;margin-top:8px;flex:none;}
+/* 車両基地：改修の段階の道 */
+.lvPath{display:flex;align-items:center;gap:0;margin:2px 0 10px;grid-column:1/-1;}
+.lvNode{flex:none;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;border:2px solid rgba(240,226,200,.3);color:var(--washi-dim);background:rgba(0,0,0,.25);}
+.lvNode.done{background:var(--gold);color:#1b1d1e;border-color:var(--gold);}
+.lvNode.next{border-color:var(--moss);color:var(--washi);box-shadow:0 0 0 3px rgba(127,160,90,.25);}
+.lvLine{flex:1;height:3px;background:rgba(240,226,200,.2);}
+.lvLine.done{background:var(--gold);}
+.gauge{height:12px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;}
+.gauge i{display:block;height:100%;border-radius:6px;}
+@media (max-width:760px), (max-height:520px){
+  .wk{padding:12px 12px 10px;height:92vh;max-height:92vh;}
+  .wk .wkHead h2{font-size:20px;}
+  .wkBody{grid-template-columns:minmax(0,1fr);}
+  .wkGrid{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));}
+  .wkIc{width:56px;height:56px;}
+  .wkDet{position:absolute;inset:auto 0 0 0;max-height:78%;border-radius:12px 12px 0 0;background:var(--panel-solid);box-shadow:0 -10px 30px rgba(0,0,0,.6);z-index:2;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));}
+  .wkDet.hide{display:none;}
+  .wkDet .back{display:block;}
+  .wkDet .bigIc{width:96px;height:96px;}
+  .wk{position:relative;}
+}
+@media (max-height:520px){ .wkMats{max-height:50px;overflow:auto;} .wkIc{width:48px;height:48px;} }
 </style>
 
 <canvas id="cv" tabindex="0"></canvas>
@@ -578,7 +655,7 @@ body.touchmode #items .hslot{width:min(var(--hbMax),calc((100vw - var(--hbL) - v
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.78 スズキの仲間 AI テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.79 スズキの仲間 AI テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -630,11 +707,19 @@ body.touchmode #items .hslot{width:min(var(--hbMax),calc((100vw - var(--hbL) - v
 </div>
 
 <div class="ov" id="craft" hidden>
-  <div class="card">
-    <h2>作業台</h2>
-    <p style="font-size:13px;color:var(--washi-dim)" id="craftHave"></p>
-    <div id="craftList"></div>
-    <div class="btns"><button class="pri" id="btnCraftClose">閉じる（Esc）</button></div>
+  <div class="card wk" id="craftCard">
+    <div class="wkHead"><h2 id="craftTitle">作業台</h2><div class="wkSub" id="craftSub"></div><button class="wkX pri" id="btnCraftClose">閉じる（Esc）</button></div>
+    <div class="wkMats" id="craftHave"></div>
+    <div class="wkTabs" id="craftTabs" role="tablist"></div>
+    <div class="wkBody"><div class="wkGrid" id="craftList"></div><div class="wkDet" id="craftDet"></div></div>
+  </div>
+</div>
+<div class="ov" id="depotOv" hidden>
+  <div class="card wk" id="depotCard">
+    <div class="wkHead"><h2>車両基地</h2><div class="wkSub" id="depotSub"></div><button class="wkX pri" id="btnDepotClose">閉じる（Esc）</button></div>
+    <div class="wkMats" id="depotHave"></div>
+    <div class="wkTabs" id="depotTabs" role="tablist"></div>
+    <div class="wkBody"><div class="wkGrid" id="depotList"></div><div class="wkDet" id="depotDet"></div></div>
   </div>
 </div>
 
@@ -785,6 +870,10 @@ const M=(ox,oz)=>[BX-ox,BZ+51-oz];
 const CORE={x:BX,z:BZ-7,r:2.4};
 const STORE={x:BX-13,z:BZ-10};
 const PSPAWN={x:BX,z:BZ+5};
+// v0.79：拠点の配置の見直し（docs/base-layout-plan.md）。南東＝車と作業（車両基地・作業台・丸太置き場・かまど・変換炉）、西＝田んぼと食料庫、北東＝共同菜園
+const BENCH={x:157.5,z:61}; // 作業台（前は (157,65.5)。車の通り道を空けて丸太置き場のそばへ）
+const STOREHOUSE=[14.5,33.4]; // 資材倉庫（M の座標。前は M(-15,40)＝南東 (165,66)。車両基地に場所を譲って南西の隅へ）
+const PADDY={x0:139,x1:147,z0:57,z1:63,grow:600,yield:10,straw:10,seeds:2,care:0.2}; // 田んぼ（v0.79 で役目：稲の種1で田植え→約10分で実る→米・藁・稲の種。数は暫定）
 // ヌシの広場：沢をさかのぼり、高速道路の高架をくぐった先の谷
 const ARENA={x:104,z:272,r:21};
 const BARRIER={x:89.6,z:255.6,rot:Math.atan2(6,8)+Math.PI/2};
@@ -2483,8 +2572,9 @@ function buildF4(){
   // 丸太（地面に置いた物と、丸太置き場に積んだ物）
   const lm=new THREE.InstancedMesh(logGeo(),vcMat,F4_MAXLOG); lm.count=0; lm.castShadow=true; lm.frustumCulled=false; world.add(lm); F4.logIM=lm;
   const li=inkInst(lm,logGeo(),0.03); li.count=0; li.frustumCulled=false; world.add(li); F4.logInk=li;
-  // 丸太置き場：作業台のそば
-  let yx=163, yz=72; outer: for(let r=0;r<16;r+=1.5) for(let a=0;a<TAU;a+=0.5){ const x=163+Math.cos(a)*r, z=72+Math.sin(a)*r; if(inBase(x,z,-3)&&f4Free(x,z,2.4)){ yx=x; yz=z; break outer; } }
+  // 丸太置き場：作業台のそば（v0.79：作業台の東・東口の近く。車両基地から約8m）
+  const yFree=(x,z,r)=>{ for(const b of gridQuery(x-r,x+r,z-r,z+r)){ if(b.active===false) continue; if(b.k==='b'){ if(x+r>b.minX&&x-r<b.maxX&&z+r>b.minZ&&z-r<b.maxZ) return false; } else if(b.k==='c'){ if(dist(x,z,b.x,b.z)<b.r+r) return false; } else if(b.k==='o'){ const dx=x-b.x, dz=z-b.z, lx=dx*b.c+dz*b.s, lz=-dx*b.s+dz*b.c; if(Math.abs(lx)<b.hx+r&&Math.abs(lz)<b.hz+r) return false; } } return true; }; // v0.79：箱の当たりは広さで比べる（近くのマスに箱があるだけで置けなくならないように）
+  let yx=163.2, yz=61; outer: for(let r=0;r<16;r+=1.5) for(let a=0;a<TAU;a+=0.5){ const x=163.2+Math.cos(a)*r, z=61+Math.sin(a)*r; if(inBase(x,z,-3)&&yFree(x,z,2.4)){ yx=x; yz=z; break outer; } }
   const yard=new THREE.Group(); for(const s of [-1,1]) for(const e of [-1,1]) yard.add(J(mesh(G.cyl8,mat(0x5e432c),s*1.5,0.5,e*0.9,0.08,1.0,0.08),0.08));
   for(const e of [-1,1]) { const b=mesh(G.box,mat(0x7a5a38),0,0.18,e*0.9,3.4,0.14,0.16); yard.add(b); }
   const sg=new THREE.Group(); sg.add(mesh(G.cyl8,mat(0x7a5a38),2.1,0.7,0,0.05,1.4,0.05)); sg.add(mesh(G.box,mat(0xfbf4f2),2.1,1.35,0,0.04,0.42,0.7)); sg.add(mesh(G.box,mat(0xe48aa6),2.13,1.45,0,0.01,0.14,0.26)); yard.add(sg);
@@ -3300,7 +3390,7 @@ function f7TakeRaw(arr,k,n){ const got=[]; for(const b of arr){ if(n<=0) break; 
 // 経過時間をためた分だけ進める
 function f7Age(sec){ const f=prog.f7; const r=f.up?F7.rate[1]:F7.rate[0];
   for(const k of F7K){ const cap=f7Cap(k); for(const b of f.hand[k]) b[1]=Math.min(cap,b[1]+sec); for(const b of f.store[k]) b[1]=Math.min(cap,b[1]+sec*r); }
-  f7Spoil(); }
+  bedFoodAge(sec); f7Spoil(); } // v0.79：KEI truck の保冷箱も（ふつうの1/5）
 // 期限切れを「傷んだ食べ物」に移す（段階Cから）
 function f7Spoil(){ if(!F7.spoil) return; f7SpoilImpl(); }
 // 食べる・料理する・出し入れする直前に、ためた分を必ず反映する
@@ -3476,6 +3566,27 @@ function f8Harvest(i){const p=prog.f8.plots[i];if(!p||p[0]!==3)return false;f31H
 function f8Build2(i){ if(!F8.full) return false; const p=prog.f8.plots[i]; if(!p||p[0]!==0||!prog.f8.intro) return false;
   for(const k in F8.cost) if((inv[k]||0)<F8.cost[k]){ sfx('deny'); toast('素材が足りない（木材4・縄1）',true); return false; }
   for(const k in F8.cost) inv[k]-=F8.cost[k]; p[0]=1; p[1]=0; p[2]=0; f8Apply(); sfx('wood'); toast(`共同菜園 ${i+1} の植え床を作った`); saveGame(); return true; }
+// ---- v0.79：拠点の田んぼ（2026-11-18 ユーザー「田んぼは今ほぼ飾りなので役割を持たせる」）----
+// 稲の種1で田植え → 約10分（遊んでいる間）で実る → 稲を刈ると 米・藁・稲の種。草取りで残りの時間を20%短くする。数は暫定。保存は paddy（新しいキー）
+function paddyFresh(){ return {v:1,st:2,t:PADDY.grow*0.5,care:0}; } // 新しいゲーム・古いセーブ：今の見た目（育っている途中）から始め、最初の1回は種なしで刈れる
+function paddyLoad(q){ const f=paddyFresh(); if(!q||typeof q!=='object'||q.v!==1) return f; f.st=num(q.st,2,1,3); f.t=f.st===2?clamp(+q.t||0,0,PADDY.grow):f.st===3?PADDY.grow:0; f.care=f.st===2&&q.care?1:0; return f; }
+function paddySave(){ const p=prog.paddy||paddyFresh(); return {v:1,st:p.st,t:Math.round(p.t*10)/10,care:p.care?1:0}; }
+function paddyBar(p){ const v=p.st===3?5:Math.min(5,Math.floor(p.t/PADDY.grow*5)); return '■'.repeat(v)+'□'.repeat(5-v); }
+function paddyUpdate(dt){ const p=prog.paddy; if(!p||p.st!==2) return; const was=Math.floor(p.t/PADDY.grow*5); p.t+=dt; if(p.t>=PADDY.grow){ p.t=PADDY.grow; p.st=3; paddyVis(); toast('拠点の田んぼの稲が実った（刈り取れる）'); saveGame(); } else if(Math.floor(p.t/PADDY.grow*5)!==was) paddyVis(); }
+function paddyVis(){ const im=PADDY.im, p=prog.paddy; if(!im||!im.userData.base||!p) return; const B=im.userData.base, m4=new THREE.Matrix4(), q=new THREE.Quaternion(), e=new THREE.Euler(), sc=new THREE.Vector3(), v=new THREE.Vector3(), col=new THREE.Color(), c2=new THREE.Color();
+  const g=p.st===3?1:p.st===2?p.t/PADDY.grow:0; if(p.st===1){ im.count=0; return; } // 田植えの前は水だけ
+  const k=0.3+0.75*Math.min(1,g/0.8), gold=p.st===3; B.forEach((b,i)=>{ e.set(0,b.ry,0); q.setFromEuler(e); const s=b.s*k; sc.set(s,s*(gold?1.08:1),s); v.set(b.x,0,b.z); m4.compose(v,q,sc); im.setMatrixAt(i,m4);
+    if(gold) col.setHex(0xc9ad4a).lerp(c2.setHex(0xb39a44),b.h*0.6); else col.setHex(g<0.25?0x8cc45a:0x6e9e3c).lerp(c2.setHex(0x8aa645),b.h*0.6); im.setColorAt(i,col); });
+  im.count=B.length; im.instanceMatrix.needsUpdate=true; if(im.instanceColor) im.instanceColor.needsUpdate=true; }
+function paddyPlant(){ const p=prog.paddy; if(p.st!==1) return; if((inv.riceSeed||0)<1){ sfx('deny'); toast('稲の種がない（共同菜園の稲・田んぼの稲を刈ると取れる。米田にも相談できる）',true); return; }
+  inv.riceSeed--; p.st=2; p.t=0; p.care=0; paddyVis(); sfx('craft'); floatText((PADDY.x0+PADDY.x1)/2,1.0,(PADDY.z0+PADDY.z1)/2,'田植えをした','#cfe8a0'); toast(`拠点の田んぼに田植えをした（約${Math.round(PADDY.grow/60)}分で実る）`); saveGame(); }
+function paddyCare(){ const p=prog.paddy; if(p.st!==2||p.care) return; p.care=1; p.t=Math.min(PADDY.grow,p.t+(PADDY.grow-p.t)*PADDY.care); paddyVis(); sfx('pickup'); floatText((PADDY.x0+PADDY.x1)/2,1.0,(PADDY.z0+PADDY.z1)/2,'草取りをした','#cfe8a0'); saveGame(); }
+function paddyHarvest(){ const p=prog.paddy; if(p.st!==3) return; p.st=1; p.t=0; p.care=0; foodAdd('rice',PADDY.yield); inv.straw=(inv.straw||0)+PADDY.straw; inv.riceSeed=(inv.riceSeed||0)+PADDY.seeds; paddyVis(); sfx('pickup');
+  floatText((PADDY.x0+PADDY.x1)/2,1.2,(PADDY.z0+PADDY.z1)/2,`米+${PADDY.yield}`,'#f0dca0'); toast(`田んぼの稲を刈った　米 +${PADDY.yield}・藁 +${PADDY.straw}・稲の種 +${PADDY.seeds}（田植えには稲の種1）`); saveGame(); }
+function paddyInteractables(L){ const p=prog.paddy; if(!p||REG.cur!=='komyoji') return; const dx=Math.max(0,Math.max(PADDY.x0-P.x,P.x-PADDY.x1)), dz=Math.max(0,Math.max(PADDY.z0-P.z,P.z-PADDY.z1)), d=Math.hypot(dx,dz); if(d>1.4) return;
+  if(p.st===1) L.push({d,label:`田んぼ：田植えをする（稲の種1。今 ${inv.riceSeed||0}）`,act:paddyPlant});
+  else if(p.st===2) L.push({d,label:`田んぼ：稲が育っている ${paddyBar(p)}${p.care?'（草取り済み）':'　草取りをする（残りを20%短く）'}`,act:paddyCare});
+  else L.push({d,label:`田んぼ：稲を刈る（米 +${PADDY.yield}・藁 +${PADDY.straw}・稲の種 +${PADDY.seeds}）`,act:paddyHarvest}); }
 // 「調べる」の帯
 function f8Interactables(L){const f=prog.f8;for(let i=0;i<f8Count();i++){const pl=F8PLOTS[i],dx=Math.max(0,Math.abs(P.x-pl.x)-F8.W/2),dz=Math.max(0,Math.abs(P.z-pl.z)-F8.D/2),d=Math.hypot(dx,dz);if(d>1.3)continue;const p=f.plots[i],nm='共同菜園 '+(i+1),crop=f8Name(p);
   if(!f.intro){L.push({d,label:'共同菜園：米田から大根と稲の種をもらう',act:f8Intro});continue;}
@@ -4455,10 +4566,11 @@ function paddy(x0,x1,z0,z1,opt={}){
   const tuft=cached('tuft',()=>{ const t=new THREE.Group(); const c3=cached('cone3o',()=>new THREE.ConeGeometry(1,1,3,1,true)); for(let i=0;i<3;i++){ const c=mesh(c3,mat(0xffffff),Math.cos(i*2.1)*0.06,0.32,Math.sin(i*2.1)*0.06,0.05,0.65,0.05); c.rotation.z=Math.cos(i*2.1)*0.18; c.rotation.x=-Math.sin(i*2.1)*0.18; t.add(c);} return bakeGeo(t,0); });
   const n=Math.floor(w/1.0)*Math.floor(d/1.0);
   const im=new THREE.InstancedMesh(tuft,instColMat||(instColMat=new THREE.MeshLambertMaterial({color:0xffffff,vertexColors:true})),n); const m4=new THREE.Matrix4(), col=new THREE.Color(), q=new THREE.Quaternion(), e=new THREE.Euler(), sc=new THREE.Vector3(), v=new THREE.Vector3(); let k=0;
-  for(let x=x0+0.5;x<x1-0.2&&k<n;x+=1.0) for(let z=z0+0.5;z<z1-0.2&&k<n;z+=1.0){ e.set(0,hash2(x,z)*6,0); q.setFromEuler(e); const s=0.85+hash2(z,x)*0.4; sc.set(s,s,s); v.set(x+(hash2(x,z*2)-0.5)*0.2,0,z); m4.compose(v,q,sc); im.setMatrixAt(k,m4);
+  const base=[]; for(let x=x0+0.5;x<x1-0.2&&k<n;x+=1.0) for(let z=z0+0.5;z<z1-0.2&&k<n;z+=1.0){ e.set(0,hash2(x,z)*6,0); q.setFromEuler(e); const s=0.85+hash2(z,x)*0.4; base.push({x:x+(hash2(x,z*2)-0.5)*0.2,z,ry:hash2(x,z)*6,s,h:hash2(x*2,z)}); sc.set(s,s,s); v.set(x+(hash2(x,z*2)-0.5)*0.2,0,z); m4.compose(v,q,sc); im.setMatrixAt(k,m4);
     col.setHex(opt.gold?0xbfa84a:0x6e9e3c).lerp(new THREE.Color(opt.gold?0xa89a46:0x8aa645),hash2(x*2,z)*0.6); im.setColorAt(k,col); k++; }
   im.count=k; im.receiveShadow=true; world.add(im);
   if(opt.scarecrow) place('fields',pScarecrow(),cx+opt.scarecrow[0],cz+opt.scarecrow[1],hash2(cx,cz)*2);
+  im.userData.base=base; return im; // v0.79：拠点の田んぼは育ち具合で形と色を変える（paddyVis）
 }
 // ---- 拠点の柵（v0.0xの配置を回して置く） ----
 let palisadePosts=null;
@@ -4608,16 +4720,16 @@ function buildWorld(){
   // 拠点の建物（ゲームだけの施設）
   const MH=(ox,oz,w,d,opt)=>{ const [x,z]=M(ox,oz); return makeHouse(x,z,w,d,Object.assign({rot:Math.PI},opt)); };
   baseHall(0,68.5,12,4.5); // 集会所（桜隊の詰所）
-  prefab(-15,40,6,4.5,{label:'資材倉庫',sheet:true});
+  prefab(STOREHOUSE[0],STOREHOUSE[1],6,4.5,{label:'資材倉庫',sheet:true}); // v0.79：南西の隅へ
   aidTent(-15,64);
   prefab(15,40,5.5,4,{label:'無線室',antenna:true});
   { const [x,z]=M(13,65); containerStore(STORE.x,z); } // 物置コンテナ（食料庫）
-  { const [x,z]=M(-7,40.5); workbench(x,z); }
+  workbench(BENCH.x,BENCH.z); // v0.79
   for(const [ox,oz] of [[-6,33],[6,33],[-19,69]]){ const [x,z]=M(ox,oz); watchtower(x,z); }
   for(const [ox,oz] of [[-3.5,62.5],[3.5,62.5]]){ const [x,z]=M(ox,oz); lantern(x,z); }
-  { const [xa,za]=M(11,49), [xb,zb]=M(3,43); paddy(xa,xb,za,zb,{scarecrow:[0,0]}); }
+  PADDY.im=paddy(PADDY.x0,PADDY.x1,PADDY.z0,PADDY.z1,{scarecrow:[0,0]}); // v0.79：稲の育ち具合で見た目が変わる（paddyVis）
   for(const p of [[-3.4,27.8],[3.4,27.8],[-22,46.2],[-22,55.8],[22,46.2],[22,55.8],[-2.2,55],[2.2,55],[-8,51],[8,51]]){ const [x,z]=M(p[0],p[1]); torch(x,z); }
-  for(const oz of [42,48]){ for(const ox of [-4.5,4.5]){ const [x,z]=M(ox,oz); cedar(x,z,0.72); } }
+  // v0.79：拠点の中の杉4本はなくした（2026-11-18 ユーザー「拠点内の木はなくす」）
   const PB=(obj,ox,oz,ry=0,s=1)=>{ const [x,z]=M(ox,oz); return place('base',obj,x,z,ry+Math.PI,s); };
   PB(pRiceBags(5),10,61.2,0); PB(pRiceBags(4),17.5,57.5,0.4);
   PB(pCrate(),17,61.5,0.3); PB(pCrate(),17.2,62.4,-0.2);
@@ -6895,7 +7007,7 @@ function chapter2Panel(n,st,bx){
 }
 function freshState(){
   inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,baitKit:0,onigiri:1,bento:0,grilledVeg:0,herbPorridge:0,meat:0,veg:0,rice:0,katsudon:0,botan:0,gomadofu:0,koroni:0,kushi:0,fang:0,mutScale:0,procScale:0,charcoal:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0};
-  prog={gear:f47Fresh(),stage:'talk',unlockTrap:false,unlockBoss:false,clues:[false,false,false],bossDefeated:false,scoutTower:false,scoutWarned:false,scoutRaidWarned:false,prepT:150,gatherT:0,introSeen:false,lastSaveT:0,townRequests:loadTownRequests(),g4:g4Fresh(),f4:f4Fresh(),level:1,exp:0,mastery:{nata:0,axe:0,club:0,spear:0},xph:0}; prog.f7=f7FromInv(); f7Sync(); prog.f8=f8Fresh(); prog.conv=facFresh(); prog.kama=kamaFresh(); prog.f9=f9Fresh(); prog.f10=f10Fresh(); prog.kami=kamiFresh(); prog.chapter2=chapter2State(null,false);
+  prog={gear:f47Fresh(),stage:'talk',unlockTrap:false,unlockBoss:false,clues:[false,false,false],bossDefeated:false,scoutTower:false,scoutWarned:false,scoutRaidWarned:false,prepT:150,gatherT:0,introSeen:false,lastSaveT:0,townRequests:loadTownRequests(),g4:g4Fresh(),f4:f4Fresh(),level:1,exp:0,mastery:{nata:0,axe:0,club:0,spear:0},xph:0}; prog.f7=f7FromInv(); f7Sync(); prog.f8=f8Fresh(); prog.paddy=paddyFresh(); prog.conv=facFresh(); prog.kama=kamaFresh(); prog.f9=f9Fresh(); prog.f10=f10Fresh(); prog.kami=kamiFresh(); prog.chapter2=chapter2State(null,false);
   stats={kills:0,deaths:0,crafts:0,time:0,perfect:0,hunt:loadHuntRecords()};
   P.lvx48=0;P.lvz48=0;
   szFresh(); // v0.70
@@ -8638,9 +8750,9 @@ function interactables(){
   if(TRUCK.drive) return {d:0,label:'KEI truck を降りる',act:()=>truckExit()}; // v0.77
   const L=[];
   for(const n of NPCS){ const d=dist(P.x,P.z,n.x,n.z); if(d<(n.y?3.6:2.3)) L.push({d:d+f9Pen(n),label:f9Label(n),act:()=>f9Interact(n)}); }
-  { const d=dist(P.x,P.z,157,66.5); if(d<2.4) L.push({d,label:'作業台（クラフト・修理）',act:openCraft}); }
+  { const d=dist(P.x,P.z,BENCH.x,BENCH.z+1.0); if(d<2.4) L.push({d,label:'作業台（クラフト・修理）',act:openCraft}); }
   if(F7.store){ const d=f7StoreDist(); if(d<1.7) L.push({d,label:f7StoreLabel(),act:openStore}); }
-  f8Interactables(L); f10Interactables(L); facInteractables(L);
+  f8Interactables(L); paddyInteractables(L); f10Interactables(L); facInteractables(L);
   const k36=trk36Nearby();if(k36)L.push({d:dist(P.x,P.z,k36.m.position.x,k36.m.position.z),label:'蹄跡を調べる',act:()=>trk36Inspect(k36)});
   for(const n of NODES){ if(!n.avail) continue; const d=dist(P.x,P.z,n.x,n.z); if(d<2.2) L.push({d,label:n.k==='wood'?'薪を拾う':n.chest?'栗を拾う':'大根を収穫する',act:()=>gatherNode(n)}); }
   for(const c of CLUES){ if(prog.clues[c.id]) continue; const d=dist(P.x,P.z,c.x,c.z); if(d<2.4) L.push({d,label:`調べる：${c.title}`,act:()=>examineClue(c)}); }
@@ -8798,31 +8910,98 @@ function craft(id){
 }
 // 縄をまとめて作る：作れる分だけ（最大5本）。材料の効率は1本と同じ。消費と加算は1回の処理で行う
 function craftRope(max){ const n=Math.min(max,Math.floor((inv.straw||0)/3)); if(n<1){ sfx('deny'); toast('素材が足りない',true); return; } inv.straw-=n*3; inv.rope+=n; stats.crafts+=n; g4CheckQuests(); sfx('craft'); toast(`縄を${n}本まとめて作った（藁 −${n*3}）`); saveGame(); renderCraft(); }
+// ---- v0.79 作業台の画面：種類ごとのタブ・絵と名前のカード・右（スマホは下から）に詳しい説明（2026-11-18 ユーザー指示） ----
+const CRAFT_CATS=[{id:'weapon',name:'武器',ic:'spear'},{id:'armor',name:'防具',ic:'gear_forest_chest'},{id:'tool',name:'道具と罠',ic:'trapKit'},{id:'food',name:'食べ物',ic:'onigiri'},{id:'build',name:'建てる',ic:'kamaBuild'},{id:'care',name:'手入れ',ic:'repair'}];
+function craftCat(r){ const id=r.id; if(WEAPONS[id]||SCALE_ARMS[id]) return 'weapon'; if(id.startsWith('gear_')) return 'armor'; if(id==='onigiri'||id==='bento') return 'food';
+  if(['convBuild','kamaBuild','depotBuild'].includes(id)) return 'build'; if(['repair','toolRepair','boomerFix','fenceFix'].includes(id)) return 'care'; return 'tool'; }
+const CRAFT_ICON={fence:'fenceKit',trap:'trapKit',spikeFence:'spikeKit',pitTrap:'pitKit',bait:'baitKit',stake:'stakeKit',rope:'mat_rope'};
+function craftIcon(r){ return CRAFT_ICON[r.id]||r.id; }
+function matIcon(k){ return FOODS[k]?k:'mat_'+k; }
+// 絵は描いてあればすぐ出し、まだなら空の枠を出して、1コマに少しずつ描いて差し替える（防具の絵は体に着せて写すので、まとめて描くとスマホで一瞬止まるため）
+const IC_Q=[], IC_BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; let IC_T=0;
+function icImg(id,cls){ const u=ICONS[id]; if(u) return `<img class="${cls||''}" src="${u}" alt="">`; if(!IC_Q.includes(id)) IC_Q.push(id); icPump(); return `<img class="${cls||''} ld" data-ic="${id}" src="${IC_BLANK}" alt="">`; }
+function icPump(){ if(IC_T) return; IC_T=setTimeout(function step(){ IC_T=0; const t0=performance.now();
+  while(IC_Q.length&&performance.now()-t0<14){ const id=IC_Q.shift(), u=iconOf(id); for(const im of document.querySelectorAll(`img[data-ic="${id}"]`)){ im.removeAttribute('data-ic'); im.classList.remove('ld'); if(u) im.src=u; else{ const sp=document.createElement('span'); sp.className=im.className+' ph'; sp.textContent='？'; im.replaceWith(sp); } } }
+  if(IC_Q.length) IC_T=setTimeout(step,16); },0); }
+const WK_MATS=['wood','stone','iron','rope','straw','bamboo','hide','charcoal','procScale','mutScale','fang','food'];
+function wkHave(k){ return FOODS[k]?f7Have(k):(inv[k]||0); }
+function wkMatsHtml(){ return WK_MATS.filter(k=>wkHave(k)>0||bedHave(k)>0||['wood','stone','iron','rope'].includes(k)).map(k=>{ const bd=FOODS[k]?0:bedHave(k); return `<span class="wkMat" title="${RNAME[k]}">${icImg(matIcon(k))}${RNAME[k]} <b>${wkHave(k)}</b>${bd?`<span class="bd">＋荷台${bd}</span>`:''}</span>`; }).join(''); }
+function wkChips(cost){ return Object.entries(cost).map(([k,v])=>{ const h=wkHave(k)+(FOODS[k]?0:bedHave(k)); return `<span class="wkChip${h<v?' lack':''}" title="${RNAME[k]}">${icImg(matIcon(k))}${v}</span>`; }).join(''); }
+function wkNeed(cost){ return '<div class="need">'+Object.entries(cost).map(([k,v])=>{ const h=wkHave(k), bd=FOODS[k]?0:bedHave(k), st=FOODS[k]&&F7.store?f7Count(k,'store'):0;
+  return `<div class="needRow${h+bd<v?' lack':''}">${icImg(matIcon(k))}<span>${RNAME[k]} ×${v}</span><span class="have">持ち ${h}${st?`（食料庫 ${st}）`:''}${bd?`＋荷台 ${bd}`:''}</span></div>`; }).join('')+'</div>'; }
+function craftCan(r){ const e=equippedWeapon(); return !(r.lock&&r.lock())&&bedAfford(r.cost)&&!(r.id==='repair'&&(!e||P.dur>=e.maxDur)); }
+function craftList(){ return RECIPES.filter(r=>(!r.show||r.show())&&craftHere(r)); }
+function weaponStats(id){ const w=WEAPONS[id]; if(!w) return ''; const mx={light:1,heavy:1,range:1,maxDur:1}; for(const k in WEAPONS) for(const q in mx) mx[q]=Math.max(mx[q],WEAPONS[k][q]||0); const row=(n,v,m)=>`<span>${n}</span><span class="bar"><i style="width:${Math.min(100,v/m*100)}%"></i></span><span class="v">${v}</span>`;
+  return `<div class="wkStats">${row('通常',w.light,mx.light)}${row('強',w.heavy,mx.heavy)}${row('間合い',w.range,mx.range)}${row('耐久',w.maxDur,mx.maxDur)}${w.chop?row('伐採',w.chop,3.5):''}</div>`; }
 function renderCraft(){
-  const list=$('craftList'); list.innerHTML='';
-  const equipped=equippedWeapon();
-  f7Flush(); $('craftHave').textContent=`所持：木材 ${inv.wood}／食料 ${inv.food}${F7.store&&f7Count('food','store')?`（食料庫 ${f7Count('food','store')}）`:''}／獣素材 ${inv.hide}／藁 ${inv.straw}／縄 ${inv.rope}／石 ${inv.stone}／竹 ${inv.bamboo}／屑鉄 ${inv.iron}${inv.fang?`／ヌシの牙 ${inv.fang}`:''}${inv.mutScale?`／変異した鱗 ${inv.mutScale}`:''}${inv.procScale?`／加工した鱗 ${inv.procScale}`:''}${inv.charcoal?`／木炭 ${inv.charcoal}`:''}　｜　武器：${equipped?`${equipped.name}（耐久 ${Math.ceil(P.dur)}/${equipped.maxDur}）`:'素手'} `;
-  for(const r of RECIPES){
-    if(r.show&&!r.show()) continue; if(!craftHere(r)) continue;
-    const locked=r.lock&&r.lock();
-    const d=document.createElement('div'); d.className='rc'+(locked?' lock':'');
-    const nm=document.createElement('div'); nm.className='nm'; nm.textContent=r.name; d.appendChild(nm);
-    const ds=document.createElement('div'); ds.className='ds'; ds.textContent=locked?`🔒 ${r.lockMsg}`:r.desc; d.appendChild(ds);
-    const cs=document.createElement('div'); cs.className='cs';
-    cs.innerHTML='必要：'+Object.entries(r.cost).map(([k,v])=>{ if(FOODS[k]){ const h=f7Count(k,'hand'), s=F7.store?f7Count(k,'store'):0, ok=h+s>=v; return `<span class="${ok?'':'lack'}">${RNAME[k]} ${v}（${h+s}${s?`：手持ち ${h}＋食料庫 ${s}`:''}）</span>`; } const bd=bedHave(k), ok=(inv[k]||0)+bd>=v; return `<span class="${ok?'':'lack'}">${RNAME[k]} ${v}（${inv[k]||0}${bd?`＋荷台 ${bd}`:''}）</span>`; }).join('　');
-    d.appendChild(cs);
-    const b=document.createElement('button'); b.textContent=locked?'未解放':'作る'; const equipped=equippedWeapon(); b.disabled=locked||!bedAfford(r.cost)||(r.id==='repair'&&(!equipped||P.dur>=equipped.maxDur)); b.id='craft_'+r.id;
-    b.addEventListener('click',()=>craft(r.id)); d.appendChild(b);
-    if(r.id==='rope'&&!locked){ const n=Math.min(5,Math.floor((inv.straw||0)/3)); const b5=document.createElement('button'); b5.id='craft_rope5'; b5.textContent=n>=2?`まとめて ${n}本（藁${n*3}）`:'まとめて（最大5本）'; b5.disabled=n<2; b5.addEventListener('click',()=>craftRope(5)); d.appendChild(b5); }
-    list.appendChild(d);
-  }
+  f7Flush(); const all=craftList(), byCat={}; for(const c of CRAFT_CATS) byCat[c.id]=[]; for(const r of all) byCat[craftCat(r)].push(r);
+  if(!CRAFT.tab||!byCat[CRAFT.tab]||!byCat[CRAFT.tab].length) CRAFT.tab=(CRAFT_CATS.find(c=>byCat[c.id].some(craftCan))||CRAFT_CATS.find(c=>byCat[c.id].length)||CRAFT_CATS[0]).id;
+  $('craftTitle').textContent=CRAFT.at==='truck'?'荷台の作業台':'作業台';
+  $('craftSub').textContent=truckNear(TRUCK_SYS.bed.near)?'KEI truck のそば：足りない素材は荷台から使う':'';
+  $('craftHave').innerHTML=wkMatsHtml();
+  const tabs=$('craftTabs'); tabs.innerHTML='';
+  for(const c of CRAFT_CATS){ const L=byCat[c.id]; if(!L.length) continue; const ok=L.filter(craftCan).length; const b=document.createElement('button'); b.className='wkTab'+(CRAFT.tab===c.id?' on':''); b.id='craftTab_'+c.id; b.setAttribute('role','tab');
+    b.innerHTML=`${icImg(c.ic)}${c.name}<span class="n${ok?' ok':''}">${ok?ok+'/':''}${L.length}</span>`; b.onclick=()=>{ CRAFT.tab=c.id; CRAFT.sel=null; renderCraft(); }; tabs.appendChild(b); }
+  const list=$('craftList'); list.innerHTML=''; const L=byCat[CRAFT.tab]||[];
+  if(!L.sort) return; if(!L.length) list.innerHTML='<div class="wkEmpty">いま作れる物はない</div>';
+  if(!L.some(r=>r.id===CRAFT.sel)) CRAFT.sel=(L.find(craftCan)||L[0]||{}).id;
+  for(const r of L){ const locked=r.lock&&r.lock(), can=craftCan(r); const d=document.createElement('div'); d.className='wkCard'+(r.id===CRAFT.sel?' sel':'')+(locked?' lock':can?' can':' short'); d.id='craftCard_'+r.id;
+    d.innerHTML=`${icImg(craftIcon(r),'wkIc')}<div class="wkNm">${locked?'🔒 ':''}${r.name}</div><div class="wkCs">${wkChips(r.cost)}</div>`;
+    const b=document.createElement('button'); b.textContent=locked?'未解放':'作る'; b.disabled=!can; b.id='craft_'+r.id; b.onclick=e=>{ e.stopPropagation(); craft(r.id); }; d.appendChild(b);
+    d.onclick=()=>{ CRAFT.sel=r.id; CRAFT.det=true; renderCraft(); }; list.appendChild(d); }
+  const det=$('craftDet'), r=L.find(x=>x.id===CRAFT.sel); det.classList.toggle('hide',!CRAFT.det); det.innerHTML='';
+  if(!r){ det.innerHTML='<div class="wkEmpty">左から選ぶと、ここに詳しく出る</div>'; return; }
+  const locked=r.lock&&r.lock(), can=craftCan(r), cat=CRAFT_CATS.find(c=>c.id===craftCat(r));
+  det.innerHTML=`<button class="back">← 一覧へ</button>${icImg(craftIcon(r),'bigIc')}<div class="tag">${cat.name}</div><h3>${r.name}</h3>${WEAPONS[r.id]?weaponStats(r.id):''}<div class="ds">${locked?'🔒 '+r.lockMsg:r.desc}</div><div class="tag">必要な素材</div>${wkNeed(r.cost)}`;
+  const go=document.createElement('button'); go.className='pri go'; go.id='craftGo'; go.textContent=locked?'未解放':!can?'素材が足りない':'作る'; go.disabled=!can; go.onclick=()=>craft(r.id); det.appendChild(go);
+  if(r.id==='rope'&&!locked){ const n=Math.min(5,Math.floor((inv.straw||0)/3)); const b5=document.createElement('button'); b5.id='craft_rope5'; b5.textContent=n>=2?`まとめて ${n}本（藁${n*3}）`:'まとめて（最大5本）'; b5.disabled=n<2; b5.onclick=()=>craftRope(5); det.appendChild(b5); }
+  det.querySelector('.back').onclick=()=>{ CRAFT.det=false; renderCraft(); };
+}
+// ---- v0.79 車両基地の画面：修理・改修（段階の道）・荷台の施設・燃料 ----
+const DEPOT_TABS=[{id:'repair',name:'修理',ic:'wrench'},{id:'up',name:'改修',ic:'upgrade'},{id:'fac',name:'荷台の施設',ic:'fac_bench'},{id:'fuel',name:'燃料',ic:'fuel'}];
+const DEPOT_UI={tab:'repair',sel:null,det:false};
+function openDepot(){ if(!depotParked()){ toast('車両基地：KEI truck を屋根の下に止めると、直す・改修・荷台の施設を作るができる'); return; } if(trk().tip){ toast('先に KEI truck を起こす',true); return; }
+  stopBeastVoices51(); S.mode='menu'; keys.clear(); DEPOT_UI.det=false; renderDepot(); $('depotOv').hidden=false; }
+function depotCards(){ const t=trk(), L=TRUCK_SYS, hm=trkHpMax(t), out=[];
+  if(DEPOT_UI.tab==='repair'){ out.push({id:'fix1',name:`車体を直す（+${L.repair.step}）`,ic:'truckRepair',cost:L.repair.cost,can:t.hp<hm&&bedAfford(L.repair.cost),why:t.hp>=hm?'傷んでいない':'',act:()=>truckRepairStep(false),desc:`車体を${L.repair.step}直す。今 ${Math.round(t.hp)}/${hm}。`});
+    const need=Math.ceil((hm-t.hp)/L.repair.step), cAll=Object.fromEntries(Object.entries(L.repair.cost).map(([k,v])=>[k,v*Math.max(1,need)]));
+    out.push({id:'fixAll',name:'直せるだけ直す',ic:'truckRepair',cost:cAll,can:t.hp<hm&&bedAfford(L.repair.cost),why:t.hp>=hm?'傷んでいない':'',act:()=>truckRepairStep(true),desc:`素材のある分だけ、続けて直す（満タンまで ${need} 回分）。`}); }
+  else if(DEPOT_UI.tab==='up'){ for(let lv=1;lv<L.lv.length;lv++){ const nx=L.lv[lv], F=Object.values(L.fac).filter(f=>f.lv===lv), done=t.lv>=lv, next=t.lv+1===lv;
+    out.push({id:'lv'+lv,name:`改修 段階${lv}`,ic:'upgrade',cost:nx.cost,can:next&&bedAfford(nx.cost),done,why:done?'済み':!next?`先に段階${lv-1}`:'',act:truckUpgrade,lv,
+      desc:`最高速度 約${Math.round(nx.speed*3.6)}km/時・耐久 ${L.hp.max[lv]}・加速 ${nx.acc}m/秒²。${F.length?`荷台に「${F.map(f=>f.name).join('」「')}」を作れるようになる。`:''}`}); } }
+  else if(DEPOT_UI.tab==='fac'){ for(const id in L.fac){ const F=L.fac[id], done=!!t.fac[id], open=t.lv>=F.lv;
+    out.push({id:'fac_'+id,name:F.name,ic:'fac_'+id,cost:F.cost,can:!done&&open&&bedAfford(F.cost),done,why:done?'作った':!open?`改修 段階${F.lv}で作れる`:'',act:()=>truckFacBuild(id),desc:F.desc,lock:!open}); } }
+  else { const G=L.gas, want=Math.ceil((100-t.gas)/G.coal-1e-6), have=bedHaveAll('charcoal');
+    out.push({id:'gas1',name:`木炭1つ（+${G.coal}%）`,ic:'fuel',cost:{charcoal:1},can:t.gas<100&&have>0,why:t.gas>=100?'満タン':'',act:()=>truckRefuel(1),desc:`燃料を${G.coal}%足す。今 ${Math.round(t.gas)}%。1km で${G.perKm}%、上志比へ移ると${G.travel}%減る。`});
+    out.push({id:'gasAll',name:'入るだけ足す',ic:'fuel',cost:{charcoal:Math.max(1,want)},can:t.gas<100&&have>0,why:t.gas>=100?'満タン':'',act:()=>truckRefuel(0),desc:`満タンまで木炭 ${want}つ（持っている分だけ使う）。木炭はかまど・荷台の炭焼き釜で焼ける。`}); }
+  return out; }
+function renderDepot(){ const t=trk(), L=TRUCK_SYS, hm=trkHpMax(t);
+  $('depotSub').textContent=`KEI truck 段階${t.lv}／${L.lv.length-1}・車体 ${Math.round(t.hp)}/${hm}・燃料 ${Math.round(t.gas)}%`;
+  $('depotHave').innerHTML=wkMatsHtml();
+  const tabs=$('depotTabs'); tabs.innerHTML=''; for(const c of DEPOT_TABS){ const b=document.createElement('button'); b.className='wkTab'+(DEPOT_UI.tab===c.id?' on':''); b.id='depotTab_'+c.id; b.innerHTML=`${icImg(c.ic)}${c.name}`; b.onclick=()=>{ DEPOT_UI.tab=c.id; DEPOT_UI.sel=null; renderDepot(); }; tabs.appendChild(b); }
+  const list=$('depotList'); list.innerHTML=''; const cards=depotCards();
+  if(DEPOT_UI.tab==='up'){ const p=document.createElement('div'); p.className='lvPath'; let h=''; for(let lv=0;lv<L.lv.length;lv++){ if(lv) h+=`<span class="lvLine${t.lv>=lv?' done':''}"></span>`; h+=`<span class="lvNode${t.lv>=lv?' done':t.lv+1===lv?' next':''}" title="段階${lv}">${lv}</span>`; } p.innerHTML=h; list.appendChild(p); }
+  if(DEPOT_UI.tab==='repair'||DEPOT_UI.tab==='fuel'){ const g=document.createElement('div'); g.className='wkEmpty'; g.style.textAlign='left'; g.style.padding='4px 2px 8px';
+    const v=DEPOT_UI.tab==='repair'?t.hp/hm:t.gas/100, col=DEPOT_UI.tab==='repair'?(v<L.hp.weak?'var(--danger)':'var(--moss)'):(t.gas<=L.gas.low?'var(--danger)':'var(--gold)');
+    g.innerHTML=`${DEPOT_UI.tab==='repair'?`車体 ${Math.round(t.hp)}/${hm}`:`燃料 ${Math.round(t.gas)}%`}<div class="gauge"><i style="width:${Math.round(v*100)}%;background:${col}"></i></div>`; list.appendChild(g); }
+  if(!cards.some(c=>c.id===DEPOT_UI.sel)) DEPOT_UI.sel=(cards.find(c=>c.can)||cards.find(c=>!c.done)||cards[0]||{}).id;
+  for(const c of cards){ const d=document.createElement('div'); d.className='wkCard'+(c.id===DEPOT_UI.sel?' sel':'')+(c.done?' lock':c.can?' can':' short'); d.id='depotCard_'+c.id;
+    d.innerHTML=`${icImg(c.ic,'wkIc')}<div class="wkNm">${c.lock?'🔒 ':''}${c.name}</div>${c.why?`<div class="tag" style="font-size:11px;color:var(--washi-dim)">${c.why}</div>`:''}<div class="wkCs">${c.done?'':wkChips(c.cost)}</div>`;
+    const b=document.createElement('button'); b.textContent=c.done?'済み':'する'; b.disabled=!c.can; b.id='depot_'+c.id; b.onclick=e=>{ e.stopPropagation(); c.act(); renderDepot(); }; d.appendChild(b);
+    d.onclick=()=>{ DEPOT_UI.sel=c.id; DEPOT_UI.det=true; renderDepot(); }; list.appendChild(d); }
+  const det=$('depotDet'), c=cards.find(x=>x.id===DEPOT_UI.sel); det.classList.toggle('hide',!DEPOT_UI.det); det.innerHTML=''; if(!c) return;
+  let extra=''; if(c.lv){ const cur=L.lv[t.lv], nx=L.lv[c.lv], row=(n,a,b,m,u)=>`<span>${n}</span><span class="bar" style="position:relative"><i style="width:${Math.min(100,b/m*100)}%" class="nx"></i><i style="position:absolute;inset:0 auto 0 0;width:${Math.min(100,a/m*100)}%"></i></span><span class="v">${a}${u}→${b}${u}</span>`;
+    extra=`<div class="wkStats">${row('最高速度',Math.round(cur.speed*3.6),Math.round(nx.speed*3.6),80,'')}${row('耐久',L.hp.max[t.lv],L.hp.max[c.lv],300,'')}${row('加速',cur.acc,nx.acc,9,'')}</div>`; }
+  det.innerHTML=`<button class="back">← 一覧へ</button>${icImg(c.ic,'bigIc')}<div class="tag">${DEPOT_TABS.find(x=>x.id===DEPOT_UI.tab).name}</div><h3>${c.name}</h3>${extra}<div class="ds">${c.desc}${c.why?`<br><b>${c.why}</b>`:''}</div>${c.done?'':`<div class="tag">必要な素材</div>${wkNeed(c.cost)}`}`;
+  const go=document.createElement('button'); go.className='pri go'; go.id='depotGo'; go.textContent=c.done?'済み':c.can?'する':(c.why||'素材が足りない'); go.disabled=!c.can; go.onclick=()=>{ c.act(); renderDepot(); }; det.appendChild(go);
+  det.querySelector('.back').onclick=()=>{ DEPOT_UI.det=false; renderDepot(); };
 }
 
 // ================= オーバーレイ管理 =================
-function hideAllOv(){ for(const id of ['title','howto','pause','craft','inv','dead','result','quests','mapOv','store','npcOv']) $(id).hidden=true; const c=document.getElementById('defenseChoice');if(c)c.remove(); }
+function hideAllOv(){ for(const id of ['title','howto','pause','craft','depotOv','inv','dead','result','quests','mapOv','store','npcOv']) $(id).hidden=true; const c=document.getElementById('defenseChoice');if(c)c.remove(); }
 function openPause(){ if(S.mode!=='playing') return; S.mode='paused'; keys.clear(); $('pause').hidden=false; f11Pause(); f31Pause();
   $('pauseInfo').textContent=`経過 ${fmtTime(stats.time)}　撃退 ${stats.kills}　見切り ${stats.perfect}`; }
-function openCraft(at){ CRAFT.at=at==='truck'?'truck':'bench'; stopBeastVoices51(); S.mode='menu'; keys.clear(); renderCraft(); $('craft').hidden=false; }
+function openCraft(at){ CRAFT.at=at==='truck'?'truck':'bench'; CRAFT.det=false; stopBeastVoices51(); S.mode='menu'; keys.clear(); renderCraft(); $('craft').hidden=false; }
 function renderHuntRecords(){
   const list=$('invHuntRecords'); list.innerHTML='';
   for(const type of HUNT_TYPES){
@@ -8859,7 +9038,7 @@ function openInv(){ f31Inv(); f34Body(); renderHuntRecords();
   renderArms();
   f9InvLine(); $('inv').hidden=false;
 }
-function closeOverlay(){ $('pause').hidden=true; $('craft').hidden=true; $('store').hidden=true; $('npcOv').hidden=true; $('quests').hidden=true; $('mapOv').hidden=true; $('inv').hidden=true; $('howto').hidden=true; if(S.mode==='paused'||S.mode==='menu') S.mode='playing'; cv.focus(); if(dlgQueue.length) nextDialog(); }
+function closeOverlay(){ $('pause').hidden=true; $('craft').hidden=true; $('depotOv').hidden=true; $('store').hidden=true; $('npcOv').hidden=true; $('quests').hidden=true; $('mapOv').hidden=true; $('inv').hidden=true; $('howto').hidden=true; if(S.mode==='paused'||S.mode==='menu') S.mode='playing'; cv.focus(); if(dlgQueue.length) nextDialog(); }
 function fmtTime(s){ s=Math.floor(s); return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
 
 // ================= 敗北・リトライ =================
@@ -9039,7 +9218,7 @@ function saveGame(){
     const data={v:1,chapter2:prog.chapter2,inv,weapon:P.weapon,dur:P.dur,full:P.full,arms:prog.arms,f5:f5Save(),
       prog:Object.assign({stage:checkpointStage(),unlockTrap:prog.unlockTrap,unlockBoss:prog.unlockBoss,clues:prog.clues,bossDefeated:prog.bossDefeated,scoutTower:!!prog.scoutTower,scoutWarned:!!prog.scoutWarned,scoutRaidWarned:!!prog.scoutRaidWarned,townRequests:prog.townRequests},f31SaveProg()),
       fences:GAPS.map(g=>g.fence.type?{type:g.fence.type,hp:g.fence.broken?0:g.fence.hp}:null),
-      traps:traps.map(saveTrap),stats,nodes:NODES.map(n=>n.avail?1:0),g4:prog.g4,f4:f4Save(),f7:f7Save(),f8:f8Save(),f9:f9Save(),f10:f10Save(),conv:facSave('conv'),kama:kamaSave(),kami:kamiSave(),suzuki:szSave()}; // v0.73：スズキ（新しいキー suzuki）
+      traps:traps.map(saveTrap),stats,nodes:NODES.map(n=>n.avail?1:0),g4:prog.g4,f4:f4Save(),f7:f7Save(),f8:f8Save(),paddy:paddySave(),f9:f9Save(),f10:f10Save(),conv:facSave('conv'),kama:kamaSave(),kami:kamiSave(),suzuki:szSave()}; // v0.73：スズキ（新しいキー suzuki）
     localStorage.setItem(SAVE_KEY,JSON.stringify(data));
   }catch(e){ storageOK=false; }
 }
@@ -9083,6 +9262,7 @@ function applySave(d){
     prog.f10=f10Load(d.f10); // 古いセーブは「伏線はまだ調べていない」で始める
     prog.f9=f9Load(d.f9); // 古いセーブは「頼んでいない」で始める
     prog.f8=f8Load(d.f8); // 古いセーブは未開始のまま始める
+    prog.paddy=paddyLoad(d.paddy); // v0.79：拠点の田んぼ（古いセーブは育っている途中から）
     prog.conv=facLoad('conv',d.conv); prog.kama=kamaLoad(d.kama); prog.kami=kamiLoad(d.kami); szApplyLoad(d.suzuki); // v0.73：スズキ（古いセーブは「まだ仲間でない」） // v0.67：上志比の採集・伐採・獣（古いセーブは何も取っていない状態） // v0.63：変換炉・v0.64：かまど（古いセーブは未建設）
     { const f=f7Load(d.f7); prog.f7=f||f7FromInv(); prog.f7Migrated=!f; f7Sync(); } // 古いセーブは今の個数を新品の束にする（1回だけ）
     const q=d.g4; if(q&&typeof q==='object'){ const g=prog.g4; g.board=!!q.board; g.hint=q.board?1:0; g.track=num(q.track,-1,-1,QUESTS.length-1); g.closure=q.closure?1:0;
@@ -9106,7 +9286,7 @@ function resetWorld(extra){
   for(const k of TRK36)scene.remove(k.m);
   TRK36.length=0;
   trk36Reset();
-  trackSpawns.length=0; trackShow=null; g4Apply(); f4Apply(); f5Apply(); f7Apply(); f8Apply(); facApply(); boomerReset(); haulStop(true); f9Reset(); f10Apply(); depotApply(); // v0.78：運搬・車両基地
+  trackSpawns.length=0; trackShow=null; g4Apply(); f4Apply(); f5Apply(); f7Apply(); f8Apply(); facApply(); boomerReset(); haulStop(true); f9Reset(); f10Apply(); depotApply(); paddyVis(); // v0.78：運搬・車両基地
   spawnFieldEnemies();
   GAPS.forEach((g,i)=>{ const f=extra&&extra.fences[i]; if(f&&(f.type==='wood'||f.type==='stake'||f.type==='spike')) setFence(g,f.type,num(f.hp,0,0,999)); else setFence(g,null); });
   traps.forEach((t,i)=>restoreTrap(t,extra&&extra.traps[i]));
@@ -9576,7 +9756,7 @@ function updateProgress(dt){ f31Tick(dt);
   }
   if(prog.stage==='toBoss'&&!bossActive&&bossE&&!prog.bossDefeated&&dist(P.x,P.z,ARENA.x,ARENA.z)<ARENA.r-3) startBoss();
   // 自動セーブ（イベント外のみ）
-  g4Update(dt); f8Update(dt); facUpdate(dt); scaleFxUpdate(dt); boomerUpdate(dt); f10Clock(dt); f10TrUpdate(); // 共同菜園の成長も同じゲームの時間で進む。F10：昼と夜・痕跡
+  g4Update(dt); f8Update(dt); paddyUpdate(dt); facUpdate(dt); scaleFxUpdate(dt); boomerUpdate(dt); f10Clock(dt); f10TrUpdate(); // 共同菜園の成長も同じゲームの時間で進む。F10：昼と夜・痕跡
   prog.lastSaveT+=dt; if(prog.lastSaveT>30&&!ev.kind&&!bossActive){ prog.lastSaveT=0; saveGame(); }
 }
 function objective(){
@@ -11098,7 +11278,7 @@ function truckNeedText(short){ const t=trk(), m=TRUCK_CFG.mats, N=k=>RNAME[k]||F
   if(!t.repaired){ for(const k in m) out.push(`${N(k)} ${Math.min(inv[k]|0,m[k])}/${m[k]}`); out.push(`${short?'部品':TRUCK_CFG.partName} ${Math.min(t.parts.length,TRUCK_CFG.parts)}/${TRUCK_CFG.parts}`); }
   if(!t.fueled) out.push(`${short?'燃料':TRUCK_CFG.fuelName} ${Math.min(t.fuel,TRUCK_CFG.fuel)}/${TRUCK_CFG.fuel}`); return out.join('・'); }
 // 部品と燃料の場所（光明寺の中。上志比へ行かなくても手に入る）：資材倉庫の前と、国道416号の脇（暫定）
-function truckSpots(){ if(TRUCK.spots) return TRUCK.spots; const [sx,sz]=M(-15,40), rz=roadZAt('国道416号',380)??160, here=REG.cur==='komyoji', used=[];
+function truckSpots(){ if(TRUCK.spots) return TRUCK.spots; const [sx,sz]=M(STOREHOUSE[0],STOREHOUSE[1]), rz=roadZAt('国道416号',380)??160, here=REG.cur==='komyoji', used=[];
   // 置きたい所が建物・丸太などと重なるときは、近くの空いた所へずらす（v0.77：見える形を置くため。光明寺の当たりで1回だけ決める）
   const ok=(x,z)=>!isWater(x,z)&&f4Free(x,z,0.9)&&used.every(u=>dist(x,z,u[0],u[1])>2.2);
   const fit=(x,z)=>{ let r0=[x,z]; if(here&&!ok(x,z)){ found: for(let r=0.6;r<=6;r+=0.6) for(let k=0;k<16;k++){ const a=k/16*TAU, X=x+Math.cos(a)*r, Z=z+Math.sin(a)*r; if(ok(X,Z)){ r0=[X,Z]; break found; } } } used.push(r0); return r0; };
@@ -11151,7 +11331,7 @@ function truckGlbLoad(kind){ let V=TRUCK_VIS[kind]; if(V) return V; V=TRUCK_VIS[
       for(const n of ['wheel_fr','wheel_fl','wheel_rr','wheel_rl']){ const w=g.getObjectByName(n); if(!w) throw new Error('車輪が無い: '+n); w.rotation.order='YXZ'; V.wheels.push(w); V.hub.push(w.position.y); }
       V.doors={r:g.getObjectByName('door_r'),l:g.getObjectByName('door_l'),tg:g.getObjectByName('tailgate')}; // v0.78：開け閉めする所（1枚の板なので裏も描く）
       for(const k in V.doors){ const o=V.doors[k]; if(o) o.traverse(q=>{ if(q.isMesh) q.material.side=THREE.DoubleSide; }); }
-      V.r=V.hub.reduce((a,b)=>a+b,0)/4; g.visible=false; if(TRUCK.m) TRUCK.m.add(g); V.g=g; V.st='ok'; })
+      V.r=V.hub.reduce((a,b)=>a+b,0)/4; g.visible=false; if(TRUCK.m) TRUCK.m.add(g); V.g=g; V.st='ok'; if(kind==='repaired') for(const k of ['truck','upgrade','truckRepair']) delete ICONS[k]; })
     .catch(e=>{ V.st='fail'; console.warn('[KEI truck の形]',e&&e.message||e); });
   return V; }
 function truckGlbFree(g){ g.traverse(o=>{ if(!o.isMesh) return; o.geometry.dispose(); const m=o.material; if(m.map) m.map.dispose(); m.dispose(); }); if(g.parent) g.parent.remove(g); }
@@ -11352,27 +11532,34 @@ function truckFuel(){ const t=trk(); if(t.fueled) return; if(t.fuel<TRUCK_CFG.fu
 // 2026-11-18 ユーザー承認：燃料は木炭・改修は加速が良くなる・源さんの運搬と台詞2つ・運転席の主人公は0.62倍。数・名前・場所は暫定。保存は chapter2.progress.truck の新しい項目（gas・hp・lv・bed・fac・kiln・tip）と chapter2.progress.depot。旧セーブは初期値で読む
 const TRUCK_SYS={
   gas:{perKm:12,travel:6,coal:25,low:15}, // 燃料（%）：1km 走ると12%・地域を移ると6%減る。木炭1つで25%足す（どこでも。荷台の木炭も使える）。15%以下で知らせる
-  hp:{max:[100,130,165,200],weak:0.3,weakK:0.75,bump:{v:4.5,k:4,cd:0.6},land:{min:0.55,k:20},beast:0.6,tip:25}, // 車体：改修の段階ごとの最大／3割より下で最高速度0.75倍／激突（ぶつかる向きの速さ 4.5m/秒を超えた分×4）／高く跳んだ着地（0.55秒を超えて浮いた分×20）／獣の攻撃は0.6倍／横転で25
+  hp:{max:[100,130,165,200,240,280],weak:0.3,weakK:0.75,bump:{v:4.5,k:4,cd:0.6},land:{min:0.55,k:20},beast:0.6,tip:25}, // 車体：改修の段階ごとの最大／3割より下で最高速度0.75倍／激突（ぶつかる向きの速さ 4.5m/秒を超えた分×4）／高く跳んだ着地（0.55秒を超えて浮いた分×20）／獣の攻撃は0.6倍／横転で25
   tip:{latA:10.5,slope:0.5,hold:0.5,v:9}, // 横転：横向きの加速（m/秒²。平らな所でいっぱいに切っても 約7.7〜8.8 までしか出ない）の割合と、外へ下がる横の傾き（rad）の割合の和が1を超え、9m/秒より速いまま0.5秒続くと倒れる。平らな道では倒れない・外へ 約8°傾いた所でいっぱいに切ると倒れる
-  lv:[{speed:14,acc:3.5},{speed:15.5,acc:4.3,cost:{iron:6,wood:10,rope:4}},{speed:17,acc:5.2,cost:{iron:10,wood:14,hide:6,stone:6}},{speed:18.5,acc:6.2,cost:{iron:16,wood:18,rope:8,stone:10}}], // 改修（初期＋3段階）：最高速度（m/秒）・加速（m/秒²）・費用
+  lv:[{speed:14,acc:3.5},{speed:15.5,acc:4.3,cost:{iron:6,wood:10,rope:4}},{speed:17,acc:5.2,cost:{iron:10,wood:14,hide:6,stone:6}},{speed:18.5,acc:6.2,cost:{iron:16,wood:18,rope:8,stone:10}},
+      {speed:20,acc:7.2,cost:{iron:22,wood:22,rope:10,stone:14,hide:8}},{speed:21.5,acc:8.2,cost:{iron:30,wood:26,rope:12,stone:18,hide:10,charcoal:6}}], // 改修（初期＋5段階。2026-11-18 ユーザー「改修段階を二つ増やしてレベル五まで」）：最高速度（m/秒）・加速（m/秒²）・費用
   repair:{step:20,cost:{iron:1,wood:1}}, field:{to:0.35,cost:{iron:2,wood:2,rope:1}}, // 車両基地で20ずつ直す／応急修理（どこでも。荷台の素材も使える）は最大の35%まで
   bed:{cap:60,log:10,maxLogs:6,near:12,mats:['wood','stone','iron','rope','straw','bamboo','hide','charcoal']}, // 荷台：広さ60。丸太は1本10（6本で満杯）・素材は1つ1。車から12m 以内で作る・建てるときは荷台の素材も使える
-  depot:{x:135.5,z:72,W:7,D:4.6,build:{wood:20,stone:12,iron:8,rope:6},park:3.2}, // 車両基地：拠点の南西の隅（南門から入って西へ）。屋根の下（中心から3.2m 以内）に止めて使う
-  fac:{bench:{lv:1,name:'荷台の作業台',cost:{wood:6,iron:2,rope:2},desc:'車のそばでクラフト・武器の手入れができる（荷台の素材も使える）'},
-       kiln:{lv:2,name:'荷台の炭焼き釜',cost:{stone:6,iron:4,wood:4},desc:'走っている間も木材を焼いて木炭（燃料）を作る。木炭は荷台へ',coal:{wood:3,time:40},maxQ:6},
-       tower:{lv:3,name:'荷台の見張り台',cost:{wood:8,iron:3,rope:4},desc:'運転中・車のそばでは、地図に遠く（90m）の獣まで映る',see:90}},
+  depot:{x:164.5,z:68.6,rot:0,W:9,D:6.4,build:{wood:20,stone:12,iron:8,rope:6},park:3.2}, // 車両基地：v0.79 で拠点の南東へ（案B、2026-11-18 ユーザー決定）。入口は西。南門から入って右へ曲がるだけ。9m×6.4m（柱の間 約5.7m）。rot は向き（0：入口が西）
+  fac:{ // 荷台の施設。解放の順は 作業台（段階1）→ 見張り台（段階2）→ 炭焼き釜（段階3）（2026-11-18 ユーザー決定）。段階4・5で解放する施設は未定
+       bench:{lv:1,name:'荷台の作業台',cost:{wood:6,iron:2,rope:2},desc:'車のそばでクラフト・武器の手入れができる（荷台の素材も使える）'},
+       tower:{lv:2,name:'荷台の見張り台',cost:{wood:8,iron:3,rope:4},desc:'運転中・車のそばでは、地図に遠く（90m）の獣まで映る',see:90},
+       kiln:{lv:3,name:'荷台の炭焼き釜',cost:{stone:6,iron:4,wood:4},desc:'走っている間も木材を焼いて木炭（燃料）を作る。木炭は荷台へ',coal:{wood:3,time:40},maxQ:6},
+       // v0.79（2026-11-18 ユーザー採用：救急箱・保冷箱・投光器）。段階4で救急箱と保冷箱、段階5で投光器（割り当て・数は暫定）
+       aid:{lv:4,name:'荷台の救急箱',cost:{wood:4,hide:3,rope:3,straw:4},desc:'車のそば（6m）で、獣に傷つけられていない間（4秒）、体力が少しずつ戻る（毎秒1.5）',heal:1.5,r:6,calm:4},
+       cool:{lv:4,name:'荷台の保冷箱',cost:{iron:4,wood:6,straw:6},desc:'食べ物を荷台に積める（1つで広さ1）。中は傷みにくい（経過がふつうの1/5）',slow:0.2},
+       light:{lv:5,name:'荷台の投光器',cost:{iron:6,rope:2,stone:2,charcoal:2},desc:'夕方と夜に、車の前（約16m）を照らす。運転中と車のそば',len:16}},
   haul:{walk:2.6,load:1.4,mats:10,near:70}, // 住民の運搬：源さんが荷台と丸太置き場の間を歩いて運ぶ（歩く速さ・積み下ろしの秒・1回に運ぶ素材の数・頼める距離）
 };
 // 車両基地を作業台で建てる（拠点の作業台。KEI truck を直したあとに出る）
-RECIPES.splice(Math.max(0,RECIPES.findIndex(r=>r.id==='cart')),0,{id:'depotBuild',name:'車両基地を建てる',cost:TRUCK_SYS.depot.build,desc:'KEI truck の屋根つきの整備場。拠点の南西の隅に建てる。車を屋根の下に止めると、車体を直す・改修（最高速度・耐久・加速が上がり、荷台に施設を作れるようになる）・荷台の施設を作るができる',
-  show:()=>truckShown()&&trk().repaired&&!depotS().built,give:()=>{ depotS().built=1; depotApply(); toast('拠点の南西の隅に車両基地を建てた。KEI truck を屋根の下に止めて使う'); }});
+RECIPES.splice(Math.max(0,RECIPES.findIndex(r=>r.id==='cart')),0,{id:'depotBuild',name:'車両基地を建てる',cost:TRUCK_SYS.depot.build,desc:'KEI truck の屋根つきの整備場。拠点の南東（南門から入って右）に建てる。車を屋根の下に止めると、車体を直す・改修（最高速度・耐久・加速が上がり、荷台に施設を作れるようになる）・荷台の施設を作るができる',
+  show:()=>truckShown()&&trk().repaired&&!depotS().built,give:()=>{ depotS().built=1; depotApply(); toast('拠点の南東に車両基地を建てた。南門から入って右へ。KEI truck を屋根の下に止めて使う'); }});
 const TRK_N=new WeakSet();
-function trkSys(t){ if(TRK_N.has(t)) return t; const L=TRUCK_SYS; t.lv=clamp(t.lv|0,0,3); const hm=L.hp.max[t.lv];
+function trkSys(t){ if(TRK_N.has(t)) return t; const L=TRUCK_SYS; t.lv=clamp(t.lv|0,0,L.lv.length-1); const hm=L.hp.max[t.lv];
   if(typeof t.gas!=='number'||!isFinite(t.gas)) t.gas=t.fueled?100:0; t.gas=clamp(t.gas,0,100);
   if(typeof t.hp!=='number'||!isFinite(t.hp)) t.hp=hm; t.hp=clamp(t.hp,0,hm);
   if(!t.bed||typeof t.bed!=='object'||Array.isArray(t.bed)) t.bed={logs:[],mats:{}}; if(!Array.isArray(t.bed.logs)) t.bed.logs=[]; t.bed.logs=t.bed.logs.filter(c=>SIZE_OF[c]).slice(0,L.bed.maxLogs);
   if(!t.bed.mats||typeof t.bed.mats!=='object'||Array.isArray(t.bed.mats)) t.bed.mats={}; for(const k of Object.keys(t.bed.mats)){ const n=Math.floor(+t.bed.mats[k]||0); if(!L.bed.mats.includes(k)||n<=0) delete t.bed.mats[k]; else t.bed.mats[k]=n; }
-  if(!t.fac||typeof t.fac!=='object'||Array.isArray(t.fac)) t.fac={}; for(const k of Object.keys(t.fac)) if(!L.fac[k]) delete t.fac[k]; for(const k in L.fac) t.fac[k]=t.fac[k]&&t.lv>=L.fac[k].lv?1:0;
+  if(!t.fac||typeof t.fac!=='object'||Array.isArray(t.fac)) t.fac={}; for(const k of Object.keys(t.fac)) if(!L.fac[k]) delete t.fac[k]; for(const k in L.fac) t.fac[k]=t.fac[k]?1:0; // 作ってある施設は、解放の段階が変わっても残す（v0.79）
+  if(!t.bed.foods||typeof t.bed.foods!=='object'||Array.isArray(t.bed.foods)) t.bed.foods={}; for(const k of Object.keys(t.bed.foods)){ const a=t.bed.foods[k]; if(!FOODS[k]||!Array.isArray(a)){ delete t.bed.foods[k]; continue; } t.bed.foods[k]=a.filter(b=>Array.isArray(b)&&b[0]>0).map(b=>[Math.floor(b[0]),Math.max(0,+b[1]||0)]); if(!t.bed.foods[k].length) delete t.bed.foods[k]; } // v0.79：保冷箱の食べ物（[数,経過秒] の束）
   if(!t.kiln||typeof t.kiln!=='object'||Array.isArray(t.kiln)) t.kiln={q:0,t:0}; t.kiln.q=clamp(t.kiln.q|0,0,L.fac.kiln.maxQ); t.kiln.t=isFinite(+t.kiln.t)?clamp(+t.kiln.t,0,L.fac.kiln.coal.time):0;
   t.tip=t.tip===1||t.tip===-1?t.tip:0; TRK_N.add(t); return t; }
 function trkHpMax(t){ return TRUCK_SYS.hp.max[t.lv|0]; }
@@ -11405,7 +11592,7 @@ function truckTipCheck(dt,latA,v,dry){ const C=TRUCK_SYS.tip, B=TRUCK.lastB; con
   if(Math.abs(lean)>1&&Math.abs(v)>C.v&&!TRUCK.air){ TRUCK.tipT=(TRUCK.tipT||0)+dt; if(TRUCK.tipT>C.hold){ if(!dry) truckTipOver(lean>0?1:-1); return true; } } else TRUCK.tipT=0; return false; }
 function truckTipCheckDry(dt,latA,v){ return truckTipCheck(dt,latA,v,true); } // 確かめる用（倒さずに判定だけ）
 // ---- 荷台 ----
-function bedUnits(t){ let n=t.bed.logs.length*TRUCK_SYS.bed.log; for(const k in t.bed.mats) n+=t.bed.mats[k]; return n; }
+function bedUnits(t){ let n=t.bed.logs.length*TRUCK_SYS.bed.log+bedFoodN(t); for(const k in t.bed.mats) n+=t.bed.mats[k]; return n; }
 function bedMatN(t){ let n=0; for(const k in t.bed.mats) n+=t.bed.mats[k]; return n; }
 function truckNear(r){ if(!truckShown()) return false; const t=trk(); return t.repaired&&t.region===REG.cur&&!REG.busy&&dist(P.x,P.z,TRUCK.x,TRUCK.z)<r; }
 function bedHave(k){ return truckNear(TRUCK_SYS.bed.near)?(trk().bed.mats[k]||0):0; } // 車のそばだけ、荷台の素材を直接使える
@@ -11436,6 +11623,8 @@ function bedMenu(){ const t=trk(), L=TRUCK_SYS.bed, G=TRUCK_SYS.gas, ch=[];
   if(t.bed.logs.length) ch.push({label:'丸太を1本下ろす',act:bedDropLog});
   if(L.mats.some(m=>(inv[m]||0)>0)&&bedUnits(t)<L.cap) ch.push({label:`持ち物の素材を積む（入るだけ。今 ${bedUnits(t)}/${L.cap}）`,act:bedLoadMats});
   if(bedMatN(t)) ch.push({label:`荷台の素材を持ち物へ（${bedMatN(t)}こ）`,act:bedUnloadMats});
+  if(t.fac.cool&&F7K.some(k=>f7Count(k,'hand')>0)&&bedUnits(t)<L.cap) ch.push({label:`食べ物を保冷箱に入れる（入るだけ。今 ${bedUnits(t)}/${L.cap}）`,act:bedFoodLoad});
+  if(bedFoodN(t)) ch.push({label:`保冷箱の食べ物を持ち物へ（${bedFoodN(t)}こ）`,act:bedFoodUnload});
   if(t.gas<100&&bedHaveAll('charcoal')>0) ch.push({label:`木炭で燃料を足す（木炭1つで+${G.coal}%。今 ${Math.round(t.gas)}%）`,act:()=>truckRefuel(1)});
   if(t.gas<100-G.coal&&bedHaveAll('charcoal')>1) ch.push({label:'木炭で燃料を入るだけ足す',act:()=>truckRefuel(0)});
   if(t.hp<Math.round(trkHpMax(t)*TRUCK_SYS.field.to)) ch.push({label:`応急修理（${facCostText(TRUCK_SYS.field.cost)}。最大の35%まで）`,act:truckFieldFix});
@@ -11445,8 +11634,33 @@ function bedMenu(){ const t=trk(), L=TRUCK_SYS.bed, G=TRUCK_SYS.gas, ch=[];
   if(!ch.length){ toast(`KEI truck の荷台：丸太 ${t.bed.logs.length}/${L.maxLogs}・素材 ${bedMatN(t)}（${bedUnits(t)}/${L.cap}）・燃料 ${Math.round(t.gas)}%。いまできることはない`); return; }
   chooseDefense(`KEI truck の荷台　丸太 ${t.bed.logs.length}/${L.maxLogs}・素材 ${bedMatN(t)}（${bedUnits(t)}/${L.cap}）・燃料 ${Math.round(t.gas)}%・車体 ${Math.round(t.hp)}/${trkHpMax(t)}`,ch,true); }
 function bedLoadCarry(){ const t=trk(), c=prog.f4.carry; if(!c||!bedRoomLog(t)) return; prog.f4.carry=0; f4LogsDirty(); bedAddLog(c); }
+// ---- v0.79 荷台の保冷箱：食べ物の束をそのまま移す（経過はふつうの1/5で進む） ----
+function bedFoodN(t){ let n=0; const F=t.bed.foods; if(F) for(const k in F) for(const b of F[k]) n+=b[0]; return n; }
+function bedFoodLoad(){ const t=trk(); f7Flush(); let room=TRUCK_SYS.bed.cap-bedUnits(t), k=0;
+  for(const key of F7K){ if(room<=0) break; const have=f7Count(key,'hand'); const n=Math.min(room,have); if(n<=0) continue; const got=f7TakeRaw(prog.f7.hand[key],key,n); if(!got.length) continue;
+    const arr=t.bed.foods[key]||(t.bed.foods[key]=[]); for(const b of got){ arr.push(b); room-=b[0]; k+=b[0]; } }
+  f7Sync(); if(!k){ sfx('deny'); toast(room<=0?'荷台がいっぱい':'積める食べ物を持っていない',true); return; } truckDoorOpen('tg',1.6); sfx('pickup'); toast(`食べ物を${k}こ保冷箱に入れた（${bedUnits(t)}/${TRUCK_SYS.bed.cap}）`); saveGame(); }
+function bedFoodUnload(){ const t=trk(); let k=0; for(const key in t.bed.foods){ const list=t.bed.foods[key]; for(const b of list) k+=b[0]; foodAddB(key,list,'hand'); } t.bed.foods={}; if(!k) return; truckDoorOpen('tg',1.6); sfx('pickup'); toast(`保冷箱の食べ物${k}こを持ち物へ移した`); saveGame(); }
+function bedFoodAge(sec){ if(!prog.chapter2) return; const t=trk(); if(!t.bed.foods) return; const r=TRUCK_SYS.fac.cool.slow; for(const key in t.bed.foods){ const life=FOODS[key].life, arr=t.bed.foods[key];
+    for(let i=arr.length-1;i>=0;i--){ const b=arr[i]; b[1]+=sec*r; if(F7.spoil&&life&&b[1]>=life){ prog.f7.spoiled[1]=(prog.f7.spoiled[1]||0)+b[0]; arr.splice(i,1); } } if(!arr.length) delete t.bed.foods[key]; } } // 傷んだ物は「食料庫の傷んだ食べ物」に数える
+// ---- v0.79 荷台の救急箱：車のそばで体力が戻る ----
+function truckAidUpdate(dt){ const t=trk(), A=TRUCK_SYS.fac.aid; if(!t.fac.aid||t.region!==REG.cur||REG.busy||P.dead||P.hp>=P.maxHp) { TRUCK.aidOn=false; return; }
+  const near=TRUCK.drive||dist(P.x,P.z,TRUCK.x,TRUCK.z)<A.r, calm=S.time-(P.lastHurt??-99)>A.calm; TRUCK.aidOn=near&&calm; if(TRUCK.aidOn) P.hp=Math.min(P.maxHp,P.hp+A.heal*dt); }
+// ---- v0.79 荷台の投光器：夕方と夜、車の前を照らす（本物の光は足さない＝重くしない。光の筋と地面の明るみを重ねる） ----
+function nightNow(){ const s=lightK.day+lightK.dusk+lightK.night||1; return (lightK.night+lightK.dusk*0.55)/s; }
+function truckLightVis(){ const t=trk(), root=TRUCK.m; if(!root) return; const want=!!t.fac.light&&t.repaired&&!t.tip&&t.region===REG.cur&&nightNow()>0.35&&(TRUCK.drive||truckNear(18));
+  let L=TRUCK.lightG; if(!L&&!want) return;
+  if(!L){ L=TRUCK.lightG=new THREE.Group(); L.name='beam'; const len=TRUCK_SYS.fac.light.len, B=TRUCK_BED;
+    const cv=document.createElement('canvas'); cv.width=cv.height=128; const c=cv.getContext('2d'), gr=c.createRadialGradient(64,64,4,64,64,64); gr.addColorStop(0,'rgba(255,244,205,0.95)'); gr.addColorStop(0.55,'rgba(255,236,180,0.35)'); gr.addColorStop(1,'rgba(255,236,180,0)'); c.fillStyle=gr; c.fillRect(0,0,128,128);
+    const pool=new THREE.Mesh(new THREE.PlaneGeometry(7,len*0.95),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,opacity:0.55,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));
+    pool.rotation.x=-Math.PI/2; pool.position.set(0,0.12,2.2+len*0.5); L.add(pool);
+    for(const sx of [-1,1]){ const geo=new THREE.ConeGeometry(2.4,len,18,1,true); geo.translate(0,-len/2,0); geo.rotateX(-Math.PI/2);
+      const beam=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0xfff0c0,transparent:true,opacity:0.07,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false}));
+      beam.position.set(sx*0.42,B.y+1.38,B.z1+0.02); beam.rotation.x=0.13; L.add(beam); }
+    root.add(L); }
+  L.visible=want; }
 // 荷台の見た目：丸太（6本まで。3本ずつ2段）・素材の木箱（20こごとに1つ。3つまで）・施設
-function truckBedSig(t){ return t.bed.logs.join('')+'|'+Math.min(3,Math.ceil(bedMatN(t)/20))+'|'+t.fac.bench+t.fac.kiln+t.fac.tower+'|'+(t.repaired?1:0); }
+function truckBedSig(t){ return t.bed.logs.join('')+'|'+Math.min(3,Math.ceil(bedMatN(t)/20))+'|'+Object.keys(TRUCK_SYS.fac).map(k=>t.fac[k]|0).join('')+'|'+(bedFoodN(t)>0?1:0)+'|'+(t.repaired?1:0); }
 function truckBedVis(){ const t=trk(), root=TRUCK.m; if(!root) return; let g=TRUCK.bedG; if(!g){ g=TRUCK.bedG=new THREE.Group(); g.name='bed'; root.add(g); }
   while(g.children.length) g.remove(g.children[0]); TRUCK.bedSig=truckBedSig(t); if(!t.repaired) return;
   const B=TRUCK_BED, y=B.y, zc=(B.z0+B.z1)/2; const logMat=mat(0x8a6a44);
@@ -11454,6 +11668,9 @@ function truckBedVis(){ const t=trk(), root=TRUCK.m; if(!root) return; let g=TRU
   const nb=Math.min(3,Math.ceil(bedMatN(t)/20)); for(let i=0;i<nb;i++) g.add(outline(mesh(rbox(0.5,0.38,0.42,0.03),mat(0x9a7a4c),0.6-i*0.55,y+0.19+(t.bed.logs.length?0.9:0),B.z1-0.3),0.02));
   if(t.fac.bench){ g.add(outline(mesh(G.box,mat(0x6a5038),-0.58,y+0.28,B.z1-0.35,0.55,0.56,0.42),0.02)); g.add(mesh(G.box,mat(0x4a4f54),-0.58,y+0.58,B.z1-0.35,0.6,0.05,0.46)); }
   if(t.fac.kiln){ g.add(outline(mesh(G.cyl8,mat(0x3e4246),0.58,y+0.4,B.z0+0.32,0.26,0.8,0.26),0.02)); g.add(mesh(G.cyl8,mat(0x2a2c2e),0.58,y+1.05,B.z0+0.32,0.06,0.5,0.06)); }
+  if(t.fac.aid){ g.add(outline(mesh(rbox(0.42,0.3,0.26,0.03),mat(0xf2f2ee),0.62,y+0.62,B.z1-0.2),0.02)); g.add(mesh(G.box,mat(0x2f8a4a),0.62,y+0.64,B.z1-0.06,0.2,0.06,0.01)); g.add(mesh(G.box,mat(0x2f8a4a),0.62,y+0.64,B.z1-0.06,0.06,0.2,0.01)); } // 救急箱（前のあおりの上、白に緑の十字）
+  if(t.fac.cool){ g.add(outline(mesh(rbox(0.62,0.42,0.42,0.04),mat(0x2f6fb0),-0.5,y+0.21,B.z0+0.38),0.02)); g.add(mesh(rbox(0.66,0.08,0.46,0.03),mat(0xf2f2ee),-0.5,y+0.45,B.z0+0.38)); if(bedFoodN(t)) g.add(mesh(G.box,mat(0xe9e2c8),-0.5,y+0.5,B.z0+0.38,0.4,0.03,0.2)); } // 保冷箱（青い箱に白いふた）
+  if(t.fac.light){ for(const sx of [-1,1]) g.add(mesh(G.cyl8,mat(0x3a3d40),sx*0.7,y+0.7,B.z1+0.02,0.04,1.4,0.04)); g.add(mesh(G.box,mat(0x3a3d40),0,y+1.4,B.z1+0.02,1.5,0.06,0.06)); for(const sx of [-1,1]){ g.add(outline(mesh(G.box,mat(0x2b2b2d),sx*0.42,y+1.38,B.z1+0.0,0.34,0.24,0.16),0.02)); g.add(mesh(G.box,mat(0xfff3c4),sx*0.42,y+1.38,B.z1+0.09,0.28,0.18,0.02)); } } // 投光器（あおりの前の枠の上、前向き）
   if(t.fac.tower){ for(const px of [-0.78,0.78]) g.add(mesh(G.cyl8,mat(0x6a5038),px,y+0.95,B.z0+0.12,0.045,1.9,0.045)); g.add(outline(mesh(G.box,mat(0x7a5a3c),0,y+1.9,B.z0+0.12,1.7,0.07,0.45),0.02)); }
   castAll(g); }
 // ---- 荷台の炭焼き釜（段階2）：遊んでいる間ずっと進む（運転中・別の地域にいる間も）。できた木炭は荷台へ（いっぱいなら持ち物へ） ----
@@ -11464,40 +11681,80 @@ function kilnUpdate(dt){ const t=trk(); if(!t.fac.kiln||!t.kiln.q) return; const
   if(bedUnits(t)<TRUCK_SYS.bed.cap) t.bed.mats.charcoal=(t.bed.mats.charcoal||0)+1; else inv.charcoal=(inv.charcoal||0)+1; toast('荷台の炭焼き釜：木炭ができた'); saveGame(); }
 function truckSee(){ if(!truckShown()) return 60; const t=trk(); return t.fac.tower&&t.region===REG.cur&&(TRUCK.drive||truckNear(12))?TRUCK_SYS.fac.tower.see:60; } // 見張り台：地図に映る獣の距離（ふだんは60m）
 // ---- 車両基地（拠点の中に建てる。修理・改修・荷台の施設） ----
-const DEPOT={g:null,cols:[]};
-function depotModel(){ if(DEPOT.g) return DEPOT.g; const D=TRUCK_SYS.depot, g=new THREE.Group(), gy=groundH(D.x,D.z), add=(m,ol=0.03)=>{ g.add(ol?outline(m,ol):m); return m; };
-  add(mesh(G.box,mat(0x9a968c),0,0.03,0,D.W,0.06,D.D),0); // コンクリートの床
-  for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) add(mesh(G.box,mat(0x5a4e40),sx*(D.W/2-0.15),1.6,sz*(D.D/2-0.15),0.22,3.2,0.22)); // 柱
-  const roof=add(mesh(G.box,mat(0x7a7f84),0,3.28,0,D.W+0.6,0.1,D.D+0.6)); roof.rotation.x=0.06; // トタン屋根（少し傾ける）
-  for(let i=-3;i<=3;i++){ const r=add(mesh(G.box,mat(0x676c71),i*1.0,3.35,0,0.06,0.04,D.D+0.6),0); r.rotation.x=0.06; }
-  add(mesh(G.box,mat(0x6a5038),-D.W/2+0.45,0.9,0,0.3,1.8,1.2),0.02); // 西の壁ぎわの道具棚
-  for(let i=0;i<3;i++) add(mesh(G.box,mat(0x8a8e90),-D.W/2+0.62,0.5+i*0.5,0,0.06,0.04,1.0),0);
-  add(mesh(G.cyl8,mat(0x8a3a2a),-D.W/2+0.5,0.45,-D.D/2+0.55,0.3,0.9,0.3),0.02); // 木炭の缶
-  add(mesh(G.box,mat(0x4a4f54),-D.W/2+0.55,0.35,D.D/2-0.6,0.6,0.7,0.6),0.02); // 工具箱
-  add(mesh(G.box,mat(0xf4efe2),D.W/2+0.05,2.6,-D.D/2+0.2,0.04,0.36,1.2),0.02); // 入口の札
-  g.position.set(D.x,gy,D.z); castAll(g); world.add(g); DEPOT.g=g; g.visible=false; return g; }
-function depotApply(){ const on=!!depotS().built; if(!on&&!DEPOT.g) return; const g=depotModel(); g.visible=on; const D=TRUCK_SYS.depot;
-  if(!DEPOT.cols.length){ for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) DEPOT.cols.push(addOBox(D.x+sx*(D.W/2-0.15),D.z+sz*(D.D/2-0.15),0.3,0.3,0,'house',{h:3})); DEPOT.cols.push(addOBox(D.x-D.W/2+0.45,D.z,0.4,1.3,0,'house',{h:1.8})); }
+const DEPOT={g:null,signs:[],cols:[]};
+// v0.79：機械の整備場らしい形（2026-11-18 ユーザー「車両基地はもっとメカニックな見た目に」）。コードで作った仮の形
+// 車の中の向き：x が奥行き（-x が入口）、z が横幅。鉄骨の H 形の柱・トタン屋根・点検ピット・吊り上げ（チェーンブロック）・工具の壁・タイヤ棚・ドラム缶・ボンベ・コンプレッサー・投光器
+function depotLocal(lx,lz){ const D=TRUCK_SYS.depot, c=Math.cos(D.rot||0), s=Math.sin(D.rot||0); return [D.x+lx*c+lz*s, D.z-lx*s+lz*c]; } // 基地の中の座標 → 世界
+function depotToLocal(x,z){ const D=TRUCK_SYS.depot, c=Math.cos(D.rot||0), s=Math.sin(D.rot||0), dx=x-D.x, dz=z-D.z; return [dx*c-dz*s, dx*s+dz*c]; }
+function depotModel(){ if(DEPOT.g) return DEPOT.g; const D=TRUCK_SYS.depot, W=D.W, Dp=D.D, g=new THREE.Group(), gy=groundH(D.x,D.z);
+  const STEEL=0x55606b, STEEL2=0x6d7882, YEL=0xe2b324, BLK=0x2b2b2d, RED=0xb5382c, CON=0x8f8c84, ROOF=0x9aa4aa, ROOF2=0x7f8a90;
+  const add=(m,j)=>{ g.add(j!=null?J(m,j):m); return m; }, box=(c,x,y,z,sx,sy,sz,j)=>add(mesh(G.box,mat(c),x,y,z,sx,sy,sz),j), cyl=(c,x,y,z,r,h,j)=>add(mesh(G.cyl8,mat(c),x,y,z,r,h,r),j);
+  const H=3.6, xs=[-W/2+0.2,0,W/2-0.2], zs=[-Dp/2+0.2,Dp/2-0.2];
+  box(CON,0,0.04,0,W+0.6,0.08,Dp+0.6,0.03); // コンクリートの床
+  for(let k=0;k<9;k++) box(k%2?BLK:YEL,-W/2-0.05,0.085,-Dp/2+0.6+k*((Dp-1.2)/8),0.4,0.012,(Dp-1.2)/8,0.02); // 入口の黄と黒のしま
+  for(const sz of [-1,1]) box(YEL,0,0.085,sz*1.55,W-1.6,0.01,0.09,0.02); // 止める所の線
+  box(0x3a3d40,0.2,0.083,0,3.6,0.012,0.95,0.02); for(let k=0;k<12;k++) box(0x5b6066,0.2-1.65+k*0.3,0.09,0,0.05,0.012,0.9,0.02); // 点検ピットの鉄の格子
+  // 鉄骨（H 形の柱6本・梁）
+  const hcol=(x,z)=>{ box(STEEL,x,H/2,z-0.11,0.28,H,0.04,0.03); box(STEEL,x,H/2,z+0.11,0.28,H,0.04,0.03); box(STEEL2,x,H/2,z,0.04,H,0.2,0.03); box(STEEL,x,0.11,z,0.46,0.06,0.46,0.03); for(const sx of [-1,1]) box(0x9ea6ac,x+sx*0.17,0.15,z+sx*0.17,0.05,0.04,0.05); };
+  for(const x of xs) for(const z of zs) hcol(x,z);
+  for(const z of zs){ box(STEEL,0,H+0.12,z,W+0.2,0.06,0.26,0.03); box(STEEL,0,H-0.12,z,W+0.2,0.06,0.26,0.03); box(STEEL2,0,H,z,W+0.2,0.24,0.04,0.03); } // 長い梁
+  for(const x of xs) box(STEEL2,x,H+0.02,0,0.2,0.2,Dp-0.2,0.03); // 横の梁
+  for(const x of [xs[0],xs[2]]) for(const sz of [-1,1]){ const b=box(STEEL2,x,H-0.55,sz*(Dp/2-0.75),0.07,0.07,1.25,0.03); b.rotation.x=sz*0.75; } // 柱と梁の筋かい
+  // トタン屋根（奥へ少し下がる）
+  const rg=new THREE.Group(); rg.position.set(0,H+0.42,0); rg.rotation.z=-0.05; g.add(rg);
+  rg.add(J(mesh(G.box,mat(ROOF),0,0,0,W+1.0,0.05,Dp+0.9),0.03)); for(let k=0;k<=Math.round((Dp+0.8)/0.28);k++) rg.add(J(mesh(G.box,mat(ROOF2),0,0.04,-Dp/2-0.4+k*0.28,W+1.0,0.04,0.06),0.03));
+  rg.add(J(mesh(G.box,mat(0x6b747a),W/2+0.5,-0.06,0,0.12,0.12,Dp+0.9),0.03)); // 雨どい
+  // 奥の壁（波板）
+  box(0x7b868c,W/2+0.08,H/2+0.05,0,0.08,H,Dp-0.1,0.03); for(let k=0;k<=Math.round((Dp-0.3)/0.26);k++) box(0x69737a,W/2+0.03,H/2+0.05,-Dp/2+0.15+k*0.26,0.04,H,0.06,0.03);
+  // 吊り上げ：チェーンブロックの I 形の梁・台車・鎖・フック
+  box(STEEL,0.6,H-0.32,0,4.6,0.05,0.18); box(STEEL2,0.6,H-0.22,0,4.6,0.16,0.04);
+  box(YEL,1.3,H-0.55,0,0.36,0.32,0.3,0.04); box(BLK,1.3,H-0.55,0.16,0.2,0.06,0.02); cyl(0x9a9fa3,1.3,H-1.3,0,0.025,1.2); cyl(0x9a9fa3,1.38,H-1.0,0,0.02,0.6);
+  add(mesh(G.torus,mat(0x9a9fa3),1.3,H-1.98,0,0.09,0.09,0.12)); box(RED,1.3,H-2.08,0,0.1,0.14,0.06);
+  // 北側（-z）：工具の壁・赤い工具箱・作業台と万力・コンプレッサー
+  const tz=-Dp/2+0.32; box(0x8b7d66,2.0,1.75,tz-0.05,3.0,1.3,0.06,0.04); box(STEEL2,2.0,1.08,tz-0.04,3.1,0.06,0.1);
+  for(let k=0;k<9;k++){ const t=box(k%3===0?RED:0x9aa0a6,0.75+k*0.3,1.62+(k%2)*0.18,tz,0.05,0.42+(k%3)*0.08,0.03); t.rotation.z=(k%2?0.12:-0.1); box(0x9aa0a6,0.75+k*0.3,1.88+(k%2)*0.18,tz,0.13,0.07,0.03); }
+  for(let k=0;k<3;k++){ box(BLK,0.9+k*0.95,2.25,tz,0.6,0.06,0.03); }
+  box(RED,3.55,0.55,tz+0.2,0.9,1.0,0.55,0.04); for(let k=0;k<5;k++){ box(0x7a2219,3.55,0.18+k*0.19,tz+0.48,0.84,0.015,0.01); box(0xc9cdd0,3.55,0.12+k*0.19+0.08,tz+0.49,0.3,0.03,0.02); } // 工具箱の引き出し
+  box(STEEL2,1.0,0.86,tz+0.3,1.8,0.06,0.7,0.03); for(const sx of [-1,1]) for(const sz of [0,1]) box(STEEL,1.0+sx*0.82,0.42,tz+0.02+sz*0.56,0.06,0.84,0.06); // 鉄の作業台
+  box(0x4d5a63,0.35,1.0,tz+0.35,0.22,0.2,0.18,0.04); box(0x4d5a63,0.35,1.0,tz+0.52,0.14,0.12,0.16); cyl(0x9aa0a6,0.35,1.0,tz+0.65,0.02,0.2); // 万力
+  box(RED,-0.6,0.42,tz+0.25,0.8,0.5,0.45,0.04); add(mesh(G.cyl8,mat(0xb8bcc0),-0.6,0.42,tz+0.25,0.2,0.7,0.2),0.03).rotation.z=Math.PI/2; for(const sx of [-1,1]) cyl(BLK,-0.6+sx*0.3,0.06,tz+0.25,0.07,0.06); // コンプレッサー
+  // 奥の南（+z）：タイヤ棚・ドラム缶・ボンベ・木炭の缶
+  const rx=W/2-0.75, rz=Dp/2-0.65; for(const sx of [-1,1]) for(const sz of [-1,1]) box(STEEL,rx+sx*0.4,0.6,rz+sz*0.4,0.05,1.2,0.05); box(STEEL2,rx,0.05,rz,0.9,0.05,0.9); box(STEEL2,rx,0.65,rz,0.9,0.05,0.9);
+  for(let k=0;k<2;k++){ cyl(0x1f1f21,rx,0.2+k*0.21,rz,0.36,0.2,0.05); cyl(0x8d9398,rx,0.2+k*0.21,rz,0.17,0.21); cyl(0x1f1f21,rx,0.8+k*0.21,rz,0.36,0.2,0.05); cyl(0x8d9398,rx,0.8+k*0.21,rz,0.17,0.21); }
+  for(const [x,z,c] of [[W/2-0.45,Dp/2-1.65,0x2f5f9a],[W/2-0.45,Dp/2-2.3,RED]]){ cyl(c,x,0.45,z,0.29,0.9,0.05); for(const y of [0.22,0.68]) cyl(0x1d1f22,x,y,z,0.3,0.03); cyl(0x1d1f22,x,0.905,z,0.27,0.01); }
+  for(const [z,c] of [[-0.3,0x2f7a4a],[0.05,0x8f979c]]){ cyl(c,W/2-0.25,0.68,z,0.12,1.36,0.04); cyl(0x6a6e72,W/2-0.25,1.42,z,0.07,0.14); }
+  box(STEEL,W/2-0.2,1.0,-0.12,0.04,0.04,0.7); // ボンベの鎖止め
+  cyl(0x3e4246,W/2-0.5,0.4,Dp/2-2.95,0.28,0.8,0.04); cyl(0x161616,W/2-0.5,0.81,Dp/2-2.95,0.25,0.04); // 木炭の缶
+  // 入口の柱：投光器・消火器。床のジャッキ
+  for(const z of zs){ const sz=Math.sign(z); box(BLK,xs[0]+0.25,H-0.5,z-sz*0.12,0.28,0.2,0.24,0.03); box(0xfff3c4,xs[0]+0.25,H-0.62,z-sz*0.12,0.24,0.03,0.2,0); }
+  cyl(RED,xs[1],0.75,zs[1]-0.22,0.09,0.5,0.03); box(BLK,xs[1],1.04,zs[1]-0.22,0.08,0.08,0.06);
+  box(RED,-1.2,0.12,1.2,0.9,0.16,0.32,0.04); const hd=box(STEEL2,-1.75,0.38,1.2,0.04,0.7,0.04); hd.rotation.z=0.8;
+  add(mesh(G.cyl8,mat(0x8a9399),-W/2+0.2,H-0.28,0,0.2,Dp-0.5,0.2),0.03).rotation.x=Math.PI/2; for(const z of zs) box(0x6b747a,-W/2+0.32,H/2,z-Math.sign(z)*0.2,0.08,H-0.4,0.08,0.03); // 入口のシャッターの巻き取り箱と溝
+  cyl(0xd23a2a,xs[0],H+0.32,zs[0],0.11,0.2,0.02); cyl(0x2b2b2d,xs[0],H+0.2,zs[0],0.13,0.06); // 回転灯
+  box(0xc9ccc4,W/2-0.02,1.6,-1.2,0.14,0.7,0.5,0.03); box(0xe2b324,W/2-0.1,1.75,-1.2,0.02,0.16,0.16); // 奥の壁の配電盤（黄色の注意の札）
+  g.position.set(D.x,gy,D.z); g.rotation.y=D.rot||0; const m=bake(g,{inkD:0.03}); m.visible=false; world.add(m); DEPOT.g=m;
+  // 入口の上の札（黄色の鉄板）
+  const sg=signBoard([{text:'車両基地',col:'#1e1e1e'},{text:'KEI TRUCK DEPOT',col:'#1e1e1e',size:0.55}],2.6,0.8,{bg:'#e2b324',edge:'#1e1e1e'});
+  const [sx,sz]=depotLocal(-W/2-0.12,0); sg.position.set(sx,gy+H+0.05,sz); sg.rotation.y=(D.rot||0)-Math.PI/2; sg.visible=false; world.add(sg); DEPOT.signs.push(sg);
+  return m; }
+function depotApply(){ const on=!!depotS().built; if(!on&&!DEPOT.g) return; const g=depotModel(); g.visible=on; for(const s of DEPOT.signs) s.visible=on; const D=TRUCK_SYS.depot;
+  if(!DEPOT.cols.length){ const sw=Math.abs(Math.sin(D.rot||0))>0.7, ob=(lx,lz,w,d,h)=>{ const [x,z]=depotLocal(lx,lz); DEPOT.cols.push(addOBox(x,z,sw?d:w,sw?w:d,0,'house',{h})); }; // 向きは 0・±90°・180° だけ
+    for(const x of [-D.W/2+0.2,0,D.W/2-0.2]) for(const z of [-D.D/2+0.2,D.D/2-0.2]) ob(x,z,0.34,0.34,3.6); // 柱
+    ob(D.W/2+0.08,0,0.2,D.D,3.6); // 奥の壁
+    ob(2.0,-D.D/2+0.45,3.4,0.75,1.8); ob(3.55,-D.D/2+0.55,0.95,0.6,1.1); ob(-0.6,-D.D/2+0.57,0.85,0.5,0.7); // 工具の壁・工具箱・コンプレッサー
+    ob(D.W/2-0.75,D.D/2-0.65,0.95,0.95,1.2); ob(D.W/2-0.45,D.D/2-1.95,0.65,1.3,0.9); ob(D.W/2-0.3,-0.12,0.45,0.8,1.4); ob(D.W/2-0.5,D.D/2-2.95,0.6,0.6,0.8); } // タイヤ棚・ドラム缶・ボンベ・木炭の缶
   for(const c of DEPOT.cols) c.active=on; }
 function depotParked(){ const D=TRUCK_SYS.depot, t=trk(); return depotS().built&&t.region==='komyoji'&&REG.cur==='komyoji'&&!TRUCK.drive&&dist(TRUCK.x,TRUCK.z,D.x,D.z)<D.park; }
 function truckRepairStep(all){ const t=trk(), L=TRUCK_SYS.repair, hm=trkHpMax(t); let k=0; while(t.hp<hm&&bedAfford(L.cost)){ bedPay(L.cost); t.hp=Math.min(hm,t.hp+L.step); k++; if(!all) break; }
   if(!k){ sfx('deny'); toast(t.hp>=hm?'車体は傷んでいない':`素材が足りない（${L.step}ごとに ${facCostText(L.cost)}）`,true); return; } sfx('craft'); toast(`KEI truck を直した（車体 ${Math.round(t.hp)}/${hm}）`); saveGame(); }
-function truckUpgrade(){ const t=trk(), L=TRUCK_SYS; if(t.lv>=3) return; const nx=L.lv[t.lv+1]; if(!bedAfford(nx.cost)){ sfx('deny'); toast(`素材が足りない（${facCostText(nx.cost)}）`,true); return; }
+function truckUpgrade(){ const t=trk(), L=TRUCK_SYS; if(t.lv>=L.lv.length-1) return; const nx=L.lv[t.lv+1]; if(!bedAfford(nx.cost)){ sfx('deny'); toast(`素材が足りない（${facCostText(nx.cost)}）`,true); return; }
   bedPay(nx.cost); const before=trkHpMax(t); t.lv++; t.hp=Math.min(trkHpMax(t),t.hp+trkHpMax(t)-before); sfx('craft'); const F=Object.values(L.fac).find(f=>f.lv===t.lv);
-  banner(`KEI truck 改修 段階${t.lv}`,`最高速度 約${Math.round(nx.speed*3.6)}km/時・耐久 ${trkHpMax(t)}・加速 ${nx.acc}m/秒²。荷台に「${F.name}」を作れる`); saveGame(); }
+  banner(`KEI truck 改修 段階${t.lv}`,`最高速度 約${Math.round(nx.speed*3.6)}km/時・耐久 ${trkHpMax(t)}・加速 ${nx.acc}m/秒²${F?`。荷台に「${F.name}」を作れる`:''}`); saveGame(); }
 function truckFacBuild(id){ const t=trk(), F=TRUCK_SYS.fac[id]; if(t.fac[id]||t.lv<F.lv) return; if(!bedAfford(F.cost)){ sfx('deny'); toast(`素材が足りない（${facCostText(F.cost)}）`,true); return; }
   bedPay(F.cost); t.fac[id]=1; sfx('craft'); toast(`${F.name}を荷台に作った：${F.desc}`); saveGame(); }
-function depotMenu(){ const t=trk(), L=TRUCK_SYS, hm=trkHpMax(t), ch=[];
-  if(!depotParked()){ toast('車両基地：KEI truck を屋根の下に止めると、直す・改修・荷台の施設を作るができる'); return; }
-  if(t.tip){ toast('先に KEI truck を起こす',true); return; }
-  if(t.hp<hm){ ch.push({label:`車体を直す（+${L.repair.step}：${facCostText(L.repair.cost)}）　今 ${Math.round(t.hp)}/${hm}`,act:()=>truckRepairStep(false)}); ch.push({label:'直せるだけ直す',act:()=>truckRepairStep(true)}); }
-  if(t.lv<3){ const nx=L.lv[t.lv+1], F=Object.values(L.fac).find(f=>f.lv===t.lv+1); ch.push({label:`改修 段階${t.lv+1}（${facCostText(nx.cost)}）：最高速度 約${Math.round(nx.speed*3.6)}km/時・耐久 ${L.hp.max[t.lv+1]}・加速 ${nx.acc}。荷台に${F.name}を作れるようになる`,act:truckUpgrade}); }
-  for(const id in L.fac){ const F=L.fac[id]; if(t.fac[id]) continue; ch.push(t.lv>=F.lv?{label:`${F.name}を作る（${facCostText(F.cost)}）：${F.desc}`,act:()=>truckFacBuild(id)}:{label:`${F.name}（改修 段階${F.lv}で作れる）`,act:()=>{ sfx('deny'); toast(`${F.name}は改修 段階${F.lv}で作れる`,true); }}); }
-  if(t.gas<100&&bedHaveAll('charcoal')>0) ch.push({label:`木炭で燃料を入るだけ足す（今 ${Math.round(t.gas)}%）`,act:()=>truckRefuel(0)});
-  if(!ch.length){ toast(`車両基地：KEI truck 段階${t.lv}・車体 ${Math.round(t.hp)}/${hm}・燃料 ${Math.round(t.gas)}%。いまできることはない`); return; }
-  chooseDefense(`車両基地　KEI truck 段階${t.lv}・車体 ${Math.round(t.hp)}/${hm}・燃料 ${Math.round(t.gas)}%`,ch,true); }
-function depotInteractables(L){ if(!depotS().built||REG.cur!=='komyoji') return; const D=TRUCK_SYS.depot, d=Math.hypot(Math.max(0,Math.abs(P.x-D.x)-D.W/2),Math.max(0,Math.abs(P.z-D.z)-D.D/2)); if(d>1.6) return;
-  L.push({d:d+0.6,label:depotParked()?'車両基地（直す・改修・荷台の施設）':'車両基地（KEI truck を屋根の下に止めて使う）',act:depotMenu}); }
+function depotMenu(){ openDepot(); } // v0.79：車両基地の画面（修理・改修・荷台の施設・燃料のタブ）
+function depotInteractables(L){ if(!depotS().built||REG.cur!=='komyoji') return; const D=TRUCK_SYS.depot, [lx,lz]=depotToLocal(P.x,P.z), d=Math.hypot(Math.max(0,Math.abs(lx)-D.W/2),Math.max(0,Math.abs(lz)-D.D/2)); if(d>1.6) return;
+  L.push({d:d+0.6,label:depotParked()?'車両基地（直す・改修・荷台の施設・燃料）':'車両基地（KEI truck を屋根の下に止めて使う）',act:depotMenu}); }
 // ---- 住民の運搬：車の入れない所・置き場までの残りを、源さんが歩いて運ぶ（荷台の丸太→丸太置き場、素材→持ち物）----
 // 車が拠点の外なら、近い門（南門・東口・沢口）を通る。引っかかって2.5秒進めないときは、次の経由点へ移る（運ぶのは止めない）
 const HAUL={on:false,st:'',t:0,load:null,path:null,wi:0,stuck:0,mesh:null,walk:false,face:0};
@@ -11539,14 +11796,14 @@ function haulPanel(st,bx){ if(!truckShown()) return; const t=trk(); if(!t.repair
   if(haulCan()) f9Btn(bx,'npc_haul',`KEI truck の荷を置き場へ運んでもらう（丸太${t.bed.logs.length}本・素材${bedMatN(t)}こ）`,haulStart);
   else if(t.region==='komyoji'&&(t.bed.logs.length||bedMatN(t))) f9El('div','nl',`KEI truck を丸太置き場から${TRUCK_SYS.haul.near}m 以内に止めると、荷台の荷を運んでもらえる`,st); }
 // ---- 毎コマ：炭焼き・運搬・横転の見た目・傷んだ煙 ----
-function truckSysUpdate(dt){ if(!truckShown()) return; const t=trk(); if(S.mode==='playing'){ kilnUpdate(dt); haulUpdate(dt); } haulVis();
+function truckSysUpdate(dt){ if(!truckShown()) return; const t=trk(); if(S.mode==='playing'){ kilnUpdate(dt); haulUpdate(dt); truckAidUpdate(dt); } haulVis(); truckLightVis();
   if(TRUCK.m&&TRUCK.bedSig!==truckBedSig(t)) truckBedVis();
   const want=t.tip?1.45:0; TRUCK.tipA=TRUCK.tipA||0; TRUCK.tipA+=clamp(want-TRUCK.tipA,-dt*1.6,dt*3.2); if(t.tip) TRUCK.tipSide=t.tip;
   if(t.repaired&&t.hp<trkHpMax(t)*TRUCK_SYS.hp.weak&&t.region===REG.cur&&!REG.busy&&(TRUCK.smokeT=(TRUCK.smokeT||0)-dt)<=0){ TRUCK.smokeT=TRUCK.drive?0.22:0.7; const sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a), gy=groundH(TRUCK.x,TRUCK.z); puff(TRUCK.x+sa*1.7,gy+1.4,TRUCK.z+ca*1.7,rr(-0.2,0.2),1.1,rr(-0.2,0.2),0.32,t.hp<=0?0x3a3836:0x5a5650,1.3); } } // 傷んでいると、ボンネットから黒い煙
 function truckTipVis(m){ const A=TRUCK.tipA||0; if(A<=0.001) return; const s=TRUCK.tipSide||1, w=0.95; // 倒れる側の車輪の線（車の中の x=∓0.95）を軸に回す。s=1：右へ
   m.rotation.z+=s*A; const lat=-s*w*(1-Math.cos(A)), sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a); m.position.x+=lat*ca; m.position.z+=-lat*sa; m.position.y+=w*Math.sin(A); }
 function truckStatusText(){ if(!truckShown()) return ''; const t=trk(); if(!t.repaired||!t.fueled||t.region!==REG.cur||!(TRUCK.drive||truckNear(8))) return '';
-  return `KEI truck 燃料 ${Math.round(t.gas)}%・車体 ${Math.round(t.hp)}/${trkHpMax(t)}${t.tip?'（横転）':t.hp<=0?'（動かない）':''}${t.lv?`・段階${t.lv}`:''}　`; }
+  return `KEI truck 燃料 ${Math.round(t.gas)}%・車体 ${Math.round(t.hp)}/${trkHpMax(t)}${t.tip?'（横転）':t.hp<=0?'（動かない）':''}${t.lv?`・段階${t.lv}`:''}${TRUCK.aidOn?'・救急箱で回復中':''}　`; }
 function truckLabelNote(t){ return t.tip?'':t.hp<=0?'（壊れて動かない）':t.gas<=0?'（燃料切れ）':''; }
 // 直した報告と見送り（草案）：車のそばに3人が来る → 終わったら KEI truck に乗った状態で、東の出口へ
 function stfTruckSpots(){ const a=TRUCK.a, fx=Math.sin(a), fz=Math.cos(a), sx=Math.cos(a), sz=-Math.sin(a), P0={x:TRUCK.x+sx*2.45,z:TRUCK.z+sz*2.45};
@@ -11589,40 +11846,137 @@ function hoverOK(){ try{ return matchMedia('(hover: hover)').matches; }catch(e){
 // ---- アイコン：既存3Dモデルを一度だけオフスクリーン描画してdataURL化（毎フレーム描画はしない） ----
 const ICONS={};
 let _ir=null,_isc=null,_icam=null;
+let _iconMan=null;
+function gearIconObj(id){ const a=G47[id]; if(!a||!G47S.includes(a.slot)) return null; // v0.79：防具の絵は、主人公と同じ体に、その1部位だけを着せて写す（ほかの部位は初期の服）
+  if(!_iconMan) _iconMan=makeHuman({player47:true,outfit:{hair:{style:'short',col:0x191c20},top:{col:0x354b60},bottom:{col:0x373b3e}}});
+  const m=_iconMan, st=a.set, sc=st==='blue'||st==='raw'; if(!m.setWear) return null;
+  if(sc&&m.saLazy) saEnsure(m,st,a.slot);
+  const w={head:'none',chest:'base',legs:'base',feet:'base'}, spec=F60_GARMENTS[st]&&F60_GARMENTS[st][a.slot];
+  if(spec&&m.wardrobe){ m.wardrobe.ensure(id,a.slot,spec); w[a.slot]=m.wardrobe.W.gar[id]?id:'base'; } else if(a.slot==='head'&&sc) w.head='circlet';
+  m.setWear(w); for(const s2 of G47S) for(const L of (m.layers&&m.layers[s2])||[]) L.visible=s2===a.slot&&L.userData.variant===st;
+  m.g.position.set(0,0,0); m.g.rotation.set(0,0,0); m.g.updateMatrixWorld(true);
+  // 写す範囲＝その服（または鱗の板）の大きさ。測れないときは部位ごとの決まった範囲
+  const bx=new THREE.Box3(), gm=m.wardrobe&&m.wardrobe.W.gar[w[a.slot]]; if(gm&&gm.geo){ gm.geo.computeBoundingBox(); bx.union(gm.geo.boundingBox); }
+  for(const L of (m.layers&&m.layers[a.slot])||[]) if(L.visible) bx.expandByObject(L);
+  let F=GEAR_FRAME[a.slot]; if(!bx.isEmpty()){ const c=bx.getCenter(new THREE.Vector3()), z=bx.getSize(new THREE.Vector3()); F=[c.x,c.y,c.z,Math.max(z.x,z.y*1.0,0.12)*0.56]; }
+  m.g.userData.iconFrame=F; return m.g; }
+const GEAR_FRAME={head:[0,1.75,0,0.3],chest:[0,1.1,0,0.4],legs:[0,0.44,0,0.46],feet:[0,0.09,0.03,0.19]}; // 写す中心（x,y,z）と半径（m）
 function makeIconObj(id){
+  if(id.startsWith('gear_')&&G47[id.slice(5)]){ try{ const o=gearIconObj(id.slice(5)); if(o) return o; }catch(e){} }
   if(WEAPONS[id]){ try{ return makeWeapon(id,{noSwap:true}); }catch(e){ return null; } } // v0.75：GLB が読めていればその形（読めたらアイコンを描き直す）
   const g=new THREE.Group(); const M=c=>new THREE.MeshLambertMaterial({color:c});
   const B=(c,sx,sy,sz,x,y,z,rz)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),M(c));m.position.set(x,y,z);if(rz)m.rotation.z=rz;g.add(m);return m;};
   const C=(c,rt,rb,h,x,y,z)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,12),M(c));m.position.set(x,y,z);g.add(m);return m;};
   const S=(c,r,x,y,z,sy)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(r,12,10),M(c));m.position.set(x,y,z);if(sy)m.scale.y=sy;g.add(m);return m;};
-  if(id==='onigiri'){ S(0xf7f3e6,0.5,0,0.05,0,0.78); B(0x2e4d2e,0.46,0.3,0.1,0,-0.2,0.4); }
+  if(id==='onigiri'){ const o=C(0xf7f3e6,0.52,0.52,0.34,0,0.02,0); o.geometry=new THREE.CylinderGeometry(0.52,0.52,0.34,3); o.rotation.x=-Math.PI/2; B(0x23382a,0.46,0.3,0.37,0,-0.12,0); } // v0.79：三角のおにぎりに海苔
   else if(id==='bento'){ B(0x8a5a2e,0.95,0.36,0.68,0,-0.12,0); B(0x5a3c1e,0.99,0.09,0.72,0,0.12,0); B(0xf0e8d4,0.62,0.08,0.34,-0.12,0.2,0); B(0x7a9a3e,0.26,0.08,0.26,0.22,0.2,-0.08); }
-  else if(id==='food'){ C(0xf2eee0,0.2,0.16,0.66,0,-0.1,0); S(0xf2eee0,0.2,0,-0.42,0); B(0x6a9a3e,0.08,0.34,0.08,-0.08,0.42,0); B(0x6a9a3e,0.08,0.3,0.08,0.08,0.4,0.15); }
+  else if(id==='food'){ C(0x9a7448,0.5,0.4,0.42,0,-0.22,0); C(0x7a5a34,0.52,0.52,0.06,0,0.0,0); // v0.79：食料＝かごに大根・芋・菜（野菜の絵と分けた）
+    const dk=C(0xf2eee0,0.11,0.07,0.6,-0.16,0.2,0.05); dk.rotation.z=0.5; B(0x6a9a3e,0.06,0.24,0.06,-0.32,0.48,0.05).rotation.z=0.5; S(0xa0563a,0.16,0.18,0.08,0.1,0.7); S(0x7a3a2a,0.14,0.02,0.1,-0.18,0.7); S(0x5e9a3a,0.15,0.2,0.1,-0.2,0.6); }
   else if(id==='meat'){ S(0xb4533c,0.4,0,0,0,0.7); C(0xf2eadc,0.07,0.07,0.9,0.3,0.1,0).rotation.z=0.9; S(0xf2eadc,0.11,0.62,0.42,0); }
   else if(id==='veg'){ C(0xf2eee0,0.2,0.16,0.66,0,-0.1,0); S(0xf2eee0,0.2,0,-0.42,0); B(0x6a9a3e,0.08,0.34,0.08,-0.08,0.42,0); B(0x6a9a3e,0.08,0.3,0.08,0.08,0.4,0.15); }
-  else if(id==='rice'){ C(0xcdb98a,0.34,0.4,0.7,0,-0.05,0); S(0xf7f3e6,0.33,0,0.3,0,0.45); B(0x8a6a3a,0.72,0.06,0.06,0,0.12,0.38); }
+  else if(id==='rice'){ const t=C(0xd8c088,0.34,0.34,0.9,0,0,0); t.rotation.z=Math.PI/2; for(const x of [-0.46,0.46]){ const e=C(0xb89a5a,0.3,0.3,0.04,x,0,0); e.rotation.z=Math.PI/2; } for(const x of [-0.26,0,0.26]){ const b=new THREE.Mesh(new THREE.TorusGeometry(0.345,0.025,6,20),M(0x7a5a30)); b.rotation.y=Math.PI/2; b.position.x=x; g.add(b); } S(0xf7f3e6,0.12,0.2,0.3,0.12,0.5); } // v0.79：米俵
   else if(FOODS[id]){ const col={grilledVeg:0x7a9a3e,herbPorridge:0xe8e6c8,gomadofu:0xe9dcc0,koroni:0x8a6a48,kushi:0x9a5a30,katsudon:0xb8793a,botan:0xa8503a}[id]||0xd8c8a0; // v0.66：料理は椀に盛った形（色で分ける）
     if(id==='kushi'){ for(let i=-1;i<=1;i++){ C(0xc8a878,0.03,0.03,1.0,i*0.26,0,0); for(let j=0;j<3;j++) B(col,0.18,0.16,0.14,i*0.26,-0.22+j*0.24,0); } }
     else { C(0x3a2a22,0.5,0.32,0.36,0,-0.18,0); S(col,0.44,0,0.0,0,0.42); if(id==='katsudon') B(0x6a3a1e,0.5,0.1,0.26,0,0.2,0); if(id==='botan') for(const x of [-0.18,0.16]) B(0x6a9a3e,0.14,0.1,0.2,x,0.18,0.12); if(id==='gomadofu') B(0xf4ecd8,0.36,0.2,0.36,0,0.16,0); } }
   else if(id==='fenceKit'){ B(0x8a6438,0.1,0.72,0.1,-0.3,-0.05,0); B(0x8a6438,0.1,0.72,0.1,0.3,-0.05,0); B(0x9a7448,0.82,0.11,0.09,0,0.22,0); B(0x9a7448,0.82,0.11,0.09,0,-0.08,0); }
   else if(id==='trapKit'){ const t=new THREE.Mesh(new THREE.TorusGeometry(0.34,0.05,8,22),M(0x7a5a38)); t.rotation.x=Math.PI/2; t.position.y=-0.12; g.add(t); C(0x6e4f2e,0.045,0.045,0.8,0.32,0.12,0); }
   else if(id==='stakeKit'){ for(let i=-1;i<=1;i++){ B(0x7a5a38,0.13,0.62,0.13,i*0.26,-0.18,0); const tip=new THREE.Mesh(new THREE.ConeGeometry(0.085,0.26,7),M(0x6a4c30)); tip.position.set(i*0.26,0.24,0); g.add(tip); } B(0x8a6438,0.8,0.09,0.09,0,-0.34,0); }
-  else return null;
+  else if(!iconDesign(id,g,M,B,C,S)) return null; // v0.79：素材・道具・建物・防具・荷台の施設・車の絵（作業台と車両基地の画面）
   return g; }
+// v0.79：作業台・車両基地の画面の絵（2026-11-18 ユーザー「名前と実際のアイテムの絵を表示」）。形は単純な立体を組んで作った
+function iconDesign(id,g,M,B,C,S){ const P=(o,x,y,z)=>{ o.position.set(x,y,z); g.add(o); return o; }, cone=(c,r,h,seg=10)=>new THREE.Mesh(new THREE.ConeGeometry(r,h,seg),M(c)), tor=(c,r,t,arc)=>new THREE.Mesh(new THREE.TorusGeometry(r,t,8,24,arc||Math.PI*2),M(c));
+  const dod=(c,r)=>new THREE.Mesh(new THREE.DodecahedronGeometry(r,0),M(c)), cyl=(c,rt,rb,h,seg=12)=>new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),M(c));
+  const log=(x,y,z,r,l,rz=Math.PI/2)=>{ const a=P(cyl(0x7a5534,r,r,l),x,y,z); a.rotation.z=rz; const e=P(cyl(0xd8b884,r*0.92,r*0.92,0.02),x+(rz?l/2:0),y+(rz?0:l/2),z); e.rotation.z=rz; return a; };
+  const WOOD=0x8a6438, IRON=0x8d9398, RUST=0x9a5a36, GOLD=0xe2b324, BLK=0x2b2b2d, RED=0xb5382c;
+  switch(id){
+  // ---- 素材 ----
+  case 'mat_wood': log(-0.05,-0.18,0.12,0.2,0.95); log(0.05,-0.18,-0.28,0.2,0.95); log(0,0.15,-0.08,0.2,0.95); return true;
+  case 'mat_stone': P(dod(0x9c9890,0.34),-0.18,-0.12,0); P(dod(0xb0aca2,0.26),0.24,-0.18,0.1); P(dod(0x86827a,0.22),0.06,0.22,-0.05); return true;
+  case 'mat_iron': { const a=B(RUST,0.8,0.08,0.5,0,-0.2,0); a.rotation.z=0.12; const b=B(IRON,0.12,0.12,0.9,0.05,0.05,0); b.rotation.y=0.6; b.rotation.z=0.4; P(cyl(0x6a6e72,0.12,0.12,0.12,6),-0.25,0.12,0.12); P(cyl(0x9aa0a4,0.06,0.06,0.3,6),-0.25,0.1,0.12); return true; }
+  case 'mat_rope': for(let i=0;i<4;i++){ const t=P(tor(0xc8a26a,0.32,0.07),0,-0.24+i*0.13,0); t.rotation.x=Math.PI/2; } { const e=B(0xc8a26a,0.08,0.08,0.4,0.34,0.2,0.15); e.rotation.x=0.6; } return true;
+  case 'mat_straw': { const b=P(cyl(0xd8bf62,0.3,0.36,1.0,14),0,0,0); b.rotation.z=1.25; for(let i=0;i<8;i++){ const st=P(cyl(0xc9ad4a,0.03,0.03,1.06,5),Math.cos(i)*0.0,Math.sin(i*1.7)*0.2,Math.cos(i*1.7)*0.2); st.rotation.z=1.25; } const t=P(cyl(0x8a5a2e,0.33,0.33,0.1,14),0,0,0); t.rotation.z=1.25; return true; }
+  case 'mat_bamboo': for(let i=0;i<3;i++){ const x=(i-1)*0.24; const b=P(cyl(0x7aa04a,0.1,0.1,1.1),x,0,i*0.05); b.rotation.z=0.12*(i-1); for(const y of [-0.3,0.1,0.45]) P(cyl(0x5f8a3a,0.115,0.115,0.04),x+0.12*(i-1)*y,y,i*0.05); } return true;
+  case 'mat_hide': { const a=B(0x8a5a34,0.95,0.07,0.7,0,-0.1,0); a.rotation.y=0.3; const b=B(0xa06a40,0.8,0.07,0.55,0.06,0.0,0.02); b.rotation.y=-0.2; b.rotation.z=0.08; P(dod(0x7a4a2a,0.12),0.42,0.04,0.25); return true; }
+  case 'mat_charcoal': P(dod(0x26262a,0.24),-0.2,-0.15,0); P(dod(0x333338,0.2),0.18,-0.18,0.1); P(dod(0x1e1e22,0.22),0.02,0.14,-0.05); P(dod(0x3a2a22,0.1),0.28,0.08,0.15); return true;
+  case 'mat_procScale': { const h=P(cyl(0x3fb0b8,0.42,0.42,0.08,6),0,0,0); h.rotation.x=1.2; const k=P(cyl(0x9fe6e6,0.24,0.24,0.1,6),0,0.02,0.04); k.rotation.x=1.2; return true; }
+  case 'mat_mutScale': { const a=P(cone(0x5a3a7a,0.4,0.9,5),0,0,0); a.scale.z=0.25; a.rotation.z=-0.3; const b=P(cone(0x8a5ab0,0.22,0.5,5),-0.05,0.08,0.06); b.scale.z=0.2; b.rotation.z=-0.3; return true; }
+  case 'mat_fang': { const a=P(cone(0xf2ecdc,0.18,0.95,9),0,0,0); a.rotation.z=-0.5; P(cyl(0xd8cfb8,0.17,0.19,0.18),0.2,-0.36,0).rotation.z=-0.5; return true; }
+  case 'mat_riceSeed': { S(0xd8c48a,0.36,0,-0.08,0,0.9); P(cyl(0x8a6a3a,0.12,0.18,0.18),0,0.3,0); for(let i=0;i<5;i++) S(0xe8d49a,0.06,-0.3+i*0.15,-0.42,0.3,1.6); return true; }
+  // ---- 道具・罠 ----
+  case 'spikeKit': for(let i=-1;i<=1;i++){ const a=B(0x7a5a38,0.12,0.8,0.12,i*0.3,0,0); a.rotation.z=i*0.25; const t=P(cone(0x5a3c22,0.09,0.26,6),i*0.3+Math.sin(i*0.25)*-0.5,0.5,0); t.rotation.z=i*0.25; } B(WOOD,0.95,0.09,0.09,0,-0.18,0.06); return true;
+  case 'pitKit': { B(0x6a4a2e,0.95,0.06,0.95,0,-0.3,0); for(let i=-2;i<=2;i++) B(0x8a6438,0.12,0.07,0.95,i*0.19,-0.25,0); for(let i=0;i<6;i++) S(0x5f9a44,0.12,Math.cos(i)*0.3,-0.18,Math.sin(i*2)*0.3,0.4); const h=B(0x7a5a38,0.06,0.9,0.06,0.42,0.22,-0.2); h.rotation.z=-0.5; B(IRON,0.25,0.06,0.2,0.62,-0.12,-0.2).rotation.z=-0.5; return true; }
+  case 'baitKit': { B(WOOD,0.95,0.12,0.6,0,-0.28,0); B(0x6a4a2e,0.85,0.06,0.5,0,-0.2,0); S(RED,0.16,-0.2,-0.02,0); S(0xf2eee0,0.13,0.12,-0.04,0.08); S(0x6a9a3e,0.1,0.1,-0.05,-0.12); P(cone(0x7a9a3e,0.06,0.3),0.12,0.15,0.08); return true; }
+  case 'hammerStone': { const h=B(0x8a6a44,0.08,1.0,0.08,0,-0.05,0); h.rotation.z=0.5; P(dod(0x8a8680,0.24),-0.25,0.4,0); B(0xc8a26a,0.3,0.06,0.1,-0.22,0.3,0.05).rotation.z=0.5; return true; }
+  case 'pickIron': { const h=B(0x8a6a44,0.08,1.1,0.08,0.05,-0.08,0); h.rotation.z=0.45; const hd=P(tor(IRON,0.42,0.06,Math.PI*0.75),-0.18,0.32,0); hd.rotation.z=0.4+Math.PI*0.12; return true; }
+  case 'cart': { B(0x7a6a58,0.8,0.32,0.55,0.08,0.02,0); B(0x5a4a3a,0.72,0.05,0.48,0.08,0.16,0); const w=P(cyl(BLK,0.2,0.2,0.1),-0.42,-0.25,0); w.rotation.x=Math.PI/2; P(cyl(IRON,0.07,0.07,0.12),-0.42,-0.25,0).rotation.x=Math.PI/2; for(const z of [-0.22,0.22]){ const a=B(WOOD,0.85,0.05,0.05,0.42,0.08,z); a.rotation.z=-0.25; B(WOOD,0.05,0.3,0.05,0.42,-0.22,z); } return true; }
+  // ---- 手入れ ----
+  case 'repair': { B(0x8a8e88,0.7,0.16,0.28,0,-0.3,0); B(0x6a6e68,0.66,0.04,0.24,0,-0.2,0); const bl=B(0xd8dcde,0.95,0.04,0.16,0.05,0.12,0); bl.rotation.z=0.35; B(0x5a3c22,0.3,0.1,0.12,-0.45,-0.05,0).rotation.z=0.35; S(0xffffff,0.05,0.2,0.22,0.1); return true; }
+  case 'toolRepair': { B(0x8a8e88,0.7,0.16,0.28,0,-0.3,0); const h=P(tor(IRON,0.3,0.05,Math.PI*0.75),0,0.15,0); h.rotation.z=0.5; B(0x8a6a44,0.06,0.7,0.06,0.1,0.05,0.05).rotation.z=0.4; return true; }
+  case 'boomerFix': { const a=B(0x3a8a9a,0.7,0.1,0.2,-0.15,0.12,0); a.rotation.z=0.6; const b=B(0x3a8a9a,0.7,0.1,0.2,0.2,0.12,0); b.rotation.z=-0.6; B(0x8a8e88,0.7,0.16,0.28,0,-0.32,0); return true; }
+  case 'fenceFix': { for(const x of [-0.35,0.35]) B(0x7a5a38,0.12,0.9,0.12,x,0,0); for(const y of [-0.15,0.2]) B(0x9a7448,0.95,0.12,0.08,0,y,0.04); const h=B(0x8a6a44,0.06,0.6,0.06,0.25,0.15,0.3); h.rotation.z=-0.8; B(0x6a6e72,0.24,0.12,0.12,0.06,0.35,0.3).rotation.z=-0.8; return true; }
+  // ---- 建てる ----
+  case 'convBuild': { B(0x8a8680,1.0,0.22,0.8,0,-0.42,0); P(cyl(0x5a5e62,0.36,0.4,0.7),0,-0.0,0); B(0xff9a3a,0.24,0.18,0.05,0,-0.05,0.38); P(cyl(0x4a4e52,0.08,0.08,0.7),0.24,0.55,-0.1); B(0x3fb0b8,0.2,0.12,0.04,-0.15,0.2,0.36); return true; }
+  case 'kamaBuild': { B(0xb08a6a,1.0,0.55,0.62,0,-0.25,0); for(const x of [-0.24,0.24]) P(cyl(0x2a2220,0.14,0.14,0.06),x,0.03,0); B(0x2a2220,0.3,0.18,0.04,0,-0.32,0.31); B(0xff8a2a,0.2,0.08,0.03,0,-0.36,0.33); P(cyl(BLK,0.2,0.16,0.22),0.24,0.17,0); return true; }
+  case 'depotBuild': { B(0x8f8c84,1.1,0.05,0.8,0,-0.42,0); for(const x of [-0.48,0.48]) for(const z of [-0.33,0.33]) B(0x55606b,0.06,0.7,0.06,x,-0.05,z); const r=B(0x9aa4aa,1.2,0.05,0.9,0,0.33,0); r.rotation.z=-0.06; B(GOLD,0.04,0.16,0.4,-0.6,0.2,0); B(0x7b868c,0.04,0.66,0.7,0.5,-0.06,0); B(0xd8c8a0,0.5,0.18,0.3,0.0,-0.3,0); for(const x of [-0.18,0.18]) P(cyl(BLK,0.08,0.08,0.05),x,-0.38,0.16).rotation.x=Math.PI/2; return true; }
+  // ---- 荷台の施設・車 ----
+  case 'fac_bench': { B(0x9a7448,1.1,0.09,0.56,0,0.08,0); for(const x of [-0.48,0.48]) for(const z of [-0.22,0.22]) B(0x6a5038,0.07,0.62,0.07,x,-0.27,z); B(0x7a5a3c,1.0,0.05,0.5,0,-0.42,0); // 天板・脚・下の棚
+    B(0x5a6066,0.2,0.16,0.2,-0.36,0.21,0.05); B(0x7c848a,0.04,0.12,0.26,-0.28,0.2,0.05); P(cyl(0x7c848a,0.025,0.025,0.3),-0.36,0.21,0.24).rotation.x=Math.PI/2; // 万力
+    const hh=B(0x8a5a2e,0.05,0.42,0.05,0.22,0.15,0.12); hh.rotation.z=1.25; B(0x4a4f54,0.1,0.16,0.08,0.02,0.2,0.12).rotation.z=1.25; // 金づち
+    const saw=B(0xc8ced2,0.42,0.12,0.01,0.25,0.15,-0.12); saw.rotation.x=-Math.PI/2+0.2; B(RED,0.12,0.08,0.05,0.5,0.16,-0.12); // のこぎり
+    return true; }
+  case 'fac_tower': { for(const x of [-0.35,0.35]) for(const z of [-0.25,0.25]) B(0x6a5038,0.06,1.1,0.06,x,-0.05,z); B(0x7a5a3c,0.9,0.06,0.65,0,0.45,0); for(const x of [-0.35,0.35]) B(0x7a5a3c,0.06,0.25,0.65,x,0.6,0); for(let i=0;i<4;i++) B(0x8a6a44,0.24,0.04,0.04,0.05,-0.45+i*0.24,0.28); return true; }
+  case 'fac_kiln': { P(cyl(0x3e4246,0.32,0.36,0.75),0,-0.12,0); P(cyl(0x2a2c2e,0.08,0.08,0.5),0.1,0.48,0); B(0xff8a2a,0.2,0.12,0.04,0,-0.2,0.34); S(0xaaaaaa,0.1,0.14,0.82,0,0.7); return true; }
+  case 'fac_aid': { B(0xf2f2ee,0.9,0.6,0.5,0,-0.1,0); B(0x2f8a4a,0.36,0.1,0.02,0,-0.08,0.26); B(0x2f8a4a,0.1,0.36,0.02,0,-0.08,0.26); B(0x9aa0a6,0.4,0.06,0.08,0,0.25,0); return true; }
+  case 'fac_cool': { B(0x2f6fb0,0.95,0.55,0.6,0,-0.18,0); B(0xf2f2ee,1.0,0.12,0.65,0,0.14,0); B(0xf2f2ee,0.3,0.06,0.08,0,0.24,0); S(0xd8eef8,0.08,-0.3,0.3,0.2); return true; }
+  case 'fac_light': { const LT=new THREE.MeshBasicMaterial({color:0xfff0a8}); // 三脚に、2つの投光器（黄色い枠・光る面）
+    for(let i=0;i<3;i++){ const a=i*2.09+0.4, l=B(0x3a3d40,0.04,0.7,0.04,Math.sin(a)*0.2,-0.48,Math.cos(a)*0.2); l.rotation.set(Math.cos(a)*0.5,0,-Math.sin(a)*0.5); }
+    B(0x3a3d40,0.05,0.75,0.05,0,-0.1,0); B(0x3a3d40,0.8,0.06,0.06,0,0.28,0);
+    for(const x of [-0.24,0.24]){ B(0xe2b324,0.36,0.3,0.16,x,0.4,0.04); B(BLK,0.38,0.32,0.06,x,0.4,-0.06); const f=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.22,0.02),LT); f.position.set(x,0.4,0.13); g.add(f); for(let k=-1;k<=1;k++) B(0x7c848a,0.29,0.015,0.02,x,0.4+k*0.07,0.15); }
+    return true; }
+  case 'wrench': { const h=B(0x9aa0a6,0.12,0.9,0.06,0,0,0); h.rotation.z=-0.8; for(const sg of [1,-1]){ const e=P(tor(0x9aa0a6,0.13,0.05,Math.PI*1.4),sg*0.33,sg*0.31,0); e.rotation.z=sg>0?-0.8+0.95:-0.8+0.95+Math.PI; } B(RED,0.13,0.36,0.065,-0.1,-0.1,0).rotation.z=-0.8; return true; } // スパナ
+  case 'fuel': { P(cyl(0xa8875a,0.3,0.36,0.62,12),0,-0.15,0); B(0x6a5434,0.62,0.04,0.04,0,0.0,0.3); for(const [x,z,r] of [[-0.12,0.05,0.12],[0.1,-0.05,0.13],[0,0.1,0.1],[0.14,0.12,0.09],[-0.1,-0.12,0.1]]) P(dod(0x26262a,r),x,0.22,z); // 木炭の袋
+    const f1=P(cone(0xff8a2a,0.16,0.42,8),0.05,0.52,0.05); const f2=P(cone(0xffd25a,0.09,0.28,8),0.05,0.48,0.12); f1.material=new THREE.MeshBasicMaterial({color:0xff8a2a}); f2.material=new THREE.MeshBasicMaterial({color:0xffd25a}); return true; }
+  case 'truck': case 'upgrade': case 'truckRepair': {
+    const V=TRUCK_VIS&&TRUCK_VIS.repaired; if(V&&V.st==='ok'&&V.g){ const k=V.g.clone(true); k.visible=true; const w=new THREE.Group(); w.add(k); w.rotation.y=Math.PI/2; w.updateMatrixWorld(true); // 正式な KEI truck の形（読めていれば）
+      const bx=new THREE.Box3().setFromObject(w), sz=bx.getSize(new THREE.Vector3()), c=bx.getCenter(new THREE.Vector3()), q=1.35/Math.max(sz.x,sz.z,0.01); w.scale.setScalar(q); w.position.set(-c.x*q-0.05,-c.y*q-0.02,-c.z*q); g.add(w); }
+    else { B(0xd8c8a0,0.5,0.42,0.62,0.32,0.02,0); B(0x9cc6d8,0.04,0.24,0.5,0.58,0.1,0); B(0xc8b890,0.7,0.12,0.66,-0.28,-0.12,0); for(const z of [-0.33,0.33]) B(0xc8b890,0.7,0.16,0.04,-0.28,-0.02,z); B(0x6a6e72,0.9,0.06,0.6,0.02,-0.2,0);
+    for(const x of [-0.38,0.32]) for(const z of [-0.3,0.3]){ const w=P(cyl(BLK,0.13,0.13,0.08),x,-0.25,z); w.rotation.x=Math.PI/2; } }
+    if(id==='upgrade'){ const a=P(cone(GOLD,0.2,0.3,4),-0.25,0.5,0.1); B(GOLD,0.12,0.22,0.08,-0.25,0.28,0.1); }
+    if(id==='truckRepair'){ const h=B(0x9aa0a6,0.08,0.6,0.08,-0.1,0.35,0.35); h.rotation.z=0.8; const hd=P(tor(0x9aa0a6,0.1,0.04,Math.PI*1.5),-0.32,0.57,0.35); hd.rotation.z=0.8; }
+    return true; }
+  }
+  if(id.startsWith('gear_')){ const a=G47[id.slice(5)]; if(!a) return false; const col={basic:0xc9a86a,work:0x4f6e9a,forest:0x6a7a3a,tracker:0x8a6a4a,blue:0x3a9aaa,raw:0x6a3a8a}[a.set]||0x8a8a8a, dk=new THREE.Color(col).multiplyScalar(0.7).getHex(), sc=a.set==='blue'||a.set==='raw';
+    const scales=(x0,x1,y0,y1,z)=>{ for(let x=x0;x<=x1;x+=0.16) for(let y=y0;y<=y1;y+=0.16){ const h=P(cyl(a.set==='blue'?0x7fd6dc:0x9a6ac0,0.07,0.07,0.03,6),x,y,z); h.rotation.x=Math.PI/2; } };
+    if(a.slot==='head'){ if(a.set==='basic'){ const c=P(cone(col,0.62,0.36,16),0,0.05,0); B(0x8a5a2e,0.04,0.3,0.04,0,-0.2,0.2); } else if(a.set==='forest'||a.set==='work'){ S(a.set==='forest'?GOLD:col,0.38,0,0,0,0.75); const b=P(cyl(a.set==='forest'?GOLD:col,0.5,0.5,0.04,16),0,-0.08,0.05); } else if(a.set==='tracker'){ S(col,0.36,0,0,0,0.7); B(dk,0.4,0.04,0.3,0,-0.12,0.3); } else { S(col,0.4,0,0,0,0.85); B(BLK,0.5,0.1,0.06,0,-0.02,0.36); scales(-0.24,0.24,0.1,0.26,0.32); } return true; }
+    if(a.slot==='chest'){ B(col,0.7,0.8,0.36,0,-0.05,0); for(const x of [-0.45,0.45]){ const s2=B(col,0.24,0.5,0.32,x,0.05,0); s2.rotation.z=x>0?-0.3:0.3; } B(dk,0.3,0.12,0.38,0,0.33,0); B(dk,0.06,0.75,0.37,0,-0.05,0.01); if(sc) scales(-0.24,0.24,-0.3,0.2,0.19); return true; }
+    if(a.slot==='legs'){ B(dk,0.66,0.16,0.34,0,0.36,0); for(const x of [-0.18,0.18]) B(col,0.28,0.85,0.3,x,-0.15,0); if(sc){ scales(-0.26,-0.1,-0.4,0.1,0.16); scales(0.1,0.26,-0.4,0.1,0.16); } return true; }
+    if(a.slot==='feet'){ for(const x of [-0.24,0.24]){ B(col,0.26,0.5,0.3,x,0.05,-0.05); B(dk,0.3,0.14,0.55,x,-0.25,0.08); } if(sc){ scales(-0.3,-0.18,-0.05,0.2,0.11); scales(0.18,0.3,-0.05,0.2,0.11); } return true; } }
+  return false; }
 function iconOf(id){
   if(ICONS[id]) return ICONS[id];
   try{
-    if(!_ir){ _ir=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true}); _ir.setSize(96,96); _ir.setClearColor(0x000000,0);
-      _isc=new THREE.Scene(); _isc.add(new THREE.AmbientLight(0xffffff,0.85));
-      const dl=new THREE.DirectionalLight(0xfff0d8,0.7); dl.position.set(1.5,2,2.5); _isc.add(dl);
+    if(!_ir){ _ir=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true}); _ir.setSize(128,128); _ir.setClearColor(0x000000,0); // v0.79：作業台の画面で大きく見せるので 128
+      _isc=new THREE.Scene(); _isc.userData.amb=new THREE.AmbientLight(0xffffff,0.85); _isc.add(_isc.userData.amb);
+      const dl=new THREE.DirectionalLight(0xfff0d8,0.7); dl.position.set(1.5,2,2.5); _isc.add(dl); _isc.userData.dl=dl;
       _icam=new THREE.PerspectiveCamera(32,1,0.05,60); }
     const obj=makeIconObj(id); if(!obj) return null;
-    _isc.add(obj);
-    const box=new THREE.Box3().setFromObject(obj);
-    if(box.isEmpty()){ _isc.remove(obj); return null; }
-    const c=box.getCenter(new THREE.Vector3()), sz=box.getSize(new THREE.Vector3());
-    const r=Math.max(sz.x,sz.y,sz.z,0.001)*0.72;
-    _icam.position.set(c.x+r*1.05,c.y+r*0.8,c.z+r*1.3); _icam.lookAt(c);
+    _isc.add(obj); obj.updateMatrixWorld(true);
+    const F=obj.userData.iconFrame; // v0.79：防具は体に着せた姿の、その部位だけを写す
+    _isc.userData.amb.intensity=F?0.42:0.85; _isc.userData.dl.intensity=F?0.62:0.7;
+    if(F){ _icam.position.set(F[0]+F[3]*1.1,F[1]+F[3]*0.6,F[2]+F[3]*3.2); _icam.lookAt(F[0],F[1],F[2]); }
+    else { const dir=new THREE.Vector3(1.05,0.8,1.3).normalize();
+      if(WEAPONS[id]){ obj.quaternion.setFromAxisAngle(dir,-Math.PI/4); obj.updateMatrixWorld(true); } // 武器は画面の斜め（左下が柄・右上が先）に置いて大きく見せる
+      // v0.79：形の頂点が画面に収まるように、向きはそのままで距離と中心を合わせる（前は大きい物の端が切れていた）
+      const pts=[], v=new THREE.Vector3(); obj.traverse(o=>{ const pa=o.isMesh&&o.geometry&&o.geometry.attributes.position; if(!pa||!o.visible) return; const st=Math.max(1,Math.floor(pa.count/1500));
+        for(let i=0;i<pa.count;i+=st) pts.push(v.fromBufferAttribute(pa,i).applyMatrix4(o.matrixWorld).clone()); });
+      if(!pts.length){ _isc.remove(obj); return null; }
+      const box=new THREE.Box3().setFromPoints(pts), c=box.getCenter(new THREE.Vector3()), sz=box.getSize(new THREE.Vector3()), rt=new THREE.Vector3(), up=new THREE.Vector3();
+      let d=Math.max(sz.x,sz.y,sz.z,0.001)*1.8; const th=Math.tan(_icam.fov*Math.PI/360);
+      for(let it=0;it<4;it++){ _icam.position.copy(c).addScaledVector(dir,d); _icam.lookAt(c); _icam.updateMatrixWorld(true);
+        let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9; for(const q of pts){ v.copy(q).project(_icam); if(v.x<x0) x0=v.x; if(v.x>x1) x1=v.x; if(v.y<y0) y0=v.y; if(v.y>y1) y1=v.y; }
+        rt.set(1,0,0).applyQuaternion(_icam.quaternion); up.set(0,1,0).applyQuaternion(_icam.quaternion);
+        c.addScaledVector(rt,(x0+x1)/2*th*d).addScaledVector(up,(y0+y1)/2*th*d); d*=Math.max(x1-x0,y1-y0)/2/0.9; }
+      _icam.position.copy(c).addScaledVector(dir,d); _icam.lookAt(c); }
     _ir.render(_isc,_icam);
     ICONS[id]=_ir.domElement.toDataURL('image/png');
     _isc.remove(obj);
@@ -11750,7 +12104,7 @@ $('btnShadow').onclick=()=>{ applyShadow(!shadowPref); toast(shadowPref?'影を�
 $('btnShadow').textContent='高画質の影：'+(renderer.shadowMap.enabled?'オン':'オフ');
 $('btnSave').onclick=()=>{ saveGame(); toast(storageOK?(ev.kind||bossActive?'セーブした（戦闘中は開始前の状態で記録）':'セーブした'):'このブラウザでは保存できない',!storageOK); };
 $('btnToTitle').onclick=()=>{ saveGame(); regionResetHome(); if(SZ.m) SZ.m.g.visible=false; /* v0.70 */ truckHideAll(); /* v0.77 */ hideAllOv(); $('hud').hidden=true; S.mode='title'; lightMode='dusk'; snapLight(); P.x=158; P.z=22; $('title').hidden=false; $('btnContinue').hidden=!readSave(); for(const f of floats) f.d.style.display='none'; for(const b of hpBars) b.style.display='none'; for(const [,b] of barkEls){b.t=0;b.d.style.display='none';} };
-$('btnCraftClose').onclick=closeOverlay; $('btnStoreClose').onclick=closeOverlay; $('btnNpcClose').onclick=closeOverlay; mapPtr(); $('objective').addEventListener('pointerdown',e=>{ e.stopPropagation(); objOpen.pin=!objOpen.pin; if(!objOpen.pin) objOpen.t=0; }); $('btnQuestClose').onclick=closeOverlay;
+$('btnCraftClose').onclick=closeOverlay; $('btnDepotClose').onclick=closeOverlay; $('btnStoreClose').onclick=closeOverlay; $('btnNpcClose').onclick=closeOverlay; mapPtr(); $('objective').addEventListener('pointerdown',e=>{ e.stopPropagation(); objOpen.pin=!objOpen.pin; if(!objOpen.pin) objOpen.t=0; }); $('btnQuestClose').onclick=closeOverlay;
 $('btnInvClose').onclick=closeOverlay;
 $('btnRetry').onclick=retryFromBase;
 $('btnRestart').onclick=()=>{ try{ localStorage.removeItem(SAVE_KEY);}catch(e){} startNew(); };

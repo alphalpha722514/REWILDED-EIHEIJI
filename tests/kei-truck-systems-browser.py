@@ -140,7 +140,7 @@ async def main():
         await ev(BASE)
         await pg.wait_for_timeout(800)
         t0 = await G("(()=>{ const t=trk(); return {gas:t.gas,hp:t.hp,lv:t.lv,bed:t.bed,fac:t.fac,tip:t.tip,max:trkHpMax(t),depot:depotS().built}; })()")
-        check(t0['gas'] == 100 and t0['hp'] == 100 and t0['lv'] == 0 and t0['bed'] == {'logs': [], 'mats': {}} and t0['tip'] == 0 and t0['depot'] == 0,
+        check(t0['gas'] == 100 and t0['hp'] == 100 and t0['lv'] == 0 and t0['bed'] == {'logs': [], 'mats': {}, 'foods': {}} and set(t0['fac'].values()) == {0} and t0['tip'] == 0 and t0['depot'] == 0,
               f'v0.77 の形の truck は 燃料100%・車体100/100・段階0・荷台は空・車両基地なしで読む {t0}')
         await until("TRUCK.m&&TRUCK.m.visible&&TRUCK.visKind==='repaired'", 120)
 
@@ -207,14 +207,22 @@ async def main():
         check(r4b['tip'] == 0 and r4b['A'] < 0.05, f'起こすと元に戻る {r4b}')
 
         # ================= ⑤ 車両基地 =================
-        await G("(()=>{ Object.assign(inv,{wood:200,stone:100,iron:100,rope:100,hide:100}); })()")
+        await G("(()=>{ Object.assign(inv,{wood:300,stone:150,iron:200,rope:150,hide:150,charcoal:20,straw:30}); })()")  # 段階5・施設6つまで足りる量
         await close_menus()
-        rc = await G("(()=>{ P.x=BENCH.x; P.z=BENCH.z+1.2; openCraft(); const b=document.getElementById('craft_depotBuild'); return b?{dis:b.disabled}:null; })()")
-        check(rc is not None and not rc['dis'], f'作業台に「車両基地を建てる」が出る（KEI truck を直したあと）{rc}')
+        rc = await G("(()=>{ P.x=BENCH.x; P.z=BENCH.z+1.2; CRAFT.tab='build'; openCraft(); const b=document.getElementById('craft_depotBuild'); return b?{dis:b.disabled}:null; })()")
+        check(rc is not None and not rc['dis'], f'作業台の「建てる」に「車両基地を建てる」が出る（KEI truck を直したあと）{rc}')
+        # v0.79：作業台の画面（タブ・絵と名前のカード・詳しい説明）
+        ui = await G("""(async()=>{ const icw=async()=>{ for(let i=0;i<600&&document.querySelector('img[data-ic]');i++) await new Promise(r=>setTimeout(r,50)); }; const tabs=[...document.querySelectorAll('#craftTabs .wkTab')].map(b=>b.textContent.replace(/[0-9/]+$/,'')); const out={tabs};
+          for(const b of document.querySelectorAll('#craftTabs .wkTab')){ b.click(); await icw(); const cards=[...document.querySelectorAll('#craftList .wkCard')]; out[b.id]={n:cards.length,img:cards.filter(c=>{ const i=c.querySelector('img.wkIc'); return i&&i.src.startsWith('data:image/png'); }).length,det:!!document.querySelector('#craftDet h3')}; }
+          return out; })()""")
+        print('   作業台の画面', ui)
+        cats = [k for k in ui if k.startswith('craftTab_')]
+        check(set(['craftTab_weapon', 'craftTab_armor', 'craftTab_tool', 'craftTab_build', 'craftTab_care']) <= set(cats) and all(ui[k]['n'] > 0 and ui[k]['img'] == ui[k]['n'] and ui[k]['det'] for k in cats),
+              '作業台の画面：武器・防具・道具と罠・建てる・手入れのタブに分かれ、どのカードにも絵と名前、選ぶと詳しい説明')
         await G("craft('depotBuild')")
         await close_menus()
         r5 = await G("({b:depotS().built,vis:!!DEPOT.g&&DEPOT.g.visible,cols:DEPOT.cols.filter(c=>c.active).length,inv:{wood:inv.wood,stone:inv.stone,iron:inv.iron,rope:inv.rope}})")
-        check(r5['b'] == 1 and r5['vis'] and r5['cols'] == 14 and r5['inv'] == {'wood': 180, 'stone': 88, 'iron': 92, 'rope': 94}, f'建てると基地の形・当たり（柱6本・奥の壁・道具）が出る・素材を引く {r5}')
+        check(r5['b'] == 1 and r5['vis'] and r5['cols'] == 14 and r5['inv'] == {'wood': 280, 'stone': 138, 'iron': 192, 'rope': 144}, f'建てると基地の形・当たり（柱6本・奥の壁・道具）が出る・素材を引く {r5}')
         # 南門の外から運転して屋根の下へ
         await put_truck(150, 88, math.pi)
         await board()
@@ -233,17 +241,20 @@ async def main():
         check(lab and '車両基地（直す' in lab, f'基地のそばで「{lab}」')
         await G("trk().hp=40")
         await G("depotMenu()")
-        menu = await G("[...document.querySelectorAll('#defenseChoice button')].map(b=>b.textContent)")
-        print('   車両基地の一覧', menu)
-        check(any('車体を直す' in m for m in menu) and any('改修 段階1' in m for m in menu) and any('荷台の作業台を作る' not in m and '荷台の作業台（改修 段階1で作れる）' in m for m in menu),
-              '一覧：直す・改修 段階1・荷台の施設（段階で解放）')
+        dm = await G("""(async()=>{ const icw=async()=>{ for(let i=0;i<600&&document.querySelector('img[data-ic]');i++) await new Promise(r=>setTimeout(r,50)); }; const out={open:!$('depotOv').hidden,tabs:[...document.querySelectorAll('#depotTabs .wkTab')].map(b=>b.textContent)};
+          for(const id of ['repair','up','fac','fuel']){ $('depotTab_'+id).click(); await icw(); out[id]=[...document.querySelectorAll('#depotList .wkCard')].map(c=>({t:c.querySelector('.wkNm').textContent+' '+(c.querySelector('.tag')?.textContent||''),img:!!c.querySelector('img.wkIc'),dis:c.querySelector('button').disabled})); if(id==='up') out.path=document.querySelectorAll('#depotList .lvNode').length; }
+          return out; })()""")
+        print('   車両基地の画面', dm['tabs'], [c['t'] for c in dm['repair']], [c['t'] for c in dm['up']][:2], [c['t'] for c in dm['fac']])
+        check(dm['open'] and dm['tabs'] == ['修理', '改修', '荷台の施設', '燃料'] and any('車体を直す' in c['t'] for c in dm['repair']) and dm['up'][0]['t'].startswith('改修 段階1') and not dm['up'][0]['dis'] and dm['up'][1]['dis'] and dm['path'] == 6
+              and [c['t'].replace('🔒','').strip().split(' ')[0] for c in dm['fac']] == ['荷台の作業台', '荷台の見張り台', '荷台の炭焼き釜', '荷台の救急箱', '荷台の保冷箱', '荷台の投光器'] and '改修 段階1で作れる' in dm['fac'][0]['t'] and all(c['img'] for k in ('repair', 'up', 'fac', 'fuel') for c in dm[k]),
+              '車両基地の画面：修理・改修（段階0〜5の道）・荷台の施設（6つ・段階で解放）・燃料のタブ、どのカードにも絵')
         await close_menus()
         await G("truckRepairStep(true)")
         r5c = await G("({hp:trk().hp,iron:inv.iron})")
-        check(r5c['hp'] == 100 and r5c['iron'] == 92 - 3, f'直せるだけ直す（20ずつ・屑鉄1と木材1）{r5c}')
+        check(r5c['hp'] == 100 and r5c['iron'] == 192 - 3, f'直せるだけ直す（20ずつ・屑鉄1と木材1）{r5c}')
         pf = []
         uo = await G("Object.fromEntries(Object.entries(TRUCK_SYS.fac).map(([k,f])=>[k,f.lv]))")
-        check(uo == {'bench': 1, 'tower': 2, 'kiln': 3}, f'荷台の施設は 作業台（段階1）→ 見張り台（段階2）→ 炭焼き釜（段階3）の順に解放（2026-11-18）{uo}')
+        check(uo == {'bench': 1, 'tower': 2, 'kiln': 3, 'aid': 4, 'cool': 4, 'light': 5}, f'荷台の施設は 作業台（段階1）→ 見張り台（段階2）→ 炭焼き釜（段階3）の順に解放（2026-11-18）、救急箱・保冷箱は段階4、投光器は段階5 {uo}')
         for lv in range(1, 6):
             await G("truckUpgrade()")
             pf.append(await G("(()=>{ const t=trk(), f=truckPerf(); return {lv:t.lv,speed:f.speed,acc:f.acc,hp:t.hp,max:trkHpMax(t)}; })()"))
@@ -252,12 +263,25 @@ async def main():
         check([x['lv'] for x in pf] == [1, 2, 3, 4, 5] and [x['speed'] for x in pf] == [15.5, 17, 18.5, 20, 21.5] and [x['max'] for x in pf] == [130, 165, 200, 240, 280] and pf[-1]['hp'] == 280
               and all(pf[i]['acc'] < pf[i + 1]['acc'] for i in range(4)),
               '改修 段階1〜5（2026-11-18 に段階4・5を足した）：最高速度・耐久・加速が上がる（直っていれば耐久の増えた分も満たす）')
-        for fid in ('bench', 'kiln', 'tower'):
+        for fid in ('bench', 'kiln', 'tower', 'aid', 'cool', 'light'):
             await G(f"truckFacBuild('{fid}')")
         r5d = await G("({fac:trk().fac,ch:TRUCK.bedG?TRUCK.bedG.children.length:0})")
         await wait_game(0.3)
         r5d['ch'] = await G("TRUCK.bedG?TRUCK.bedG.children.length:0")
-        check(r5d['fac'] == {'bench': 1, 'kiln': 1, 'tower': 1} and r5d['ch'] >= 6, f'荷台の施設3つを作る・荷台に見える {r5d}')
+        check(r5d['fac'] == {'bench': 1, 'tower': 1, 'kiln': 1, 'aid': 1, 'cool': 1, 'light': 1} and r5d['ch'] >= 9, f'荷台の施設6つを作る・荷台に見える {r5d}')
+        # v0.79：救急箱・保冷箱・投光器（2026-11-18 ユーザー採用）
+        ra = await G("""(()=>{ P.x=TRUCK.x+3; P.z=TRUCK.z; P.hp=P.maxHp-30; P.lastHurt=S.time-10; const h0=P.hp; truckAidUpdate(2); const h1=P.hp, on=TRUCK.aidOn;
+          P.lastHurt=S.time; truckAidUpdate(2); const h2=P.hp; P.lastHurt=S.time-10; P.x=TRUCK.x+9; truckAidUpdate(2); const h3=P.hp; P.hp=P.maxHp; return {up:+(h1-h0).toFixed(2),on,hurt:+(h2-h1).toFixed(2),far:+(h3-h2).toFixed(2)}; })()""")
+        check(ra == {'up': 3.0, 'on': True, 'hurt': 0.0, 'far': 0.0}, f'救急箱：車のそば（6m）で傷つけられていない間は毎秒1.5戻る・傷つけられた直後と離れると戻らない {ra}')
+        rcool = await G("""(()=>{ const t=trk(); t.bed.logs=[]; t.bed.mats={}; t.bed.foods={}; P.x=TRUCK.x+2.5; P.z=TRUCK.z; for(const k of F7K){ prog.f7.hand[k]=[]; inv[k]=0; } foodAdd('meat',3); foodAdd('veg',2); f7Sync();
+          bedFoodLoad(); const n=bedFoodN(t), u=bedUnits(t), hand=f7Count('meat','hand'); const a0=t.bed.foods.meat[0][1]; bedFoodAge(100); const a1=t.bed.foods.meat[0][1];
+          bedMenu(); const menu=[...document.querySelectorAll('#defenseChoice button')].map(b=>b.textContent); bedFoodUnload(); return {n,u,hand,age:+(a1-a0).toFixed(1),back:f7Count('meat','hand')+f7Count('veg','hand'),left:bedFoodN(t),menu:menu.filter(m=>m.includes('保冷箱'))}; })()""")
+        await close_menus()
+        print('   保冷箱', rcool)
+        check(rcool['n'] == 5 and rcool['u'] == 5 and rcool['hand'] == 0 and rcool['age'] == 20.0 and rcool['back'] == 5 and rcool['left'] == 0 and len(rcool['menu']) >= 1,
+              '保冷箱：食べ物を荷台に積む（1つで広さ1）・中は傷みが1/5・持ち物へ戻せる・荷台の一覧に出る')
+        rl = await G("""(()=>{ const nn=nightNow; P.x=TRUCK.x+3; P.z=TRUCK.z; nightNow=()=>0.9; truckLightVis(); const night=!!TRUCK.lightG&&TRUCK.lightG.visible; nightNow=()=>0.1; truckLightVis(); const day=!!TRUCK.lightG&&TRUCK.lightG.visible; nightNow=nn; return {night,day}; })()""")
+        check(rl == {'night': True, 'day': False}, f'投光器：夜は車の前を照らす・昼は消える {rl}')
         # 柱にぶつかる
         await put_truck(153.6, TRUCK_Z_POST, math.pi / 2)  # 基地の入口の北の柱へ東向きに
         await board()
@@ -347,6 +371,19 @@ async def main():
         await G("(()=>{ P.x=TRUCK.x+30; })()")
         check(await G("truckSee()") == 60, '車から離れると 60m に戻る')
 
+        # ================= ⑧b 田んぼ・拠点の配置（v0.79） =================
+        rp = await G("""(()=>{ const p=prog.paddy; p.st=2; p.t=100; p.care=0; P.x=(PADDY.x0+PADDY.x1)/2; P.z=PADDY.z1+0.8; const lab=(interactables()||{}).label||''; paddyCare(); const t1=p.t;
+          p.t=PADDY.grow-1; paddyUpdate(2); const st3=p.st; const lab3=(interactables()||{}).label||''; inv.straw=0; inv.riceSeed=0; const r0=f7Count('rice','hand'); paddyHarvest();
+          const got={rice:f7Count('rice','hand')-r0,straw:inv.straw,seed:inv.riceSeed,st:p.st,vis:PADDY.im.count}; paddyPlant(); const sv=paddySave(); return {lab,t1,exp:100+(PADDY.grow-100)*PADDY.care,st3,lab3,got,after:{st:p.st,t:p.t,seed:inv.riceSeed,vis:PADDY.im.count},sv}; })()""")
+        print('   田んぼ', rp)
+        check('田んぼ' in rp['lab'] and abs(rp['t1'] - rp['exp']) < 0.01 and rp['st3'] == 3 and '稲を刈る' in rp['lab3'] and rp['got'] == {'rice': 10, 'straw': 10, 'seed': 2, 'st': 1, 'vis': 0}
+              and rp['after']['st'] == 2 and rp['after']['t'] == 0 and rp['after']['seed'] == 1 and rp['after']['vis'] > 0 and rp['sv'] == {'v': 1, 'st': 2, 't': 0, 'care': 0},
+              '田んぼ：草取りで残りが20%短い・実ったら稲刈り（米+10・藁+10・稲の種+2）・種1で田植え・セーブの形 paddy:{v:1,st,t,care}')
+        lay = await G("""(()=>({trees:cedarList.filter(t=>t.x>128&&t.x<172&&t.z>34&&t.z<76).length,bench:[BENCH.x,BENCH.z],store:M(STOREHOUSE[0],STOREHOUSE[1]),yard:[+F4.yard.x.toFixed(1),+F4.yard.z.toFixed(1)],
+          dDepot:{yard:+dist(F4.yard.x,F4.yard.z,TRUCK_SYS.depot.x,TRUCK_SYS.depot.z).toFixed(1),bench:+dist(BENCH.x,BENCH.z,TRUCK_SYS.depot.x,TRUCK_SYS.depot.z).toFixed(1)}}))()""")
+        print('   配置', lay)
+        check(lay['trees'] == 0 and lay['dDepot']['yard'] < 14 and lay['dDepot']['bench'] < 12, f'拠点の中に木がない・車両基地から丸太置き場（14m 以内）と作業台（12m 以内）が近い {lay}')
+
         # ================= ⑨ 上志比では光明寺の印を出さない =================
         r9 = await G("(()=>{ const was=REG.cur; REG.cur='kamishihi'; const a=questHere(); REG.cur=was; return {kami:a,home:questHere()}; })()")
         check(r9 == {'kami': False, 'home': True}, f'光明寺の依頼・目的の印は光明寺だけ（5990m の直し）{r9}')
@@ -371,16 +408,19 @@ async def main():
               '変異した鱗の防具一式：防御は蒼鱗と同じ・最大体力 0.7倍・機動力が上がる・衝撃波は8秒でたまる（2026-11-17 22:21）')
 
         # ================= ⑪ セーブ → 続きから =================
-        await G("(()=>{ const t=trk(); t.gas=63.5; t.hp=150; t.bed.logs=['k']; t.bed.mats={iron:3}; t.kiln.q=1; t.kiln.t=12; saveGame(); })()")
-        before = await G("JSON.parse(JSON.stringify({t:trk(),d:depotS()}))")
+        await G("(()=>{ const t=trk(); t.gas=63.5; t.hp=150; t.bed.logs=['k']; t.bed.mats={iron:3}; t.bed.foods={meat:[[2,30]]}; t.kiln.q=1; t.kiln.t=12; prog.paddy={v:1,st:2,t:123.4,care:1}; saveGame(); })()")
+        before = await G("JSON.parse(JSON.stringify({t:trk(),d:depotS(),p:prog.paddy}))")
         await boot(cont=True)
         await pg.wait_for_timeout(1500)
-        after = await G("JSON.parse(JSON.stringify({t:trk(),d:depotS(),dv:!!DEPOT.g&&DEPOT.g.visible}))")
+        after = await G("JSON.parse(JSON.stringify({t:trk(),d:depotS(),dv:!!DEPOT.g&&DEPOT.g.visible,p:prog.paddy}))")
         keys_ = ('gas', 'hp', 'lv', 'bed', 'fac', 'tip', 'repaired', 'fueled')
-        same = all(before['t'][k] == after['t'][k] for k in keys_) and before['t']['kiln']['q'] == after['t']['kiln']['q'] and abs(before['t']['kiln']['t'] - after['t']['kiln']['t']) < 5  # 炭焼き釜は読み込んだあとも進む
+        bedsame = lambda b: {'logs': b['logs'], 'mats': b['mats'], 'foods': {k: sum(x[0] for x in v) for k, v in b.get('foods', {}).items()}}  # 保冷箱の食べ物は読み込んだあとも少し傷む（経過秒が増える）
+        same = all(before['t'][k] == after['t'][k] for k in keys_ if k != 'bed') and bedsame(before['t']['bed']) == bedsame(after['t']['bed']) and before['t']['kiln']['q'] == after['t']['kiln']['q'] and abs(before['t']['kiln']['t'] - after['t']['kiln']['t']) < 5  # 炭焼き釜は読み込んだあとも進む
         check(same and after['d'] == {'built': 1} and after['dv'], f'セーブ → 続きから：燃料・車体・段階・荷台・施設・炭焼き・車両基地が戻る {({k: after["t"][k] for k in keys_})}')
         sv = await G("JSON.parse(localStorage.getItem(SAVE_KEY))")
         check(sv.get('v') == 1 and 'truck' in sv['chapter2']['progress'] and 'depot' in sv['chapter2']['progress'], 'セーブは v:1 のまま・chapter2.progress.truck と depot に入る')
+        check(after['t']['bed'].get('foods') == {'meat': [[2, 30]]} or (after['t']['bed'].get('foods', {}).get('meat', [[0]])[0][0] == 2), f'保冷箱の食べ物も戻る {after["t"]["bed"].get("foods")}')
+        check(after['p']['st'] == 2 and abs(after['p']['t'] - 123.4) < 3 and after['p']['care'] == 1 and sv.get('paddy', {}).get('v') == 1, f'田んぼの育ち具合が戻る（セーブの paddy）{after["p"]}')
 
         check(not errs, f'ページのエラーなし {errs[:3]}')
         await b.close()

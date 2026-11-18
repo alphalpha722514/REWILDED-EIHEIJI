@@ -78,7 +78,8 @@
 | `docs/p2-story-f-plan.md` | 作業F（救援無線・出発・山王での初遭遇）の現状整理（2026-11-16）：目標・実装状況（使える既存の処理）・確定仕様・決めてほしい質問14個・依存関係・技術的な問題・推奨順序 |
 | `docs/p2-story-f.md` | 作業F の実装記録（v0.77、2026-11-17 本編へ）：2026-11-17 ユーザー確定の5項目・指示書との照合・流れと仕組み・KEI truck（仮の値・操作・【3Dモデル制作依頼】）・台詞（2026-11-17 すべて承認）・セーブ（新しいキー・旧セーブ）・確認・決めてほしいこと |
 | `docs/kei-truck-glb.md` | KEI truck の正式モデル（Tripo の GLB、修理前・修理後。v0.77）：main の確認・元データ・ゲーム用の作り方・フロントガラス（元に無いので足した）・車輪の分離（ドア・あおりは未）・大きさ・運転席・荷台・当たり・組み込み・軽量化・確認・指示書 §8 の実装の順 |
-| `docs/kei-truck-systems.md` | KEI truck の仕組み（v0.78、2026-11-17 20:57 ユーザー決定）：燃料（木炭で足す）・車体の傷み（激突・着地・獣・横転）・横転と起こす・車両基地（拠点の南西）・改修（初期＋3段階）・荷台（丸太6本・広さ60・建設に直接使う）・荷台の施設3つ・源さんの運搬・照合・数（暫定）・セーブ・確認・決めてほしいこと |
+| `docs/kei-truck-systems.md` | KEI truck の仕組み（v0.78、2026-11-17 20:57 ユーザー決定。v0.79 で改修を段階5まで・荷台の施設6つ・車両基地を南東へ）：燃料（木炭で足す）・車体の傷み（激突・着地・獣・横転）・横転と起こす・車両基地（拠点の南東・画面のタブ）・改修（初期＋5段階）・荷台（丸太6本・広さ60・建設に直接使う・保冷箱で食べ物）・荷台の施設6つ（作業台・見張り台・炭焼き釜・救急箱・保冷箱・投光器）・源さんの運搬・照合・数（暫定）・セーブ・確認・決めてほしいこと |
+| `docs/base-layout-plan.md` | 拠点（光明寺）の施設の配置の見直し（v0.79、2026-11-18 ユーザー決定の B案）：動かしたもの・車両基地の新しい形・田んぼの役目（田植え→稲刈り）・作業台と車両基地の画面（タブとカード・アイテムの絵）・確認 |
 | `docs/p2-weapon-glb.md` | 武器13本と鉈の鞘の GLB（v0.75）：照合・対応表（アイテムID ← GLB）・ゲーム用の作り方（`tools/models/weapon_build.mjs`）・読み込みとフォールバック・光・確認・重さ・未確認 |
 | `docs/scale-armor-v2.md` | 鱗の防具の作り直し（v0.76）：STEP 0 の調査・新しい作り（体を測って沿わせる板・立体の鱗・亀裂・縁金と爪）・8種類の形・演出・確認・重さ・未解決 |
 | `docs/p2-investigation.md` | P2 統合指示書 v3.0 への初期調査（防具の原因・地理データ・スズキ・順序・確認事項） |
@@ -88,6 +89,7 @@
 | `docs/combat-aim.md` | 攻撃の向きと当たり判定（v0.58） |
 | `docs/hud-layout.md` | 画面の配置（v0.76.1）：手持ちバーはスマホでも下・PC の操作表と重ならない・指は離したときに選ぶ・確認 |
 
+- 拠点を真上から撮った図（施設の名前つき）：`python3 tools/base-topdown.py 出力.png [中心x 中心z 幅m]`。
 - KEI truck の GLB の確認画像：`python3 tools/kei-truck-studio.py 出力.png [broken|repaired|both] [views|parts|spin|person]`（6方向と上・車体と車輪を分けた姿・車輪を回した姿・人と並べた大きさ）。ゲーム用を作り直すときは `node tools/models/kei_truck_build.mjs`（設定 `tools/models/kei_truck.json`）。
 - 武器の GLB の確認画像：`python3 tools/weapon-studio.py 出力.png lineup|hand|holster|perf 武器ID …`（前の形との比較・手に持つ姿・腰と背中・重さ）。ゲーム用の GLB を作り直すときは `node tools/models/weapon_build.mjs [ID …]`（設定 `tools/models/weapons.json`。`tools/models` で npm install が要る）。
 - キャラクターの確認画像：`python3 tools/char-studio.py 出力.png player suzuki gen`（`player@forest` で防具の組を着せる。`STUDIO_POSE=1` で動きの姿勢。`STUDIO_HTML` で別の index.html）。鱗の防具（蒼鱗・変異した鱗）は `python3 tools/scale-armor-studio.py 出力.png`（全身）と `python3 tools/scale-armor-studio2.py 出力.png raw|blue fx|nofx|dark [pose]`（部位ごとの正面・横・背面・斜め／演出なし／暗い背景／ゲームの中の姿勢）。スズキの動き（待つ・歩く・走る・蹴り3種・倒れる・臭いの煙など、ゲームの中で）は `python3 tools/suzuki-pose-shots.py 出力.png [姿勢 …]`。動画は `python3 tools/suzuki-anim-video.py 出力.mp4`。スズキを連れたときの重さの目安は `python3 tools/suzuki-perf.py`。
