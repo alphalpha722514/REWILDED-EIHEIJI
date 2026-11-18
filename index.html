@@ -10117,6 +10117,16 @@ function p3aWin(gb,x,y,z,w,h,face,broken,frame=0x5b6066){ // face：+1/-1 は z 
   if(!broken){ B(ax?px+s*0.035:px,y,ax?pz:pz+s*0.035,0.05,h,0.03,frame); B(ax?px+s*0.04:px+(-w*0.18),y+h*0.1,ax?pz+(-w*0.18):pz+s*0.04,w*0.3,h*0.55,0.01,0x9fb4bf); }
   else { B(ax?px+s*0.04:px-w*0.3,y-h*0.25,ax?pz-w*0.3:pz+s*0.04,w*0.25,h*0.4,0.01,0x6b8794); } // 割れて残ったガラス
 }
+// 置き去りの軽トラック（コードの形。運転席・荷台・あおり）
+function p3aKeiTruck(g,P,h,rot,col){ g.frame(P[0],h,P[1],rot);
+  g.box(1.05,0.95,0,1.2,1.3,1.42,cc(col)); g.box(1.66,1.25,0,0.04,0.6,1.3,cc(0x2c3a44)); for(const sz of [-1,1]) g.box(1.05,1.25,sz*0.72,0.9,0.5,0.02,cc(0x2c3a44));
+  g.box(-0.5,0.65,0,1.95,0.08,1.42,cc(col)); for(const sz of [-1,1]) g.box(-0.5,0.85,sz*0.69,1.95,0.35,0.04,cc(col)); g.box(-1.46,0.85,0,0.04,0.35,1.42,cc(col)); g.box(0.42,1.05,0,0.06,0.8,1.42,cc(0x6d6f70));
+  g.box(0.3,0.38,0,3.0,0.18,1.2,cc(0x3a3a3a)); for(const dx of [1.1,-0.9]) for(const sz of [-1,1]) g.box(dx,0.3,sz*0.62,0.55,0.55,0.18,cc(0x1c1c1c)); }
+// 家の前の用水路：コンクリートの縁と水（地面より少し上に出す）。入口の前に渡し板。道路の上には作らない
+function p3aChannel(g,x,z,rot,c,s,lx0,lx1,lz,doorX){ const RS=p3aRoadSegs({x,z},Math.max(Math.abs(lx0),Math.abs(lx1))+Math.abs(lz)+10), seg=1.5;
+  for(let lx=lx0;lx<lx1;lx+=seg){ const cx=lx+seg/2, wx=x+cx*c-lz*s, wz=z+cx*s+lz*c; if(p3aOnRoad(RS,wx,wz)||kamiCls(wx,wz)===2) continue; const h=kamiH(wx,wz); g.frame(wx,h,wz,rot);
+    for(const sd of [-1,1]) g.box(0,0.12,sd*0.55,seg+0.02,0.36,0.14,cc(0x9c9a92)); g.box(0,0.06,0,seg+0.02,0.04,0.96,cc(0x4c6668)); if(((cx/seg)|0)%3===0) g.box(0,0.07,(hash2(wx,wz)-0.5)*0.5,0.4,0.02,0.18,cc(0x7f9a9a));
+    if(Math.abs(cx-doorX)<1.3) g.box(0,0.32,0,seg+0.02,0.08,1.3,cc(0xa9a69e)); } }
 function p3aGutter(gb,L,W,y,ov){ for(const sz of [-1,1]){ gb.box(0,y,sz*(W/2+ov),L+ov*2,0.12,0.14,cc(0x6d6f70)); } for(const sx of [-1,1]) for(const sz of [-1,1]) gb.box(sx*(L/2+ov-0.15),y/2,sz*(W/2+ov),0.1,y,0.1,cc(0x6d6f70)); } // 雨樋と縦樋
 function p3aVine(gb,x,y,z,w,h,face,rnd){ const ax=Math.abs(face)===2, s=Math.sign(face); for(let k=0;k<Math.round(w*h*2.2);k++){ const u=(rnd()-0.5)*w, v=rnd()*h*(1-Math.abs(u)/w); const sz=0.25+rnd()*0.45, col=cc([0x3f6a2e,0x4d7a35,0x35592a,0x5b8a3c][Math.floor(rnd()*4)]);
     if(ax) gb.box(x+s*0.12,y+v,z+u,0.12,sz,sz*1.2,col); else gb.box(x+u,y+v,z+s*0.12,sz*1.2,sz,0.12,col); } }
@@ -10189,30 +10199,55 @@ function p3aHouse(ctx,gb,yd,b,type,rnd){ const [x,z,l0,w0,rot]=b; const L=Math.m
   const y0=hmin-0.2, fh=Math.min(1.2,hmax-hmin+0.4); gb.frame(x,y0,z,rot); gb.seed=x*0.1;
   const TILE=0x2c3034, UNDER=0x3a332c, WHITE=0xe7e3d6, TIM=0x4a3a2c; let top=fh+3;
   const door={lx:0,lz:W/2,face:1}; // 玄関（屋内探索へ広げるときに使う）
-  if(type==='farm'||type==='farm2'){ // 農家住宅：白壁と柱、黒い瓦の入母屋、腰板、縁側の雨戸、雪よけの下屋
-    const h1=3.0, h2=2.9, big=type==='farm'; gb.box(0,fh/2,0,L+0.3,fh,W+0.3,cc(0x8a8478));
-    gb.box(0,fh+h1/2,0,L,h1,W,cc(WHITE)); gb.box(0,fh+0.55,0,L+0.06,1.1,W+0.06,cc(0x5a4634)); // 腰板
-    for(const sz of [-1,1]) for(let x2=-L/2;x2<=L/2+0.01;x2+=L/Math.max(2,Math.round(L/1.8))) gb.box(x2,fh+h1/2,sz*(W/2+0.03),0.16,h1,0.06,cc(TIM));
-    for(const sz of [-1,1]) for(let x2=-L/2+1.4;x2<L/2-1;x2+=2.6) p3aWin(gb,x2,fh+1.75,sz*W/2,1.5,1.0,sz,rnd()<0.3,0x6a5440);
-    if(big){ gb.box(0,fh+h1+h2/2,0,L*0.7,h2,W*0.72,cc(WHITE)); for(let x2=-L*0.3;x2<L*0.3;x2+=2.4) p3aWin(gb,x2,fh+h1+h2*0.64,W*0.36,1.3,0.8,1,rnd()<0.35,0x6a5440); }
-    // 2階建ては1階の屋根を低い下屋にして、2階の壁と窓を見せる
-    const rH=fh+h1, rh=big?1.05:W*0.24; roofHip(gb,L,W,rH,rh,0.9,cc(TILE),cc(UNDER)); if(big){ roofGable(gb,L*0.7,W*0.72,fh+h1+h2,W*0.26,0.7,cc(TILE),cc(UNDER)); for(const sx of [-1,1]) gb.tri([sx*L*0.35,fh+h1+h2,sx*W*0.36],[sx*L*0.35,fh+h1+h2,-sx*W*0.36],[sx*L*0.35,fh+h1+h2+W*0.26,0],cc(WHITE)); ridge(gb,L*0.7+0.6,fh+h1+h2+W*0.26,cc(TILE)); top=fh+h1+h2+W*0.26;
-      // 妻壁：束（縦の柱）と貫（横の材）の格子に白壁（永平寺町の農家の「真壁の大きな妻壁」。福井県「ふくいの伝統的民家」の説明による）
-      { const hw=W*0.36, yb=fh+h1, yt=fh+h1+h2, rr=W*0.26; for(const sx of [-1,1]){ const gx=sx*(L*0.35+0.04);
-        for(let zz=-hw;zz<=hw+0.01;zz+=hw/3){ const ht=yt+rr*(1-Math.abs(zz)/hw)-yb; gb.box(gx,yb+ht/2,zz,0.06,ht,0.16,cc(TIM)); }
-        for(const yy of [yb+0.95,yt,yt+rr*0.5]){ const w=yy<=yt?hw*2:hw*2*(1-(yy-yt)/rr); gb.box(gx,yy,0,0.07,0.14,w,cc(TIM)); } } }
-    } else top=rH+rh;
-    // 玄関（引き戸・庇）
-    gb.box(L*0.18,fh+1.05,W/2+0.05,1.9,2.1,0.06,cc(0x6a5440)); for(const dx of [-0.48,0.48]) gb.box(L*0.18+dx,fh+1.05,W/2+0.08,0.86,1.9,0.02,cc(0x8c7a62)); gb.box(L*0.18,fh+2.35,W/2+0.7,2.6,0.12,1.4,cc(TILE)); door.lx=L*0.18;
-    // 縁側の雨戸（南面の一部が閉まったまま）
-    gb.box(-L*0.2,fh+1.0,-W/2-0.05,L*0.45,1.9,0.06,cc(0x6b5a46)); for(let k=0;k<6;k++) gb.box(-L*0.2-L*0.2+k*L*0.08,fh+1.0,-W/2-0.09,0.02,1.9,0.02,cc(0x4a3a2c));
-    p3aGutter(gb,L,W,rH-0.05,0.85); p3aVine(gb,-L/2,fh,0,W*0.6,2.2,-2,rnd);
-    // 庭：松・植え込み・灯油タンク・耕運機・物干し・稲架
-    const P_=(lx,lz)=>[x+lx*c-lz*s,z+lx*s+lz*c];
-    { const [wx,wz]=P_(-L/2-1.6,W/2+2.5); const h=kamiH(wx,wz); yd.frame(wx,h,wz,rot); yd.box(0,0.8,0,0.18,1.6,0.18,cc(0x5a4632)); for(let k=0;k<4;k++) yd.box((rnd()-0.5)*1.2,1.4+k*0.35,(rnd()-0.5)*1.2,1.4-k*0.2,0.35,1.1-k*0.15,cc(0x2f5a2c)); }
+  const P_=(lx,lz)=>[x+lx*c-lz*s,z+lx*s+lz*c];
+  if(type==='farm'){ // 農家（妻入り）：道に向けた大きな妻壁（白壁に束と貫の黒い格子）、黒い板張りの壁、前の深い下屋、片側に土蔵。
+    // 参考：福井県「ふくいの伝統的民家」の永平寺町の農家の説明、ユーザー提供のストリートビューの画面（2026-11-18）
+    const h1=3.0, h2=2.7, E=fh+h1+h2, rr=L*0.3, DARK=0x3a3330, BOARD=0x2a2522, SID=0x8a6e58;
+    gb.box(0,fh/2,0,L+0.3,fh,W+0.3,cc(0x8a8478)); // 基礎
+    gb.box(0,fh+(h1+h2)/2,0,L,h1+h2,W,cc(DARK)); // 黒い板張りの壁
+    for(const sx of [-1,1]) for(let z2=-W/2+0.3;z2<W/2;z2+=0.6) gb.box(sx*(L/2+0.02),fh+(h1+h2)/2,z2,0.03,h1+h2,0.05,cc(BOARD)); // 縦の目板
+    for(const sx of [-1,1]) gb.box(sx*(L/2+0.03),fh+h1*0.55,0,0.03,h1*0.9,W*0.6,cc(SID)); // 後から張った茶色の波板（下の半分）
+    for(const sx of [-1,1]) for(let z2=-W/2+2;z2<W/2-1.5;z2+=3.2) p3aWin(gb,sx*L/2,fh+h1+h2*0.55,z2,1.2,0.85,sx*2,rnd()<0.3,0x8a9093); // 2階の窓（横）
+    for(const sz of [-1,1]){ const zf=sz*(W/2+0.03); // 妻壁（前と後ろ）
+      gb.box(0,fh+h1+h2/2,zf,L,h2,0.05,cc(WHITE)); gb.tri([-sz*L/2,E,zf],[sz*L/2,E,zf],[0,E+rr,zf],cc(WHITE));
+      const zt=zf+sz*0.04; gb.box(0,fh+h1,zt,L+0.2,0.28,0.12,cc(TIM)); gb.box(0,E,zt,L+0.1,0.22,0.1,cc(TIM)); // 2階の床の梁・軒の梁
+      for(let k=-3;k<=3;k++){ const xx=k*L/6, ht=E+rr*(1-Math.abs(xx)/(L/2))-(fh+h1); if(ht>0.2) gb.box(xx,fh+h1+ht/2,zt,0.15,ht,0.07,cc(TIM)); } // 束
+      for(const yy of [fh+h1+h2*0.5,E+rr*0.42]){ const w=yy<=E?L:L*(1-(yy-E)/rr); gb.box(0,yy,zt,w,0.12,0.06,cc(TIM)); } // 貫
+      if(sz>0){ for(const xx of [-L*0.25,L*0.25]) p3aWin(gb,xx,fh+h1+h2*0.5,W/2+0.05,1.3,0.85,1,rnd()<0.35,0x8a9093); } }
+    gb.frame(x,y0,z,rot+Math.PI/2); roofGable(gb,W,L,E,rr,0.9,cc(TILE),cc(UNDER)); ridge(gb,W+1.8,E+rr,cc(TILE)); gb.frame(x,y0,z,rot); // 瓦の切妻（棟は奥へ向かう＝妻入り）
+    top=E+rr;
+    // 前の下屋（深い庇）：入口の格子の引き戸と、ガラスの引き戸
+    { const d=2.0, yA=fh+h1-0.05, yB=yA-0.65, xa=-L/2-0.3, xb=L/2+0.3, zA=W/2, zB=W/2+d;
+      gb.quad([xa,yA,zA],[xa,yB,zB],[xb,yB,zB],[xb,yA,zA],cc(TILE)); gb.quad([xa,yA-0.12,zA],[xb,yA-0.12,zA],[xb,yB-0.12,zB],[xa,yB-0.12,zB],cc(UNDER));
+      gb.box(0,yB-0.1,zB,L+0.6,0.2,0.08,cc(TIM)); for(let xx=-L/2;xx<=L/2+0.01;xx+=L/4) gb.box(xx,(fh+yB)/2,zB-0.15,0.18,yB-fh,0.18,cc(TIM));
+      gb.box(L*0.15,fh+1.05,W/2+0.06,2.4,2.1,0.06,cc(0x2a2420)); for(let k=0;k<12;k++) gb.box(L*0.15-1.1+k*0.2,fh+1.05,W/2+0.1,0.04,2.0,0.03,cc(0x5a4634)); // 格子の引き戸
+      gb.box(-L*0.22,fh+1.0,W/2+0.06,L*0.38,1.9,0.05,cc(0xd8dcd6)); for(let k=0;k<=4;k++) gb.box(-L*0.22-L*0.19+k*L*0.095,fh+1.0,W/2+0.09,0.06,1.9,0.03,cc(0x6d6f70)); door.lx=L*0.15; }
+    // 土蔵（片側の奥に続く）：白壁・下は黒い板・瓦の切妻・小さな窓
+    { const kx=-L/2-2.5, kz=-W/2+2.9, KL=4.4, KW=5.0, KH=5.0; gb.box(kx,fh/2,kz,KL+0.2,fh,KW+0.2,cc(0x8a8478)); gb.box(kx,fh+KH/2,kz,KL,KH,KW,cc(0xe9e5d8)); gb.box(kx,fh+0.9,kz,KL+0.04,1.8,KW+0.04,cc(BOARD));
+      gb.box(kx,fh+KH*0.7,kz+KW/2+0.05,0.8,0.8,0.08,cc(0x2a2522)); gb.frame(x+kx*c-kz*s,y0,z+kx*s+kz*c,rot+Math.PI/2); roofGable(gb,KW,KL,fh+KH,KL*0.32,0.5,cc(TILE),cc(UNDER)); ridge(gb,KW+1,fh+KH+KL*0.32,cc(TILE)); gb.frame(x,y0,z,rot);
+      for(const sz of [-1,1]) gb.tri([kx-sz*KL/2,fh+KH,kz+sz*(KW/2+0.02)],[kx+sz*KL/2,fh+KH,kz+sz*(KW/2+0.02)],[kx,fh+KH+KL*0.32,kz+sz*(KW/2+0.02)],cc(0xe9e5d8));
+      const [wx,wz]=P_(kx,kz); ctx.obox(wx,wz,KL+0.3,KW+0.3,rot,'house',{h:y0+fh+KH+KL*0.32}); }
+    for(const sx of [-1,1]){ gb.box(sx*(L/2+0.85),E-0.05,0,0.14,0.12,W+1.8,cc(0x6d6f70)); for(const sz of [-1,1]) gb.box(sx*(L/2+0.85),(E-0.05)/2,sz*(W/2+0.75),0.1,E-0.05,0.1,cc(0x6d6f70)); } // 雨樋（軒は横の面）
+    p3aVine(gb,L/2,fh,-W*0.1,W*0.5,2.4,2,rnd);
+    // 庭：松・灯油タンク・耕運機・稲架・置き去りの軽トラ・石垣
+    { const [wx,wz]=P_(-L/2-1.4,W/2+3.0); const h=kamiH(wx,wz); yd.frame(wx,h,wz,rot); yd.box(0,0.8,0,0.18,1.6,0.18,cc(0x5a4632)); for(let k=0;k<4;k++) yd.box((rnd()-0.5)*1.2,1.4+k*0.35,(rnd()-0.5)*1.2,1.4-k*0.2,0.35,1.1-k*0.15,cc(0x2f5a2c)); }
     { const [wx,wz]=P_(L/2+1.1,-W/2+1.2); const h=kamiH(wx,wz); yd.frame(wx,h,wz,rot); yd.box(0,0.55,0,0.62,0.62,1.05,cc(0xd8dad6)); for(const dz of [-0.4,0.4]) yd.box(0,0.12,dz,0.5,0.24,0.06,cc(0x6d6f70)); } // 灯油タンク
     { const [wx,wz]=P_(L/2+2.4,W/2+1.4); const h=kamiH(wx,wz); yd.frame(wx,h,wz,rot+0.4); yd.box(0,0.45,0,1.1,0.5,0.6,cc(0xd04a2a)); yd.box(-0.3,0.85,0,0.4,0.3,0.4,cc(0x3a3a3a)); for(const dz of [-0.36,0.36]) yd.box(0.3,0.25,dz,0.45,0.45,0.14,cc(0x1c1c1c)); yd.box(-1.0,0.75,0,1.0,0.05,0.05,cc(0x9a9fa3)); } // 耕運機
     { const [wx,wz]=P_(-L/2-3,-W/2-2); const h=kamiH(wx,wz); yd.frame(wx,h,wz,rot); for(const dx of [-2,2]) yd.box(dx,1.1,0,0.1,2.2,0.1,cc(0x6b5a46)); for(let k=0;k<3;k++) yd.box(0,1.2+k*0.35,0,4.2,0.05,0.05,cc(0x6b5a46)); yd.box(0,0.95,0,3.6,0.6,0.25,cc(0xb89a5a)); } // 稲架（はさ）
+    p3aKeiTruck(yd,P_(L/2+3.4,W/2+4.6),kamiH(...P_(L/2+3.4,W/2+4.6)),rot+0.15,0xb8bcbc);
+    { const RS=p3aRoadSegs({x,z},L+20); for(let zz=-W/2;zz<W/2+3;zz+=0.9){ const [wx,wz]=P_(-L/2-5.6,zz); if(p3aOnRoad(RS,wx,wz)) continue; const h=kamiH(wx,wz), sz=0.55+rnd()*0.35; yd.frame(wx,h,wz,rot+rnd()*0.6); yd.box(0,sz*0.35,0,sz*1.3,sz*0.75,sz,cc([0x8a857a,0x77736a,0x9a9488][Math.floor(rnd()*3)])); } } // 石垣
+    p3aChannel(yd,x,z,rot,c,s,-L/2-4,L/2+6,W/2+6.4,L*0.15); // 家の前の用水路（コンクリート）と入口の渡し板
+  } else if(type==='farm2'){ // 町家風（平入り）：道に長い面を向け、1階の前に通し庇、格子戸とガラスの引き戸、波板の壁、2階の窓に手すり（参考：ユーザー提供の画面）
+    const h1=3.0, h2=2.6, E=fh+h1+h2, rh=W*0.2, WALL=0xa08c6c;
+    gb.box(0,fh/2,0,L+0.3,fh,W+0.3,cc(0x8a8478)); gb.box(0,fh+(h1+h2)/2,0,L,h1+h2,W,cc(WALL));
+    for(const sz of [-1,1]) for(let x2=-L/2+0.2;x2<L/2;x2+=0.35) gb.box(x2,fh+h1+h2/2,sz*(W/2+0.02),0.03,h2,0.03,cc(0x8a7658)); // 2階の波板の筋
+    gb.box(-L*0.2,fh+1.05,W/2+0.05,L*0.5,2.0,0.05,cc(0xdcded8)); for(let k=0;k<=6;k++) gb.box(-L*0.45+k*L/12,fh+1.05,W/2+0.08,0.06,2.0,0.03,cc(0x6d6f70)); gb.box(-L*0.2,fh+1.6,W/2+0.08,L*0.5,0.05,0.03,cc(0x6d6f70)); // ガラスの引き戸（すりガラス）
+    gb.box(L*0.25,fh+1.05,W/2+0.05,2.6,2.1,0.05,cc(0x3a2c22)); for(let k=0;k<14;k++) gb.box(L*0.25-1.25+k*0.19,fh+1.05,W/2+0.09,0.05,2.0,0.03,cc(0x6a5240)); gb.box(L*0.25,fh+0.3,W/2+0.09,2.6,0.4,0.03,cc(0xc8865a)); door.lx=L*0.25; // 格子戸
+    for(let x2=-L/2+1.6;x2<L/2-1;x2+=2.8){ p3aWin(gb,x2,fh+h1+h2*0.5,W/2,1.5,1.0,1,rnd()<0.3,0x8a9093); gb.box(x2,fh+h1+0.55,W/2+0.35,1.7,0.05,0.05,cc(0x6d6f70)); for(const dx of [-0.8,0.8]) gb.box(x2+dx,fh+h1+0.3,W/2+0.35,0.05,0.5,0.05,cc(0x6d6f70)); } // 2階の窓と手すり
+    { const d=1.3, yA=fh+h1-0.05, yB=yA-0.45; gb.quad([-L/2-0.3,yA,W/2],[-L/2-0.3,yB,W/2+d],[L/2+0.3,yB,W/2+d],[L/2+0.3,yA,W/2],cc(TILE)); gb.quad([-L/2-0.3,yA-0.1,W/2],[L/2+0.3,yA-0.1,W/2],[L/2+0.3,yB-0.1,W/2+d],[-L/2-0.3,yB-0.1,W/2+d],cc(UNDER)); gb.box(0,yB-0.08,W/2+d,L+0.6,0.16,0.06,cc(0x6a5240)); } // 通し庇
+    roofGable(gb,L,W,E,rh,0.7,cc(TILE),cc(UNDER)); ridge(gb,L+1.4,E+rh,cc(TILE)); for(const sx of [-1,1]) gb.tri([sx*L/2,E,sx*W/2],[sx*L/2,E,-sx*W/2],[sx*L/2,E+rh,0],cc(WALL)); top=E+rh;
+    p3aGutter(gb,L,W,E-0.05,0.75);
+    { const [wx,wz]=P_(L/2+1.0,-W/2+1.4); const h=kamiH(wx,wz); yd.frame(wx,h,wz,rot); yd.box(0,0.55,0,0.62,0.62,1.05,cc(0xd8dad6)); } // 灯油タンク
   } else if(type==='modern'||type==='modern2'){ // 一般住宅：2階建て、サイディング、金属の寄棟、雪止め、ベランダ、カーポート
     const h=5.5, col=cc(type==='modern'?0xcfc8b8:0xb9c2c4), roofC=cc(type==='modern'?0x4a3c34:0x3c4a56); gb.box(0,fh/2,0,L+0.2,fh,W+0.2,cc(0x9a968e));
     gb.box(0,fh+h/2,0,L,h,W,col); for(let y=fh+0.3;y<fh+h;y+=0.3) for(const sz of [-1,1]) gb.box(0,y,sz*(W/2+0.02),L,0.02,0.02,cc(0xa7a090));
@@ -10227,10 +10262,12 @@ function p3aHouse(ctx,gb,yd,b,type,rnd){ const [x,z,l0,w0,rot]=b; const L=Math.m
       yd.box(-0.6,0.65,0.5,1.5,0.9,3.1,cc(type==='modern'?0x8a2a2a:0xd6d6d0)); yd.box(-0.6,1.3,0.2,1.4,0.55,1.7,cc(0x2c3a44)); for(const dx of [-0.65,0.65]) for(const dz of [-0.9,1.6]) yd.box(-0.6+dx,0.28,0.5+dz,0.16,0.5,0.5,cc(0x1c1c1c)); // 置き去りの車（コードの形）
       yd.frame(wx+1.6,h0,wz,rot+1.1); yd.box(0,0.35,0,1.5,0.05,0.04,cc(0x2f6a8a)); for(const dx of [-0.6,0.6]){ yd.box(dx,0.32,0,0.04,0.62,0.62,cc(0x222222)); } } // 倒れた自転車
     { const [wx,wz]=P_(-L/2-1.2,W/2+0.4); const h0=kamiH(wx,wz); yd.frame(wx,h0,wz,rot); for(let k=0;k<5;k++) yd.box(0,0.2+k*0.2,0,0.2,0.19,3.0,cc(0xb0aca2)); } // ブロック塀
-  } else if(type==='barn'){ // 農業倉庫：大きな金属の切妻、引き戸、さび、前に農機具
-    const h=4.2, col=cc(0x8d969a), roofC=cc(0x7a6650); gb.box(0,0.15,0,L+0.2,0.3,W+0.2,cc(0x9a968e)); gb.box(0,0.3+h/2,0,L,h,W,col);
-    for(const sz of [-1,1]) for(let x2=-L/2+0.4;x2<L/2;x2+=0.8) gb.box(x2,0.3+h/2,sz*(W/2+0.03),0.1,h-0.1,0.04,cc(hash2(x2,sz)<0.2?0x8a6a4c:0x7d878b));
-    gb.box(0,0.3+1.6,W/2+0.08,L*0.55,3.2,0.08,cc(0x6f797d)); gb.box(L*0.15,0.3+1.6,W/2+0.04,L*0.25,3.0,0.06,cc(0x111214)); // 半分開いた引き戸
+  } else if(type==='barn'){ // 農業倉庫・作業場：錆びた赤い波板の壁、上は灰色の波板、正面にガラスの引き戸とシャッター（参考：ユーザー提供の画面の錆びた作業場）
+    const h=4.8, col=cc(0x8e4a34), roofC=cc(0x7c8084); gb.box(0,0.15,0,L+0.2,0.3,W+0.2,cc(0x9a968e)); gb.box(0,0.3+h/2,0,L,h,W,col); gb.box(0,0.3+h-0.6,0,L+0.02,1.2,W+0.02,cc(0x8f9496));
+    for(const sz of [-1,1]) for(let x2=-L/2+0.2;x2<L/2;x2+=0.3) gb.box(x2,0.3+(h-1.2)/2,sz*(W/2+0.03),0.06,h-1.2,0.03,cc(hash2(x2*3,sz)<0.3?0xa65a3a:hash2(x2,sz*2)<0.2?0x6e3a2a:0x7d4230)); // 錆の濃淡の筋
+    gb.box(-L*0.18,0.3+1.3,W/2+0.06,L*0.4,2.6,0.05,cc(0xc8ccc8)); for(let k=0;k<=4;k++) gb.box(-L*0.38+k*L*0.1,0.3+1.3,W/2+0.09,0.06,2.6,0.03,cc(0x9aa0a6)); // ガラスの引き戸
+    gb.box(L*0.3,0.3+1.4,W/2+0.06,L*0.3,2.8,0.05,cc(0xb4b8b8)); for(let k=0;k<10;k++) gb.box(L*0.3,0.45+k*0.28,W/2+0.09,L*0.3,0.03,0.02,cc(0x8a9093)); // シャッター
+    for(const xx of [-L*0.25,L*0.1]) p3aWin(gb,xx,0.3+h-0.6,W/2+0.02,1.1,0.7,1,rnd()<0.5,0x8a9093); // 上の窓
     const rh=W*0.2; roofGable(gb,L,W,0.3+h,rh,0.5,roofC,cc(UNDER)); for(const sx of [-1,1]) gb.tri([sx*L/2,0.3+h,sx*W/2],[sx*L/2,0.3+h,-sx*W/2],[sx*L/2,0.3+h+rh,0],col); top=0.3+h+rh;
     const P_=(lx,lz)=>[x+lx*c-lz*s,z+lx*s+lz*c]; const [wx,wz]=P_(-L*0.15,W/2+2.6); const h0=kamiH(wx,wz); yd.frame(wx,h0,wz,rot);
     yd.box(0,0.9,0,1.8,1.0,1.1,cc(0xd25a2a)); yd.box(-0.4,1.6,0,0.7,0.5,0.8,cc(0x2a2a2a)); for(const dz of [-0.6,0.6]){ yd.box(0.6,0.55,dz,1.1,1.1,0.3,cc(0x1c1c1c)); yd.box(-0.7,0.35,dz,0.7,0.7,0.24,cc(0x1c1c1c)); } // 小さいトラクター
@@ -10251,7 +10288,7 @@ function p3aHouse(ctx,gb,yd,b,type,rnd){ const [x,z,l0,w0,rot]=b; const L=Math.m
     p3aGutter(gb,L,W,fh+h1+h2-0.05,0.55); door.lx=0;
   }
   ctx.obox(x,z,L+0.3,W+0.3,rot,'house',{h:y0+top});
-  const P_=(lx,lz)=>[x+lx*c-lz*s,z+lx*s+lz*c]; const [dx,dz]=P_(door.face===2?door.lx+1.2:door.lx,door.face===2?0:door.lz+1.2);
+  const [dx,dz]=P_(door.face===2?door.lx+1.2:door.lx,door.face===2?0:door.lz+1.2);
   P3A.doors.push({id:'house'+b.idx,x:dx,z:dz,type,label:'（家の中の探索は P3-E。入口の位置だけ決めた）',future:true});
   return y0+top; }
 function p3aBuildHouses(ctx){ const D=KAMI.D, gb=new GB(), yd=new GB(), rnd=p3aRng(911); gb.jit=0.05; yd.jit=0.05;
@@ -10263,9 +10300,14 @@ function p3aBuildHouses(ctx){ const D=KAMI.D, gb=new GB(), yd=new GB(), rnd=p3aR
     for(let t=0;t<Ls;t+=2){ const px=ax+(bx-ax)*t/Ls, pz=az+(bz-az)*t/Ls; for(const sd of [-1,1]){ const gx=px+nx*sd*(road.w/2+0.35), gz=pz+nz*sd*(road.w/2+0.35); const h=kamiH(gx,gz); st.frame(gx,h,gz,Math.atan2(bz-az,bx-ax)); st.box(0,0.02,0,2.05,0.08,0.5,cc(0x8f8b84)); st.box(0,0.035,0,2.0,0.06,0.3,cc(0x55534e)); if(((acc+t)/2|0)%3===0) for(let k=-3;k<=3;k++) st.box(k*0.25,0.08,0,0.04,0.02,0.3,cc(0x3a3a3a)); } } // 側溝と網の蓋
     while(acc+Ls>=poles.length*32){ const t=poles.length*32-acc; if(t>Ls) break; const px=ax+(bx-ax)*t/Ls+nx*(road.w/2+1.0), pz=az+(bz-az)*t/Ls+nz*(road.w/2+1.0); poles.push([px,pz,Math.atan2(bz-az,bx-ax)]); }
     acc+=Ls; }
-  for(const [px,pz,a] of poles){ const h=kamiH(px,pz); st.frame(px,h,pz,a); st.box(0,4.4,0,0.32,8.8,0.32,cc(0xb8b6ae)); st.box(0,8.2,0,0.12,0.12,2.2,cc(0x6d6f70)); st.box(0,7.7,0.6,0.5,0.7,0.5,cc(0x8a9093)); for(let k=0;k<6;k++) st.box(0,2+k*0.45,0.17,0.06,0.04,0.12,cc(0x7a7d80)); ctx.circle(px,pz,0.3,'pole',{h:h+8.8}); }
-  for(let i=0;i<poles.length-1;i++){ const [ax,az]=poles[i],[bx,bz]=poles[i+1], ha=kamiH(ax,az)+8.2, hb=kamiH(bx,bz)+8.2; for(const off of [-0.9,0,0.9]){ const n=6; for(let k=0;k<n;k++){ const t0=k/n, t1=(k+1)/n, sag=t=>-Math.sin(t*Math.PI)*0.5; const x0=lerp(ax,bx,t0), z0=lerp(az,bz,t0), x1=lerp(ax,bx,t1), z1=lerp(az,bz,t1), a2=Math.atan2(z1-z0,x1-x0), L2=dist(x0,z0,x1,z1);
-        st.frame((x0+x1)/2-Math.sin(a2)*off,(lerp(ha,hb,t0)+sag(t0)+lerp(ha,hb,t1)+sag(t1))/2,(z0+z1)/2+Math.cos(a2)*off,a2); st.box(0,0,0,L2,0.03,0.03,cc(0x1c1c1c)); } } } // 電線（少したるむ）
+  if(poles.length>1){ const [px,pz,a]=poles[1], bx=px+Math.cos(a)*4, bz=pz+Math.sin(a)*4, h=kamiH(bx,bz); st.frame(bx,h,bz,a); st.box(0,0.12,0,0.5,0.24,0.5,cc(0x9a968e)); st.box(0,1.3,0,0.08,2.6,0.08,cc(0xd8d8d2)); for(let k=0;k<5;k++) st.box(0,0.4+k*0.4,0.05,0.09,0.2,0.02,cc(0xc83a2a)); // バス停の標識（赤い丸・時刻表の板）
+    st.box(0,2.55,0,0.04,0.62,0.62,cc(0xc83a2a)); st.box(0,2.55,0,0.06,0.44,0.44,cc(0xf0eee6)); st.box(0,1.6,0.06,0.03,0.5,0.36,cc(0xf0eee6)); ctx.circle(bx,bz,0.25,'pole',{h:h+2.8}); }
+  for(const [px,pz,a] of poles){ const h=kamiH(px,pz); st.frame(px,h,pz,a); st.box(0,4.4,0,0.32,8.8,0.32,cc(0xb8b6ae)); st.box(0,8.2,0,0.12,0.12,2.2,cc(0x6d6f70)); st.box(0,7.0,0,0.1,0.1,1.6,cc(0x6d6f70)); st.box(0,7.7,0.6,0.5,0.7,0.5,cc(0x8a9093)); st.box(0,5.6,0.2,0.14,0.14,0.4,cc(0x3a3a3a)); for(let k=0;k<6;k++) st.box(0,2+k*0.45,0.17,0.06,0.04,0.12,cc(0x7a7d80)); ctx.circle(px,pz,0.3,'pole',{h:h+8.8}); }
+  for(let i=0;i<poles.length-1;i++){ const [ax,az]=poles[i],[bx,bz]=poles[i+1], ha=kamiH(ax,az)+8.2, hb=kamiH(bx,bz)+8.2, Lp=dist(ax,az,bx,bz)||1, ux=-(bz-az)/Lp, uz=(bx-ax)/Lp, sag=t=>-Math.sin(t*Math.PI)*0.55; st.frame(0,0,0,0);
+    for(const [off,hy,th] of [[-0.9,0,0.035],[0,0,0.035],[0.9,0,0.035],[-0.6,-1.2,0.035],[0,-1.2,0.035],[0.6,-1.2,0.035],[0.25,-2.6,0.08]]){ const n=10, col=cc(0x1c1c1c); // 電線：高圧3本・低圧3本・太い通信線1本。たるみに沿ってつないだ細い帯（縦と横の2枚）
+      const P=t=>[lerp(ax,bx,t)+ux*off,lerp(ha,hb,t)+sag(t)+hy,lerp(az,bz,t)+uz*off];
+      for(let k=0;k<n;k++){ const p0=P(k/n), p1=P((k+1)/n), up=(p,d)=>[p[0],p[1]+d,p[2]], sd=(p,d)=>[p[0]+ux*d,p[1],p[2]+uz*d];
+        st.quad(p0,p1,up(p1,th),up(p0,th),col); st.quad(p1,p0,up(p0,th),up(p1,th),col); st.quad(sd(p0,-th/2),sd(p1,-th/2),sd(p1,th/2),sd(p0,th/2),col); st.quad(sd(p1,-th/2),sd(p0,-th/2),sd(p0,th/2),sd(p1,th/2),col); } } }
   { const [ex,ez]=pts[0]; const h=kamiH(ex+2,ez-3); st.frame(ex+2,h,ez-3,0.3); st.box(0,1.4,0,0.1,2.8,0.1,cc(0xd8782a)); st.box(0,2.85,0.2,0.08,0.08,0.4,cc(0xd8782a)); st.box(0,2.85,0.45,0.75,0.75,0.08,cc(0xd8782a)); st.box(0,2.85,0.5,0.62,0.62,0.02,cc(0xa9c4cc)); // カーブミラー
     st.frame(ex+4,kamiH(ex+4,ez+4),ez+4,0); st.box(0,1.1,0,0.08,2.2,0.08,cc(0xa0a4a8)); st.tri([0,2.55,0.05],[-0.42,1.85,0.05],[0.42,1.85,0.05],cc(0xc02a2a)); } // 止まれ
   const sm=new THREE.Mesh(ctx.own(st.geo()),vcMat); sm.receiveShadow=true; ctx.add(sm);
@@ -10452,15 +10494,17 @@ async function p3aEnter(door){ if(P3A.busy||P3A.inside) return; P3A.busy=true; S
   const I=p3aInteriorBuild(); P3A.ret={x:P.x,z:P.z,f:P.facing,hfn:REG.hfn}; I.g.visible=true; for(const c of I.cols) if(!c.off) c.active=true;
   if(REG.live) REG.live.group.visible=false; P3A.inside=true; REG.inB={minX:P3A_IN.x-1,maxX:P3A_IN.x+81,minZ:P3A_IN.z-1,maxZ:P3A_IN.z+19}; REG.hfn=(x,z)=>(x>P3A_IN.x-10&&z>P3A_IN.z-10)?0:P3A.ret.hfn(x,z);
   P.x=P3A_IN.x+2.2; P.z=P3A_IN.z+8.5; P.facing=Math.PI/2; cam.yaw=Math.PI/2;
+  p3aSzFollow(); // スズキも一緒に入る（2026-11-18 ユーザー回答「入る」。待たせているとき・倒れているときは外に残る）
   await stfWait(250); S.mode='playing'; await stfFade(false); P3A.busy=false; toast('拠点本部の候補の中（試作）。部屋の並びは案です'); }
 async function p3aExit(){ if(P3A.busy||!P3A.inside) return; P3A.busy=true; S.mode='dialog'; await stfFade(true); const I=P3A.interior;
   I.g.visible=false; for(const c of I.cols) c.active=false; if(REG.live) REG.live.group.visible=true; P3A.inside=false; REG.inB=null; REG.hfn=P3A.ret.hfn;
-  P.x=P3A.ret.x; P.z=P3A.ret.z; P.facing=P3A.ret.f+Math.PI; cam.yaw=P.facing; await stfWait(250); S.mode='playing'; await stfFade(false); P3A.busy=false; }
+  const szIn=typeof szHere==='function'&&szHere()&&SZ.x>P3A_IN.x-60; P.x=P3A.ret.x; P.z=P3A.ret.z; P.facing=P3A.ret.f+Math.PI; cam.yaw=P.facing; if(szIn){ SZ.crumbs.length=0; szPlaceBehind(); } /* 中にいたスズキも外へ */ await stfWait(250); S.mode='playing'; await stfFade(false); P3A.busy=false; }
 function p3aMove(dx,dz){ P.x+=dx; P.z+=dz; }
+function p3aSzFollow(){ if(typeof szHere!=='function'||!szHere()||SZ.order!=='follow'||SZ.down) return false; szCombatReset(); szRescueCancel(); SZ.crumbs.length=0; szPlaceBehind(); return true; } // ついて来ているスズキを主人公の後ろへ
 function p3aInteractables(L){ if(!P3A.on||REG.cur!=='kamishihi') return;
   if(P3A.inside){ const I=P3A.interior; for(const k of I.marks){ const d=dist(P.x,P.z,k.x,k.z); if(d>1.8) continue;
-      L.push({d,label:k.label,act:()=>{ if(k.exit) p3aExit(); else if(k.up){ (async()=>{ S.mode='dialog'; await stfFade(true); P.x=P3A_IN.x+44+3; P.z=P3A_IN.z+2; await stfWait(200); S.mode='playing'; await stfFade(false); })(); }
-        else if(k.down){ (async()=>{ S.mode='dialog'; await stfFade(true); P.x=P3A_IN.x+26; P.z=P3A_IN.z+15; await stfWait(200); S.mode='playing'; await stfFade(false); })(); } else toast(k.label.replace(/（.*$/,'')+'：P3-B で調べられるようにする'); }}); } return; }
+      L.push({d,label:k.label,act:()=>{ if(k.exit) p3aExit(); else if(k.up){ (async()=>{ S.mode='dialog'; await stfFade(true); P.x=P3A_IN.x+44+3; P.z=P3A_IN.z+2; p3aSzFollow(); await stfWait(200); S.mode='playing'; await stfFade(false); })(); }
+        else if(k.down){ (async()=>{ S.mode='dialog'; await stfFade(true); P.x=P3A_IN.x+26; P.z=P3A_IN.z+15; p3aSzFollow(); await stfWait(200); S.mode='playing'; await stfFade(false); })(); } else toast(k.label.replace(/（.*$/,'')+'：P3-B で調べられるようにする'); }}); } return; }
   for(const dr of P3A.doors){ if(dr.future) continue; const d=dist(P.x,P.z,dr.x,dr.z); if(d<2.6) L.push({d,label:dr.label,act:()=>p3aEnter(dr)}); } }
 let P3A_SND=null;
 function p3aUpdate(dt){ if(!P3A.on) return; P3A.t+=dt; if(P3A.waterU) P3A.waterU.value=P3A.t; const M=P3A.mats; if(M&&M.swayU) M.swayU.value=P3A.t;
@@ -11106,8 +11150,8 @@ function szFree(x,z,r){ for(const b of gridQuery(x-r,x+r,z-r,z+r)){ if(b.active=
     else if(b.k==='o'){ const dx=x-b.x, dz=z-b.z, lx=dx*b.c+dz*b.s, lz=-dx*b.s+dz*b.c; if(Math.abs(lx)<b.hx+r&&Math.abs(lz)<b.hz+r) return false; }
     else if(x+r>b.minX&&x-r<b.maxX&&z+r>b.minZ&&z-r<b.maxZ) return false; }
   return true; }
-function szWalkable(x,z){ if(isWater(x,z)) return false; const B=BOUNDS; if(x<B.minX+0.5||x>B.maxX-0.5||z<B.minZ+0.5||z>B.maxZ-0.5) return false;
-  if(REG.cur==='kamishihi'&&KAMI&&!kamiReach(x,z)) return false; return true; }
+function szWalkable(x,z){ if(isWater(x,z)) return false; const inn=REG.inB&&x>REG.inB.minX-60, B=inn?REG.inB:BOUNDS; if(x<B.minX+0.5||x>B.maxX-0.5||z<B.minZ+0.5||z>B.maxZ-0.5) return false; // P3-A 試作：屋内の場ではその範囲で
+  if(REG.cur==='kamishihi'&&KAMI&&!inn&&!kamiReach(x,z)) return false; return true; }
 // まっすぐ歩いて行けるか（0.5m おきに調べる）
 function szLine(ax,az,bx,bz){ const d=dist(ax,az,bx,bz), n=Math.ceil(d/0.5); for(let i=1;i<n;i++){ const t=i/n, x=ax+(bx-ax)*t, z=az+(bz-az)*t; if(!szFree(x,z,SZA.r*0.8)||!szWalkable(x,z)) return false; } return true; }
 function szSpotOK(x,z,minEnemy=6){ if(!szFree(x,z,SZA.r+0.08)||!szWalkable(x,z)) return false; if(Math.abs(groundH(x,z)-groundH(P.x,P.z))>2.5) return false;
