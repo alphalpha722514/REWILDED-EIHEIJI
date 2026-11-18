@@ -120,7 +120,7 @@
 - `chapter2.progress` は中身をそのまま保存する（v0.55 から）ので、読み込みの直しは要らない。保存キー・`v:1` は変えていない。
 
 ## 5. 確認
-`python3 tests/kei-truck-systems-browser.py`（画面のない Chromium・SwiftShader。約15分。`KTS_SHOTS=フォルダ` で横転・車両基地・荷台・運搬の画面）。結果は §6。
+`python3 tests/kei-truck-systems-browser.py`（画面のない Chromium・SwiftShader。約12〜15分。`KTS_SHOTS=フォルダ` で横転・車両基地・荷台・運搬の画面）。結果は §6。
 
 ## 6. テスト結果（2026-11-17、画面のない Chromium・SwiftShader。実機ではない）
 
@@ -149,7 +149,7 @@
 
 ## 6b. テスト結果（v0.79、2026-11-18、画面のない Chromium・SwiftShader。実機ではない）
 
-`tests/kei-truck-systems-browser.py` に v0.79 の確認を足した（約25分）。主なもの：
+`tests/kei-truck-systems-browser.py` に v0.79 の確認を足した：**58項目すべて ok**（約12分）。主なもの：
 
 | 項目 | 結果 |
 |---|---|
@@ -166,6 +166,8 @@
 | 配置 | 拠点の中の杉 0本。車両基地の中心から丸太置き場 7.7m・作業台 10.3m |
 | セーブ | 燃料・車体・段階・荷台（保冷箱の食べ物も）・施設・炭焼き・車両基地・田んぼが戻る。`v:1` のまま |
 | ページのエラー | なし |
+
+ほかの確認（同じ日、順に1本ずつ）：`node tests/chapter2-save.cjs`（田んぼの保存 `paddy` を足した）・`chapter2-defense`・`classic-body`・`death-penalty`・`combat-aim`・`truck-physics` すべて PASS。`python3 tests/scale-gear-browser.py`・`kei-truck-glb-browser.py`・`hud-layout-browser.py`・`story-f-touch-browser.py`・`story-f-browser.py`・`region-browser.py`・`weapon-glb-browser.py`・`suzuki-rescue-browser.py`（作業台の場所を新しい所に直した）・`kamado-browser.py`・`wardrobe-browser.py`・`suzuki-defense-browser.py` すべて PASS。防衛戦の勝率は `docs/base-layout-plan.md` §4。
 
 ## 7. 決まったこと（2026-11-18 06:15 ユーザーの答え）
 

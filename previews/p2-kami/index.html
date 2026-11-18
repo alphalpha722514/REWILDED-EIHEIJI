@@ -11648,8 +11648,10 @@ function truckLightVis(){ const t=trk(), root=TRUCK.m; if(!root) return; const w
     const cv=document.createElement('canvas'); cv.width=cv.height=128; const c=cv.getContext('2d'), gr=c.createRadialGradient(64,64,4,64,64,64); gr.addColorStop(0,'rgba(255,244,205,0.95)'); gr.addColorStop(0.55,'rgba(255,236,180,0.35)'); gr.addColorStop(1,'rgba(255,236,180,0)'); c.fillStyle=gr; c.fillRect(0,0,128,128);
     const pool=new THREE.Mesh(new THREE.PlaneGeometry(7,len*0.95),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,opacity:0.55,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));
     pool.rotation.x=-Math.PI/2; pool.position.set(0,0.12,2.2+len*0.5); L.add(pool);
-    for(const sx of [-1,1]){ const geo=new THREE.ConeGeometry(2.4,len,18,1,true); geo.translate(0,-len/2,0); geo.rotateX(-Math.PI/2);
-      const beam=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0xfff0c0,transparent:true,opacity:0.07,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false}));
+    for(const sx of [-1,1]){ const geo=new THREE.ConeGeometry(2.4,len,18,1,true); geo.translate(0,-len/2,0);
+      const pa=geo.attributes.position, cl=new Float32Array(pa.count*3); for(let i=0;i<pa.count;i++){ const k=Math.max(0,1+pa.getY(i)/len); cl[i*3]=cl[i*3+1]=cl[i*3+2]=k*k; } geo.setAttribute('color',new THREE.BufferAttribute(cl,3)); // 根もとが明るく、先へ行くほど消える
+      geo.rotateX(-Math.PI/2);
+      const beam=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0xfff0c0,vertexColors:true,transparent:true,opacity:0.1,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false}));
       beam.position.set(sx*0.42,B.y+1.38,B.z1+0.02); beam.rotation.x=0.13; L.add(beam); }
     root.add(L); }
   L.visible=want; }
