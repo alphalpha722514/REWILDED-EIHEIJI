@@ -79,6 +79,7 @@
 - 画面の大きさ：PC（1280×760）とスマホ縦（390×844）で撮って確かめた。スマホでは詳しい説明が下からせり上がり、素材の帯は横に流れる。
 - 上から見た図：`python3 tools/base-topdown.py`。
 - 防衛戦の勝率：第4節。
+- v0.79.1（2026-11-18）：`tests/kei-truck-systems-browser.py` に「作業台の武器の絵は GLB を読んでから撮る（まだ持っていない牙槍・木の棍棒・鉄の斧も）」を足して 59項目すべて ok。`node tests/*.cjs` 6本・`weapon-glb-browser.py`（GLB あり／`WGT_NOGLB=1`）・`hud-layout-browser.py`・`scale-gear-browser.py` すべて PASS。
 
 ## 7. 決まったこと（2026-11-18 10:50 ユーザーの答え）
 

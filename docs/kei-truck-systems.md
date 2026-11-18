@@ -149,7 +149,7 @@
 
 ## 6b. テスト結果（v0.79、2026-11-18、画面のない Chromium・SwiftShader。実機ではない）
 
-`tests/kei-truck-systems-browser.py` に v0.79 の確認を足した：**58項目すべて ok**（約12分）。主なもの：
+`tests/kei-truck-systems-browser.py` に v0.79 の確認を足した：**58項目すべて ok**（約12分。v0.79.1 で武器の絵の確認を足して 59項目すべて ok）。主なもの：
 
 | 項目 | 結果 |
 |---|---|

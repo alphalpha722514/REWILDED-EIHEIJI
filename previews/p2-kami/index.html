@@ -655,7 +655,7 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.79 上志比の獣・採集 テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.79.1 上志比の獣・採集 テスト版（本編とは別に保存）　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -8865,15 +8865,15 @@ const RECIPES=[
  {id:'spikeFence',name:'トゲ柵キット',cost:{wood:4,hide:1},desc:'柵台に設置。耐久90。接触した獣に6ダメージと体勢削り',give:()=>{inv.spikeKit++;}},
  {id:'pitTrap',name:'落とし穴キット',cost:{wood:4,rope:1},desc:'罠台に設置。イノシシ・クマを5秒拘束し28ダメージ。サルは飛び越える。ヌシは2.5秒。使用後は木材2で掘り直し',lock:()=>!prog.unlockTrap,lockMsg:'小規模襲撃を退けると解放',give:()=>{inv.pitKit++;}},
  {id:'bait',name:'おとり餌場キット',cost:{wood:2,rope:1},desc:'通常の罠台で食料2を使って設置。半径25mの徘徊中の野性獣を誘う。90秒経過か獣が食べると終了。食料1・木材1で補充',give:()=>{inv.baitKit++;}},
- {id:'nata2',name:'鉈を鍛える（Lv2）',cost:{wood:3,hide:3},desc:'通常14／強36・耐久80に強化（耐久も全回復）',show:()=>prog.arms.nata1!=null,give:()=>{armUpgrade('nata1','nata2');}},
- {id:'nata3',name:'鉈を鍛える（Lv3）',cost:{wood:5,hide:6},desc:'通常18／強46・耐久100に強化（耐久も全回復）',show:()=>prog.arms.nata2!=null,give:()=>{armUpgrade('nata2','nata3');}},
- {id:'spear',name:'牙槍',cost:{wood:4,hide:4,fang:1},desc:'ヌシの牙を穂先にした槍。通常22／強58・リーチ大・耐久140',lock:()=>!prog.unlockBoss,lockMsg:'ヌシ討伐で解放',show:()=>prog.arms.spear==null,give:()=>{armGain('spear',true);}},
+ {id:'nata2',name:'鉈を鍛える（Lv2）',cost:{wood:3,hide:3},desc:`通常${WEAPONS.nata2.light}／強${WEAPONS.nata2.heavy}・耐久${WEAPONS.nata2.maxDur}に強化（耐久も全回復）`,show:()=>prog.arms.nata1!=null,give:()=>{armUpgrade('nata1','nata2');}},
+ {id:'nata3',name:'鉈を鍛える（Lv3）',cost:{wood:5,hide:6},desc:`通常${WEAPONS.nata3.light}／強${WEAPONS.nata3.heavy}・耐久${WEAPONS.nata3.maxDur}に強化（耐久も全回復）`,show:()=>prog.arms.nata2!=null,give:()=>{armUpgrade('nata2','nata3');}},
+ {id:'spear',name:'牙槍',cost:{wood:4,hide:4,fang:1},desc:`ヌシの牙を穂先にした槍。通常${WEAPONS.spear.light}／強${WEAPONS.spear.heavy}・リーチ大・耐久${WEAPONS.spear.maxDur}`,lock:()=>!prog.unlockBoss,lockMsg:'ヌシ討伐で解放',show:()=>prog.arms.spear==null,give:()=>{armGain('spear',true);}},
  {id:'stake',name:'杭柵キット',cost:{wood:6,hide:2},desc:'先を尖らせた杭の柵（耐久260）。既存の木柵を作り替えられる',lock:()=>!prog.unlockBoss,lockMsg:'ヌシ討伐で解放',give:()=>{inv.stakeKit++;}},
  {id:'rope',name:'縄',cost:{straw:3},desc:'なぎ倒された稲の藁を綯って縄にする。道具づくりに使う',give:()=>{inv.rope++;}},
- {id:'axeStone',name:'石の手斧（簡素な斧）',cost:{stone:2,rope:1,wood:1},desc:'打ち欠いた石を柄に縛った斧。木を切る力は鉈の1.5倍（杉なら7回→5回）。武器としては重めの一撃。耐久45と減りが早い',show:()=>prog.arms.axeStone==null&&prog.arms.axeIron==null,give:()=>{armGain('axeStone',true);}},
- {id:'club',name:'木の棍棒',cost:{wood:3},desc:'太い枝を削った棍棒。間合いが少し長い。木は切れない。耐久70',show:()=>prog.arms.club==null,give:()=>{armGain('club',true);}},
- {id:'bamboo',name:'竹槍',cost:{bamboo:3,rope:1},desc:'竹の先を斜めに削いで尖らせた槍。間合いが長い（3.4）。木は切れない。耐久40',show:()=>prog.arms.bamboo==null,lock:()=>prog.arms.axeStone==null&&prog.arms.axeIron==null,lockMsg:'穂先を削るのに石の手斧が要る',give:()=>{armGain('bamboo',true);}},
- {id:'axeIron',name:'鉄の斧（良質な斧）',cost:{iron:4,wood:2,rope:1},desc:'壊れた家のがれきから集めた屑鉄を打ち直した斧。木を切る力は鉈の3倍（太い杉も4回で倒れる）。武器としても強い。耐久120で減りにくい',show:()=>prog.arms.axeIron==null,lock:()=>prog.arms.axeStone==null,lockMsg:'まず石の手斧を作って、斧の形を覚える',give:()=>{ delete prog.arms.axeStone; if(P.weapon==='axeStone'){ P.weapon='axeIron'; P.dur=WEAPONS.axeIron.maxDur; } prog.arms.axeIron=WEAPONS.axeIron.maxDur; refreshWeaponMesh(); }},
+ {id:'axeStone',name:'石の手斧（簡素な斧）',cost:{stone:2,rope:1,wood:1},desc:`打ち欠いた石を柄に縛った斧。木を切る力は鉈の1.5倍（杉なら7回→5回）。武器としては重めの一撃。耐久${WEAPONS.axeStone.maxDur}と減りが早い`,show:()=>prog.arms.axeStone==null&&prog.arms.axeIron==null,give:()=>{armGain('axeStone',true);}},
+ {id:'club',name:'木の棍棒',cost:{wood:3},desc:`太い枝を削った棍棒。間合いが少し長い。木は切れない。耐久${WEAPONS.club.maxDur}`,show:()=>prog.arms.club==null,give:()=>{armGain('club',true);}},
+ {id:'bamboo',name:'竹槍',cost:{bamboo:3,rope:1},desc:`竹の先を斜めに削いで尖らせた槍。間合いが長い（3.4）。木は切れない。耐久${WEAPONS.bamboo.maxDur}`,show:()=>prog.arms.bamboo==null,lock:()=>prog.arms.axeStone==null&&prog.arms.axeIron==null,lockMsg:'穂先を削るのに石の手斧が要る',give:()=>{armGain('bamboo',true);}},
+ {id:'axeIron',name:'鉄の斧（良質な斧）',cost:{iron:4,wood:2,rope:1},desc:`壊れた家のがれきから集めた屑鉄を打ち直した斧。木を切る力は鉈の3倍（太い杉も4回で倒れる）。武器としても強い。耐久${WEAPONS.axeIron.maxDur}で減りにくい`,show:()=>prog.arms.axeIron==null,lock:()=>prog.arms.axeStone==null,lockMsg:'まず石の手斧を作って、斧の形を覚える',give:()=>{ delete prog.arms.axeStone; if(P.weapon==='axeStone'){ P.weapon='axeIron'; P.dur=WEAPONS.axeIron.maxDur; } prog.arms.axeIron=WEAPONS.axeIron.maxDur; refreshWeaponMesh(); }},
  ...Object.entries(SCALE_ARMS).map(([id,base])=>{ const raw=WEAPONS[id].scale==='raw'; return {id,name:WEAPONS[id].name,cost:SCALE_ARM_COST[id],desc:raw?`${WEAPONS[base].name}に変異した鱗を加工せずに打ち込む。通常${WEAPONS[id].light}／強${WEAPONS[id].heavy}・リーチ${WEAPONS[id].range}・耐久${WEAPONS[id].maxDur}。持つ間：移動+12%・回避の消費-15%。強攻撃は蒼鱗より強い（1.5倍）が、1回でスタミナをすべて使う。代償：最大体力-15%。まがまがしい暗いもやをまとう。${WEAPONS[base].name}はこの武器に変わる`:`${WEAPONS[base].name}に加工した鱗を打ち込んで鍛え直す。通常${WEAPONS[id].light}／強${WEAPONS[id].heavy}・リーチ${WEAPONS[id].range}・耐久${WEAPONS[id].maxDur}。持つ間：被ダメージ-15%。青い光をまとう。${WEAPONS[base].name}はこの武器に変わる`,
    show:()=>prog.arms[base]!=null&&(raw?inv.mutScale>0:(inv.procScale>0||!!prog.conv?.built)),give:()=>{armUpgrade(base,id);}}; }), // v0.63：蒼鱗の武器、v0.64：変異鱗の武器（暫定）
  {id:'boomer',name:'鱗の飛去来器',cost:{procScale:3,iron:3,wood:2},desc:'加工した鱗をはめた投げ具。投げると手元に戻る（強攻撃で遠くへ）。飛んでいる間にもう一度攻撃すると、飛去来器の周りに衝撃波が起きて獣を押し出す。当たり18・衝撃波20。耐久10（投げるたびに1減る）',show:()=>prog.arms.boomer==null&&(inv.procScale>0||!!prog.conv?.built),give:()=>{armGain('boomer',false); toast('鱗の飛去来器：持ち替え（R／持ち物）で持つ');}}, // v0.64（暫定）
@@ -8913,7 +8913,11 @@ function craftIcon(r){ return CRAFT_ICON[r.id]||r.id; }
 function matIcon(k){ return FOODS[k]?k:'mat_'+k; }
 // 絵は描いてあればすぐ出し、まだなら空の枠を出して、1コマに少しずつ描いて差し替える（防具の絵は体に着せて写すので、まとめて描くとスマホで一瞬止まるため）
 const IC_Q=[], IC_BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; let IC_T=0;
-function icImg(id,cls){ const u=ICONS[id]; if(u) return `<img class="${cls||''}" src="${u}" alt="">`; if(!IC_Q.includes(id)) IC_Q.push(id); icPump(); return `<img class="${cls||''} ld" data-ic="${id}" src="${IC_BLANK}" alt="">`; }
+// 武器の絵は、正式な形（GLB）を読んでから撮る（2026-11-18 ユーザー「作業台の武器の絵は実際のGLBモデルを撮影したもの」）。まだ持っていない武器の形もここで読む。読めないときと、GLB の無い武器（石の手斧・竹槍）はコードの形
+function icGlbWait(id){ const d=WGLB[id]; if(!d) return null; const r=WG.files[d.f]; if(r&&r.st!=='load') return null; return wglbFile(d.f); }
+function icImg(id,cls){ const wait=icGlbWait(id), u=!wait&&ICONS[id]; if(u) return `<img class="${cls||''}" src="${u}" alt="">`;
+  if(wait) wait.then(()=>{ delete ICONS[id]; if(!IC_Q.includes(id)) IC_Q.push(id); icPump(); }); else { if(!IC_Q.includes(id)) IC_Q.push(id); icPump(); }
+  return `<img class="${cls||''} ld" data-ic="${id}" src="${IC_BLANK}" alt="">`; }
 function icPump(){ if(IC_T) return; IC_T=setTimeout(function step(){ IC_T=0; const t0=performance.now();
   while(IC_Q.length&&performance.now()-t0<14){ const id=IC_Q.shift(), u=iconOf(id); for(const im of document.querySelectorAll(`img[data-ic="${id}"]`)){ im.removeAttribute('data-ic'); im.classList.remove('ld'); if(u) im.src=u; else{ const sp=document.createElement('span'); sp.className=im.className+' ph'; sp.textContent='？'; im.replaceWith(sp); } } }
   if(IC_Q.length) IC_T=setTimeout(step,16); },0); }
@@ -11961,7 +11965,7 @@ function iconOf(id){
     _isc.userData.amb.intensity=F?0.42:0.85; _isc.userData.dl.intensity=F?0.62:0.7;
     if(F){ _icam.position.set(F[0]+F[3]*1.1,F[1]+F[3]*0.6,F[2]+F[3]*3.2); _icam.lookAt(F[0],F[1],F[2]); }
     else { const dir=new THREE.Vector3(1.05,0.8,1.3).normalize();
-      if(WEAPONS[id]){ obj.quaternion.setFromAxisAngle(dir,-Math.PI/4); obj.updateMatrixWorld(true); } // 武器は画面の斜め（左下が柄・右上が先）に置いて大きく見せる
+      if(WEAPONS[id]){ obj.quaternion.setFromAxisAngle(dir,Math.PI*0.75); obj.updateMatrixWorld(true); } // 武器は画面の斜め（左下が柄・右上が刃や穂先）に置いて大きく見せる
       // v0.79：形の頂点が画面に収まるように、向きはそのままで距離と中心を合わせる（前は大きい物の端が切れていた）
       const pts=[], v=new THREE.Vector3(); obj.traverse(o=>{ const pa=o.isMesh&&o.geometry&&o.geometry.attributes.position; if(!pa||!o.visible) return; const st=Math.max(1,Math.floor(pa.count/1500));
         for(let i=0;i<pa.count;i+=st) pts.push(v.fromBufferAttribute(pa,i).applyMatrix4(o.matrixWorld).clone()); });
