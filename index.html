@@ -10090,6 +10090,8 @@ const P3A={on:true, t:0, inside:false, busy:false,
   fishSpots:[], doors:[], interior:null, mats:null};
 P3A.skip=new Set(); for(const h of P3A.HOUSES) P3A.skip.add(h.i); P3A.skip.add(P3A.HQ.i);
 function p3aSkipBld(i){ return P3A.on&&P3A.skip.has(i); }
+// 試作で差し替えた建物も、main と同じ順で「壊れた家」の一覧（DAMAGED）には入れる（がれきの番号＝セーブの kami.sc がずれないように）。形と当たり判定は捨てる
+function p3aGhostBuilding(b){ const n0=[boxes.length,circles.length,oboxes.length]; genBuilding(new GB(),new GB(),b); for(const o of [...boxes.slice(n0[0]),...circles.slice(n0[1]),...oboxes.slice(n0[2])]) gridRemove(o); }
 function p3aInRiver(x,z){ const R=P3A.RIVER; return P3A.on&&x>R.x0&&x<R.x1&&z>R.z0&&z<R.z1; }
 function p3aInForest(x,z){ const F=P3A.FOREST; return P3A.on&&dist(x,z,F.x,F.z)<F.r; }
 function p3aMats(){ if(P3A.mats) return P3A.mats; const M=P3A.mats={};
@@ -10194,7 +10196,12 @@ function p3aHouse(ctx,gb,yd,b,type,rnd){ const [x,z,l0,w0,rot]=b; const L=Math.m
     for(const sz of [-1,1]) for(let x2=-L/2+1.4;x2<L/2-1;x2+=2.6) p3aWin(gb,x2,fh+1.75,sz*W/2,1.5,1.0,sz,rnd()<0.3,0x6a5440);
     if(big){ gb.box(0,fh+h1+h2/2,0,L*0.7,h2,W*0.72,cc(WHITE)); for(let x2=-L*0.3;x2<L*0.3;x2+=2.4) p3aWin(gb,x2,fh+h1+h2*0.64,W*0.36,1.3,0.8,1,rnd()<0.35,0x6a5440); }
     // 2階建ては1階の屋根を低い下屋にして、2階の壁と窓を見せる
-    const rH=fh+h1, rh=big?1.05:W*0.24; roofHip(gb,L,W,rH,rh,0.9,cc(TILE),cc(UNDER)); if(big){ roofGable(gb,L*0.7,W*0.72,fh+h1+h2,W*0.26,0.7,cc(TILE),cc(UNDER)); for(const sx of [-1,1]) gb.tri([sx*L*0.35,fh+h1+h2,sx*W*0.36],[sx*L*0.35,fh+h1+h2,-sx*W*0.36],[sx*L*0.35,fh+h1+h2+W*0.26,0],cc(WHITE)); ridge(gb,L*0.7+0.6,fh+h1+h2+W*0.26,cc(TILE)); top=fh+h1+h2+W*0.26; } else top=rH+rh;
+    const rH=fh+h1, rh=big?1.05:W*0.24; roofHip(gb,L,W,rH,rh,0.9,cc(TILE),cc(UNDER)); if(big){ roofGable(gb,L*0.7,W*0.72,fh+h1+h2,W*0.26,0.7,cc(TILE),cc(UNDER)); for(const sx of [-1,1]) gb.tri([sx*L*0.35,fh+h1+h2,sx*W*0.36],[sx*L*0.35,fh+h1+h2,-sx*W*0.36],[sx*L*0.35,fh+h1+h2+W*0.26,0],cc(WHITE)); ridge(gb,L*0.7+0.6,fh+h1+h2+W*0.26,cc(TILE)); top=fh+h1+h2+W*0.26;
+      // 妻壁：束（縦の柱）と貫（横の材）の格子に白壁（永平寺町の農家の「真壁の大きな妻壁」。福井県「ふくいの伝統的民家」の説明による）
+      { const hw=W*0.36, yb=fh+h1, yt=fh+h1+h2, rr=W*0.26; for(const sx of [-1,1]){ const gx=sx*(L*0.35+0.04);
+        for(let zz=-hw;zz<=hw+0.01;zz+=hw/3){ const ht=yt+rr*(1-Math.abs(zz)/hw)-yb; gb.box(gx,yb+ht/2,zz,0.06,ht,0.16,cc(TIM)); }
+        for(const yy of [yb+0.95,yt,yt+rr*0.5]){ const w=yy<=yt?hw*2:hw*2*(1-(yy-yt)/rr); gb.box(gx,yy,0,0.07,0.14,w,cc(TIM)); } } }
+    } else top=rH+rh;
     // 玄関（引き戸・庇）
     gb.box(L*0.18,fh+1.05,W/2+0.05,1.9,2.1,0.06,cc(0x6a5440)); for(const dx of [-0.48,0.48]) gb.box(L*0.18+dx,fh+1.05,W/2+0.08,0.86,1.9,0.02,cc(0x8c7a62)); gb.box(L*0.18,fh+2.35,W/2+0.7,2.6,0.12,1.4,cc(TILE)); door.lx=L*0.18;
     // 縁側の雨戸（南面の一部が閉まったまま）
@@ -10551,8 +10558,8 @@ function kamishihiBuild(ctx){
     for(const [t,gb] of gbs){ const m=new THREE.Mesh(own(gb.geo()),rmat); m.receiveShadow=true; m.visible=false; ctx.add(m); t.road=m; }
     if(deco.i.length) ctx.add(new THREE.Mesh(own(deco.geo()),vcMat)); }
   // ---- 5) 建物（光明寺と同じ作り方。いくつかは獣に荒らされている） ----
-  { const by=new Map(); D.bld.forEach((b,bi)=>{ if(p3aSkipBld(bi)) return; const t=tileOf(b[0],b[1]); let a=by.get(t); if(!a){ a=[]; by.set(t,a); } a.push(b); }); // 当たり判定は genBuilding が足す（P3-A：試作の建物は外して別に作る）
-    for(const [t,list] of by){ const gb=new GB(), lo=new GB(); for(const b of list) genBuilding(gb,lo,b);
+  { const by=new Map(); D.bld.forEach((b,bi)=>{ const t=tileOf(b[0],b[1]); let a=by.get(t); if(!a){ a=[]; by.set(t,a); } a.push(p3aSkipBld(bi)?{p3aGhost:b}:b); }); // 当たり判定は genBuilding が足す（P3-A：試作の建物は外して別に作る）
+    for(const [t,list] of by){ const gb=new GB(), lo=new GB(); for(const b of list){ if(b.p3aGhost){ p3aGhostBuilding(b.p3aGhost); continue; } genBuilding(gb,lo,b); }
       t.bld=new THREE.Mesh(own(gb.geo()),vcMat); t.bld.castShadow=true; t.bld.receiveShadow=true; t.bld.visible=false; ctx.add(t.bld);
       t.bldInk=new THREE.Mesh(own(inkGeo(t.bld.geometry,0.07)),inkMat); t.bldInk.visible=false; t.bldInk.raycast=()=>{}; ctx.add(t.bldInk);
       t.bldLo=new THREE.Mesh(own(lo.geo()),vcMat); t.bldLo.visible=false; ctx.add(t.bldLo); } }
