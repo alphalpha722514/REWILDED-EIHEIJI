@@ -58,6 +58,7 @@
 |---|---|
 | `docs/save-and-flags.md` | セーブ項目・章フラグ・イベントID |
 | `docs/asset-registry.md` | 3Dアセットの台帳と制作依頼の形式 |
+| `docs/dialogue-changes.md` | 確定した台詞・呼び方を変えた記録（v0.79.3：住民はヌシを「化け猪」と呼ぶ・変えていない所の一覧） |
 | `docs/character-classic-body.md` | プレイヤー・村人の体の決定と検証 |
 | `docs/chapter2-progress.md` | 第2章の実装状況 |
 | `docs/chapter2-map-plan.md` | 上志比マップの調査と計画 |

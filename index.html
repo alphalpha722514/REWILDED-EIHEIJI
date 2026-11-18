@@ -654,7 +654,7 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.79.2 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.79.3 デモ版　第二章・光明寺防衛戦と上志比</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -3889,9 +3889,10 @@ function f9EshinPose(m,t){ m.armR.rotation.set(-1.25+Math.sin(t*14)*0.18,0,0.45)
 
 // ---- トミオの「いま大事なこと」と源さんの「外の様子」（段階D）----
 // どちらも、その時の実際の状態だけから決める。聞いても報酬や進行は変わらない
+// v0.79.3：住民（トミオ・米田など）の台詞では、ヌシを「化け猪」と呼ぶ（2026-11-18 ユーザー指示）。画面の名前・ヌシ自身の台詞・遺言・品名は「ヌシ」のまま
 const F9TOBJ={gather:'東口の外の畑と、線路の向こうの山すそで、木材と食料を集めてきておくれ',buildFence:'作業台で木柵キットを作って、南門の柵台に据えておくれ',raid:'獣が来とる！ 拠点を守っておくれ',
   explore:'沢沿いの道を山へ登って、手掛かりを探しておくれ',invasionPrep:'備えができたら「侵攻を始める」を押しね。時間が来ても始まるで',invasion:'火の見やぐらを守り抜いておくれ',
-  toBoss:'沢の奥の広場で、光明寺のヌシを討っておくれ',boss:'ヌシを討っておくれ',cleared:'町は落ち着いた。好きに歩いてみね'};
+  toBoss:'沢の奥の広場で、光明寺の化け猪を討っておくれ',boss:'化け猪を討っておくれ',cleared:'町は落ち着いた。好きに歩いてみね'};
 function f9TomeTips(){ const T=[], st=prog.stage;
   if(st==='buildFence'||st==='invasionPrep'){ const gs=st==='buildFence'?GAPS.filter(g=>g.id==='S'):GAPS; // 1 柵のない／壊れた門
     const no=gs.filter(g=>!g.fence.type), br=gs.filter(g=>g.fence.type&&g.fence.broken);
@@ -3950,7 +3951,7 @@ function f9TomePose(n,m,dt){ n.f9want=null; if(ev.kind) return; F9I.tome+=dt; co
 
 // ---- 場面ごとの短い会話（段階D）。平常の小話の前に、その場面の一言を出す ----
 const F9SCENE={
- tome:{prep:['柵は町の命や。手ぇ抜いたらあかんで。'],out:['無理はせんでええ。戻ってきたら、まず顔を見せておくれ。'],after:['みんな無事やった。……おまえも無事で、ほんによかった。ほやけど、まだ終わってえんのや。','最近、沢のほうが気になってしょうがんのぅ……。'],done:['ヌシがおらんようになって、山も少し静かになったのう。']},
+ tome:{prep:['柵は町の命や。手ぇ抜いたらあかんで。'],out:['無理はせんでええ。戻ってきたら、まず顔を見せておくれ。'],after:['みんな無事やった。……おまえも無事で、ほんによかった。ほやけど、まだ終わってえんのや。','最近、沢のほうが気になってしょうがんのぅ……。'],done:['化け猪がおらんようになって、山も少し静かになったのう。']},
  gen:{prep:['門は三つ、見張りの目は二つ。足らん分は柵に頼むわ。'],out:['沢の方は見通しが悪い。音のする方へ不用意に寄るなや。'],after:['群れは引いた。ほやけど、足跡はまだ新しい。'],done:['今朝は半鐘を鳴らさんで済んだ。……鳴らしたかったけどの。']},
  eshin:{prep:['柵の傷みは私が見ます。あなたは獣を見てください。'],out:['空腹では刃が鈍ります。食べてから行きなさい。'],after:['直した柵の数だけ、町は続きます。'],done:['今日は柵より、鍋の番ができます。']},
  yone:{prep:['菜園の大根も、柵の内側やで守られとるんや。'],out:['山の方の畑は荒らされたままや。足もと気ぃつけて歩きね。'],after:['大根は逃げんでええのう。獣は逃げるけど。'],done:['ようやく、獣より大根の心配ができるわ。']}};
@@ -8481,7 +8482,7 @@ function winEvent(){
     setNight(false); setBarrier(false);
     banner('拠点を守り抜いた！','報酬：獣素材6・食料4・木材5・おにぎり2',3.2);
     prog.stage='toBoss';
-    queueDialog([[npcTome,'夜が明けた……。みんな無事や。おまえのおかげやざ。……ほんに、よう無事でおってくれた。'],[npcTome,'群れを追い立てとったのは“光明寺のヌシ”と呼ばれる大イノシシやろう。沢の奥、高速道路の高架をくぐった先の広場や。道をふさいどった倒木は、町のもんがどけてくれた。'],[npcYone,'ヌシは突っ込んできたら止まらんらしい。大岩にぶつけたったら、さすがに目ぇ回すやろ。……知らんけど。']]);
+    queueDialog([[npcTome,'夜が明けた……。みんな無事や。おまえのおかげやざ。……ほんに、よう無事でおってくれた。'],[npcTome,'群れを追い立てとったのは“光明寺の化け猪”と呼ばれる大イノシシやろう。沢の奥、高速道路の高架をくぐった先の広場や。道をふさいどった倒木は、町のもんがどけてくれた。'],[npcYone,'化け猪は突っ込んできたら止まらんらしい。大岩にぶつけたったら、さすがに目ぇ回すやろ。……知らんけど。']]);
   }
   // 柵の応急処置：慧心が少し直す
   saveGame();
@@ -8684,7 +8685,7 @@ function talkTo(n){
     if(st==='buildFence'){ queueDialog([[npcTome,'作業台で「木柵キット」を作って、南門の柵台に据えておくれ。獣は通さんが、町のもんは脇のくぐり戸から出入りできる。']]); return; }
     if(st==='explore'){ queueDialog([[npcTome,'線路を渡って、沢沿いの道を山へ登った先に、獣の異変の手掛かりがあるはずや。クマもおるで、準備してから行きね。']]); return; }
     if(st==='invasionPrep'){ queueDialog([[npcTome,'備えが足らんなら、今のうちや。準備ができたら言うておくれ。半鐘を鳴らすで。']]); return; }
-    if(st==='toBoss'){ queueDialog([[npcTome,'ヌシは沢の奥、高速道路の高架をくぐった先の広場や。弁当と罠を持っていきね。']]); return; }
+    if(st==='toBoss'){ queueDialog([[npcTome,'化け猪は沢の奥、高速道路の高架をくぐった先の広場や。弁当と罠を持っていきね。']]); return; }
   }
   if(n===npcYone&&prog.f8&&!prog.f8.intro&&st!=='talk'){ f8Intro(); return; }
   if(n===npcYone&&prog.f8&&prog.f8.intro&&f8SeedTopUp()) return; // 種が足りないときだけ分けてもらえる // 米田から大根の種をもらう（一度だけ）
