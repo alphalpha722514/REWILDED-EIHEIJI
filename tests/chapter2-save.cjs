@@ -99,8 +99,8 @@ assert.match(html,/prog\.chapter2=chapter2State\(null,false\)/);
   for(const bad of [undefined,null,{v:2,komyoji:{wood:5}},'x']) assert.deepEqual(S(bad),{v:1,komyoji:{},kami:{}},'old or malformed stash: empty');
   assert.deepEqual(S({v:1,komyoji:{wood:12,gold:9,stone:-3,iron:'x'},kami:{rope:4.7}}),{v:1,komyoji:{wood:12},kami:{rope:4}},'only known materials, whole numbers'); }
 { // v0.82 P3-C：住民 p3c の読み込み（古いセーブ・不正な値・進み具合のつじつま）
-  const code=html.slice(html.indexOf('function p3cFresh()'),html.indexOf('function p3cState()'))+html.slice(html.indexOf('const P3C_FAC='),html.indexOf('function p3cFac()'));
-  const c4=vm.createContext({}); vm.runInContext(`const P3C={hits:3}; function num(v,def,min=0,max=9999){ return (typeof v==='number'&&isFinite(v))?Math.max(min,Math.min(max,Math.floor(v))):def; } let prog={};`+code,c4);
+  const code=html.slice(html.indexOf('function p3cFresh()'),html.indexOf('function p3cState()'))+html.slice(html.indexOf('const P3C_FAC='),html.indexOf('function p3cFac()'))+html.slice(html.indexOf('const P3C_REQ='),html.indexOf('function p3cReq(id)')); // v0.83：依頼と仕事も
+  const c4=vm.createContext({}); vm.runInContext(`const P3C={hits:3}; const P3C_LINES={}; function num(v,def,min=0,max=9999){ return (typeof v==='number'&&isFinite(v))?Math.max(min,Math.min(max,Math.floor(v))):def; } let prog={};`+code,c4);
   const J=x=>JSON.parse(JSON.stringify(x)), L=q=>J(c4.p3cLoad(q)), F=J(c4.p3cFresh());
   for(const bad of [undefined,null,42,'x',[],{v:2,sumie:{done:1}}]) assert.deepEqual(L(bad),F,'old or malformed p3c: nobody yet');
   assert.deepEqual(L({v:1,sumie:{done:1}}).sumie,{met:1,hits:3,done:1},'rescued Sumie: met and pile cleared');
@@ -111,7 +111,21 @@ assert.match(html,/prog\.chapter2=chapter2State\(null,false\)/);
   assert.deepEqual(L({v:1,soichi:{coop:1,job:5}}).soichi,{found:0,coop:1,joinDone:0,resident:0,job:''},'Soichi: separate flags (P3-D)');
   // v0.82 C-2：施設の工事（納めた素材・進み）と住民の担当
   const f=L({v:1,fac:{housing:{dl:{wood:30,straw:5,gold:9,rope:-2},h:9,done:0},defense:{dl:{wood:20},h:1.5,done:0},farm:{done:1}},job:{sumie:'b:housing',rio:'b:farm',x:'b:defense'}});
-  assert.deepEqual(f.fac,{housing:{dl:{wood:24,straw:5},h:4,done:0},defense:{dl:{wood:20},h:1.5,done:0}},'delivered capped at the cost, unknown facilities and materials dropped, progress capped');
-  assert.deepEqual(f.job,{sumie:'b:housing',rio:''},'only buildable facilities as jobs');
-  assert.deepEqual(L({v:1,fac:{housing:{done:1}}}).fac.housing,{dl:{},h:4,done:1},'done: full progress'); }
-console.log('PASS: inline script syntax; legacy/malformed defaults; boss unlock; save round trip; existing key, version, inventory and durability; v0.67 kami state; v0.73 suzuki state; v0.81 p3/stash state; v0.82 p3c residents');
+  const E={dl:{},h:0,done:0};
+  assert.deepEqual(f.fac,{housing:{dl:{wood:24,straw:5},h:4,done:0},defense:{dl:{wood:20},h:1.5,done:0},farm:{dl:{},h:2,done:1},garage:E,haul:E},'delivered capped at the cost, unknown materials dropped, progress capped (v0.83: Lv2 facilities too)');
+  assert.deepEqual(f.job,{sumie:'b:housing',rio:'b:farm',evac:''},'only buildable facilities as jobs');
+  assert.deepEqual(L({v:1,fac:{housing:{done:1}}}).fac.housing,{dl:{},h:4,done:1},'done: full progress');
+  assert.deepEqual(L({v:1,job:{sumie:'w:farm',rio:'w:haul',evac:'w:fish'}}).job,{sumie:'w:farm',rio:'w:haul',evac:''},'work jobs: farm and haul only');
+  // v0.83 C-3：段階・依頼・避難住民・農園の収穫・収集の端数
+  assert.equal(F.lv,1); assert.deepEqual(F.req,{}); assert.equal(F.trk,''); assert.deepEqual(F.ev,{res:0});
+  for(const [v,e] of [[2,2],[3,3],[9,3],[0,1],['x',1],[2.7,2]]) assert.equal(L({v:1,lv:v}).lv,e,'level clamped 1..3');
+  const q=L({v:1,req:{trace:{a:1,s:[1,1,null,0],h:[0,0,0,0]},salvage:{a:1,s:[0,0],h:[99,0]},nope:{a:1},tools:{r:1},bell:{a:0,s:[1,1,1]}},trk:'trace'});
+  assert.deepEqual(q.req.trace,{a:1,s:[1,1,0,0],h:[0,0,0,0],r:0},'accepted request: steps as 0/1');
+  assert.deepEqual(q.req.salvage.h,[4,0],'hits capped');
+  assert.deepEqual(q.req.tools,{a:1,s:[1,1,1],h:[4,0,3],r:1},'reported: all steps done');
+  assert.ok(!('nope' in q.req)&&!('bell' in q.req),'unknown or not accepted requests dropped'); assert.equal(q.trk,'trace');
+  assert.equal(L({v:1,req:{tools:{r:1}},trk:'tools'}).trk,'','no tracking of a reported request'); assert.equal(L({v:1,trk:'nope'}).trk,'');
+  assert.deepEqual(L({v:1,req:{evac:{a:1,s:[1,1,1]}}}).ev,{res:1},'evacuee found: resident'); assert.deepEqual(L({v:1,ev:{res:1}}).ev,{res:1});
+  const o=L({v:1,out:{veg:99},acc:{farm:0.5,haul:{wood:0.4,gold:3}},got:{wood:12,gold:2}});
+  assert.equal(o.out.veg,30,'harvest capped'); assert.deepEqual(o.acc,{farm:0.5,haul:{wood:0.4}},'fractions kept (below 1), unknown materials dropped'); assert.deepEqual(L({v:1,acc:{farm:7,haul:{wood:-1}}}).acc,{farm:0.999,haul:{}}); assert.deepEqual(o.got,{wood:12}); }
+console.log('PASS: inline script syntax; legacy/malformed defaults; boss unlock; save round trip; existing key, version, inventory and durability; v0.67 kami state; v0.73 suzuki state; v0.81 p3/stash state; v0.82 p3c residents; v0.83 p3c requests and level');

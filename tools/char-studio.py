@@ -23,7 +23,8 @@ SRC = open(os.path.join(ROOT, os.environ.get('STUDIO_HTML', 'index.html')), enco
 HOOK = ("window.__studio={THREE,makeHuman,get pm(){return pm},get NPCS(){return NPCS},"
         "mesh:(...a)=>mesh(...a),mat:(...a)=>mat(...a),bmat:(...a)=>bmat(...a),outline:(...a)=>outline(...a),get G(){return G},"
         "get SUZUKI_OPTS(){return typeof SUZUKI_OPTS!=='undefined'?SUZUKI_OPTS:null},"
-        "get F60_GARMENTS(){return typeof F60_GARMENTS!=='undefined'?F60_GARMENTS:null}};\n")
+        "get F60_GARMENTS(){return typeof F60_GARMENTS!=='undefined'?F60_GARMENTS:null},"
+        "get P3C_LOOK(){return typeof P3C_LOOK!=='undefined'?P3C_LOOK:null}};\n")
 ANCHOR = 'function updateNPCs(dt){'
 assert SRC.count(ANCHOR) == 1, 'anchor'
 HTML = SRC.replace(ANCHOR, HOOK + ANCHOR)
