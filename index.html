@@ -657,7 +657,7 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.81 デモ版　第二章・上志比の拠点本部（P3-B）</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.81.1 デモ版　第二章・上志比の拠点本部（P3-B）</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -6485,7 +6485,7 @@ function studyGeometry51(species){
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(Float32Array.from(bytes51(p.p,Int16Array),v=>v/10000),3));g.setAttribute('normal',new THREE.BufferAttribute(bytes51(p.n,Int8Array),3,true));
  // v0.51.1: match the game's legacy LinearEncoding palette; decoding sRGB here alone crushed dark fur.
  const colors=bytes51(p.c,Uint8Array);
- g.setAttribute('color',new THREE.BufferAttribute(colors,3,true));g.setAttribute('skinIndex',new THREE.BufferAttribute(Uint16Array.from(bytes51(p.b,Uint8Array)),4));g.setAttribute('skinWeight',new THREE.BufferAttribute(bytes51(p.w,Uint8Array),4,true));g.setIndex(new THREE.BufferAttribute(bytes51(p.ix,Uint32Array),1));g.userData.shared51=true;g.computeBoundingSphere();out[name]=g;}
+ g.setAttribute('color',new THREE.BufferAttribute(colors,3,true));g.setAttribute('skinIndex',new THREE.BufferAttribute(Uint16Array.from(bytes51(p.b,Uint8Array)),4));g.setAttribute('skinWeight',new THREE.BufferAttribute(bytes51(p.w,Uint8Array),4,true));g.setIndex(new THREE.BufferAttribute(bytes51(p.ix,Uint32Array),1));g.userData.shared51=true;g.computeBoundingSphere();{const bs=g.boundingSphere;bs.radius=(2*bs.center.length()+bs.radius)*1.1;}out[name]=g;} // v0.81.1：画面の外を描かないための範囲。骨の原点（足もと）のまわりにどう回っても（倒れても）入る大きさに広げる
  return studyCache51[species]=out;
 }
 function makeStudyBeast51(species){
@@ -6497,7 +6497,7 @@ function makeStudyBeast51(species){
  // A small unlit floor preserves facial/body detail in shade without extra lights or draw calls.
  if(name==='body'){mat.emissive.setHex(boss?0x111913:0x1b140e);mat.emissiveIntensity=.45;}
  if(name==='glow'){mat.emissive.setHex(0x287e68);mat.emissiveIntensity=.65;}if(name==='eye'){eyeM=mat;mat.emissive.setHex(boss?0x66431a:0x241806);mat.emissiveIntensity=.25;}else flashM.push(mat);
- mat.userData.baseEmissive=mat.emissive.clone();const mesh=new THREE.SkinnedMesh(geo,mat);mesh.name='study51_'+name;mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;g.add(mesh);mesh.bind(skeleton,new THREE.Matrix4());}
+ mat.userData.baseEmissive=mat.emissive.clone();const mesh=new THREE.SkinnedMesh(geo,mat);mesh.name='study51_'+name;mesh.castShadow=true;mesh.receiveShadow=true;g.add(mesh);mesh.bind(skeleton,new THREE.Matrix4());}
  const aura=new THREE.Group();g.add(aura);if(boss){const texture=mistTexture51();for(let i=0;i<10;i++){const mat=new THREE.SpriteMaterial({map:texture,color:0x58d9b8,transparent:true,opacity:.17,depthWrite:false});const sprite=new THREE.Sprite(mat);sprite.userData.phase=i*2.39996;sprite.scale.set(.55,.85,1);aura.add(sprite);}}
  g.scale.setScalar(boss?2.05:1.25);
  return {g,body,head,legs,eyeM,flashM,brows:[],study51:true,species,k,skeleton,aura};
@@ -6506,7 +6506,8 @@ let mistTex51=null;
 function mistTexture51(){if(mistTex51)return mistTex51;const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),a=x.createRadialGradient(32,32,0,32,32,31);a.addColorStop(0,'rgba(101,220,184,.6)');a.addColorStop(1,'rgba(40,100,80,0)');x.fillStyle=a;x.fillRect(0,0,64,64);return mistTex51=new THREE.CanvasTexture(c);}
 function animateStudyBeast51(e,dt){
  const m=e.m,k=m.k,boss=e.type==='boss',t=S.time,st=e.state,gy=groundH(e.x,e.z),sp=e.spd||0;
- m.g.visible=boss||dist(e.x,e.z,camera.position.x,camera.position.z)<100;m.g.position.set(e.x,gy,e.z);m.g.rotation.set(0,e.rot,0);
+ m.g.visible=(boss&&REG.cur==='komyoji')||dist(e.x,e.z,camera.position.x,camera.position.z)<100;m.g.position.set(e.x,gy,e.z); // v0.81.1：ヌシを遠くから見せるのは光明寺にいるときだけ
+m.g.rotation.set(0,e.rot,0);
  const running=st==='charge',rate=running?2.5:Math.min(1.8,sp*.24),amp=Math.min(1,sp/2.6);e.studyWalk51=(e.studyWalk51||0)+dt*rate;
  if(boss&&sp>.7&&st!=='intro'&&st!=='dead'){const beat=Math.floor(e.studyWalk51*2);if(e.stepBeat52!=null&&beat!==e.stepBeat52) beastImpact52(e,running?1:.55);e.stepBeat52=beat;}else e.stepBeat52=null;
  m.body.position.set(0,0,0);m.body.rotation.set(0,0,0);m.body.scale.set(1+Math.sin(t*2.1+e.id)*.004,1,1);m.head.rotation.set(.012*Math.sin(t*1.8+e.id),0,0);
@@ -8346,6 +8347,7 @@ function updateEnemies(dt){
           else if(e.type==='mutant') updateMutant(e,ldt);
           f10Post(e,prev); if(e.kf) kfPost(e,prev); } finally{ if(sw) tgvEnd(); } } }
       if((e.kf||e.kfw)&&e.m&&e.m.g){ e.m.g.position.set(e.x,groundH(e.x,e.z)+(e.kfY||0),e.z); e.m.g.rotation.y=e.rot; } // v0.69：遠くでも形の位置だけは合わせる（近づいたときに飛ばない）
+      else if(e.m&&e.m.g){ const vis=dist(e.x,e.z,camera.position.x,camera.position.z)<(e.m.study51?100:160); e.m.g.visible=vis; if(vis){ e.m.g.position.set(e.x,groundH(e.x,e.z),e.z); e.m.g.rotation.y=e.rot; } } // v0.81.1：遠くの獣は描かない（今までは、まだ近づいていない獣が原点に残って描かれ、ほかの地域にいても毎回描いていた）。見える距離は近くのときと同じ
       continue; }
     if(!updatePoise(e,dt)){ const prev=e.state, sw=szPick(e); if(sw) tgvBegin(); try{ // v0.70：相手がスズキなら、考える間だけスズキを見せる
     if(f10Pre(e,dt)){}
