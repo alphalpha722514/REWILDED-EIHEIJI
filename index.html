@@ -736,6 +736,7 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
 <div class="ov" id="bookOv" hidden>
   <div class="card wk" id="bookCard">
     <div class="wkHead"><h2>魚と水辺の図鑑</h2><div class="wkSub" id="bookSub"></div><button class="wkX pri" id="btnBookClose">閉じる（Esc）</button></div>
+    <div class="wkTabs" id="bookTabs" role="tablist"></div>
     <div class="wkBody"><div class="wkGrid" id="bookList"></div><div class="wkDet" id="bookDet"></div></div>
   </div>
 </div>
@@ -2944,6 +2945,7 @@ function f5Gather(n){ const left=nodeLeft(n); if(left>0) return; let got=0, key=
   else if(n.k==='pebble'){ got=2; key='stone'; inv.stone=(inv.stone||0)+got; }
   else if(n.k==='straw'||n.k==='straw2'){ got=STRAW_GOT; key='straw'; inv.straw=(inv.straw||0)+got; }
   else if(n.k==='bamboo'){ const t=f5BestTool(); if(!t){ toast('竹を切るには刃物が要る',true); return; } got=2; inv.bamboo=(inv.bamboo||0)+got; f5Wear(t); chips(n.x,1.2,n.z,6,0x9ab86a); sfx('wood'); }
+  if(P.gatherT>0&&got>0){ inv[key]=(inv[key]||0)+1; got++; } // v0.84：雑魚の天ぷらで +1
   prog.f5.nodes[nodeKey(n)]=n.sheaf?240:F5.regrow[n.k]; f5Apply(); if(n.k!=='bamboo') sfx('pickup');
   toast(`${F5_MATS[key]} +${got}（${inv[key]}）`); floatText(n.x,1.4,n.z,`${F5_MATS[key]}+${got}`,'#f0dca0'); g4CheckQuests(); }
 function f5Quarry(n){ const left=rockLeft(n); if(left<=0) return; const tool=f5QuarryTool(); if(!tool){ toast('岩を割るには槌かつるはしが要る（作業台で作れる）',true); return; }
@@ -3041,6 +3043,7 @@ function drawMap(){ const cv=$('mapCv'); if(!cv||$('mapOv').hidden) return; cons
   trk36Map(c,X,Z,lab);
   // 近くの獣
   for(const e of enemies){ if(e.state==='dead'||e.removed||trk36MapTargetHidden(e)) continue; if(e.mode==='field'&&dist(e.x,e.z,P.x,P.z)>truckSee()) continue; c.fillStyle=e.type==='boss'?'#ff6040':'#e0533c'; c.beginPath(); c.arc(X(e.x),Z(e.z),e.type==='boss'?6:3.5,0,TAU); c.fill(); }
+  p3dScoutDraw(c,X,Z,true); // v0.84 ずがに汁
   // 依頼と目的
   const ql=questHere()&&questLine(); if(ql&&ql[1]){ const x=X(ql[1].x), y=Z(ql[1].z); c.strokeStyle='#7ad0e0'; c.lineWidth=3; c.beginPath(); c.arc(x,y,9,0,TAU); c.stroke(); lab('依頼',x+11,y-8,'#9fe6f0'); }
   const [ot,tg]=objective(); if(tg){ const x=X(tg.x), y=Z(tg.z); c.fillStyle='#f0c34a'; c.strokeStyle='#1b1d1e'; c.lineWidth=2; c.beginPath(); c.moveTo(x,y-10); c.lineTo(x+8,y); c.lineTo(x,y+10); c.lineTo(x-8,y); c.closePath(); c.fill(); c.stroke(); lab('目的',x+11,y+4,'#ffe08a',13); }
@@ -3353,7 +3356,9 @@ const FOODS={
   meat:{name:'肉',life:900},veg:{name:'野菜',life:1500},rice:{name:'米',life:3000},
   katsudon:{name:'ソースカツ丼',life:1800},botan:{name:'ぼたん鍋',life:1800},gomadofu:{name:'胡麻豆腐',life:2400},koroni:{name:'里芋のころ煮',life:2400},kushi:{name:'串焼き',life:1500},
   // v0.84 P3-D：九頭竜川の魚11種（肉と同じく傷む。料理は D-2）
-  fAyu:{name:'アユ',life:900},fUgui:{name:'ウグイ',life:900},fOikawa:{name:'オイカワ',life:900},fAbura:{name:'アブラハヤ',life:900},fMutsu:{name:'カワムツ',life:900},fKoi:{name:'コイ',life:900},fFuna:{name:'フナ',life:900},fYamame:{name:'ヤマメ',life:900},fIwana:{name:'イワナ',life:900},fNigoi:{name:'ニゴイ',life:900},fKamatsuka:{name:'カマツカ',life:900},
+  fAyu:{name:'アユ',life:900},fUgui:{name:'ウグイ',life:900},fOikawa:{name:'オイカワ',life:900},fAbura:{name:'アブラハヤ',life:900},fMutsu:{name:'カワムツ',life:900},fKoi:{name:'コイ',life:900},fFuna:{name:'フナ',life:900},fYamame:{name:'ヤマメ',life:900},fIwana:{name:'イワナ',life:900},fNigoi:{name:'ニゴイ',life:900},fKamatsuka:{name:'カマツカ',life:900},zugani:{name:'モクズガニ',life:900},
+  // v0.84 P3-D（D-2）：魚料理10品（かまどで作る。数は暫定）
+  ayuShio:{name:'鮎の塩焼き',life:1500},keiShio:{name:'渓魚の塩焼き',life:1500},ayuMeshi:{name:'鮎めし',life:2400},koikoku:{name:'鯉こく',life:2400},funaKanro:{name:'鮒の甘露煮',life:4800},kawaKushi:{name:'川魚の串焼き',life:1500},zakoTen:{name:'雑魚の天ぷら',life:1800},kawaZosui:{name:'川魚の雑炊',life:2400},zuganiJiru:{name:'ずがに汁',life:2400},nigoiTsumire:{name:'にごいのつみれ汁',life:2400},
 };
 const RAW_FOODS=['food','meat','veg','rice']; // 生の食材。「食料」が要る所（餌・畑の手入れ・最初の素材集め）は、どれでも足りる
 function rawCount(){ return RAW_FOODS.reduce((a,k)=>a+(inv[k]||0),0); } // 毎フレーム呼ぶ所はこちら（鮮度の計算をしない）
@@ -3681,7 +3686,7 @@ function kamaBuildModel(g){ const F=FAC.kama, M={}, plaster=0xd9cfbd, base=0x5a5
 function kamaFresh(){ return {v:1,built:0,q:[],t:0,out:{}}; }
 function kamaSave(){ const c=prog.kama||kamaFresh(); return {v:1,built:c.built?1:0,q:c.q.slice(),t:Math.round(c.t*10)/10,out:Object.assign({},c.out)}; }
 function kamaLoad(q){ const c=kamaFresh(); if(!q||typeof q!=='object'||q.v!==1) return c; c.built=q.built?1:0; if(!c.built) return c;
-  const ok=k=>k==='charcoal'||(FOODS[k]&&COOKED.includes(k));
+  const ok=k=>k==='charcoal'||(FOODS[k]&&(COOKED.includes(k)||!!FISH_DISH[k])); // v0.84：魚料理も
   if(Array.isArray(q.q)) c.q=q.q.filter(ok).slice(0,FAC.kama.maxQ); else if(typeof q.q==='number') c.q=Array(num(q.q,0,0,FAC.kama.maxQ)).fill('charcoal'); // v0.64 の形（数だけ）も読む
   if(q.out&&typeof q.out==='object'){ for(const k in q.out) if(ok(k)){ const n=num(q.out[k],0,0,999); if(n>0) c.out[k]=n; } } else if(typeof q.out==='number'&&q.out>0) c.out.charcoal=num(q.out,0,0,999);
   c.t=c.q.length&&typeof q.t==='number'&&isFinite(q.t)?clamp(q.t,0,kamaTime(c.q[0])):0; return c; }
@@ -3693,6 +3698,7 @@ function kamaState(){ const c=prog.kama; if(!c.q.length) return '火は落ちて
 function kamaInteract(L,d){ const c=prog.kama, F=FAC.kama, ch=[], full=c.q.length>=F.maxQ;
   if(kamaOutN()>0) ch.push({label:`取り出す（${kamaOutText()}）`,act:kamaTake});
   if(!full) ch.push({label:`料理する（食材を${F.cook.min}〜${F.cook.max}つ・薪に木材${F.cook.fuel.wood}・${F.cook.time}秒）`,act:()=>kamaCookUI({meat:0,veg:0,rice:0,food:0})});
+  if(!full&&p3dHasFish()) ch.push({label:`魚を料理する（魚料理10品から選ぶ・薪に木材${F.cook.fuel.wood}・${F.cook.time}秒）`,act:p3dDishUI}); // v0.84
   if(!full) ch.push({label:`木炭を焼く（木材${F.coal.wood}・${F.coal.time}秒）　所持 木材${inv.wood}`,act:()=>kamaCoal(1)});
   if(c.q.length<F.maxQ-1) ch.push({label:`木炭を焼けるだけ焼く（最大${F.maxQ-c.q.length}つ）`,act:()=>kamaCoal(F.maxQ)});
   L.push({d,label:`かまど：${kamaState()}${kamaOutN()?`　できた物 ${kamaOutText()}`:''}`,act:()=>ch.length?chooseDefense('かまど',ch):(sfx('deny'),toast('いっぱい。できあがるまで待つ',true))}); }
@@ -7038,7 +7044,7 @@ function chapter2Panel(n,st,bx){
   if(!ev.kind)f9Btn(bx,'npc_chapter2',done?'第二章の防衛戦に再挑戦':'第二章の防衛戦を始める',startChapter2Defense,{pri:1});
 }
 function freshState(){
-  inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,baitKit:0,onigiri:1,bento:0,grilledVeg:0,herbPorridge:0,meat:0,veg:0,rice:0,katsudon:0,botan:0,gomadofu:0,koroni:0,kushi:0,fang:0,mutScale:0,procScale:0,charcoal:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0,oldParts:0,shelfKit:0,toolSet:0,gatePart:0,liftJack:0,winchPart:0,bell:0,fAyu:0,fUgui:0,fOikawa:0,fAbura:0,fMutsu:0,fKoi:0,fFuna:0,fYamame:0,fIwana:0,fNigoi:0,fKamatsuka:0}; // v0.84：魚11種 // v0.81：古い機械部品・専用部品（棚の金具・作業場の工具一式）。v0.83：水門の部品・整備工場の特殊部品・巻き上げ機の部品・半鐘
+  inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,baitKit:0,onigiri:1,bento:0,grilledVeg:0,herbPorridge:0,meat:0,veg:0,rice:0,katsudon:0,botan:0,gomadofu:0,koroni:0,kushi:0,fang:0,mutScale:0,procScale:0,charcoal:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0,oldParts:0,shelfKit:0,toolSet:0,gatePart:0,liftJack:0,winchPart:0,bell:0,fAyu:0,fUgui:0,fOikawa:0,fAbura:0,fMutsu:0,fKoi:0,fFuna:0,fYamame:0,fIwana:0,fNigoi:0,fKamatsuka:0,zugani:0,kawamushi:0,ayuShio:0,keiShio:0,ayuMeshi:0,koikoku:0,funaKanro:0,kawaKushi:0,zakoTen:0,kawaZosui:0,zuganiJiru:0,nigoiTsumire:0}; // v0.84：魚11種・モクズガニ・川虫・魚料理 // v0.81：古い機械部品・専用部品（棚の金具・作業場の工具一式）。v0.83：水門の部品・整備工場の特殊部品・巻き上げ機の部品・半鐘
   prog={gear:f47Fresh(),stage:'talk',unlockTrap:false,unlockBoss:false,clues:[false,false,false],bossDefeated:false,scoutTower:false,scoutWarned:false,scoutRaidWarned:false,prepT:150,gatherT:0,introSeen:false,lastSaveT:0,townRequests:loadTownRequests(),g4:g4Fresh(),f4:f4Fresh(),level:1,exp:0,mastery:{nata:0,axe:0,club:0,spear:0},xph:0}; prog.f7=f7FromInv(); f7Sync(); prog.f8=f8Fresh(); prog.paddy=paddyFresh(); prog.conv=facFresh(); prog.kama=kamaFresh(); prog.f9=f9Fresh(); prog.f10=f10Fresh(); prog.kami=kamiFresh(); prog.p3=p3Fresh(); prog.stash=stashFresh(); prog.p3c=p3cFresh(); prog.p3d=p3dFresh(); prog.chapter2=chapter2State(null,false);
   stats={kills:0,deaths:0,crafts:0,time:0,perfect:0,hunt:loadHuntRecords()};
   P.lvx48=0;P.lvz48=0;
@@ -7717,7 +7723,7 @@ function eat(k){
   }
   else if(KAMA_DISH[k]&&KAMA_DISH[k].full){ const d=KAMA_DISH[k]; if(inv[k]<=0){ toast(FOODS[k].name+'がない',true); sfx('deny'); return; } // v0.66：かまどの新しい料理
     foodTake(k,1); healPlayer(d.heal||0); P.full=Math.min(100,P.full+d.full); const fx=[`体力+${d.heal||0}`,`満腹+${d.full}`];
-    if(d.atk){ P.buffT=Math.max(P.buffT||0,d.atk); fx.push(`${d.atk}秒間 攻撃力+30%`); } if(d.spd){ P.vegT=MEAL_BUFF_TIME; fx.push('30秒間 移動速度+10%'); } if(d.regen){ P.porridgeT=MEAL_BUFF_TIME; fx.push('30秒かけて体力が最大40回復'); }
+    if(d.atk){ P.buffT=Math.max(P.buffT||0,d.atk); fx.push(`${d.atk}秒間 攻撃力+30%`); } if(d.spd){ P.vegT=MEAL_BUFF_TIME; fx.push('30秒間 移動速度+10%'); } if(d.regen){ P.porridgeT=MEAL_BUFF_TIME; fx.push('30秒かけて体力が最大40回復'); } if(d.gather){ P.gatherT=60; fx.push('60秒間 採集の量+1'); } if(d.scout){ P.scoutT=90; fx.push('90秒間 近くの採集物と依頼の場所が地図に出る'); } // v0.84：魚料理
     toast(`${FOODS[k].name}を食べた　${fx.join('・')}`); }
   else if(k==='meat'||k==='rice'){ toast(`${FOODS[k].name}は生では食べられない（かまどで料理する）`,true); sfx('deny'); return; }
   else { const rk=k==='veg'?'veg':'food', nm=FOODS[rk].name; if(inv[rk]<=0){ toast(prog.f7.spoiled[0]?`食べられる${nm}がない（傷んだ物は食べられない）`:`${nm}がない`,true); sfx('deny'); return; } if(P.full>=99){ toast('おなかいっぱい'); return; }
@@ -8800,7 +8806,7 @@ function interactables(){
 function interact(){ if(bossCinema52()) return; if(P3D.fish){ p3dPress(); return; } if(curInter) curInter.act(); } // v0.84：釣りのあいだは「投げる・合わせる」
 function gatherNode(n){
   if(!n.avail) return;
-  const amt=n.k==='wood'?2:(n.chest?2:1+(Math.random()<0.5?1:0));
+  const amt=(n.k==='wood'?2:(n.chest?2:1+(Math.random()<0.5?1:0)))+(P.gatherT>0?1:0); // v0.84：雑魚の天ぷらで +1
   if(FOODS[n.k]) foodAdd(n.k,amt); else inv[n.k]+=amt; setNode(n,false);
   toast(`${n.k==='wood'?'木材':'食料'} +${amt}`); sfx('pickup'); floatText(n.x,1.8,n.z,`${n.k==='wood'?'木材':'食料'}+${amt}`,'#f0dca0');
 }
@@ -8861,7 +8867,7 @@ function buildScoutTower(){
 }
 
 // ================= クラフト =================
-const RNAME={meat:'肉',veg:'野菜',rice:'米',wood:'木材',food:'食料',hide:'獣素材',fang:'ヌシの牙',mutScale:'変異した鱗',procScale:'加工した鱗',charcoal:'木炭',straw:'藁',rope:'縄',stone:'石',bamboo:'竹',iron:'屑鉄',oldParts:'古い機械部品',shelfKit:'棚の金具',toolSet:'作業場の工具一式',seed:'大根の種',gatePart:'水門の部品',liftJack:'整備工場の特殊部品',winchPart:'巻き上げ機の部品',bell:'半鐘',fAyu:'アユ',fUgui:'ウグイ',fOikawa:'オイカワ',fAbura:'アブラハヤ',fMutsu:'カワムツ',fKoi:'コイ',fFuna:'フナ',fYamame:'ヤマメ',fIwana:'イワナ',fNigoi:'ニゴイ',fKamatsuka:'カマツカ'};
+const RNAME={meat:'肉',veg:'野菜',rice:'米',wood:'木材',food:'食料',hide:'獣素材',fang:'ヌシの牙',mutScale:'変異した鱗',procScale:'加工した鱗',charcoal:'木炭',straw:'藁',rope:'縄',stone:'石',bamboo:'竹',iron:'屑鉄',oldParts:'古い機械部品',shelfKit:'棚の金具',toolSet:'作業場の工具一式',seed:'大根の種',gatePart:'水門の部品',liftJack:'整備工場の特殊部品',winchPart:'巻き上げ機の部品',bell:'半鐘',fAyu:'アユ',fUgui:'ウグイ',fOikawa:'オイカワ',fAbura:'アブラハヤ',fMutsu:'カワムツ',fKoi:'コイ',fFuna:'フナ',fYamame:'ヤマメ',fIwana:'イワナ',fNigoi:'ニゴイ',fKamatsuka:'カマツカ',zugani:'モクズガニ',kawamushi:'川虫'};
 const RECIPES=[
  // v0.66：料理4つは作業台に出さない（料理はかまどだけ。2026-11-13 ユーザー決定）。この表は、慧心に頼む料理が使う
  {id:'onigiri',name:'おにぎり',cost:{food:2},show:()=>false,desc:'塩をきかせて竹の皮で包んだ握り飯。体力+35・満腹+25。手持ちで約30分もつ（生の食料は約20分）。Q または 1 で食べる',give:()=>{foodAdd('onigiri',1);}},
@@ -9023,12 +9029,12 @@ function openInv(){ f31Inv(); f34Body(); renderHuntRecords(); { const st=p3dStat
   const g=$('invGrid'); g.innerHTML='';
   if(prog.chapter2&&prog.chapter2.unlocked){ const n=carryN(), r=document.createElement('div'); r.style.gridColumn='1 / -1'; r.innerHTML=`<span>素材の重さ <small class="f7s">${P3B.carry.cap}を超えると、拠点の外では歩くのが遅くなる（資材置き場・荷台に預けられる）</small></span><b style="color:${n>P3B.carry.cap?'#ff9a7a':'inherit'}">${n}/${P3B.carry.cap}</b>`; g.appendChild(r); } // v0.81
   const items=[['木材',inv.wood],['食料',inv.food],['肉',inv.meat],['野菜',inv.veg],['米',inv.rice],['獣素材',inv.hide],['藁',inv.straw],['縄',inv.rope],['石',inv.stone],['竹',inv.bamboo],['屑鉄',inv.iron],['大根の種',inv.seed],['ヌシの牙',inv.fang],['変異した鱗',inv.mutScale],['加工した鱗',inv.procScale],['木炭',inv.charcoal],['おにぎり',inv.onigiri],['精進弁当',inv.bento],['木柵キット',inv.fenceKit],['トゲ柵キット',inv.spikeKit],['杭柵キット',inv.stakeKit],['くくり罠キット',inv.trapKit],['落とし穴キット',inv.pitKit],['おとり餌場キット',inv.baitKit],['古い機械部品',inv.oldParts],['棚の金具',inv.shelfKit],['作業場の工具一式',inv.toolSet],['水門の部品',inv.gatePart],['整備工場の特殊部品',inv.liftJack],['巻き上げ機の部品',inv.winchPart],['半鐘',inv.bell]];
-  for(const f of FISH) items.push([f.name,inv[f.id]||0]); // v0.84：魚
-  f7Flush(); const fk={'食料':'food','おにぎり':'onigiri','精進弁当':'bento','肉':'meat','野菜':'veg','米':'rice'}; for(const f of FISH) fk[f.name]=f.id;
-  for(const [n,v] of items){ if(v===0&&(n==='ヌシの牙'||n==='杭柵キット'||n==='大根の種'||n==='肉'||n==='野菜'||n==='米'||n==='古い機械部品'||n==='棚の金具'||n==='作業場の工具一式'||n==='水門の部品'||n==='整備工場の特殊部品'||n==='巻き上げ機の部品'||n==='半鐘'||FISH.some(f=>f.name===n))) continue; const d=document.createElement('div'); const k=fk[n]; let sub='';
+  for(const f of FISH) items.push([f.name,inv[f.id]||0]); items.push(['モクズガニ',inv.zugani||0],['川虫',inv.kawamushi||0]); // v0.84：魚・モクズガニ・川虫（釣りの餌）
+  f7Flush(); const fk={'食料':'food','おにぎり':'onigiri','精進弁当':'bento','肉':'meat','野菜':'veg','米':'rice'}; for(const f of FISH) fk[f.name]=f.id; fk['モクズガニ']='zugani';
+  for(const [n,v] of items){ if(v===0&&(n==='ヌシの牙'||n==='杭柵キット'||n==='大根の種'||n==='肉'||n==='野菜'||n==='米'||n==='古い機械部品'||n==='棚の金具'||n==='作業場の工具一式'||n==='水門の部品'||n==='整備工場の特殊部品'||n==='巻き上げ機の部品'||n==='半鐘'||n==='モクズガニ'||n==='川虫'||FISH.some(f=>f.name===n))) continue; const d=document.createElement('div'); const k=fk[n]; let sub='';
     if(k&&v>0&&F7.store){ const w=f7Warn(k,'hand'); sub=`<small class="f7s">${w?`うち傷みかけ ${w}・`:''}最短の残り${f7Min(f7Left(k,'hand'))}</small>`; }
     d.innerHTML=`<span>${n}${sub}</span><b>${v}</b>`; g.appendChild(d); }
-  for(const k of [...STRAW_MEALS,'gomadofu','koroni','kushi','katsudon','botan']){ // v0.66：かまどの料理も「食べる」で食べられる
+  for(const k of [...STRAW_MEALS,'gomadofu','koroni','kushi','katsudon','botan',...Object.keys(FISH_DISH)]){ // v0.66：かまどの料理も「食べる」で食べられる（v0.84：魚料理も）
     if(inv[k]<=0)continue;
     const row=document.createElement('div'); row.style.gridColumn='1 / -1';
     const warning=f7Warn(k,'hand');
@@ -9341,7 +9347,7 @@ function updatePlayer(dt){
   if(P.dead) return;
   if(TRUCK.drive){ truckDrive(dt); return; } // v0.77：KEI truck を運転している
   const w=equippedWeapon(); // null は素手。以降の移動・攻撃処理では武器情報を直接参照しない。
-  P.dodgeCD=Math.max(0,P.dodgeCD-dt); P.perfectT=Math.max(0,P.perfectT-dt); P.buffT=Math.max(0,P.buffT-dt);
+  P.dodgeCD=Math.max(0,P.dodgeCD-dt); P.perfectT=Math.max(0,P.perfectT-dt); P.buffT=Math.max(0,P.buffT-dt); P.gatherT=Math.max(0,(P.gatherT||0)-dt); P.scoutT=Math.max(0,(P.scoutT||0)-dt);
   updateStamina(dt); updateF6C(dt); if(P.dbuf){ if(S.time-P.dbuf>0.25) P.dbuf=0; else if(!P.dodge&&P.stagger<=0) tryDodge(true); }
   const inp=SZR.on||(P3D.fish&&(P3D.fish.st==='ara'||P3D.fish.st==='release'))?{x:0,z:0,mag:0}:inputWorld(); if(P3D.fish&&inp.mag>0) p3dStop(); /* v0.84：歩くと釣りをやめる */ const mx=inp.x, mz=inp.z, ml=inp.mag>0?1:0, mag=inp.mag||1; // v0.72：スズキを助け起こしている間は動けない
   P.moveMag=inp.mag; if(inp.mag>0) P.moveAng=Math.atan2(mx,mz);
@@ -9882,6 +9888,7 @@ function drawMini(){
       c.save(); c.translate(tx,tz); c.rotate(a); c.fillStyle='#f0c34a'; c.beginPath(); c.moveTo(6,0); c.lineTo(-4,-5); c.lineTo(-4,5); c.closePath(); c.fill(); c.restore(); }
     else { c.beginPath(); c.moveTo(tx,tz-5); c.lineTo(tx+5,tz); c.lineTo(tx,tz+5); c.lineTo(tx-5,tz); c.closePath(); c.stroke(); } }
   g4Mini(c,X,Z); truckMini(c,X,Z); // v0.77：KEI truck の部品・燃料・車
+  p3dScoutDraw(c,X,Z,false); // v0.84 ずがに汁
   c.save(); c.translate(W/2,H/2); c.rotate(-P.facing+Math.PI); c.fillStyle='#ffffff'; c.beginPath(); c.moveTo(0,-5); c.lineTo(3.5,4); c.lineTo(-3.5,4); c.closePath(); c.fill(); c.restore();
 }
 function updateLabels(dt){
@@ -11139,13 +11146,14 @@ const P3D_AREA={se:'本流の瀬',asa:'本流の浅くゆるい所',fuchi:'本�
 // 釣り竿（§4 の案・暫定）：win 猶予の倍率・cast 最大の投げる距離（m）・rare 珍しい魚の倍率・wait アタリまでの待ち（秒）
 const P3D_ROD={ basic:{name:'簡易釣り竿',win:1.0,cast:8,rare:1.0,wait:[6,14]}, pro:{name:'川漁師の竿',win:1.15,cast:11,rare:1.2,wait:[5,12]}, guard:{name:'川守の釣り竿',win:1.3,cast:13,rare:1.5,wait:[5,12]} };
 const P3D={ fish:null, segs:null, ui:null, bob:null, line:null, rodM:null, look:0 };
-function p3dFresh(){ return {v:1,rod:{basic:0,pro:0,guard:0},book:{},ara:{observed:0,caughtReleased:0,reported:0,rodRewardClaimed:0},casts:0,catches:0}; }
+function p3dFresh(){ return {v:1,rod:{basic:0,pro:0,guard:0},book:{},book2:{},ara:{observed:0,caughtReleased:0,reported:0,rodRewardClaimed:0},casts:0,catches:0}; }
 function p3dLoad(q){ const d=p3dFresh(); if(!q||typeof q!=='object'||q.v!==1) return d; const b=x=>x?1:0;
   for(const k in d.rod) d.rod[k]=b(q.rod&&q.rod[k]); for(const k in d.ara) d.ara[k]=b(q.ara&&q.ara[k]);
   if(d.ara.rodRewardClaimed){ d.ara.reported=1; d.rod.guard=1; } if(d.ara.reported) d.ara.caughtReleased=1; if(d.ara.caughtReleased) d.ara.observed=1; // 後の段階が済んでいれば前の段階も
   d.casts=num(q.casts,0,0,1e6); d.catches=num(q.catches,0,0,1e6);
   if(q.book&&typeof q.book==='object') for(const f of FISH.concat([ARAGAKO])){ const e=q.book[f.id]; if(!e||typeof e!=='object') continue; const s=x=>typeof x==='string'?x.slice(0,24):'';
     d.book[f.id]={n:num(e.n,0,0,1e6),max:num(e.max,0,0,200),where:s(e.where),band:s(e.band),seen:(b(e.seen)||num(e.n,0,0,1)>0)?1:0}; }
+  if(q.book2&&typeof q.book2==='object') for(const a of AQUA){ const e=q.book2[a.id]; if(!e||typeof e!=='object') continue; const s=x=>typeof x==='string'?x.slice(0,24):''; d.book2[a.id]={n:num(e.n,0,0,1e6),where:s(e.where),band:s(e.band),seen:(b(e.seen)||num(e.n,0,0,1)>0)?1:0}; } // v0.84 D-2：水生生物
   return d; }
 function p3dState(){ if(!prog.p3d) prog.p3d=p3dFresh(); return prog.p3d; }
 function p3dRod(){ const r=p3dState().rod; return r.guard?'guard':r.pro?'pro':r.basic?'basic':null; }
@@ -11165,8 +11173,8 @@ function p3dPlaceName(w){ return w.main?'九頭竜川':(w.st.n||'水路'); }
 // 水際か（陸に立ち、2.5m 以内に水がある）
 function p3dShore(){ if(REG.cur!=='kamishihi'||P3A.inside||TRUCK.drive) return null; if(p3dWater(P.x,P.z)) return null; for(let r=1;r<=2.6;r+=0.8) for(let a=0;a<12;a++){ const x=P.x+Math.cos(a*Math.PI/6)*r, z=P.z+Math.sin(a*Math.PI/6)*r, w=p3dWater(x,z); if(w) return {x,z,w}; } return null; }
 // ---- 魚を選ぶ ----
-function p3dPick(area,main,rod){ const band=p3dBand(), wx=(typeof weather!=='undefined'&&weather.state)||'clear', R=P3D_ROD[rod]; const L=[]; let tot=0;
-  for(const f of FISH){ let w=f.where[area]||0; if(!w) continue; w*=(f.band&&f.band[band])||1; w*=(f.wx&&f.wx[wx])||1; if(f.rare) w*=R.rare; L.push([f,w]); tot+=w; }
+function p3dPick(area,main,rod,bait){ const band=p3dBand(), wx=(typeof weather!=='undefined'&&weather.state)||'clear', R=P3D_ROD[rod]; const L=[]; let tot=0;
+  for(const f of FISH){ let w=f.where[area]||0; if(!w) continue; w*=(f.band&&f.band[band])||1; w*=(f.wx&&f.wx[wx])||1; if(f.rare) w*=R.rare*(bait?P3D_BAIT.rare:1); L.push([f,w]); tot+=w; }
   if(main&&area==='se'&&Math.random()<ARAGAKO.p) return ARAGAKO; // アラレガコ（釣り竿では上げない）
   let r=Math.random()*tot; for(const [f,w] of L){ r-=w; if(r<=0) return f; } return L.length?L[L.length-1][0]:FISH_BY.fUgui; }
 // ---- 釣りの流れ：aim（押している間ゲージ）→ fly（飛ぶ）→ wait（待つ）→ bite（アタリ）→ reel（引き寄せ）→ 終わり ----
@@ -11181,7 +11189,8 @@ function p3dCast(){ const F=P3D.fish, R=P3D_ROD[F.rod], d=Math.max(2,R.cast*(0.2
   let hit=null; for(let s=d;s>=1.2;s-=0.4){ const x=P.x+dx*s, z=P.z+dz*s, w=p3dWater(x,z); if(w){ hit={x,z,w}; break; } }
   const st=p3dState(); st.casts++; if(!hit){ sfx('deny'); F.st='ready'; F.t=0; p3dUi(); toast('水に届かなかった。水のほうを向いて、もう一度'); return; }
   const area=p3dArea(hit.x,hit.z,hit.w); F.x=hit.x; F.z=hit.z; F.y=hit.w.y; F.area=area; F.place=p3dPlaceName(hit.w); F.main=hit.w.main; F.st='fly'; F.t=0; F.d=d;
-  F.fishPick=p3dPick(area,hit.w.main,F.rod); const W=R.wait; F.wait=W[0]+Math.random()*(W[1]-W[0]); sfx('swing'); p3dUi(); }
+  F.bait=0; if((inv.kawamushi||0)>0){ inv.kawamushi--; F.bait=1; } // 川虫があれば自動で付ける
+  F.fishPick=p3dPick(area,hit.w.main,F.rod,F.bait); const W=R.wait; F.wait=(W[0]+Math.random()*(W[1]-W[0]))*(F.bait?P3D_BAIT.wait:1); sfx('swing'); p3dUi(); }
 function p3dHook(){ const F=P3D.fish; F.st='reel'; F.t=0; sfx('hit'); p3dUi(); }
 function p3dEnd(msg){ const F=P3D.fish; if(!F) return; F.st='ready'; F.t=0; if(P3D.bob) P3D.bob.visible=false; if(P3D.line) P3D.line.visible=false; if(P3D.fm) P3D.fm.visible=false; p3dUi(); if(msg) toast(msg); saveGame(); p3dAfterCast(); }
 function p3dWin(f,rod){ return (f.rare||f===ARAGAKO?0.7:1.0)*P3D_ROD[rod].win; }
@@ -11228,12 +11237,12 @@ function p3dUi(){ if(!P3D.ui){ const d=document.createElement('div'); d.id='fish
     const st=document.createElement('style'); st.textContent='#fishUi{position:fixed;left:50%;bottom:calc(112px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:30;background:rgba(18,16,12,.82);border:1px solid #6a5a3a;border-radius:10px;padding:8px 10px;color:#efe6d2;display:grid;grid-template-columns:1fr auto;gap:6px 8px;align-items:center;min-width:260px;max-width:92vw;font-size:13px;user-select:none;-webkit-user-select:none;touch-action:none}#fishUi[hidden]{display:none}#fishUi .fhT{grid-column:1/3;display:flex;gap:8px;align-items:baseline}#fishUi .fhG{height:10px;background:#3a3428;border-radius:5px;overflow:hidden}#fishUi .fhG i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7ab0d0,#e8d070)}#fishBtn{grid-row:2/4;grid-column:2;font-size:16px;font-weight:700;padding:14px 18px;border-radius:10px;background:#c8a03a;color:#1a1408;border:0;min-width:96px}#fishBtn.now{background:#e04030;color:#fff}#fishX{grid-column:1;justify-self:start;font-size:12px;padding:4px 10px;border-radius:6px;background:#3a3428;color:#efe6d2;border:1px solid #6a5a3a}';
     document.head.appendChild(st); const b=$('fishBtn'); b.addEventListener('pointerdown',e=>{ e.preventDefault(); e.stopPropagation(); P3D.btnDown=1; p3dPress(); }); b.addEventListener('pointerup',e=>{ e.preventDefault(); e.stopPropagation(); if(P3D.btnDown){ P3D.btnDown=0; p3dRelease(); } }); b.addEventListener('pointerleave',()=>{ if(P3D.btnDown){ P3D.btnDown=0; p3dRelease(); } });
     $('fishX').addEventListener('click',e=>{ e.stopPropagation(); p3dStop(); }); }
-  const F=P3D.fish; P3D.ui.hidden=!F; if(!F) return; $('fishRod').textContent=P3D_ROD[F.rod].name;
+  const F=P3D.fish; P3D.ui.hidden=!F; if(!F) return; $('fishRod').textContent=P3D_ROD[F.rod].name+((inv.kawamushi||0)||F.bait?`・川虫 ${inv.kawamushi||0}${F.bait&&['fly','wait','bite','reel'].includes(F.st)?'（付けた）':''}`:'');
   const M={ready:'押している間、投げる距離が行き来する。離すと投げる',aim:'離すと投げる（カメラの向き）',fly:'',wait:'待つ……浮きが沈んだら押す',bite:'今だ！ 押す',reel:'釣り上げている',ara:'',release:''};
   $('fishMsg').textContent=M[F.st]||''; const b=$('fishBtn'); b.textContent=F.st==='ready'||F.st==='aim'?'投げる':F.st==='bite'?'合わせる！':'合わせる'; b.classList.toggle('now',F.st==='bite'); p3dUiGauge(); }
 function p3dUiGauge(){ const F=P3D.fish; if(!F||!P3D.ui) return; const g=$('fishGauge'); g.style.width=(F.st==='aim'?Math.round(F.g*100):F.st==='bite'?Math.round(100*(1-F.t/F.win)):0)+'%'; if(P3D.lastSt!==F.st){ P3D.lastSt=F.st; p3dUi(); } }
 // ---- 外で：釣りをする・川底をのぞく ----
-function p3dOutside(L){ if(P3D.fish) return; const sh=p3dShore(); if(sh){ const rod=p3dRod(); L.push({d:1.6,label:rod?`釣りをする（${P3D_ROD[rod].name}）`:'釣りをする（釣り竿が要る：作業台で作る）',act:p3dStart}); }
+function p3dOutside(L){ if(P3D.fish) return; const sh=p3dShore(); if(sh){ const rod=p3dRod(); L.push({d:1.6,label:rod?`釣りをする（${P3D_ROD[rod].name}）`:'釣りをする（釣り竿が要る：作業台で作る）',act:p3dStart}); L.push({d:1.7,label:'水辺の石の下を調べる（水生生物）',act:p3dSearch}); }
   for(const f of P3A.fishSpots||[]){ const d=dist(P.x,P.z,f.x,f.z); if(d<2.4) L.push({d:d+0.3,label:'川底をのぞく',act:()=>p3dLook(f)}); } }
 // 川底をのぞく：石の多い瀬の底に、まれにアラレガコの姿が見える（目撃。§14.2）。1回で 20%（暫定）
 function p3dLook(f){ if(P3D.look>0){ toast('水面がまだ揺れている。少し待とう'); return; } P3D.look=8; const st=p3dState(); const see=Math.random()<0.2||P3D.forceSee;
@@ -11241,16 +11250,84 @@ function p3dLook(f){ if(P3D.look>0){ toast('水面がまだ揺れている。少
   const first=!st.ara.observed; st.ara.observed=1; const e=st.book.ara||(st.book.ara={n:0,max:0,where:'',band:'',seen:1}); e.seen=1; if(!e.where){ e.where='九頭竜川（本流の瀬の底）'; e.band=P3D_BAND[p3dBand()]; } saveGame();
   toast('石に紛れて、頭の大きな魚がじっとしている……。'+(first?'（図鑑に記録：アラレガコを目撃）':''),true); sfx('pickup'); }
 // ---- 図鑑（魚類。水生生物は D-2）----
-const BOOK={sel:'fAyu'};
-function p3dOpenBook(){ if(S.mode!=='playing'&&S.mode!=='menu') return; hideAllOv(); stopBeastVoices51(); S.mode='menu'; keys.clear(); p3dRenderBook(); $('bookOv').hidden=false; }
-function p3dRenderBook(){ const st=p3dState(), all=FISH.concat([ARAGAKO]), n=all.filter(f=>st.book[f.id]&&st.book[f.id].seen).length; $('bookSub').textContent=`魚類 ${n}/${all.length}　釣った数 ${st.catches}${p3cState().soichi.coop?'　記録：川村宗一':''}`;
+const BOOK={sel:'fAyu',tab:'fish',det:false};
+function p3dOpenBook(){ if(S.mode!=='playing'&&S.mode!=='menu') return; hideAllOv(); stopBeastVoices51(); S.mode='menu'; keys.clear(); BOOK.det=false; p3dRenderBook(); $('bookOv').hidden=false; }
+function p3dRenderBook(){ p3dBookTabs(); if(BOOK.tab==='aqua'){ p3dRenderAqua(); return; } const st=p3dState(), all=FISH.concat([ARAGAKO]), n=all.filter(f=>st.book[f.id]&&st.book[f.id].seen).length; $('bookSub').textContent=`魚類 ${n}/${all.length}　釣った数 ${st.catches}${p3cState().soichi.coop?'　記録：川村宗一':''}`;
   const list=$('bookList'); list.innerHTML=''; for(const f of all){ const e=st.book[f.id], seen=!!(e&&e.seen); const el=document.createElement('div'); el.className='wkCard'+(BOOK.sel===f.id?' sel':'')+(seen?'':' lock'); el.id='bookCard_'+f.id;
-    el.innerHTML=`<div class="wkIc">${seen?icImg('p3d_'+f.id):''}</div><div class="wkNm">${seen?f.name:'？？？'}</div><div class="wkSub2">${seen?(f===ARAGAKO?(st.ara.reported?'保護報告済み':st.ara.caughtReleased?'川へ戻した':'目撃'):`${e.n}匹・最大 ${e.max}cm`):'まだ'}</div>`;
-    el.onclick=()=>{ BOOK.sel=f.id; p3dRenderBook(); }; list.appendChild(el); }
-  const f=all.find(x=>x.id===BOOK.sel)||all[0], e=st.book[f.id], seen=!!(e&&e.seen), det=$('bookDet');
-  if(!seen){ det.innerHTML=`<div class="tag">魚類</div><h3>？？？</h3><p class="ds">まだ見つけていない。${f.rare?'珍しい魚。':''}</p>`; return; }
+    el.innerHTML=`${seen?icImg('p3d_'+f.id,'wkIc'):'<span class="wkIc"></span>'}<div class="wkNm">${seen?f.name:'？？？'}</div><div class="tag" style="font-size:11px;color:var(--washi-dim)">${seen?(f===ARAGAKO?(st.ara.reported?'保護報告済み':st.ara.caughtReleased?'川へ戻した':'目撃'):`${e.n}匹・最大 ${e.max}cm`):'まだ'}</div>`;
+    el.onclick=()=>{ BOOK.sel=f.id; BOOK.det=true; p3dRenderBook(); }; list.appendChild(el); }
+  const f=all.find(x=>x.id===BOOK.sel)||all[0], e=st.book[f.id], seen=!!(e&&e.seen), det=$('bookDet'); det.classList.toggle('hide',!BOOK.det); setTimeout(()=>{ const b=det.querySelector('.back'); if(b) b.onclick=()=>{ BOOK.det=false; p3dRenderBook(); }; },0);
+  if(!seen){ det.innerHTML=`<button class="back">← 一覧へ</button><div class="tag">魚類</div><h3>？？？</h3><div class="ds">まだ見つけていない。${f.rare?'珍しい魚。':''}</div>`; return; }
   const ara=f===ARAGAKO, recs=ara?[st.ara.observed?'目撃した':'',st.ara.caughtReleased?'釣ったあと、すぐ川へ戻した':'',st.ara.reported?'川村宗一に報告した（保護報告済み）':''].filter(Boolean):[];
-  det.innerHTML=`<div class="wkBig">${icImg('p3d_'+f.id)}</div><div class="tag">魚類${f.rare?'（珍しい）':ara?'（保護）':''}</div><h3>${f.name}</h3><p class="ds">生息環境：${f.hab}<br>発見場所：${e.where||'—'}<br>見つけた時間帯：${e.band||'—'}${ara?'':`<br>釣った数：${e.n}匹　最大：${e.max}cm`}${ara?`<br>観察記録：${recs.join('・')}<br><b>持ち帰らない魚。釣れたら、すぐ川へ戻す</b>`:''}</p>`; }
+  det.innerHTML=`<button class="back">← 一覧へ</button>${icImg('p3d_'+f.id,'bigIc')}<div class="tag">魚類${f.rare?'（珍しい）':ara?'（保護）':''}</div><h3>${f.name}</h3><div class="ds">生息環境：${f.hab}<br>発見場所：${e.where||'—'}<br>見つけた時間帯：${e.band||'—'}${ara?'':`<br>釣った数：${e.n}匹　最大：${e.max}cm`}${ara?`<br>観察記録：${recs.join('・')}<br><b>持ち帰らない魚。釣れたら、すぐ川へ戻す</b>`:''}</div>`; }
+// ---- v0.84 P3-D（D-2）：魚料理10品（かまど）・水生生物7種・水生生物の図鑑 ----
+// 魚料理は 2026-11-19 20:31 ユーザー「一任します」。名前・素材・数は Claude が決めた（docs/p3d-plan.md §5 の案。雑魚の天ぷら・ずがに汁の補助は変えた：docs/p3d-d2.md §1。暫定）。新しい調味料は足さない。
+// need：any どの川魚でも・small 小さい川魚・kei ヤマメかイワナ・zugani モクズガニ。効果：heal 体力・full 満腹・atk 攻撃+30%の秒数・spd 30秒 移動+10%・regen 30秒で体力40・gather 60秒 採集の量+1・scout 90秒 近くの採集物と受けた依頼の場所が地図に出る
+const FISH_DISH={
+ ayuShio:{name:'鮎の塩焼き',need:{fAyu:1},heal:25,full:25,spd:1,note:'塩をふって炭火で焼いた。川の香りがする'},
+ keiShio:{name:'渓魚の塩焼き',need:{kei:1},heal:30,full:30,atk:15,note:'ヤマメかイワナを串に刺して焼いた。力がわく'},
+ ayuMeshi:{name:'鮎めし',need:{fAyu:1,rice:1},heal:30,full:55,note:'焼いた鮎を、米と一緒に炊きこんだ'},
+ koikoku:{name:'鯉こく',need:{fKoi:1,veg:1},heal:35,full:45,regen:1,note:'鯉を輪切りにして、野菜と煮込んだ。体が芯から温まる'},
+ funaKanro:{name:'鮒の甘露煮',need:{fFuna:1},heal:20,full:35,note:'鮒をじっくり甘辛く煮つめた。日持ちがする'},
+ kawaKushi:{name:'川魚の串焼き',need:{any:1},heal:15,full:20,note:'どの川魚でも、串に刺して焼けば食べられる'},
+ zakoTen:{name:'雑魚の天ぷら',need:{small:2},heal:20,full:35,gather:1,note:'小さい川魚をからりと揚げた。手が軽くなる'},
+ kawaZosui:{name:'川魚の雑炊',need:{any:1,rice:1},heal:30,full:50,note:'川魚の身をほぐして、米と煮た'},
+ zuganiJiru:{name:'ずがに汁',need:{zugani:1,veg:1},heal:30,full:40,scout:1,note:'九頭竜川のモクズガニ（ずがに）をすりつぶした福井の汁。目が冴えて、まわりがよく見える'},
+ nigoiTsumire:{name:'にごいのつみれ汁',need:{fNigoi:1,veg:1},heal:25,full:45,note:'ニゴイの身をたたいて団子にした汁'} };
+for(const id in FISH_DISH){ const d=FISH_DISH[id]; KAMA_DISH[id]={a:null,heal:d.heal,full:d.full,atk:d.atk,spd:d.spd,regen:d.regen,gather:d.gather,scout:d.scout,note:d.note}; }
+const P3D_SMALL=['fOikawa','fAbura','fMutsu','fUgui','fKamatsuka'];
+const P3D_NEEDN={any:'どの川魚でも',small:'小さい川魚（オイカワ・アブラハヤ・カワムツ・ウグイ・カマツカ）',kei:'ヤマメかイワナ',zugani:'モクズガニ'};
+function p3dNeedText(id){ const n=FISH_DISH[id].need; return Object.keys(n).map(k=>`${P3D_NEEDN[k]||FOODS[k].name}${n[k]}`).join('・'); }
+function p3dEffText(d){ const fx=[`体力+${d.heal}`,`満腹+${d.full}`]; if(d.atk) fx.push(`${d.atk}秒間 攻撃+30%`); if(d.spd) fx.push('30秒間 移動+10%'); if(d.regen) fx.push('30秒かけて体力40'); if(d.gather) fx.push('60秒間 採集の量+1'); if(d.scout) fx.push('90秒間 近くの採集物と依頼の場所が地図に出る'); return fx.join('・'); }
+// 料理に使う魚を決める（多く持っている魚から使う）。足りなければ null
+function p3dDishPlan(id){ f7Flush(); const need=FISH_DISH[id].need, take={}, have=k=>(inv[k]||0)-(take[k]||0);
+  for(const k in need){ let n=need[k]; const pool=k==='any'?FISH.map(f=>f.id).sort((a,b)=>have(b)-have(a)):k==='small'?P3D_SMALL.slice().sort((a,b)=>have(b)-have(a)):k==='kei'?['fYamame','fIwana']:[k];
+    for(const f of pool){ while(n>0&&have(f)>0){ take[f]=(take[f]||0)+1; n--; } } if(n>0) return null; } return take; }
+// ずがに汁（P.scoutT・90秒）：近くの採集物（80m）と、受けた依頼のまだの場所を、右上の小さい地図と G の地図に出す
+function p3dScoutPts(){ if(!(P.scoutT>0)) return null; const R=80, pts=[], near=(x,z)=>dist(x,z,P.x,P.z)<=R;
+  if(REG.cur==='kamishihi'&&REG.live&&REG.live.kw){ const k=prog.kami;
+    for(const n of REG.live.kw.nodes){ if(!near(n.x,n.z)) continue; if(n.k==='scrap'?k.sc.includes(n.key):n.k==='rock'?kamiRockLeft(n)<=0:k.n[n.key]!=null) continue; pts.push({x:n.x,z:n.z,col:n.k==='scrap'?'#9aa4ac':n.k==='rock'?'#d8d4cc':n.k==='wood'?'#c89a60':n.k==='food'?'#f0dca0':'#7ad0ff'}); }
+    for(const q of P3C_REQ){ const r=p3cReq(q.id); if(!r||!r.a||r.r) continue; q.steps.forEach((st,j)=>{ if(!p3cStepOpen(q,r,j)) return; const sp=p3cSpot(st); pts.push({x:sp.x,z:sp.z,req:1}); }); } }
+  else if(!REG.live){ for(const n of NODES) if(n.avail&&near(n.x,n.z)) pts.push({x:n.x,z:n.z,col:n.k==='wood'?'#c89a60':'#f0dca0'});
+    for(const n of F5.rock) if(rockLeft(n)>0&&near(n.x,n.z)) pts.push({x:n.x,z:n.z,col:'#d8d4cc'}); }
+  return pts; }
+function p3dScoutDraw(c,X,Z,big){ const pts=p3dScoutPts(); if(!pts) return; for(const p of pts){ const x=X(p.x), y=Z(p.z);
+    if(p.req){ c.strokeStyle='#7ad0e0'; c.lineWidth=2; c.beginPath(); c.arc(x,y,big?8:4.5,0,TAU); c.stroke(); if(big){ c.font='bold 11px "Zen Kaku Gothic New",sans-serif'; c.lineWidth=3; c.strokeStyle='rgba(0,0,0,.75)'; c.strokeText('依頼',x+10,y-6); c.fillStyle='#9fe6f0'; c.fillText('依頼',x+10,y-6); } }
+    else { c.fillStyle=p.col; c.strokeStyle='#000'; c.lineWidth=1; c.beginPath(); c.arc(x,y,big?3.4:2,0,TAU); c.fill(); c.stroke(); } } }
+function p3dHasFish(){ return FISH.some(f=>(inv[f.id]||0)>0)||(inv.zugani||0)>0; }
+function p3dDishUI(){ const F=FAC.kama, ch=[]; for(const id in FISH_DISH){ const d=FISH_DISH[id], ok=!!p3dDishPlan(id); ch.push({label:`${ok?'':'（素材が足りない）'}${d.name}：${p3dNeedText(id)}　${p3dEffText(d)}`,act:()=>p3dDishCook(id)}); }
+  chooseDefense(`かまどで魚を料理（薪に木材${F.cook.fuel.wood}・${F.cook.time}秒）`,ch); }
+function p3dDishCook(id){ const c=prog.kama, F=FAC.kama, d=FISH_DISH[id]; if(c.q.length>=F.maxQ){ sfx('deny'); toast('いっぱい。できあがるまで待つ',true); return null; }
+  const plan=p3dDishPlan(id); if(!plan){ sfx('deny'); toast(`${d.name}：素材が足りない（${p3dNeedText(id)}）`,true); return null; }
+  if(!canAfford(F.cook.fuel)){ sfx('deny'); toast(`薪が足りない（木材${F.cook.fuel.wood}）`,true); return null; }
+  for(const k in plan) foodTake(k,plan[k]); for(const k in F.cook.fuel) inv[k]-=F.cook.fuel[k]; c.q.push(id); sfx('craft');
+  toast(`${d.name}を火にかけた（${Object.keys(plan).map(k=>FOODS[k].name+plan[k]).join('・')}）。${F.cook.time}秒`); facVis('kama'); saveGame(); return id; }
+// ---- 水生生物（§16.2・§16.3。2026-11-19 20:31 承認：川虫は釣りの餌・モクズガニは食材・ほかは観察だけ）----
+const AQUA=[
+ {id:'aKawagera',name:'カワゲラ（幼虫）',where:{se:30,trib:25,tribUp:30},use:'bait',hab:'流れの速い瀬の、石の裏',note:'川虫。釣りの餌になる'},
+ {id:'aTobikera',name:'トビケラ（幼虫）',where:{se:20,asa:20,trib:25,tribUp:15},use:'bait',hab:'石の裏に、小石や砂で筒のような巣を作る',note:'川虫。釣りの餌になる'},
+ {id:'aYago',name:'ヤゴ',where:{asa:10,canal:30,trib:8,fuchi:6},use:'obs',hab:'流れのゆるい所や水路の、草の根もと',note:'トンボの幼虫。見るだけにして、そっと戻した'},
+ {id:'aSawagani',name:'サワガニ',where:{tribUp:30,trib:8},use:'obs',hab:'山のほうのきれいな沢の、石の下',note:'見るだけにして、そっと戻した'},
+ {id:'aMokuzu',name:'モクズガニ',where:{se:10,asa:12,fuchi:12,trib:10},use:'food',hab:'川の石の陰。はさみに毛がある',note:'福井では「ずがに」と呼ばれ、汁にして食べる'},
+ {id:'aYoshinobori',name:'小魚（ヨシノボリ）',where:{se:20,asa:25,trib:15},use:'obs',hab:'浅瀬の石の上に、腹のひれではりつく',note:'見るだけにして、そっと戻した'},
+ {id:'aKawanina',name:'水辺の貝（カワニナ）',where:{canal:30,trib:12,asa:8,fuchi:6},use:'obs',hab:'水路やゆるい流れの、石や泥の上',note:'ホタルの幼虫の餌になる貝。見るだけにした'} ];
+const AQUA_BY={}; for(const a of AQUA) AQUA_BY[a.id]=a;
+const P3D_BAIT={rare:1.3,wait:0.85}; // 川虫を付けると：珍しい魚 1.3倍・待ち 0.85倍（暫定）
+// 水辺の石の下を調べる：近くの水の種類で、見つかる生き物が変わる。8秒に1回（暫定）。3割は何もいない
+function p3dSearch(){ if(P3D.srch>0){ toast('さっき調べたばかり。少し待とう'); return; } const sh=p3dShore(); if(!sh) return; P3D.srch=8; const area=p3dArea(sh.x,sh.z,sh.w), place=p3dPlaceName(sh.w);
+  chips(sh.x,groundH(sh.x,sh.z)+0.3,sh.z,6,0x8a857a); sfx('hit'); if(Math.random()<0.3&&!P3D.forceAqua){ toast('石の下には、何もいなかった'); return; }
+  const L=AQUA.map(a=>[a,a.where[area]||0]).filter(x=>x[1]>0); let r=Math.random()*L.reduce((s,x)=>s+x[1],0), got=L[L.length-1][0]; for(const [a,w] of L){ r-=w; if(r<=0){ got=a; break; } } if(P3D.forceAqua) got=AQUA_BY[P3D.forceAqua]||got;
+  const st=p3dState(); if(!st.book2) st.book2={}; const e=st.book2[got.id]||(st.book2[got.id]={n:0,where:'',band:'',seen:1}); const first=!e.n; e.n++; e.seen=1; if(first){ e.where=`${place}（${P3D_AREA[area]}）`; e.band=P3D_BAND[p3dBand()]; }
+  let msg=''; if(got.use==='bait'){ const n=1+(Math.random()<0.5?1:0); inv.kawamushi=(inv.kawamushi||0)+n; msg=`${got.name}：川虫 +${n}（釣りの餌）`; }
+  else if(got.use==='food'){ foodAdd('zugani',1); msg=`${got.name}をつかまえた（食材）`; } else msg=`${got.name}を観察した。${got.note}`;
+  sfx('pickup'); saveGame(); if(first) banner(`図鑑に記録：${got.name}`,`${e.where}・${e.band}`,2.4); toast(msg,first); }
+function p3dBookTabs(){ const t=$('bookTabs'); if(!t) return; const st=p3dState(); t.innerHTML=''; for(const [id,nm] of [['fish','魚類'],['aqua','水生生物']]){ const b=document.createElement('button'); b.className='wkTab'+(BOOK.tab===id?' on':''); b.id='bookTab_'+id; b.textContent=nm; b.onclick=()=>{ BOOK.tab=id; BOOK.sel=id==='aqua'?AQUA[0].id:'fAyu'; p3dRenderBook(); }; t.appendChild(b); } }
+function p3dRenderAqua(){ const st=p3dState(), B2=st.book2||{}, n=AQUA.filter(a=>B2[a.id]&&B2[a.id].seen).length; $('bookSub').textContent=`水生生物 ${n}/${AQUA.length}　川虫 ${inv.kawamushi||0}`;
+  const list=$('bookList'); list.innerHTML=''; for(const a of AQUA){ const e=B2[a.id], seen=!!(e&&e.seen); const el=document.createElement('div'); el.className='wkCard'+(BOOK.sel===a.id?' sel':'')+(seen?'':' lock'); el.id='bookCard_'+a.id;
+    el.innerHTML=`${seen?icImg('p3d_'+a.id,'wkIc'):'<span class="wkIc"></span>'}<div class="wkNm">${seen?a.name:'？？？'}</div><div class="tag" style="font-size:11px;color:var(--washi-dim)">${seen?`${e.n}回・${a.use==='bait'?'釣りの餌':a.use==='food'?'食材':'観察だけ'}`:'まだ'}</div>`;
+    el.onclick=()=>{ BOOK.sel=a.id; BOOK.det=true; p3dRenderBook(); }; list.appendChild(el); }
+  const a=AQUA_BY[BOOK.sel]||AQUA[0], e=B2[a.id], det=$('bookDet'); det.classList.toggle('hide',!BOOK.det); setTimeout(()=>{ const b=det.querySelector('.back'); if(b) b.onclick=()=>{ BOOK.det=false; p3dRenderBook(); }; },0); if(!(e&&e.seen)){ det.innerHTML=`<button class="back">← 一覧へ</button><div class="tag">水生生物</div><h3>？？？</h3><div class="ds">まだ見つけていない。水辺の石の下を調べると見つかる。</div>`; return; }
+  det.innerHTML=`<button class="back">← 一覧へ</button>${icImg('p3d_'+a.id,'bigIc')}<div class="tag">水生生物（${a.use==='bait'?'釣りの餌':a.use==='food'?'食材':'観察だけ'}）</div><h3>${a.name}</h3><div class="ds">生息環境：${a.hab}<br>発見場所：${e.where||'—'}<br>見つけた時間帯：${e.band||'—'}<br>見つけた回数：${e.n}<br>観察記録：${a.note}</div>`; }
 // ---- 宗一（§7.3・§8.2・§11）：川辺で初めて釣りをしたときに出会う → 加入依頼（釣り道具の修理と失くした道具の探索）→ 協力者 → Lv2 の空き部屋で正式居住 ----
 P3C_WHO.soichi={name:'宗一'};
 const P3D_LINES={
@@ -11303,9 +11380,15 @@ function p3dReqBuild(ctx){ const mk=(x,z,rot,fn)=>{ const g=new GB(); g.jit=0.03
   { const p=S(2), a=0.3; mk(p.x,p.z,a,g=>{ for(const [x,z] of [[-1.4,-1.1],[1.4,-1.1],[-1.4,1.1],[1.4,1.1]]) g.box(x,1.0,z,0.12,2.0,0.12,cc(0x6a5440)); g.box(0,2.05,0,3.2,0.1,2.6,cc(0x5a5c5e)); g.box(0,1.0,-1.15,2.8,2.0,0.06,cc(0x8a6a44)); g.box(-1.0,0.9,-0.9,0.9,0.06,0.4,cc(0x7a5a3a)); g.box(0.6,0.25,-0.6,0.9,0.5,0.6,cc(0x8a8a82)); });
     const bx=mk(p.x,p.z,a,g=>{ g.box(-1.0,1.05,-0.9,0.6,0.25,0.36,cc(0x8a3a2a)); }); reg(2,{pre:[bx]}); ctx.obox(p.x+Math.sin(a)*1.15,p.z-Math.cos(a)*1.15,2.8,0.2,a,'house',{h:kamiH(p.x,p.z)+2,p3a:1}); }
   p3cReqVis(); } // 光る印は p3cReqBuild がすべての依頼に作る
-function p3dIconObj(id){ const f=FISH_BY[id]||(id==='ara'?ARAGAKO:null); if(!f) return null; const g=new THREE.Group(), M=c=>new THREE.MeshLambertMaterial({color:c}), B=(c,w,h,d,x,y,z)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c)); m.position.set(x,y,z); g.add(m); };
+function p3dIconObj(id){ if(AQUA_BY[id]) return p3dAquaIcon(id); const f=FISH_BY[id]||(id==='ara'?ARAGAKO:null); if(!f) return null; const g=new THREE.Group(), M=c=>new THREE.MeshLambertMaterial({color:c}), B=(c,w,h,d,x,y,z)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c)); m.position.set(x,y,z); g.add(m); };
   if(f===ARAGAKO){ B(f.col[0],0.5,0.18,0.42,0.3,0.5,0); B(f.col[0],0.8,0.15,0.26,-0.3,0.5,0); for(let k=0;k<5;k++) B(f.col[1],0.1,0.02,0.1,-0.5+k*0.2,0.6,(k%2?0.07:-0.07)); B(f.col[1],0.08,0.15,0.24,-0.75,0.5,0); }
   else { B(f.col[0],1.1,0.3,0.16,0,0.55,0); B(0xe8e8e0,0.9,0.12,0.14,0,0.45,0); B(f.col[0],0.25,0.36,0.06,-0.7,0.55,0); B(f.col[1],0.3,0.12,0.04,0.05,0.74,0); B(0x101010,0.05,0.05,0.18,0.42,0.6,0); }
+  g.rotation.y=-0.5; return g; }
+function p3dAquaIcon(id){ const g=new THREE.Group(), M=c=>new THREE.MeshLambertMaterial({color:c}), B=(c,w,h,d,x,y,z,ry)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c)); m.position.set(x,y,z); if(ry) m.rotation.y=ry; g.add(m); };
+  if(id==='aMokuzu'||id==='aSawagani'){ const c=id==='aMokuzu'?0x5a4a3a:0xc8603a; B(c,0.8,0.25,0.6,0,0.4,0); for(const s of [-1,1]){ B(c,0.3,0.2,0.2,s*0.55,0.45,0.35); if(id==='aMokuzu') B(0x2a2420,0.2,0.18,0.18,s*0.55,0.45,0.42); for(let k=0;k<3;k++) B(c,0.4,0.06,0.06,s*0.5,0.3,-0.2+k*0.18); } }
+  else if(id==='aKawanina'){ for(let k=0;k<4;k++) B(0x3a3428,0.36-k*0.07,0.2,0.36-k*0.07,0,0.3+k*0.15,0); }
+  else if(id==='aYoshinobori'){ B(0x8a7a5a,1.0,0.22,0.2,0,0.5,0); B(0x6a5a3a,0.2,0.3,0.06,-0.6,0.5,0); for(let k=0;k<3;k++) B(0x4a3a2a,0.12,0.04,0.21,-0.25+k*0.25,0.6,0); }
+  else { const c=id==='aYago'?0x6a7a3a:id==='aKawagera'?0x8a6a3a:0x7a6a4a; B(c,0.9,0.18,0.24,0,0.45,0); B(c,0.25,0.2,0.3,0.5,0.45,0); for(let k=0;k<3;k++) for(const s of [-1,1]) B(c,0.05,0.04,0.35,0.2-k*0.2,0.38,s*0.2); if(id==='aTobikera') B(0x9a8a6a,0.7,0.3,0.34,-0.05,0.45,0); }
   g.rotation.y=-0.5; return g; }
 // 管理画面の絵（施設・住民）
 function p3cIconObj(id){ const g=new THREE.Group(), M=c=>new THREE.MeshLambertMaterial({color:c}); const B=(c,sx,sy,sz,x,y,z)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),M(c)); m.position.set(x,y,z); g.add(m); return m; };
@@ -11430,7 +11513,7 @@ function p3aUpdate(dt){ if(!P3A.on) return; P3A.t+=dt; if(P3A.waterU) P3A.waterU
   if(P3A.interior){ const I=P3A.interior; for(const s of I.mk){ s.rotation.y+=dt*1.5; s.position.y=1.2+Math.sin(P3A.t*2+s.position.x)*0.1; } p3bInteriorTick(dt); }
   if(P3A.inside){ P3A.tc=(P3A.tc||0)+dt; if(P3A.tc>0.5){ P3A.tc=0; p3bTalkCheck(false); } } else p3bOutsideTick(); // v0.81 P3-B
   p3cUpdate(dt); // v0.82 P3-C：住民・救助
-  if(P3D.look>0) P3D.look-=dt; p3dTick(dt); // v0.84 P3-D：釣り・宗一
+  if(P3D.look>0) P3D.look-=dt; if(P3D.srch>0) P3D.srch-=dt; p3dTick(dt); // v0.84 P3-D：釣り・宗一
   // 川の音：九頭竜川の河原に近いほど大きく（環境音の帯に重ねる）
   if(typeof AU!=='undefined'&&AU.ok&&AC){ if(!P3A_SND){ const s=AC.createBufferSource(); s.buffer=noiseBuf; s.loop=true; const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=700; const f2=AC.createBiquadFilter(); f2.type='peaking'; f2.frequency.value=1600; f2.gain.value=6; const g=AC.createGain(); g.gain.value=0; s.connect(f); f.connect(f2); f2.connect(g); g.connect(AU.amb); s.start(); P3A_SND={g}; }
     const R=P3A.RIVER, dx=Math.max(0,R.x0-P.x,P.x-R.x1), dz=Math.max(0,R.z0-P.z,P.z-R.z1), d=Math.hypot(dx,dz), want=(REG.cur==='kamishihi'&&!P3A.inside)?clamp(1-d/70,0,1)*0.09:0; P3A_SND.g.gain.value+=(want-P3A_SND.g.gain.value)*Math.min(1,dt*2); } }
@@ -11574,7 +11657,7 @@ function kamishihiBuild(ctx){
     const km=K.nx/TW; c2.drawImage(mk,sx*km,sz*km,sw*km,sh*km,0,0,W,H);
     const X=x=>(x-P.x)/MINI_M+W/2, Z=z=>(z-P.z)/MINI_M+H/2;
     for(const e of enemies){ if(e.state==='dead'||dist(e.x,e.z,P.x,P.z)>truckSee()) continue; c2.fillStyle='#e0533c'; c2.beginPath(); c2.arc(X(e.x),Z(e.z),2.4,0,TAU); c2.fill(); }
-    const ex=D.exitWest; c2.fillStyle='#f0c34a'; c2.fillRect(X(ex.x)-3,Z(ex.z)-3,6,6);
+    const ex=D.exitWest; c2.fillStyle='#f0c34a'; c2.fillRect(X(ex.x)-3,Z(ex.z)-3,6,6); p3dScoutDraw(c2,X,Z,false); /* v0.84 ずがに汁 */
     c2.save(); c2.translate(W/2,H/2); c2.rotate(-P.facing+Math.PI); c2.fillStyle='#ffffff'; c2.beginPath(); c2.moveTo(0,-5); c2.lineTo(3.5,4); c2.lineTo(-3.5,4); c2.closePath(); c2.fill(); c2.restore(); };
   // ---- 全体地図（地面の絵をそのまま使う） ----
   ctx.drawMap=(c2,W,H)=>{ const B=ctx.bounds, s0=Math.min(W/(B.maxX-B.minX+40),H/(B.maxZ-B.minZ+40))*MAPV.zoom;
@@ -11588,6 +11671,7 @@ function kamishihiBuild(ctx){
     c2.save(); c2.translate(X(P.x),Z(P.z)); c2.rotate(-P.facing+Math.PI); c2.fillStyle='#ffd23a'; c2.strokeStyle='#000'; c2.lineWidth=1.5; c2.beginPath(); c2.moveTo(0,-9); c2.lineTo(6,7); c2.lineTo(0,3); c2.lineTo(-6,7); c2.closePath(); c2.fill(); c2.stroke(); c2.restore();
     if(ctx.kf) kamiDrawFort(ctx,c2,X,Z); // v0.68：サルの要塞・小拠点のバリケードと見張り台
     if(KW_TEST.marks&&ctx.kw) kamiDrawMarks(ctx,c2,X,Z); // v0.67：試遊版のテストだけ（獣と採集の場所）
+    p3dScoutDraw(c2,X,Z,true); // v0.84 ずがに汁
     lab('地形：国土地理院 標高タイル／道・建物：© OpenStreetMap contributors',8,H-10,'#cfc6b4',10); };
   kamiPopulate(ctx,dmg0); // v0.67：獣・採集・伐採
 }
@@ -11733,6 +11817,7 @@ function kamiGather(n){ const k=prog.kami, T=stats.time; if(k.n[n.key]!=null) re
   else if(n.k==='wood'){ got=2; inv.wood+=got; nm='木材'; k.n[n.key]=T+NODE_RESPAWN; }
   else if(n.k==='food'){ got=n.chest?2:1+(Math.random()<0.5?1:0); foodAdd('food',got); nm='食料'; k.n[n.key]=T+NODE_RESPAWN; }
   else return;
+  if(P.gatherT>0){ if(n.k==='food') foodAdd('food',1); else inv[n.k]=(inv[n.k]||0)+1; got++; } // v0.84：雑魚の天ぷらで +1
   if(n.k!=='bamboo') sfx('pickup'); toast(n.k==='food'?`食料 +${got}`:`${nm} +${got}（${n.k==='wood'?inv.wood:inv[n.k]}）`); floatText(n.x,1.4,n.z,`${nm}+${got}`,'#f0dca0');
   kamiNodesUpdate(REG.live,T); g4CheckQuests(); }
 function kamiSearch(n){ const k=prog.kami; if(k.sc.includes(n.key)) return; k.sc.push(n.key); sfx('pickup'); sfx('hit');
@@ -13181,8 +13266,8 @@ $('btnContinue').onclick=()=>{ audioInit(); continueGame(); };
 
 // ================= v0.45 手持ちバー（固定10スロット）とインベントリ =================
 const HOTNM={nata1:'鉈',nata2:'鍛鉈',nata3:'業鉈',axeStone:'石斧',axeIron:'鉄斧',club:'棍棒',bamboo:'竹槍',spear:'牙槍',fenceKit:'木柵キット',trapKit:'罠キット',stakeKit:'杭柵キット',onigiri:'おにぎり',bento:'精進弁当',food:'食料',scNata:'蒼鱗鉈',scAxe:'蒼鱗斧',scClub:'蒼鱗棍棒',scSpear:'蒼鱗槍',rwNata:'変異鱗鉈',rwAxe:'変異鱗斧',rwClub:'変異鱗棍棒',rwSpear:'変異鱗槍',boomer:'飛去来器',
-  grilledVeg:'焼き野菜',herbPorridge:'薬草粥',gomadofu:'胡麻豆腐',koroni:'里芋のころ煮',kushi:'串焼き',katsudon:'ソースカツ丼',botan:'ぼたん鍋',veg:'野菜'};
-const HB_EXTRA=['grilledVeg','herbPorridge','gomadofu','koroni','kushi','katsudon','botan','veg']; // v0.66：持っているときだけ手持ちバーに出る食べ物
+  grilledVeg:'焼き野菜',herbPorridge:'薬草粥',gomadofu:'胡麻豆腐',koroni:'里芋のころ煮',kushi:'串焼き',katsudon:'ソースカツ丼',botan:'ぼたん鍋',veg:'野菜',ayuShio:'鮎の塩焼き',keiShio:'渓魚の塩焼き',ayuMeshi:'鮎めし',koikoku:'鯉こく',funaKanro:'鮒の甘露煮',kawaKushi:'川魚の串焼き',zakoTen:'雑魚の天ぷら',kawaZosui:'川魚の雑炊',zuganiJiru:'ずがに汁',nigoiTsumire:'にごいのつみれ汁'};
+const HB_EXTRA=['grilledVeg','herbPorridge','gomadofu','koroni','kushi','katsudon','botan','veg','ayuShio','keiShio','ayuMeshi','koikoku','funaKanro','kawaKushi','zakoTen','kawaZosui','zuganiJiru','nigoiTsumire']; // v0.84：魚料理も // v0.66：持っているときだけ手持ちバーに出る食べ物
 const ARMS_ORDER=['nata1','nata2','nata3','axeStone','axeIron','club','bamboo','spear','scNata','scAxe','scClub','scSpear','rwNata','rwAxe','rwClub','rwSpear','boomer']; // v0.66：鱗の武器も手持ちバー・持ち物に出す
 const HB={defs:[],els:[]};
 let hbKey=null,tipTimer=null;
@@ -13226,8 +13311,8 @@ function makeIconObj(id){
   else if(id==='meat'){ S(0xb4533c,0.4,0,0,0,0.7); C(0xf2eadc,0.07,0.07,0.9,0.3,0.1,0).rotation.z=0.9; S(0xf2eadc,0.11,0.62,0.42,0); }
   else if(id==='veg'){ C(0xf2eee0,0.2,0.16,0.66,0,-0.1,0); S(0xf2eee0,0.2,0,-0.42,0); B(0x6a9a3e,0.08,0.34,0.08,-0.08,0.42,0); B(0x6a9a3e,0.08,0.3,0.08,0.08,0.4,0.15); }
   else if(id==='rice'){ const t=C(0xd8c088,0.34,0.34,0.9,0,0,0); t.rotation.z=Math.PI/2; for(const x of [-0.46,0.46]){ const e=C(0xb89a5a,0.3,0.3,0.04,x,0,0); e.rotation.z=Math.PI/2; } for(const x of [-0.26,0,0.26]){ const b=new THREE.Mesh(new THREE.TorusGeometry(0.345,0.025,6,20),M(0x7a5a30)); b.rotation.y=Math.PI/2; b.position.x=x; g.add(b); } S(0xf7f3e6,0.12,0.2,0.3,0.12,0.5); } // v0.79：米俵
-  else if(FOODS[id]){ const col={grilledVeg:0x7a9a3e,herbPorridge:0xe8e6c8,gomadofu:0xe9dcc0,koroni:0x8a6a48,kushi:0x9a5a30,katsudon:0xb8793a,botan:0xa8503a}[id]||0xd8c8a0; // v0.66：料理は椀に盛った形（色で分ける）
-    if(id==='kushi'){ for(let i=-1;i<=1;i++){ C(0xc8a878,0.03,0.03,1.0,i*0.26,0,0); for(let j=0;j<3;j++) B(col,0.18,0.16,0.14,i*0.26,-0.22+j*0.24,0); } }
+  else if(FOODS[id]){ const col={grilledVeg:0x7a9a3e,herbPorridge:0xe8e6c8,gomadofu:0xe9dcc0,koroni:0x8a6a48,kushi:0x9a5a30,katsudon:0xb8793a,botan:0xa8503a,ayuShio:0xb8a070,keiShio:0xa89068,ayuMeshi:0xd8c890,koikoku:0x8a6a48,funaKanro:0x6a4a28,kawaKushi:0x9a7a50,zakoTen:0xd8b060,kawaZosui:0xe0d4b0,zuganiJiru:0xa86a4a,nigoiTsumire:0xc8b090}[id]||0xd8c8a0; // v0.66：料理は椀に盛った形（色で分ける）
+    if(id==='kushi'||id==='kawaKushi'||id==='ayuShio'||id==='keiShio'){ for(let i=-1;i<=1;i++){ C(0xc8a878,0.03,0.03,1.0,i*0.26,0,0); for(let j=0;j<3;j++) B(col,0.18,0.16,0.14,i*0.26,-0.22+j*0.24,0); } }
     else { C(0x3a2a22,0.5,0.32,0.36,0,-0.18,0); S(col,0.44,0,0.0,0,0.42); if(id==='katsudon') B(0x6a3a1e,0.5,0.1,0.26,0,0.2,0); if(id==='botan') for(const x of [-0.18,0.16]) B(0x6a9a3e,0.14,0.1,0.2,x,0.18,0.12); if(id==='gomadofu') B(0xf4ecd8,0.36,0.2,0.36,0,0.16,0); } }
   else if(id==='fenceKit'){ B(0x8a6438,0.1,0.72,0.1,-0.3,-0.05,0); B(0x8a6438,0.1,0.72,0.1,0.3,-0.05,0); B(0x9a7448,0.82,0.11,0.09,0,0.22,0); B(0x9a7448,0.82,0.11,0.09,0,-0.08,0); }
   else if(id==='trapKit'){ const t=new THREE.Mesh(new THREE.TorusGeometry(0.34,0.05,8,22),M(0x7a5a38)); t.rotation.x=Math.PI/2; t.position.y=-0.12; g.add(t); C(0x6e4f2e,0.045,0.045,0.8,0.32,0.12,0); }

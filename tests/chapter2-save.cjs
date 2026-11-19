@@ -129,11 +129,12 @@ assert.match(html,/prog\.chapter2=chapter2State\(null,false\)/);
   const o=L({v:1,out:{veg:99},acc:{farm:0.5,haul:{wood:0.4,gold:3}},got:{wood:12,gold:2}});
   assert.equal(o.out.veg,30,'harvest capped');
   { // v0.84 P3-D：釣り（p3d）
-    const code=html.slice(html.indexOf('const FISH=['),html.indexOf('function p3dState()'));
+    const code=html.slice(html.indexOf('const FISH=['),html.indexOf('function p3dState()'))+html.slice(html.indexOf('const AQUA=['),html.indexOf('const AQUA_BY'));
     const c5=vm.createContext({}); vm.runInContext(`function num(v,def,min=0,max=9999){ return (typeof v==='number'&&isFinite(v))?Math.max(min,Math.min(max,Math.floor(v))):def; }`+code,c5); const L5=q=>JSON.parse(vm.runInContext(`JSON.stringify(p3dLoad(${JSON.stringify(q)}))`,c5));
     const F5=JSON.parse(vm.runInContext('JSON.stringify(p3dFresh())',c5)); assert.deepEqual(F5.rod,{basic:0,pro:0,guard:0}); assert.deepEqual(F5.ara,{observed:0,caughtReleased:0,reported:0,rodRewardClaimed:0});
     assert.deepEqual(L5(null),F5,'no p3d: fresh'); assert.deepEqual(L5({v:2,rod:{basic:1}}),F5,'other version: fresh');
     const a=L5({v:1,ara:{rodRewardClaimed:1}}); assert.deepEqual(a.ara,{observed:1,caughtReleased:1,reported:1,rodRewardClaimed:1},'later stages imply earlier ones'); assert.equal(a.rod.guard,1,'reward claimed: river-guard rod');
     const b=L5({v:1,book:{fAyu:{n:3,max:999,where:'九頭竜川（本流の瀬）',band:'昼'},nope:{n:1},ara:{seen:1}},casts:-5});
-    assert.deepEqual(b.book.fAyu,{n:3,max:200,where:'九頭竜川（本流の瀬）',band:'昼',seen:1}); assert.ok(!('nope' in b.book)); assert.equal(b.book.ara.seen,1); assert.equal(b.casts,0); } assert.deepEqual(o.acc,{farm:0.5,haul:{wood:0.4}},'fractions kept (below 1), unknown materials dropped'); assert.deepEqual(L({v:1,acc:{farm:7,haul:{wood:-1}}}).acc,{farm:0.999,haul:{}}); assert.deepEqual(o.got,{wood:12}); }
+    assert.deepEqual(b.book.fAyu,{n:3,max:200,where:'九頭竜川（本流の瀬）',band:'昼',seen:1}); assert.ok(!('nope' in b.book)); assert.equal(b.book.ara.seen,1); assert.equal(b.casts,0);
+    const c=L5({v:1,book2:{aMokuzu:{n:2,where:'河内川（支流）',band:'朝'},aNope:{n:1},aYago:{seen:1}}}); assert.deepEqual(c.book2.aMokuzu,{n:2,where:'河内川（支流）',band:'朝',seen:1}); assert.ok(!('aNope' in c.book2)); assert.equal(c.book2.aYago.seen,1); assert.deepEqual(F5.book2,{}); } assert.deepEqual(o.acc,{farm:0.5,haul:{wood:0.4}},'fractions kept (below 1), unknown materials dropped'); assert.deepEqual(L({v:1,acc:{farm:7,haul:{wood:-1}}}).acc,{farm:0.999,haul:{}}); assert.deepEqual(o.got,{wood:12}); }
 console.log('PASS: inline script syntax; legacy/malformed defaults; boss unlock; save round trip; existing key, version, inventory and durability; v0.67 kami state; v0.73 suzuki state; v0.81 p3/stash state; v0.82 p3c residents; v0.83 p3c requests and level; v0.84 p3d fishing');
