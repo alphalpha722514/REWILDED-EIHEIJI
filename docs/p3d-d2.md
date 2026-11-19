@@ -78,8 +78,11 @@
 ## 4. テスト
 
 - 新しいテスト `python3 tests/p3d-cook-browser.py`（画面のない Chromium。5分ほど）：**PASS**（12項目：かまどの一覧・10品を作る・素材の使い方・魚が無いとき・食べたときの補助3つ・採集の量・上志比の地図に出る（切れると消える）・石の下を調べる・川虫を付ける・図鑑のタブ・つづきから・エラーなし）。
-- `python3 tests/p3d-fishing-browser.py`（図鑑の見た目を変えたので再実行）：結果は §6。
-- `node tests/chapter2-save.cjs`（`p3d.book2` の読み込み・おかしな値）：PASS。
+- `python3 tests/p3d-fishing-browser.py`（図鑑の見た目を変えたので再実行。古いセーブの期待値に `book2` を足した）：PASS（14項目）。
+- `node` のテスト6本（chapter2-save・chapter2-defense・classic-body・death-penalty・combat-aim・truck-physics）：PASS。chapter2-save は `p3d.book2` の読み込み・おかしな値も見る。
+- 回帰テスト（画面のない Chromium、26本。2026-11-19）：**すべて PASS**。p3d-fishing・p3c-requests・p3c-manage・p3c-residents・p3b-hq・kamado・kamishihi・region・kami-wild・kami-fort・kami-watch・suzuki（5本）・story-f・story-f-touch・kei-truck-systems・hud-layout・kei-truck-glb・weapon-glb・wardrobe・scale-armor2・scale-gear・mutant。
+  - 1回目に kei-truck-systems が落ちた：作業台の「簡易釣り竿」「川漁師の竿」のカードに絵が無かった（D-1 の不具合）→ 釣り竿の絵を足し、作業台の素材の印で「？」になっていた古い機械部品にも絵を付けた → 再実行で PASS。
+  - 1回目に hud-layout が手持ちバーの待ちで時間切れ：同時に別の確認のブラウザを動かしていて遅かった → 単独で再実行して PASS。
 
 ## 5. 画面（`docs/p3d/`。D-1 の画面も一緒に置いた）
 
