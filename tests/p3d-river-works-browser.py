@@ -108,7 +108,7 @@ async def main():
 
         # ================= D-3 =================
         w = await E("[RIV.nChunks, RIV.tiles.length, REG.live.group.children.filter(m=>m.material&&m.material.customProgramCacheKey&&m.material.customProgramCacheKey()==='p3aWater').length, REG.live.group.children.filter(m=>m.material&&m.material.customProgramCacheKey&&m.material.customProgramCacheKey()==='rivStream').length]")
-        check(w[0][0] >= 6 and w[0][1] >= 4 and w[1] > 20 and w[2] == w[0][0] and w[3] == 1, f'本流の水面（区画ごと）・浅い所の川底・近くの河原の区画・支流と水路の水面 {w}')
+        check(w[0][0] >= 3 and w[0][1] >= 3 and w[1] > 20 and w[2] == w[0][0] and w[3] >= 2, f'本流の水面（区画ごと）・浅い所の川底・近くの河原の区画・支流と水路の水面 {w}')
         await E("(P.x=6900, P.z=935, 1)")
         await until("RIV.tiles.some(t=>t.o)", 30000)
         await pg.wait_for_timeout(1500)

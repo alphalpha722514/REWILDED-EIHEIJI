@@ -10427,7 +10427,7 @@ function p3aBuildRiver(ctx,K){ const R=P3A.RIVER, nx=K.nx, rnd=p3aRng(5150); con
     const wm=new THREE.Mesh(ctx.own(wg.geo()),vcMat); wm.castShadow=true; ctx.add(wm); } }
 // ================= v0.85 P3-D（D-3）：九頭竜川の改修（本流の全部・名前のある支流・水路）=================
 // 2026-11-20 07:07 ユーザー「D3と、C4に取り掛かってください」。P3-A の河原の試作（承認済み）の作りを本流の全部へ広げる（docs/p3d-d3c4-plan.md・docs/p3d-d3.md）。数は暫定
-// 水面：岸からの距離で浅瀬と深場・流れの向きに動く波・瀬の白波・透け方・照り返し（P3-A と同じ材質）。区画（約540m）ごとに分けて、見えない所は描かない
+// 水面：岸からの距離で浅瀬と深場・流れの向きに動く波・瀬の白波・透け方・照り返し（P3-A と同じ材質）。区画（約770m）ごとに分けて、見えない所は描かない
 // 川底：岸から7区画（約22m）まで（その先は水が濃くて見えない）。礫の河原：地面の絵に塗る（遠く）＋近く（約135m）だけ小石・水の中の石・岩・流木・ヨシ・草・ヤナギ（近づいたら作り、離れたら捨てる。同じ所はいつも同じ形）
 const RIV={near:135,far:215,bedD:7,uT:{value:0},F:null,tiles:null,geo:null,made:0};
 function rivField(K){ const nx=K.nx, ny=K.ny, N=nx*ny, dd=new Uint8Array(N).fill(255), dl=new Uint8Array(N).fill(255), q=new Int32Array(N);
@@ -10462,7 +10462,7 @@ function rivWaterMat(ctx,stream){ const m=ctx.own(new THREE.MeshPhongMaterial({c
         vec3 nw=normalize(vec3(-(hx-h0)*(0.6+vDep*0.4)*1.6,1.,-(hz-h0)*(0.6+vDep*0.4)*1.6)); normal=normalize((viewMatrix*vec4(nw,0.)).xyz); }`); };
   m.customProgramCacheKey=()=>stream?'rivStream':'p3aWater'; return m; }
 // 本流の水面と川底（区画ごと）
-function rivBuildWater(ctx,K,F){ const nx=K.nx, ny=K.ny, CH=168, NCX=Math.ceil(nx/CH), C=new Map(), wm=rivWaterMat(ctx,false), bm=ctx.own(new THREE.MeshLambertMaterial({vertexColors:true}));
+function rivBuildWater(ctx,K,F){ const nx=K.nx, ny=K.ny, CH=240, NCX=Math.ceil(nx/CH), C=new Map(), wm=rivWaterMat(ctx,false), bm=ctx.own(new THREE.MeshLambertMaterial({vertexColors:true}));
   const depOf=n=>clamp((F.dd[n]-0.6)/5.5,0,1);
   for(let k=0;k<ny-1;k++) for(let i=0;i<nx-1;i++){ const n=k*nx+i; if(F.wlv[n]<-900||F.wlv[n+1]<-900||F.wlv[n+nx]<-900||F.wlv[n+nx+1]<-900) continue;
     const key=Math.floor(k/CH)*NCX+Math.floor(i/CH); let o=C.get(key); if(!o){ o={pos:[],dep:[],idx:[],vid:new Map(),bp:[],bc:[],bidx:[],bvid:new Map()}; C.set(key,o); }
@@ -10476,7 +10476,7 @@ function rivBuildWater(ctx,K,F){ const nx=K.nx, ny=K.ny, CH=168, NCX=Math.ceil(n
   for(const o of C.values()){ const g=ctx.own(new THREE.BufferGeometry()); g.setAttribute('position',new THREE.Float32BufferAttribute(o.pos,3)); g.setAttribute('aDepth',new THREE.Float32BufferAttribute(o.dep,1)); g.setIndex(o.idx); g.computeVertexNormals(); g.computeBoundingSphere();
     const ms=new THREE.Mesh(g,wm); ms.renderOrder=2; ctx.add(ms); nW++;
     if(o.bidx.length){ const bg=ctx.own(new THREE.BufferGeometry()); bg.setAttribute('position',new THREE.Float32BufferAttribute(o.bp,3)); bg.setAttribute('color',new THREE.Float32BufferAttribute(o.bc,3)); bg.setIndex(o.bidx); bg.computeVertexNormals(); bg.computeBoundingSphere();
-      const bmesh=new THREE.Mesh(bg,bm); bmesh.receiveShadow=true; ctx.add(bmesh); nB++; } }
+      const bmesh=new THREE.Mesh(bg,bm); bmesh.receiveShadow=true; ctx.add(bmesh); nB++; (RIV.beds=RIV.beds||[]).push(bmesh); } }
   P3A.bedOf=(x,z,d,wl)=>wl-0.12-(0.12+clamp((d-0.6)/5.5,0,1)*1.15); P3A.waterU=RIV.uT; RIV.nChunks=[nW,nB]; }
 // 地面の絵：本流の岸から3区画（約10m）を礫の河原の色に（遠くから見ても河原が分かる）
 function rivPaintCell(n,p){ const F=RIV.F; if(!F) return p; const d=F.dl[n]; if(d<1||d>3) return p; const t=d===1?0.85:d===2?0.7:0.45, g=d===1?[150,144,132]:[172,164,148]; return [lerp(p[0],g[0],t),lerp(p[1],g[1],t),lerp(p[2],g[2],t)]; }
@@ -10517,9 +10517,9 @@ function rivTileMake(ctx,K,F,rt){ const rnd=p3aRng(rt.ci*7919+rt.ck*104729+13), 
     im.receiveShadow=true; ctx.group.add(im); o.meshes.push(im); }
   rt.o=o; }
 function rivTileDrop(ctx,rt){ const o=rt.o; if(!o) return; for(const m of o.meshes){ ctx.group.remove(m); if(m.isInstancedMesh&&m.dispose) m.dispose(); } for(const g of o.own) g.dispose(); for(const c of o.cols) gridRemove(c); rt.o=null; }
-function rivTilesUpdate(ctx,px,pz){ if(!RIV.tiles) return; let made=0; for(const rt of RIV.tiles){ const d=Math.hypot(Math.max(0,Math.abs(px-rt.cx)-rt.hw),Math.max(0,Math.abs(pz-rt.cz)-rt.hw));
+function rivTilesUpdate(ctx,px,pz){ if(!RIV.tiles) return; let made=0; for(const m of RIV.beds||[]){ const s=m.geometry.boundingSphere; m.visible=Math.hypot(s.center.x-px,s.center.z-pz)-s.radius<450; } /* 川底は遠いと見えないので描かない */ for(const rt of RIV.tiles){ const d=Math.hypot(Math.max(0,Math.abs(px-rt.cx)-rt.hw),Math.max(0,Math.abs(pz-rt.cz)-rt.hw));
     if(d<RIV.near&&!rt.o&&made<1){ rivTileMake(ctx,KAMI,RIV.F,rt); made++; RIV.made++; } else if(d>RIV.far&&rt.o) rivTileDrop(ctx,rt); } }
-function rivDispose(ctx){ if(RIV.tiles) for(const rt of RIV.tiles) rivTileDrop(ctx,rt); RIV.tiles=null; RIV.F=null; RIV.geo=null; RIV.streamSegs=null; RIV.obs=null; if(RIV.camT>0){ RIV.camT=0; cam.override=null; } }
+function rivDispose(ctx){ if(RIV.tiles) for(const rt of RIV.tiles) rivTileDrop(ctx,rt); RIV.tiles=null; RIV.F=null; RIV.geo=null; RIV.streamSegs=null; RIV.obs=null; RIV.beds=null; if(RIV.camT>0){ RIV.camT=0; cam.override=null; } }
 // ---- 護岸：本流のそばを通る道の、川の側の土手にコンクリートブロックの斜面（P3-A の試作と同じ形。試作の範囲は除く）----
 function rivRevet(gbOf,roads,K){ for(const r of roads){ if(r.b||r.tn||r.w<4) continue; const p=r.p;
     for(let s=0;s<p.length-1;s++){ const [ax,az]=p[s],[bx,bz]=p[s+1], Ls=dist(ax,az,bx,bz); if(Ls<0.5) continue; const ux=(bx-ax)/Ls, uz=(bz-az)/Ls;
@@ -10537,10 +10537,15 @@ function rivStreams(ctx,D,gbOf){ const pos=[], dep=[], flo=[], idx=[], conc=cc(0
       const yl=named?Math.max(rivStreamY(st,cx+nx*w/2,cz+nz*w/2),y-0.2):y, yr=named?Math.max(rivStreamY(st,cx-nx*w/2,cz-nz*w/2),y-0.2):y; // 支流は掘れた川の形に沿わせる（岸で水面が切れてぎざぎざにならないように）
       pos.push(cx+nx*w/2,yl,cz+nz*w/2, cx,y,cz, cx-nx*w/2,yr,cz-nz*w/2); dep.push(0,named?0.42:0.22,0); for(let j=0;j<3;j++) flo.push(dx,dz);
       if(prev>=0) idx.push(prev,v0,prev+1, prev+1,v0,v0+1, prev+1,v0+1,prev+2, prev+2,v0+1,v0+2); prev=v0;
-      if(!named&&s<P.length-1){ const [ex,ez]=P[s+1], L=dist(cx,cz,ex,ez), ang=Math.atan2(ez-cz,ex-cx), mx=(cx+ex)/2, mz=(cz+ez)/2, gb=gbOf(mx,mz); gb.frame(mx,kamiH(mx,mz),mz,ang);
-        for(const sd of [-1,1]){ gb.box(0,0.12,sd*(w/2+0.07),L+0.02,0.42,0.14,conc); gb.box(0,0.34,sd*(w/2+0.07),L+0.02,0.02,0.16,conc2); } gb.frame(0,0,0,0); } } } // 水路の壁（高さ0.4m）。道の帯は frame を使わないので元に戻す
-  if(!idx.length) return null; const g=ctx.own(new THREE.BufferGeometry()); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('aDepth',new THREE.Float32BufferAttribute(dep,1)); g.setAttribute('aFlow',new THREE.Float32BufferAttribute(flo,2)); g.setIndex(idx); g.computeVertexNormals(); g.computeBoundingSphere();
-  const m=new THREE.Mesh(g,rivWaterMat(ctx,true)); m.renderOrder=2; ctx.add(m); return m; }
+      if(!named&&s<P.length-1){ const [ex,ez]=P[s+1], mx=(cx+ex)/2, mz=(cz+ez)/2, gb=gbOf(mx,mz), ux=ex-cx, uz=ez-cz, ul=Math.hypot(ux,uz)||1, nx2=-uz/ul, nz2=ux/ul;
+        for(const sd of [-1,1]){ const o=sd*(w/2), o2=sd*(w/2+0.14), A=(x,z,oo,hy)=>[x+nx2*oo,kamiH(x,z)+hy,z+nz2*oo]; // 水路の壁（高さ0.33m）：内側の面と上の面だけ（描く三角形を減らす）
+          if(sd<0){ gb.quad(A(cx,cz,o,-0.05),A(ex,ez,o,-0.05),A(ex,ez,o,0.33),A(cx,cz,o,0.33),conc); gb.quad(A(cx,cz,o,0.33),A(ex,ez,o,0.33),A(ex,ez,o2,0.33),A(cx,cz,o2,0.33),conc2); }
+          else { gb.quad(A(ex,ez,o,-0.05),A(cx,cz,o,-0.05),A(cx,cz,o,0.33),A(ex,ez,o,0.33),conc); gb.quad(A(ex,ez,o,0.33),A(cx,cz,o,0.33),A(cx,cz,o2,0.33),A(ex,ez,o2,0.33),conc2); } } } } } // 道の帯は frame を使わない
+  if(!idx.length) return null; const mt=rivWaterMat(ctx,true), C=new Map(), K=KAMI, CS=1100; // 区画（約1.1km）ごとに分ける（見えない所は描かない）
+  for(let t=0;t<idx.length;t+=3){ const a=idx[t]; const key=Math.floor((pos[a*3]-K.X0)/CS)+','+Math.floor((pos[a*3+2]-K.Z0)/CS); let o=C.get(key); if(!o){ o={map:new Map(),p:[],d:[],f:[],i:[]}; C.set(key,o); }
+    for(let j=0;j<3;j++){ const v=idx[t+j]; let n=o.map.get(v); if(n===undefined){ n=o.p.length/3; o.map.set(v,n); o.p.push(pos[v*3],pos[v*3+1],pos[v*3+2]); o.d.push(dep[v]); o.f.push(flo[v*2],flo[v*2+1]); } o.i.push(n); } }
+  let n=0; for(const o of C.values()){ const g=ctx.own(new THREE.BufferGeometry()); g.setAttribute('position',new THREE.Float32BufferAttribute(o.p,3)); g.setAttribute('aDepth',new THREE.Float32BufferAttribute(o.d,1)); g.setAttribute('aFlow',new THREE.Float32BufferAttribute(o.f,2)); g.setIndex(o.i); g.computeVertexNormals(); g.computeBoundingSphere();
+    const m=new THREE.Mesh(g,mt); m.renderOrder=2; ctx.add(m); n++; } RIV.nStream=n; return n; }
 function M_sway(){ return p3aMats().sway; }
 // ---- 林道・森林：杉林（真っすぐな幹の列）・広葉樹林（丸い樹冠）・竹林、下草（シダ）、落ち葉、岩、倒木、切り株、獣道、木漏れ日 ----
 function p3aTreeGeo(kind){ const g=new THREE.Group(), rnd=p3aRng(kind==='sugi'?11:kind==='kona'?22:44);
