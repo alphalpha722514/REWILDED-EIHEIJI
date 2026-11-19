@@ -151,7 +151,7 @@ async def main():
         check(h5 - h4 > 0.7, f'光明寺にいても、時計が進むと上志比の工事が進む（{round(h4,2)}→{round(h5,2)}）')
         await E("p3bAdvance(2)")
         dn = await E("[p3cFac().housing.done, JSON.stringify(p3cState().job)]")
-        check(dn == [1, '{"sumie":"","rio":"","evac":""}'], f'完成すると担当は待機に戻る {dn}')
+        check(dn == [1, '{"sumie":"","rio":"","evac":"","soichi":""}'], f'完成すると担当は待機に戻る {dn}')
         await until("$('banner').textContent.includes('共同住居ができた')", 5000)
         check('共同住居ができた' in await E("$('banner').textContent"), '「共同住居ができた」と出る')
 
@@ -189,7 +189,7 @@ async def main():
         await pg.wait_for_timeout(1500)
         await until("REG.cur==='kamishihi'&&!REG.busy&&S.mode==='playing'", 60000)
         lp = await E("[p3cFac().housing.done, p3cFac().defense.done, JSON.stringify(p3cState().job)]")
-        check(lp == [1, 1, '{"sumie":"","rio":"","evac":""}'], f'つづきから：施設の完成と担当が残る {lp}')
+        check(lp == [1, 1, '{"sumie":"","rio":"","evac":"","soichi":""}'], f'つづきから：施設の完成と担当が残る {lp}')
         check(not errs, f'エラーなし {errs[:3]}')
         await b.close()
     print('PASS: P3-C 拠点の管理と工事' if ok else 'FAILED')

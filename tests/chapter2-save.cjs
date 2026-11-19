@@ -82,7 +82,7 @@ assert.match(html,/prog\.chapter2=chapter2State\(null,false\)/);
   assert.equal(L({v:1,joined:true,order:'wait',region:'komyoji'}).order,'follow','no position: follow');
   assert.equal(L({v:1,joined:true,order:'base',region:'kamishihi',x:5000,z:700}).order,'follow','base only in Komyoji');
   vm.runInContext('prog={p3:{hq:{plan:1}}}',sc); assert.equal(L({v:1,joined:true,order:'base',region:'kamishihi',x:5000,z:700}).order,'base','v0.82: base in Kamishihi after the founding talk');
-  assert.match(html,/kami:kamiSave\(\),suzuki:szSave\(\),p3:p3Save\(\),stash:stashSave\(\),p3c:p3cSave\(\)\}/); assert.match(html,/prog\.p3c=p3cLoad\(d\.p3c\)/); assert.match(html,/szApplyLoad\(d\.suzuki\)/); }
+  assert.match(html,/kami:kamiSave\(\),suzuki:szSave\(\),p3:p3Save\(\),stash:stashSave\(\),p3c:p3cSave\(\),p3d:prog\.p3d\}/); assert.match(html,/prog\.p3c=p3cLoad\(d\.p3c\)/); assert.match(html,/prog\.p3d=p3dLoad\(d\.p3d\)/); /* v0.84：釣り */ assert.match(html,/szApplyLoad\(d\.suzuki\)/); }
 { // v0.81 P3-B：拠点本部 p3・資材置き場 stash の読み込み（古いセーブ・不正な値）
   const code=html.slice(html.indexOf('function p3Fresh()'),html.indexOf('function stashHere()'));
   const c3=vm.createContext({}); vm.runInContext(`const P3B={carry:{mats:['wood','stone','iron','rope','straw','bamboo','hide','charcoal','oldParts']}}; const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)); function num(v,def,min=0,max=9999){ return (typeof v==='number'&&isFinite(v))?clamp(Math.floor(v),min,max):def; } let prog={}; let inv={};\n${code}`,c3);
@@ -113,9 +113,9 @@ assert.match(html,/prog\.chapter2=chapter2State\(null,false\)/);
   const f=L({v:1,fac:{housing:{dl:{wood:30,straw:5,gold:9,rope:-2},h:9,done:0},defense:{dl:{wood:20},h:1.5,done:0},farm:{done:1}},job:{sumie:'b:housing',rio:'b:farm',x:'b:defense'}});
   const E={dl:{},h:0,done:0};
   assert.deepEqual(f.fac,{housing:{dl:{wood:24,straw:5},h:4,done:0},defense:{dl:{wood:20},h:1.5,done:0},farm:{dl:{},h:2,done:1},garage:E,haul:E},'delivered capped at the cost, unknown materials dropped, progress capped (v0.83: Lv2 facilities too)');
-  assert.deepEqual(f.job,{sumie:'b:housing',rio:'b:farm',evac:''},'only buildable facilities as jobs');
+  assert.deepEqual(f.job,{sumie:'b:housing',rio:'b:farm',evac:'',soichi:''},'only buildable facilities as jobs');
   assert.deepEqual(L({v:1,fac:{housing:{done:1}}}).fac.housing,{dl:{},h:4,done:1},'done: full progress');
-  assert.deepEqual(L({v:1,job:{sumie:'w:farm',rio:'w:haul',evac:'w:fish'}}).job,{sumie:'w:farm',rio:'w:haul',evac:''},'work jobs: farm and haul only');
+  assert.deepEqual(L({v:1,job:{sumie:'w:farm',rio:'w:haul',evac:'w:fish'}}).job,{sumie:'w:farm',rio:'w:haul',evac:'',soichi:''},'work jobs: farm and haul only');
   // v0.83 C-3：段階・依頼・避難住民・農園の収穫・収集の端数
   assert.equal(F.lv,1); assert.deepEqual(F.req,{}); assert.equal(F.trk,''); assert.deepEqual(F.ev,{res:0});
   for(const [v,e] of [[2,2],[3,3],[9,3],[0,1],['x',1],[2.7,2]]) assert.equal(L({v:1,lv:v}).lv,e,'level clamped 1..3');
@@ -127,5 +127,13 @@ assert.match(html,/prog\.chapter2=chapter2State\(null,false\)/);
   assert.equal(L({v:1,req:{tools:{r:1}},trk:'tools'}).trk,'','no tracking of a reported request'); assert.equal(L({v:1,trk:'nope'}).trk,'');
   assert.deepEqual(L({v:1,req:{evac:{a:1,s:[1,1,1]}}}).ev,{res:1},'evacuee found: resident'); assert.deepEqual(L({v:1,ev:{res:1}}).ev,{res:1});
   const o=L({v:1,out:{veg:99},acc:{farm:0.5,haul:{wood:0.4,gold:3}},got:{wood:12,gold:2}});
-  assert.equal(o.out.veg,30,'harvest capped'); assert.deepEqual(o.acc,{farm:0.5,haul:{wood:0.4}},'fractions kept (below 1), unknown materials dropped'); assert.deepEqual(L({v:1,acc:{farm:7,haul:{wood:-1}}}).acc,{farm:0.999,haul:{}}); assert.deepEqual(o.got,{wood:12}); }
-console.log('PASS: inline script syntax; legacy/malformed defaults; boss unlock; save round trip; existing key, version, inventory and durability; v0.67 kami state; v0.73 suzuki state; v0.81 p3/stash state; v0.82 p3c residents; v0.83 p3c requests and level');
+  assert.equal(o.out.veg,30,'harvest capped');
+  { // v0.84 P3-D：釣り（p3d）
+    const code=html.slice(html.indexOf('const FISH=['),html.indexOf('function p3dState()'));
+    const c5=vm.createContext({}); vm.runInContext(`function num(v,def,min=0,max=9999){ return (typeof v==='number'&&isFinite(v))?Math.max(min,Math.min(max,Math.floor(v))):def; }`+code,c5); const L5=q=>JSON.parse(vm.runInContext(`JSON.stringify(p3dLoad(${JSON.stringify(q)}))`,c5));
+    const F5=JSON.parse(vm.runInContext('JSON.stringify(p3dFresh())',c5)); assert.deepEqual(F5.rod,{basic:0,pro:0,guard:0}); assert.deepEqual(F5.ara,{observed:0,caughtReleased:0,reported:0,rodRewardClaimed:0});
+    assert.deepEqual(L5(null),F5,'no p3d: fresh'); assert.deepEqual(L5({v:2,rod:{basic:1}}),F5,'other version: fresh');
+    const a=L5({v:1,ara:{rodRewardClaimed:1}}); assert.deepEqual(a.ara,{observed:1,caughtReleased:1,reported:1,rodRewardClaimed:1},'later stages imply earlier ones'); assert.equal(a.rod.guard,1,'reward claimed: river-guard rod');
+    const b=L5({v:1,book:{fAyu:{n:3,max:999,where:'九頭竜川（本流の瀬）',band:'昼'},nope:{n:1},ara:{seen:1}},casts:-5});
+    assert.deepEqual(b.book.fAyu,{n:3,max:200,where:'九頭竜川（本流の瀬）',band:'昼',seen:1}); assert.ok(!('nope' in b.book)); assert.equal(b.book.ara.seen,1); assert.equal(b.casts,0); } assert.deepEqual(o.acc,{farm:0.5,haul:{wood:0.4}},'fractions kept (below 1), unknown materials dropped'); assert.deepEqual(L({v:1,acc:{farm:7,haul:{wood:-1}}}).acc,{farm:0.999,haul:{}}); assert.deepEqual(o.got,{wood:12}); }
+console.log('PASS: inline script syntax; legacy/malformed defaults; boss unlock; save round trip; existing key, version, inventory and durability; v0.67 kami state; v0.73 suzuki state; v0.81 p3/stash state; v0.82 p3c residents; v0.83 p3c requests and level; v0.84 p3d fishing');
