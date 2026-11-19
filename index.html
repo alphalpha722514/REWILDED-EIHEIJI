@@ -2873,7 +2873,7 @@ function f5Pile(kind){ const g=new THREE.Group();
   else if(kind==='straw'){ for(let i=0;i<9;i++){ const a=hash2(i,6)*TAU, r=0.7+hash2(i,7)*0.8; const st=mesh(G.cyl8,mat(0xc8b050),Math.cos(a)*r,0.05,Math.sin(a)*r,0.03,0.9,0.03); st.rotation.set(Math.PI/2,a,0); g.add(st); }
     for(let i=0;i<3;i++){ const b=mesh(lathe([[0.02,0],[0.14,0.1],[0.12,0.7],[0.16,1.0],[0,1.02]],7),mat(0xf0d070),(i-1)*0.4,0.15,(hash2(i,9)-0.5)*0.5); b.rotation.z=Math.PI/2; b.rotation.y=(hash2(i,3)-0.5)*0.6; g.add(J(b,0.1)); g.add(mesh(G.torus,mat(0x8a6a30),(i-1)*0.4+0.0,0.15,(hash2(i,9)-0.5)*0.5,0.13,0.13,0.13)); } }
   return g; }
-function f5Rock(sign=true){ const g=new THREE.Group(); // v0.67：上志比の岩は桜隊の札なし（sign=false） const body=mesh(G.ico||G.sphLo,mat(0x8c8a84),0,0.55,0,1.0,0.75,0.85); body.rotation.y=0.6; g.add(outline(J(body,0.12),0.05));
+function f5Rock(sign=true){ const g=new THREE.Group(); /* v0.67：上志比の岩は桜隊の札なし（sign=false）。v0.85：この行の本体がコメントに入って消えていたのを戻した */ const body=mesh(G.ico||G.sphLo,mat(0x8c8a84),0,0.55,0,1.0,0.75,0.85); body.rotation.y=0.6; g.add(outline(J(body,0.12),0.05));
   // 上面の白い割れ目（どの向きからも見える）と、打ち込まれた楔
   for(const [x,z,ry,l] of [[0,0,0.3,1.3],[0.25,0.1,-0.9,0.8],[-0.3,-0.15,1.4,0.7]]){ const c=mesh(G.box,mat(0xf2eee4),x,1.27,z,0.07,0.04,l); c.rotation.y=ry; g.add(c); }
   for(const a of [0,2.1,4.2]){ const c=mesh(G.box,mat(0xf2eee4),Math.sin(a)*0.92,0.75,Math.cos(a)*0.8,0.06,0.55,0.04); c.rotation.y=a; c.rotation.z=0.25; g.add(c); }
@@ -4517,6 +4517,7 @@ function f31Sched(){ if(!AC||!AU.ok) return; const now=AC.currentTime;
   const ph=f10Has('F')?f10Phase():'day';
   if(SND.amb&&(ph==='dusk'||ph==='night')&&S.mode!=='title'&&now>AU.bugT){ AU.bugT=now+0.6+Math.random()*1.4; const t=now+0.05, f=3800+Math.random()*900;
     for(let j=0;j<3;j++) f31Note(AU.amb,f,t+j*0.07,0.05,'sine',0.012); }
+  if(SND.amb&&ph==='day'&&S.mode==='playing'&&!(typeof P3A!=='undefined'&&P3A.inside)&&now>(AU.birdT||0)){ AU.birdT=now+3+Math.random()*7; rivBird(now+0.05); } // v0.85：昼の鳥
   if(SND.amb&&AU.fireNear&&now>AU.crackT){ AU.crackT=now+0.25+Math.random()*0.6; const s=AC.createBufferSource(); s.buffer=noiseBuf; const f=AC.createBiquadFilter(); f.type='highpass'; f.frequency.value=1800; const g=AC.createGain();
     g.gain.setValueAtTime(0.03,now+0.02); g.gain.exponentialRampToValueAtTime(0.0001,now+0.08); s.connect(f); f.connect(g); g.connect(AU.amb); s.start(now+0.02,Math.random()*0.8,0.08); s.onended=()=>{ s.disconnect(); f.disconnect(); g.disconnect(); }; } }
 function f31Scene(){ if(S.mode==='title') return 'title'; if(prog.stage==='cleared') return 'clear'; if(bossActive) return 'boss';
@@ -4528,7 +4529,7 @@ function f31SetScene(k){ if(!AU.ok||AU.cur===k) return; const now=AC.currentTime
   const n=AU.scenes[k]; if(!n.on){ n.on=true; n.step=0; n.next=now+0.05; } n.off=0; n.g.gain.cancelScheduledValues(now); n.g.gain.setValueAtTime(n.g.gain.value,now); n.g.gain.linearRampToValueAtTime(1,now+1); AU.cur=k; }
 function f31AudioUpdate(){ if(!AU.ok) return; f31SetScene(f31Scene()); const now=AC.currentTime;
   const ph=f10Has('F')?f10Phase():'day'; const night=ph==='night'&&S.mode!=='title';
-  const wind=0.035+0.02*Math.sin(S.time*0.13)+0.01*Math.sin(S.time*0.37); AU.windG.gain.setTargetAtTime(wind,now,0.5);
+  const wind=(0.035+0.02*Math.sin(S.time*0.13)+0.01*Math.sin(S.time*0.37))*(1+0.6*(typeof RIVSND!=='undefined'&&RIVSND?RIVSND.wind:0)); AU.windG.gain.setTargetAtTime(wind,now,0.5); // v0.85：河原では風が少し強い
   AU.rainG.gain.setTargetAtTime(S.mode==='title'?0:0.035*weather.rain*weather.strength,now,0.25);
   const danger=night&&zoneNow==='danger'; AU.droneG.gain.setTargetAtTime(danger?0.05:0,now,0.8);
   AU.fireNear=!!(NW.on&&night&&f31NearFire());
@@ -7044,7 +7045,7 @@ function chapter2Panel(n,st,bx){
   if(!ev.kind)f9Btn(bx,'npc_chapter2',done?'第二章の防衛戦に再挑戦':'第二章の防衛戦を始める',startChapter2Defense,{pri:1});
 }
 function freshState(){
-  inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,baitKit:0,onigiri:1,bento:0,grilledVeg:0,herbPorridge:0,meat:0,veg:0,rice:0,katsudon:0,botan:0,gomadofu:0,koroni:0,kushi:0,fang:0,mutScale:0,procScale:0,charcoal:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0,oldParts:0,shelfKit:0,toolSet:0,gatePart:0,liftJack:0,winchPart:0,bell:0,fAyu:0,fUgui:0,fOikawa:0,fAbura:0,fMutsu:0,fKoi:0,fFuna:0,fYamame:0,fIwana:0,fNigoi:0,fKamatsuka:0,zugani:0,kawamushi:0,ayuShio:0,keiShio:0,ayuMeshi:0,koikoku:0,funaKanro:0,kawaKushi:0,zakoTen:0,kawaZosui:0,zuganiJiru:0,nigoiTsumire:0}; // v0.84：魚11種・モクズガニ・川虫・魚料理 // v0.81：古い機械部品・専用部品（棚の金具・作業場の工具一式）。v0.83：水門の部品・整備工場の特殊部品・巻き上げ機の部品・半鐘
+  inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,baitKit:0,onigiri:1,bento:0,grilledVeg:0,herbPorridge:0,meat:0,veg:0,rice:0,katsudon:0,botan:0,gomadofu:0,koroni:0,kushi:0,fang:0,mutScale:0,procScale:0,charcoal:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0,oldParts:0,shelfKit:0,toolSet:0,gatePart:0,liftJack:0,winchPart:0,bell:0,fAyu:0,fUgui:0,fOikawa:0,fAbura:0,fMutsu:0,fKoi:0,fFuna:0,fYamame:0,fIwana:0,fNigoi:0,fKamatsuka:0,zugani:0,kawamushi:0,ayuShio:0,keiShio:0,ayuMeshi:0,koikoku:0,funaKanro:0,kawaKushi:0,zakoTen:0,kawaZosui:0,zuganiJiru:0,nigoiTsumire:0,ore:0,hardwood:0,steel:0,spindle:0} /* v0.85：川底の鉱石・山地の硬木・鋼材・加工機の主軸 */; // v0.84：魚11種・モクズガニ・川虫・魚料理 // v0.81：古い機械部品・専用部品（棚の金具・作業場の工具一式）。v0.83：水門の部品・整備工場の特殊部品・巻き上げ機の部品・半鐘
   prog={gear:f47Fresh(),stage:'talk',unlockTrap:false,unlockBoss:false,clues:[false,false,false],bossDefeated:false,scoutTower:false,scoutWarned:false,scoutRaidWarned:false,prepT:150,gatherT:0,introSeen:false,lastSaveT:0,townRequests:loadTownRequests(),g4:g4Fresh(),f4:f4Fresh(),level:1,exp:0,mastery:{nata:0,axe:0,club:0,spear:0},xph:0}; prog.f7=f7FromInv(); f7Sync(); prog.f8=f8Fresh(); prog.paddy=paddyFresh(); prog.conv=facFresh(); prog.kama=kamaFresh(); prog.f9=f9Fresh(); prog.f10=f10Fresh(); prog.kami=kamiFresh(); prog.p3=p3Fresh(); prog.stash=stashFresh(); prog.p3c=p3cFresh(); prog.p3d=p3dFresh(); prog.chapter2=chapter2State(null,false);
   stats={kills:0,deaths:0,crafts:0,time:0,perfect:0,hunt:loadHuntRecords()};
   P.lvx48=0;P.lvz48=0;
@@ -8867,7 +8868,7 @@ function buildScoutTower(){
 }
 
 // ================= クラフト =================
-const RNAME={meat:'肉',veg:'野菜',rice:'米',wood:'木材',food:'食料',hide:'獣素材',fang:'ヌシの牙',mutScale:'変異した鱗',procScale:'加工した鱗',charcoal:'木炭',straw:'藁',rope:'縄',stone:'石',bamboo:'竹',iron:'屑鉄',oldParts:'古い機械部品',shelfKit:'棚の金具',toolSet:'作業場の工具一式',seed:'大根の種',gatePart:'水門の部品',liftJack:'整備工場の特殊部品',winchPart:'巻き上げ機の部品',bell:'半鐘',fAyu:'アユ',fUgui:'ウグイ',fOikawa:'オイカワ',fAbura:'アブラハヤ',fMutsu:'カワムツ',fKoi:'コイ',fFuna:'フナ',fYamame:'ヤマメ',fIwana:'イワナ',fNigoi:'ニゴイ',fKamatsuka:'カマツカ',zugani:'モクズガニ',kawamushi:'川虫'};
+const RNAME={meat:'肉',veg:'野菜',rice:'米',wood:'木材',food:'食料',hide:'獣素材',fang:'ヌシの牙',mutScale:'変異した鱗',procScale:'加工した鱗',charcoal:'木炭',straw:'藁',rope:'縄',stone:'石',bamboo:'竹',iron:'屑鉄',oldParts:'古い機械部品',shelfKit:'棚の金具',toolSet:'作業場の工具一式',seed:'大根の種',gatePart:'水門の部品',liftJack:'整備工場の特殊部品',winchPart:'巻き上げ機の部品',bell:'半鐘',fAyu:'アユ',fUgui:'ウグイ',fOikawa:'オイカワ',fAbura:'アブラハヤ',fMutsu:'カワムツ',fKoi:'コイ',fFuna:'フナ',fYamame:'ヤマメ',fIwana:'イワナ',fNigoi:'ニゴイ',fKamatsuka:'カマツカ',zugani:'モクズガニ',kawamushi:'川虫',ore:'川底の鉱石',hardwood:'山地の硬木',steel:'鋼材',spindle:'加工機の主軸'};
 const RECIPES=[
  // v0.66：料理4つは作業台に出さない（料理はかまどだけ。2026-11-13 ユーザー決定）。この表は、慧心に頼む料理が使う
  {id:'onigiri',name:'おにぎり',cost:{food:2},show:()=>false,desc:'塩をきかせて竹の皮で包んだ握り飯。体力+35・満腹+25。手持ちで約30分もつ（生の食料は約20分）。Q または 1 で食べる',give:()=>{foodAdd('onigiri',1);}},
@@ -9028,7 +9029,7 @@ function openInv(){ f31Inv(); f34Body(); renderHuntRecords(); { const st=p3dStat
   stopBeastVoices51(); S.mode='menu'; keys.clear();
   const g=$('invGrid'); g.innerHTML='';
   if(prog.chapter2&&prog.chapter2.unlocked){ const n=carryN(), r=document.createElement('div'); r.style.gridColumn='1 / -1'; r.innerHTML=`<span>素材の重さ <small class="f7s">${P3B.carry.cap}を超えると、拠点の外では歩くのが遅くなる（資材置き場・荷台に預けられる）</small></span><b style="color:${n>P3B.carry.cap?'#ff9a7a':'inherit'}">${n}/${P3B.carry.cap}</b>`; g.appendChild(r); } // v0.81
-  const items=[['木材',inv.wood],['食料',inv.food],['肉',inv.meat],['野菜',inv.veg],['米',inv.rice],['獣素材',inv.hide],['藁',inv.straw],['縄',inv.rope],['石',inv.stone],['竹',inv.bamboo],['屑鉄',inv.iron],['大根の種',inv.seed],['ヌシの牙',inv.fang],['変異した鱗',inv.mutScale],['加工した鱗',inv.procScale],['木炭',inv.charcoal],['おにぎり',inv.onigiri],['精進弁当',inv.bento],['木柵キット',inv.fenceKit],['トゲ柵キット',inv.spikeKit],['杭柵キット',inv.stakeKit],['くくり罠キット',inv.trapKit],['落とし穴キット',inv.pitKit],['おとり餌場キット',inv.baitKit],['古い機械部品',inv.oldParts],['棚の金具',inv.shelfKit],['作業場の工具一式',inv.toolSet],['水門の部品',inv.gatePart],['整備工場の特殊部品',inv.liftJack],['巻き上げ機の部品',inv.winchPart],['半鐘',inv.bell]];
+  const items=[['木材',inv.wood],['食料',inv.food],['肉',inv.meat],['野菜',inv.veg],['米',inv.rice],['獣素材',inv.hide],['藁',inv.straw],['縄',inv.rope],['石',inv.stone],['竹',inv.bamboo],['屑鉄',inv.iron],['大根の種',inv.seed],['ヌシの牙',inv.fang],['変異した鱗',inv.mutScale],['加工した鱗',inv.procScale],['木炭',inv.charcoal],['おにぎり',inv.onigiri],['精進弁当',inv.bento],['木柵キット',inv.fenceKit],['トゲ柵キット',inv.spikeKit],['杭柵キット',inv.stakeKit],['くくり罠キット',inv.trapKit],['落とし穴キット',inv.pitKit],['おとり餌場キット',inv.baitKit],['古い機械部品',inv.oldParts],['棚の金具',inv.shelfKit],['作業場の工具一式',inv.toolSet],['水門の部品',inv.gatePart],['整備工場の特殊部品',inv.liftJack],['巻き上げ機の部品',inv.winchPart],['半鐘',inv.bell],['川底の鉱石',inv.ore||0],['山地の硬木',inv.hardwood||0],['鋼材',inv.steel||0],['加工機の主軸',inv.spindle||0]]; // v0.85
   for(const f of FISH) items.push([f.name,inv[f.id]||0]); items.push(['モクズガニ',inv.zugani||0],['川虫',inv.kawamushi||0]); // v0.84：魚・モクズガニ・川虫（釣りの餌）
   f7Flush(); const fk={'食料':'food','おにぎり':'onigiri','精進弁当':'bento','肉':'meat','野菜':'veg','米':'rice'}; for(const f of FISH) fk[f.name]=f.id; fk['モクズガニ']='zugani';
   for(const [n,v] of items){ if(v===0&&(n==='ヌシの牙'||n==='杭柵キット'||n==='大根の種'||n==='肉'||n==='野菜'||n==='米'||n==='古い機械部品'||n==='棚の金具'||n==='作業場の工具一式'||n==='水門の部品'||n==='整備工場の特殊部品'||n==='巻き上げ機の部品'||n==='半鐘'||n==='モクズガニ'||n==='川虫'||FISH.some(f=>f.name===n))) continue; const d=document.createElement('div'); const k=fk[n]; let sub='';
@@ -10382,43 +10383,14 @@ function p3aGrass(ctx,c,r,n,ok,tint,kind='grass'){ const geo=ctx.own(p3aGrassGeo
   for(let k=0;k<n*3&&L.length<n;k++){ const a=rnd()*TAU, rr=Math.sqrt(rnd())*r, x=c.x+Math.sin(a)*rr, z=c.z+Math.cos(a)*rr; if(!ok(x,z)||!p3aFree(x,z)||p3aOnRoad(RS,x,z)) continue; L.push([x,kamiH(x,z),z,0.7+rnd()*0.7,rnd()*TAU]); }
   if(!L.length) return null; const im=new THREE.InstancedMesh(geo,M.sway,L.length), m4=new THREE.Matrix4(), q=new THREE.Quaternion(), e=new THREE.Euler(), sc=new THREE.Vector3(), v=new THREE.Vector3();
   L.forEach((p,j)=>{ e.set(0,p[4],0); q.setFromEuler(e); sc.set(p[3],p[3],p[3]); v.set(p[0],p[1]-0.03,p[2]); m4.compose(v,q,sc); im.setMatrixAt(j,m4); }); im.receiveShadow=true; ctx.add(im); (P3A.near=P3A.near||[]).push({m:im,x:c.x,z:c.z,r:r+60}); return im; }
-// ---- 九頭竜川の河原：深さで色と透け方を変える水面（流れの向きに動く波・瀬の白波）、川底の石、礫の河原、護岸、ヨシ、ヤナギ、流木、釣り場 ----
-function p3aRiverWater(ctx,K,cells){ // cells：この範囲で描く水の四角の左上の番号
+// ---- 九頭竜川の河原（P3-A の試作の範囲）：川底の石、礫の河原、護岸、ヨシ、ヤナギ、流木、釣り場。水面と川底は v0.85 から本流全体の作り（rivBuildWater） ----
+function p3aRiverInfo(K){ // v0.85：水面と川底は本流全体の作り（rivBuildWater）。ここは試作の範囲の物の置き場所を決める距離だけ（試作の形を変えないため）
   const R=P3A.RIVER, nx=K.nx, ny=K.ny, i0=Math.max(0,Math.floor((R.x0-K.X0)/K.GS)-4), i1=Math.min(nx-1,Math.ceil((R.x1-K.X0)/K.GS)+4), k0=Math.max(0,Math.floor((R.z0-K.Z0)/K.GS)-4), k1=Math.min(ny-1,Math.ceil((R.z1-K.Z0)/K.GS)+4);
   const W=i1-i0+1, Hh=k1-k0+1, dd=new Float32Array(W*Hh).fill(99), q=[]; // 岸からの距離（格子）
   for(let k=k0;k<=k1;k++) for(let i=i0;i<=i1;i++){ if(K.C[k*nx+i]!==2){ dd[(k-k0)*W+(i-i0)]=0; q.push(i-i0,k-k0); } }
   for(let h=0;h<q.length;h+=2){ const a=q[h], b=q[h+1], d0=dd[b*W+a]; for(const [da,db] of [[1,0],[-1,0],[0,1],[0,-1]]){ const aa=a+da, bb=b+db; if(aa<0||bb<0||aa>=W||bb>=Hh) continue; if(dd[bb*W+aa]>d0+1){ dd[bb*W+aa]=d0+1; q.push(aa,bb); } } }
-  const pos=[], dep=[], idx=[], vid=new Map(), V=(i,k)=>{ const key=k*nx+i; let v=vid.get(key); if(v!==undefined) return v; let wl=-999; for(let b=-1;b<=1;b++) for(let a=-1;a<=1;a++){ const ii=i+a, kk=k+b; if(ii>=0&&kk>=0&&ii<nx&&kk<ny) wl=Math.max(wl,K.WL[kk*nx+ii]); }
-      v=pos.length/3; vid.set(key,v); pos.push(K.X0+i*K.GS,wl-0.12,K.Z0+k*K.GS); const d=(i>=i0&&i<=i1&&k>=k0&&k<=k1)?dd[(k-k0)*W+(i-i0)]:6; dep.push(clamp((d-0.6)/5.5,0,1)); return v; };
-  for(const n of cells){ const i=n%nx, k=(n/nx)|0; const a=V(i,k), b=V(i+1,k), c2=V(i,k+1), d2=V(i+1,k+1); idx.push(a,c2,b,b,c2,d2); }
-  const g=ctx.own(new THREE.BufferGeometry()); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('aDepth',new THREE.Float32BufferAttribute(dep,1)); g.setIndex(idx); g.computeVertexNormals(); g.computeBoundingSphere();
-  const m=ctx.own(new THREE.MeshPhongMaterial({color:0x5f9fb8,transparent:true,opacity:0.9,shininess:70,specular:0x8fa6b0,depthWrite:false}));
-  m.onBeforeCompile=sh=>{ sh.uniforms.uT={value:0}; P3A.waterU=sh.uniforms.uT;
-    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float aDepth; varying float vDep; varying vec3 vWP;').replace('#include <begin_vertex>','#include <begin_vertex>\nvDep=aDepth; vWP=(modelMatrix*vec4(position,1.)).xyz;');
-    sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
-      uniform float uT; varying float vDep; varying vec3 vWP;
-      float p3h(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
-      float p3n(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(p3h(i),p3h(i+vec2(1,0)),f.x),mix(p3h(i+vec2(0,1)),p3h(i+vec2(1,1)),f.x),f.y); }`)
-      .replace('#include <color_fragment>',`#include <color_fragment>
-      vec2 fl=vec2(-1.,0.18); float sp=0.6+vDep*1.3; vec2 p=vWP.xz;
-      float w=p3n((p+fl*uT*sp)*0.35)*0.6+p3n((p*1.9+fl*uT*sp*1.6)*0.5)*0.4;
-      vec3 shallow=vec3(0.45,0.58,0.48), deep=vec3(0.17,0.38,0.45);
-      diffuseColor.rgb=mix(shallow,deep,smoothstep(0.,1.,vDep))*(0.88+w*0.24);
-      float foam=smoothstep(0.62,0.9,p3n((p+fl*uT*2.2)*0.9))*smoothstep(0.45,0.05,vDep)*0.85; diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.93,0.96,0.95),foam);
-      diffuseColor.a=mix(0.38,0.93,smoothstep(0.,0.75,vDep))+foam*0.4;`)
-      .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
-      { vec2 fl2=vec2(-1.,0.18); float sp2=0.6+vDep*1.3; vec2 q=vWP.xz+fl2*uT*sp2; float e=0.35;
-        float h0=p3n(q*0.55)+p3n(q*1.4)*0.5, hx=p3n((q+vec2(e,0.))*0.55)+p3n((q+vec2(e,0.))*1.4)*0.5, hz=p3n((q+vec2(0.,e))*0.55)+p3n((q+vec2(0.,e))*1.4)*0.5;
-        vec3 nw=normalize(vec3(-(hx-h0)*(0.6+vDep*0.4)*1.6,1.,-(hz-h0)*(0.6+vDep*0.4)*1.6)); normal=normalize((viewMatrix*vec4(nw,0.)).xyz); }`); };
-  m.customProgramCacheKey=()=>'p3aWater';
-  const ms=new THREE.Mesh(g,m); ms.renderOrder=2; ctx.add(ms);
-  // 川底：岸の近くは浅く（砂と礫）、真ん中ほど深く暗い。元の地面の川底より上に、ゆるい坂の底を重ねる
-  { const bp=[], bc=[], pa=g.attributes.position; for(let v=0;v<pa.count;v++){ const x=pa.getX(v), z=pa.getZ(v), wl=pa.getY(v)+0.12, d=dep[v]; const i=Math.round((x-K.X0)/K.GS), k=Math.round((z-K.Z0)/K.GS), hb=K.H[clamp(k,0,ny-1)*nx+clamp(i,0,nx-1)];
-      bp.push(x,Math.max(hb+0.02,wl-0.12-(0.12+d*1.15)),z); const c0=d<0.25?[0.72,0.68,0.56]:d<0.6?[0.55,0.53,0.47]:[0.3,0.35,0.34], n=0.9+hash2(x,z)*0.2; bc.push(c0[0]*n,c0[1]*n,c0[2]*n); }
-    const bg=ctx.own(new THREE.BufferGeometry()); bg.setAttribute('position',new THREE.Float32BufferAttribute(bp,3)); bg.setAttribute('color',new THREE.Float32BufferAttribute(bc,3)); bg.setIndex(idx); bg.computeVertexNormals(); bg.computeBoundingSphere();
-    const bm=new THREE.Mesh(bg,ctx.own(new THREE.MeshLambertMaterial({vertexColors:true}))); bm.receiveShadow=true; ctx.add(bm); P3A.bedOf=(x,z,d,wl)=>wl-0.12-(0.12+clamp((d-0.6)/5.5,0,1)*1.15); }
   return {dd,i0,k0,W,Hh}; }
-function p3aBuildRiver(ctx,K,cells){ const R=P3A.RIVER, nx=K.nx, rnd=p3aRng(5150); const info=p3aRiverWater(ctx,K,cells);
+function p3aBuildRiver(ctx,K){ const R=P3A.RIVER, nx=K.nx, rnd=p3aRng(5150); const info=p3aRiverInfo(K);
   const depthAt=(x,z)=>{ const i=Math.round((x-K.X0)/K.GS)-info.i0, k=Math.round((z-K.Z0)/K.GS)-info.k0; if(i<0||k<0||i>=info.W||k>=info.Hh) return 9; return info.dd[k*info.W+i]; };
   const wlAt=(x,z)=>{ const i=Math.round((x-K.X0)/K.GS), k=Math.round((z-K.Z0)/K.GS); let wl=-999; for(let b=-1;b<=1;b++) for(let a=-1;a<=1;a++){ const n=(k+b)*nx+i+a; if(n>=0&&n<K.WL.length) wl=Math.max(wl,K.WL[n]); } return wl; };
   // 礫の河原：水際から3〜4格子の陸に、灰色と黄土色の小石の帯
@@ -10451,6 +10423,122 @@ function p3aBuildRiver(ctx,K,cells){ const R=P3A.RIVER, nx=K.nx, rnd=p3aRng(5150
   { const wg=new GB(); wg.jit=0.06; for(let n=0;n<7;n++){ const x=R.x0+12+rnd()*(R.x1-R.x0-24), z=R.z0+rnd()*(R.z1-R.z0); if(kamiCls(x,z)===2) continue; let near=99; for(let b=-5;b<=5;b++) for(let a=-5;a<=5;a++) if(kamiCls(x+a*K.GS,z+b*K.GS)===2) near=Math.min(near,Math.hypot(a,b)); if(near<2||near>6) continue;
       const h=kamiH(x,z); wg.frame(x,h,z,rnd()*TAU); wg.box(0,1.3,0,0.32,2.6,0.32,cc(0x5a4a3a)); wg.box(0.4,2.4,0,0.18,1.2,0.18,cc(0x5a4a3a)); for(let k=0;k<14;k++){ const a=rnd()*TAU, rr=0.6+rnd()*1.6, yy=2.6+rnd()*1.8; wg.box(Math.sin(a)*rr,yy-0.6,Math.cos(a)*rr,0.5+rnd()*0.6,1.6+rnd()*1.4,0.5+rnd()*0.6,cc(rnd()<0.5?0x7f9a4a:0x93a85a)); } ctx.circle(x,z,0.4,'tree',{h:h+5}); }
     const wm=new THREE.Mesh(ctx.own(wg.geo()),vcMat); wm.castShadow=true; ctx.add(wm); } }
+// ================= v0.85 P3-D（D-3）：九頭竜川の改修（本流の全部・名前のある支流・水路）=================
+// 2026-11-20 07:07 ユーザー「D3と、C4に取り掛かってください」。P3-A の河原の試作（承認済み）の作りを本流の全部へ広げる（docs/p3d-d3c4-plan.md・docs/p3d-d3.md）。数は暫定
+// 水面：岸からの距離で浅瀬と深場・流れの向きに動く波・瀬の白波・透け方・照り返し（P3-A と同じ材質）。区画（約540m）ごとに分けて、見えない所は描かない
+// 川底：岸から7区画（約22m）まで（その先は水が濃くて見えない）。礫の河原：地面の絵に塗る（遠く）＋近く（約135m）だけ小石・水の中の石・岩・流木・ヨシ・草・ヤナギ（近づいたら作り、離れたら捨てる。同じ所はいつも同じ形）
+const RIV={near:135,far:215,bedD:7,uT:{value:0},F:null,tiles:null,geo:null,made:0};
+function rivField(K){ const nx=K.nx, ny=K.ny, N=nx*ny, dd=new Uint8Array(N).fill(255), dl=new Uint8Array(N).fill(255), q=new Int32Array(N);
+  const bfs=(arr,cap)=>{ let h=0, t=0; for(let n=0;n<N;n++) if(arr[n]===0) q[t++]=n;
+    while(h<t){ const n=q[h++], i=n%nx, d=arr[n]+1; if(d>cap) continue;
+      if(i>0&&arr[n-1]>d){ arr[n-1]=d; q[t++]=n-1; } if(i<nx-1&&arr[n+1]>d){ arr[n+1]=d; q[t++]=n+1; } if(n>=nx&&arr[n-nx]>d){ arr[n-nx]=d; q[t++]=n-nx; } if(n+nx<N&&arr[n+nx]>d){ arr[n+nx]=d; q[t++]=n+nx; } } };
+  for(let n=0;n<N;n++){ if(K.C[n]!==2) dd[n]=0; else dl[n]=0; } bfs(dd,254); bfs(dl,60); // dd：水の中の岸からの区画数／dl：陸の本流までの区画数
+  const wlv=new Float32Array(N).fill(-999); for(let k=0;k<ny;k++) for(let i=0;i<nx;i++){ let wl=-999; for(let b=-1;b<=1;b++) for(let a=-1;a<=1;a++){ const ii=i+a, kk=k+b; if(ii>=0&&kk>=0&&ii<nx&&kk<ny&&K.WL[kk*nx+ii]>wl) wl=K.WL[kk*nx+ii]; } wlv[k*nx+i]=wl; }
+  return RIV.F={dd,dl,wlv}; }
+function rivCell(x,z){ const K=KAMI; if(!K) return -1; const i=Math.round((x-K.X0)/K.GS), k=Math.round((z-K.Z0)/K.GS); return (i<0||k<0||i>=K.nx||k>=K.ny)?-1:k*K.nx+i; }
+function rivDl(x,z){ const n=rivCell(x,z); return n<0||!RIV.F?255:RIV.F.dl[n]; } // 本流までの区画数（水の中は0）
+// 水面の材質（P3-A の水面と同じ。支流と水路は頂点ごとの流れの向き）
+function rivWaterMat(ctx,stream){ const m=ctx.own(new THREE.MeshPhongMaterial({color:0x5f9fb8,transparent:true,opacity:0.9,shininess:70,specular:0x8fa6b0,depthWrite:false}));
+  m.onBeforeCompile=sh=>{ sh.uniforms.uT=RIV.uT;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float aDepth; varying float vDep; varying vec3 vWP;'+(stream?' attribute vec2 aFlow; varying vec2 vFl;':''))
+      .replace('#include <begin_vertex>','#include <begin_vertex>\nvDep=aDepth; vWP=(modelMatrix*vec4(position,1.)).xyz;'+(stream?' vFl=aFlow;':''));
+    const FL=stream?'vFl':'vec2(-1.,0.18)', SP=stream?'1.5+vDep*1.2':'0.6+vDep*1.3';
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
+      uniform float uT; varying float vDep; varying vec3 vWP;${stream?' varying vec2 vFl;':''}
+      float p3h(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+      float p3n(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(p3h(i),p3h(i+vec2(1,0)),f.x),mix(p3h(i+vec2(0,1)),p3h(i+vec2(1,1)),f.x),f.y); }`)
+      .replace('#include <color_fragment>',`#include <color_fragment>
+      vec2 fl=${FL}; float sp=${SP}; vec2 p=vWP.xz;
+      float w=p3n((p+fl*uT*sp)*0.35)*0.6+p3n((p*1.9+fl*uT*sp*1.6)*0.5)*0.4;
+      vec3 shallow=vec3(0.45,0.58,0.48), deep=vec3(0.17,0.38,0.45);
+      diffuseColor.rgb=mix(shallow,deep,smoothstep(0.,1.,vDep))*(0.88+w*0.24);
+      float foam=smoothstep(0.62,0.9,p3n((p+fl*uT*2.2)*0.9))*smoothstep(0.45,0.05,vDep)*${stream?'0.6':'0.85'}; diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.93,0.96,0.95),foam);
+      diffuseColor.a=${stream?'mix(0.12,0.86,smoothstep(0.,0.4,vDep))':'mix(0.38,0.93,smoothstep(0.,0.75,vDep))'}+foam*0.4;`) // 支流は岸で透けて消える（地形との切れ目を目立たせない）
+      .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+      { vec2 fl2=${FL}; float sp2=${SP}; vec2 q=vWP.xz+fl2*uT*sp2; float e=0.35;
+        float h0=p3n(q*0.55)+p3n(q*1.4)*0.5, hx=p3n((q+vec2(e,0.))*0.55)+p3n((q+vec2(e,0.))*1.4)*0.5, hz=p3n((q+vec2(0.,e))*0.55)+p3n((q+vec2(0.,e))*1.4)*0.5;
+        vec3 nw=normalize(vec3(-(hx-h0)*(0.6+vDep*0.4)*1.6,1.,-(hz-h0)*(0.6+vDep*0.4)*1.6)); normal=normalize((viewMatrix*vec4(nw,0.)).xyz); }`); };
+  m.customProgramCacheKey=()=>stream?'rivStream':'p3aWater'; return m; }
+// 本流の水面と川底（区画ごと）
+function rivBuildWater(ctx,K,F){ const nx=K.nx, ny=K.ny, CH=168, NCX=Math.ceil(nx/CH), C=new Map(), wm=rivWaterMat(ctx,false), bm=ctx.own(new THREE.MeshLambertMaterial({vertexColors:true}));
+  const depOf=n=>clamp((F.dd[n]-0.6)/5.5,0,1);
+  for(let k=0;k<ny-1;k++) for(let i=0;i<nx-1;i++){ const n=k*nx+i; if(F.wlv[n]<-900||F.wlv[n+1]<-900||F.wlv[n+nx]<-900||F.wlv[n+nx+1]<-900) continue;
+    const key=Math.floor(k/CH)*NCX+Math.floor(i/CH); let o=C.get(key); if(!o){ o={pos:[],dep:[],idx:[],vid:new Map(),bp:[],bc:[],bidx:[],bvid:new Map()}; C.set(key,o); }
+    const V=(ii,kk)=>{ const m=kk*nx+ii; let v=o.vid.get(m); if(v!==undefined) return v; v=o.pos.length/3; o.vid.set(m,v); o.pos.push(K.X0+ii*K.GS,F.wlv[m]-0.12,K.Z0+kk*K.GS); o.dep.push(depOf(m)); return v; };
+    const a=V(i,k), b=V(i+1,k), c2=V(i,k+1), d2=V(i+1,k+1); o.idx.push(a,c2,b,b,c2,d2);
+    if(F.dd[n]<=RIV.bedD&&F.dd[n+1]<=RIV.bedD&&F.dd[n+nx]<=RIV.bedD&&F.dd[n+nx+1]<=RIV.bedD){
+      const B=(ii,kk)=>{ const m=kk*nx+ii; let v=o.bvid.get(m); if(v!==undefined) return v; v=o.bp.length/3; o.bvid.set(m,v); const x=K.X0+ii*K.GS, z=K.Z0+kk*K.GS, dp=depOf(m), wl=F.wlv[m];
+        o.bp.push(x,Math.max(K.H[m]+0.02,wl-0.12-(0.12+dp*1.15)),z); const c0=dp<0.25?[0.72,0.68,0.56]:dp<0.6?[0.55,0.53,0.47]:[0.3,0.35,0.34], nn=0.9+hash2(x,z)*0.2; o.bc.push(c0[0]*nn,c0[1]*nn,c0[2]*nn); return v; };
+      const ba=B(i,k), bb=B(i+1,k), bc2=B(i,k+1), bd2=B(i+1,k+1); o.bidx.push(ba,bc2,bb,bb,bc2,bd2); } }
+  let nW=0, nB=0;
+  for(const o of C.values()){ const g=ctx.own(new THREE.BufferGeometry()); g.setAttribute('position',new THREE.Float32BufferAttribute(o.pos,3)); g.setAttribute('aDepth',new THREE.Float32BufferAttribute(o.dep,1)); g.setIndex(o.idx); g.computeVertexNormals(); g.computeBoundingSphere();
+    const ms=new THREE.Mesh(g,wm); ms.renderOrder=2; ctx.add(ms); nW++;
+    if(o.bidx.length){ const bg=ctx.own(new THREE.BufferGeometry()); bg.setAttribute('position',new THREE.Float32BufferAttribute(o.bp,3)); bg.setAttribute('color',new THREE.Float32BufferAttribute(o.bc,3)); bg.setIndex(o.bidx); bg.computeVertexNormals(); bg.computeBoundingSphere();
+      const bmesh=new THREE.Mesh(bg,bm); bmesh.receiveShadow=true; ctx.add(bmesh); nB++; } }
+  P3A.bedOf=(x,z,d,wl)=>wl-0.12-(0.12+clamp((d-0.6)/5.5,0,1)*1.15); P3A.waterU=RIV.uT; RIV.nChunks=[nW,nB]; }
+// 地面の絵：本流の岸から3区画（約10m）を礫の河原の色に（遠くから見ても河原が分かる）
+function rivPaintCell(n,p){ const F=RIV.F; if(!F) return p; const d=F.dl[n]; if(d<1||d>3) return p; const t=d===1?0.85:d===2?0.7:0.45, g=d===1?[150,144,132]:[172,164,148]; return [lerp(p[0],g[0],t),lerp(p[1],g[1],t),lerp(p[2],g[2],t)]; }
+// ---- 近くの河原（区画ごとに作る・捨てる）----
+function rivTilesInit(ctx,K,F,TL){ const NCX=Math.ceil((K.nx-1)/TL), NCZ=Math.ceil((K.ny-1)/TL), L=[];
+  for(let ck=0;ck<NCZ;ck++) for(let ci=0;ci<NCX;ci++){ let n=0; const i0=ci*TL, k0=ck*TL, i1=Math.min(K.nx-1,i0+TL), k1=Math.min(K.ny-1,k0+TL);
+    for(let k=k0;k<k1&&!n;k++) for(let i=i0;i<i1;i++){ const m=k*K.nx+i; if((F.dl[m]>=1&&F.dl[m]<=3)||(F.dd[m]>=1&&F.dd[m]<=3)){ n=1; break; } }
+    const cx=K.X0+(i0+i1)/2*K.GS, cz=K.Z0+(k0+k1)/2*K.GS, hw=(i1-i0)*K.GS/2; if(!n) n=rivStreamSegs().some(g=>g.st.n&&g.x1>cx-hw&&g.x0<cx+hw&&g.z1>cz-hw&&g.z0<cz+hw)?1:0;
+    if(n) L.push({ci,ck,i0,k0,i1,k1,cx,cz,hw,o:null}); }
+  RIV.tiles=L; RIV.geo={reed:ctx.own(p3aGrassGeo('reed')),grass:ctx.own(p3aGrassGeo('grass'))}; }
+function rivStreamSegs(){ if(RIV.streamSegs) return RIV.streamSegs; const L=[]; if(KAMI) for(const st of KAMI.D.streams){ if(st.cul) continue; for(let j=0;j<st.p.length-1;j++){ const [ax,az]=st.p[j],[bx,bz]=st.p[j+1]; L.push({st,ax,az,bx,bz,x0:Math.min(ax,bx)-st.w,x1:Math.max(ax,bx)+st.w,z0:Math.min(az,bz)-st.w,z1:Math.max(az,bz)+st.w}); } } return RIV.streamSegs=L; }
+function rivTileMake(ctx,K,F,rt){ const rnd=p3aRng(rt.ci*7919+rt.ck*104729+13), gv=new GB(), pb=new GB(), o={meshes:[],cols:[],own:[]}; gv.jit=0.12; gv.seed=rt.ci*31+rt.ck; pb.jit=0.1; gv.frame(0,0,0,0);
+  const RS=p3aRoadSegs({x:rt.cx,z:rt.cz},rt.hw*1.6), reeds=[], grass=[], RK=[], S=K.GS/2+0.05, h=(x,z)=>kamiH(x,z)+0.04;
+  const nearB=(x,z)=>{ for(const b of KAMI.D.bld){ if(Math.abs(b[0]-x)<b[2]/2+b[3]/2+2&&Math.abs(b[1]-z)<b[2]/2+b[3]/2+2) return true; } return false; };
+  for(let k=rt.k0;k<rt.k1;k++) for(let i=rt.i0;i<rt.i1;i++){ const m=k*K.nx+i, x=K.X0+i*K.GS, z=K.Z0+k*K.GS; if(p3aInRiver(x,z)) continue; const dl=F.dl[m], dd=F.dd[m];
+    if(K.C[m]!==2&&dl>=1&&dl<=3){ if(p3aOnRoad(RS,x,z)) continue;
+      const col=cc(dl===1?0x9a9284:(rnd()<0.5?0xa9a08e:0x8f8a80)); gv.quad([x-S,h(x-S,z+S),z+S],[x+S,h(x+S,z+S),z+S],[x+S,h(x+S,z-S),z-S],[x-S,h(x-S,z-S),z-S],col);
+      const np=dl===1?2:1; for(let j=0;j<np;j++){ const px=x+(rnd()-0.5)*K.GS, pz=z+(rnd()-0.5)*K.GS, sz=0.12+rnd()*0.3; pb.frame(px,kamiH(px,pz)+0.03,pz,rnd()*TAU); pb.box(0,sz*0.35,0,sz*1.4,sz*0.7,sz,cc([0xb6afa0,0x8c8780,0x9f9483,0x6f6b66,0xc4bba8][Math.floor(rnd()*5)])); }
+      const r1=rnd(); if(dl===1&&r1<0.5) reeds.push([x+(rnd()-0.5)*K.GS,z+(rnd()-0.5)*K.GS]); else if(dl>=2&&r1<0.28) grass.push([x+(rnd()-0.5)*K.GS,z+(rnd()-0.5)*K.GS]);
+      const r2=rnd(); if(r2<0.012&&dl<=2){ pb.frame(x,kamiH(x,z)+0.15,z,rnd()*TAU); pb.box(0,0,0,3.2+rnd()*2,0.28,0.3,cc(0x9b8a74)); pb.box(1.4,0.1,0.35,0.9,0.12,0.14,cc(0x8f7e68)); } // 流木
+      else if(r2>0.993&&dl===3&&!nearB(x,z)){ const hh=kamiH(x,z); pb.frame(x,hh,z,rnd()*TAU); pb.box(0,1.3,0,0.32,2.6,0.32,cc(0x5a4a3a)); pb.box(0.4,2.4,0,0.18,1.2,0.18,cc(0x5a4a3a)); for(let q=0;q<12;q++){ const a=rnd()*TAU, rr=0.6+rnd()*1.6, yy=2.6+rnd()*1.8; pb.box(Math.sin(a)*rr,yy-0.6,Math.cos(a)*rr,0.5+rnd()*0.6,1.6+rnd()*1.4,0.5+rnd()*0.6,cc(rnd()<0.5?0x7f9a4a:0x93a85a)); } o.cols.push(addCircle(x,z,0.4,'tree',{h:hh+5})); } // ヤナギ
+      else if(r2>0.982&&r2<=0.993){ const big=0.8+rnd()*1.0; RK.push({x,y:kamiH(x,z)-0.15*big,z,s:big*1.4,rot:rnd()*TAU,col:0x86827a,col2:0x7a766c,moss:rnd()<0.4}); o.cols.push(addCircle(x,z,big*0.75,'rock',{h:kamiH(x,z)+big})); } } // 岩
+    else if(K.C[m]===2&&dd>=1&&dd<=3&&rnd()<0.42){ const wl=F.wlv[m]; if(wl<-900) continue; const sz=0.2+rnd()*0.45; pb.frame(x+(rnd()-0.5)*2.4,P3A.bedOf(x,z,dd,wl)+sz*0.12,z+(rnd()-0.5)*2.4,rnd()*TAU); pb.box(0,0,0,sz*1.5,sz*0.6,sz,cc([0x6f6f62,0x7f7a68,0x5a5f58,0x8a8270][Math.floor(rnd()*4)])); // 水の中の石（浅い所は透けて見える）
+      if(dd===1&&rnd()<0.035){ const big=0.8+rnd()*0.9; RK.push({x,y:P3A.bedOf(x,z,dd,wl),z,s:big*1.4,rot:rnd()*TAU,col:0x6f6d62,col2:0x7a766c}); } } }
+  // 名前のある支流：川底の石と岸の草（2.5m ごと）
+  for(const g of rivStreamSegs()){ if(!g.st.n||g.x1<rt.cx-rt.hw||g.x0>rt.cx+rt.hw||g.z1<rt.cz-rt.hw||g.z0>rt.cz+rt.hw) continue; const L=dist(g.ax,g.az,g.bx,g.bz), ux=(g.bx-g.ax)/(L||1), uz=(g.bz-g.az)/(L||1), w=g.st.w*0.36;
+    for(let t=0;t<L;t+=2.5){ const cx=g.ax+ux*t, cz=g.az+uz*t; if(Math.abs(cx-rt.cx)>rt.hw||Math.abs(cz-rt.cz)>rt.hw) continue;
+      if(rnd()<0.7){ const off=(rnd()-0.5)*w*1.6, x=cx-uz*off, z=cz+ux*off, sz=0.18+rnd()*0.35; pb.frame(x,rivStreamY(g.st,cx,cz)-0.1-sz*0.2,z,rnd()*TAU); pb.box(0,0,0,sz*1.4,sz*0.6,sz,cc([0x6f6f62,0x7f7a68,0x5a5f58,0x8a8270][Math.floor(rnd()*4)])); }
+      for(const sd of [-1,1]) if(rnd()<0.45){ const off=sd*(w+0.9+rnd()*1.2); (rnd()<0.4?reeds:grass).push([cx-uz*off,cz+ux*off]); } } }
+  // 河原・小石・流木・ヤナギは1つの形（描く回数を減らす）
+  { for(let n=0;n<gv.i.length;n++) pb.i.push(gv.i[n]+pb.v); for(let n=0;n<gv.p.length;n++){ pb.p.push(gv.p[n]); pb.n.push(gv.n[n]); pb.c.push(gv.c[n]); } pb.v+=gv.v; }
+  const add=(geo,mt,sh)=>{ const ms=new THREE.Mesh(geo,mt); ms.receiveShadow=true; ms.castShadow=!!sh; ctx.group.add(ms); o.meshes.push(ms); o.own.push(geo); return ms; };
+  if(pb.i.length) add(pb.geo(),vcMat,false);
+  if(RK.length){ const rm=p3aRockMesh(ctx,RK); if(rm){ o.meshes.push(rm); o.own.push(rm.geometry); } }
+  const M=p3aMats(), m4=new THREE.Matrix4(), q=new THREE.Quaternion(), e=new THREE.Euler(), sc=new THREE.Vector3(), v=new THREE.Vector3();
+  for(const [L,geo] of [[reeds,RIV.geo.reed],[grass,RIV.geo.grass]]){ if(!L.length) continue; const im=new THREE.InstancedMesh(geo,M.sway,L.length);
+    L.forEach((p,j)=>{ const s=0.7+hash2(p[0],p[1])*0.7; e.set(0,hash2(p[1],p[0])*TAU,0); q.setFromEuler(e); sc.set(s,s,s); v.set(p[0],kamiH(p[0],p[1])-0.03,p[1]); m4.compose(v,q,sc); im.setMatrixAt(j,m4); });
+    im.receiveShadow=true; ctx.group.add(im); o.meshes.push(im); }
+  rt.o=o; }
+function rivTileDrop(ctx,rt){ const o=rt.o; if(!o) return; for(const m of o.meshes){ ctx.group.remove(m); if(m.isInstancedMesh&&m.dispose) m.dispose(); } for(const g of o.own) g.dispose(); for(const c of o.cols) gridRemove(c); rt.o=null; }
+function rivTilesUpdate(ctx,px,pz){ if(!RIV.tiles) return; let made=0; for(const rt of RIV.tiles){ const d=Math.hypot(Math.max(0,Math.abs(px-rt.cx)-rt.hw),Math.max(0,Math.abs(pz-rt.cz)-rt.hw));
+    if(d<RIV.near&&!rt.o&&made<1){ rivTileMake(ctx,KAMI,RIV.F,rt); made++; RIV.made++; } else if(d>RIV.far&&rt.o) rivTileDrop(ctx,rt); } }
+function rivDispose(ctx){ if(RIV.tiles) for(const rt of RIV.tiles) rivTileDrop(ctx,rt); RIV.tiles=null; RIV.F=null; RIV.geo=null; RIV.streamSegs=null; RIV.obs=null; if(RIV.camT>0){ RIV.camT=0; cam.override=null; } }
+// ---- 護岸：本流のそばを通る道の、川の側の土手にコンクリートブロックの斜面（P3-A の試作と同じ形。試作の範囲は除く）----
+function rivRevet(gbOf,roads,K){ for(const r of roads){ if(r.b||r.tn||r.w<4) continue; const p=r.p;
+    for(let s=0;s<p.length-1;s++){ const [ax,az]=p[s],[bx,bz]=p[s+1], Ls=dist(ax,az,bx,bz); if(Ls<0.5) continue; const ux=(bx-ax)/Ls, uz=(bz-az)/Ls;
+      for(let t=0;t<Ls;t+=2.0){ const x=ax+ux*t, z=az+uz*t; if(p3aInRiver(x,z)) continue; const dl=rivDl(x,z); if(dl>4||dl<1) continue;
+        let nx2=-uz, nz2=ux; if(rivDl(x+nx2*8,z+nz2*8)>rivDl(x-nx2*8,z-nz2*8)){ nx2=-nx2; nz2=-nz2; } const t1=Math.min(Ls,t+2.0), gb=gbOf(x,z);
+        for(let row=0;row<3;row++){ const o0=r.w/2+0.4+row*1.2, o1=o0+1.2, P_=(tt,oo)=>{ const xx=ax+ux*tt+nx2*oo, zz=az+uz*tt+nz2*oo; return [xx,kamiH(xx,zz)+0.06,zz]; };
+          const pe=P_(t,o1); if(kamiCls(pe[0],pe[2])===2) break; gb.quad(P_(t,o1),P_(t1,o1),P_(t1,o0),P_(t,o0),cc(((Math.round(t/2)+row)%2)?0x9c9a92:0x8e8c84)); } } } } }
+// ---- 支流（名前のある川）と水路（名前の無い細い川）：流れる水面。水路はコンクリートの U 字の壁 ----
+function rivStreamY(st,x,z){ return kamiH(x,z)+(st.n?0.06:0.1); }
+function rivStreams(ctx,D,gbOf){ const pos=[], dep=[], flo=[], idx=[], conc=cc(0xa9a79e), conc2=cc(0x8f8d86);
+  for(const st of D.streams){ if(st.cul) continue; const named=!!st.n, w=named?st.w*0.72:st.w*0.8; const P=[];
+    for(let s=0;s<st.p.length-1;s++){ const [ax,az]=st.p[s],[bx,bz]=st.p[s+1], L=dist(ax,az,bx,bz), n=Math.max(1,Math.ceil(L/2)); for(let t=0;t<n;t++) P.push([lerp(ax,bx,t/n),lerp(az,bz,t/n)]); } P.push(st.p[st.p.length-1]);
+    let prev=-1;
+    for(let s=0;s<P.length;s++){ const a=P[Math.max(0,s-1)], b=P[Math.min(P.length-1,s+1)]; let dx=b[0]-a[0], dz=b[1]-a[1]; const l=Math.hypot(dx,dz)||1; dx/=l; dz/=l; const nx=-dz, nz=dx, [cx,cz]=P[s], y=rivStreamY(st,cx,cz), v0=pos.length/3;
+      const yl=named?Math.max(rivStreamY(st,cx+nx*w/2,cz+nz*w/2),y-0.2):y, yr=named?Math.max(rivStreamY(st,cx-nx*w/2,cz-nz*w/2),y-0.2):y; // 支流は掘れた川の形に沿わせる（岸で水面が切れてぎざぎざにならないように）
+      pos.push(cx+nx*w/2,yl,cz+nz*w/2, cx,y,cz, cx-nx*w/2,yr,cz-nz*w/2); dep.push(0,named?0.42:0.22,0); for(let j=0;j<3;j++) flo.push(dx,dz);
+      if(prev>=0) idx.push(prev,v0,prev+1, prev+1,v0,v0+1, prev+1,v0+1,prev+2, prev+2,v0+1,v0+2); prev=v0;
+      if(!named&&s<P.length-1){ const [ex,ez]=P[s+1], L=dist(cx,cz,ex,ez), ang=Math.atan2(ez-cz,ex-cx), mx=(cx+ex)/2, mz=(cz+ez)/2, gb=gbOf(mx,mz); gb.frame(mx,kamiH(mx,mz),mz,ang);
+        for(const sd of [-1,1]){ gb.box(0,0.12,sd*(w/2+0.07),L+0.02,0.42,0.14,conc); gb.box(0,0.34,sd*(w/2+0.07),L+0.02,0.02,0.16,conc2); } gb.frame(0,0,0,0); } } } // 水路の壁（高さ0.4m）。道の帯は frame を使わないので元に戻す
+  if(!idx.length) return null; const g=ctx.own(new THREE.BufferGeometry()); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('aDepth',new THREE.Float32BufferAttribute(dep,1)); g.setAttribute('aFlow',new THREE.Float32BufferAttribute(flo,2)); g.setIndex(idx); g.computeVertexNormals(); g.computeBoundingSphere();
+  const m=new THREE.Mesh(g,rivWaterMat(ctx,true)); m.renderOrder=2; ctx.add(m); return m; }
 function M_sway(){ return p3aMats().sway; }
 // ---- 林道・森林：杉林（真っすぐな幹の列）・広葉樹林（丸い樹冠）・竹林、下草（シダ）、落ち葉、岩、倒木、切り株、獣道、木漏れ日 ----
 function p3aTreeGeo(kind){ const g=new THREE.Group(), rnd=p3aRng(kind==='sugi'?11:kind==='kona'?22:44);
@@ -10503,7 +10591,7 @@ function p3inDef(){ return P3IN[P3A.inId||'hq']; }
 // ================= v0.81 P3-B：拠点本部（調べる・拠点設立の会話・倉庫と総合作業場の初回修復）・持ち物の重さ・資材置き場・時刻 =================
 // 数はすべて暫定（2026-11-19）。素材の数は P3-A の案（2026-11-19 ユーザー「よい」）
 const P3B={ hour:50, h0:6, // 1日1200秒＝24時間・1時間50秒・tod 0＝6:00（2026-11-18 ユーザー決定「1日を均等に24時間に分ける」）
-  carry:{cap:60, slow:0.6, mats:['wood','stone','iron','rope','straw','bamboo','hide','charcoal','oldParts']}, // 持ち物の素材の重さ（2026-11-19 ユーザー決定「持ち物に制限を用意する」。数は暫定）
+  carry:{cap:60, slow:0.6, mats:['wood','stone','iron','rope','straw','bamboo','hide','charcoal','oldParts','ore','hardwood','steel']}, // v0.85：鉱石・硬木・鋼材も重さに数える // 持ち物の素材の重さ（2026-11-19 ユーザー決定「持ち物に制限を用意する」。数は暫定）
   rep:{ storage:{name:'倉庫',hours:2,spots:[
       {name:'倒れた鉄の棚を起こして直す',x:11,z:3.6,cost:{wood:6,iron:2,shelfKit:1}},
       {name:'崩れた壁と床を直す',x:17.6,z:5.4,cost:{wood:3,stone:6}},
@@ -11146,7 +11234,7 @@ const P3D_AREA={se:'本流の瀬',asa:'本流の浅くゆるい所',fuchi:'本�
 // 釣り竿（§4 の案・暫定）：win 猶予の倍率・cast 最大の投げる距離（m）・rare 珍しい魚の倍率・wait アタリまでの待ち（秒）
 const P3D_ROD={ basic:{name:'簡易釣り竿',win:1.0,cast:8,rare:1.0,wait:[6,14]}, pro:{name:'川漁師の竿',win:1.15,cast:11,rare:1.2,wait:[5,12]}, guard:{name:'川守の釣り竿',win:1.3,cast:13,rare:1.5,wait:[5,12]} };
 const P3D={ fish:null, segs:null, ui:null, bob:null, line:null, rodM:null, look:0 };
-function p3dFresh(){ return {v:1,rod:{basic:0,pro:0,guard:0},book:{},book2:{},ara:{observed:0,caughtReleased:0,reported:0,rodRewardClaimed:0},casts:0,catches:0}; }
+function p3dFresh(){ return {v:1,rod:{basic:0,pro:0,guard:0},book:{},book2:{},obs:{},ara:{observed:0,caughtReleased:0,reported:0,rodRewardClaimed:0},casts:0,catches:0}; }
 function p3dLoad(q){ const d=p3dFresh(); if(!q||typeof q!=='object'||q.v!==1) return d; const b=x=>x?1:0;
   for(const k in d.rod) d.rod[k]=b(q.rod&&q.rod[k]); for(const k in d.ara) d.ara[k]=b(q.ara&&q.ara[k]);
   if(d.ara.rodRewardClaimed){ d.ara.reported=1; d.rod.guard=1; } if(d.ara.reported) d.ara.caughtReleased=1; if(d.ara.caughtReleased) d.ara.observed=1; // 後の段階が済んでいれば前の段階も
@@ -11154,6 +11242,7 @@ function p3dLoad(q){ const d=p3dFresh(); if(!q||typeof q!=='object'||q.v!==1) re
   if(q.book&&typeof q.book==='object') for(const f of FISH.concat([ARAGAKO])){ const e=q.book[f.id]; if(!e||typeof e!=='object') continue; const s=x=>typeof x==='string'?x.slice(0,24):'';
     d.book[f.id]={n:num(e.n,0,0,1e6),max:num(e.max,0,0,200),where:s(e.where),band:s(e.band),seen:(b(e.seen)||num(e.n,0,0,1)>0)?1:0}; }
   if(q.book2&&typeof q.book2==='object') for(const a of AQUA){ const e=q.book2[a.id]; if(!e||typeof e!=='object') continue; const s=x=>typeof x==='string'?x.slice(0,24):''; d.book2[a.id]={n:num(e.n,0,0,1e6),where:s(e.where),band:s(e.band),seen:(b(e.seen)||num(e.n,0,0,1)>0)?1:0}; } // v0.84 D-2：水生生物
+  if(q.obs&&typeof q.obs==='object') for(const id of ['oAyu','oSagi','oKawasemi']){ const e=q.obs[id]; if(!e||typeof e!=='object') continue; const n=num(e.n,0,0,1e6); if(n>0) d.obs[id]={n,band:typeof e.band==='string'?e.band.slice(0,24):''}; } // v0.85 D-3：特別な観察地点
   return d; }
 function p3dState(){ if(!prog.p3d) prog.p3d=p3dFresh(); return prog.p3d; }
 function p3dRod(){ const r=p3dState().rod; return r.guard?'guard':r.pro?'pro':r.basic?'basic':null; }
@@ -11164,7 +11253,7 @@ const P3D_BAND={morn:'朝',day:'昼',eve:'夕方',night:'夜'};
 function p3dSegs(){ if(P3D.segs) return P3D.segs; const out=[]; for(const s of KAMI.D.streams){ const p=s.p; let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9; for(const [x,z] of p){ x0=Math.min(x0,x); x1=Math.max(x1,x); z0=Math.min(z0,z); z1=Math.max(z1,z); } out.push({s,x0:x0-6,x1:x1+6,z0:z0-6,z1:z1+6}); } return P3D.segs=out; }
 function p3dWater(x,z){ const K=KAMI; if(!K) return null; const i=Math.round((x-K.X0)/K.GS), k=Math.round((z-K.Z0)/K.GS); if(i<0||k<0||i>=K.nx||k>=K.ny) return null;
   if(K.C[k*K.nx+i]===2&&K.WL[k*K.nx+i]>-900) return {y:K.WL[k*K.nx+i],main:1};
-  for(const o of p3dSegs()){ if(x<o.x0||x>o.x1||z<o.z0||z>o.z1) continue; const p=o.s.p, hw=o.s.w/2; for(let j=0;j<p.length-1;j++){ const [ax,az]=p[j],[bx,bz]=p[j+1], dx=bx-ax, dz=bz-az, L2=dx*dx+dz*dz||1, t=clamp(((x-ax)*dx+(z-az)*dz)/L2,0,1); if(Math.hypot(ax+dx*t-x,az+dz*t-z)<hw) return {y:kamiH(x,z)-0.18,main:0,st:o.s}; } }
+  for(const o of p3dSegs()){ if(x<o.x0||x>o.x1||z<o.z0||z>o.z1) continue; const p=o.s.p, hw=o.s.w/2; for(let j=0;j<p.length-1;j++){ const [ax,az]=p[j],[bx,bz]=p[j+1], dx=bx-ax, dz=bz-az, L2=dx*dx+dz*dz||1, t=clamp(((x-ax)*dx+(z-az)*dz)/L2,0,1); if(Math.hypot(ax+dx*t-x,az+dz*t-z)<hw) return {y:rivStreamY(o.s,ax+dx*t,az+dz*t)-0.04,main:0,st:o.s}; } } /* v0.85：支流・水路の水面の高さ */
   return null; }
 function p3dArea(x,z,w){ if(!w.main){ if(!w.st.n) return 'canal'; return kamiH(x,z)>12?'tribUp':'trib'; } // 支流の山側は標高 12m より上（暫定）
   let d=0; for(let r=1;r<=3;r++){ let all=true; for(let a=0;a<8;a++){ const xx=x+Math.cos(a*Math.PI/4)*KAMI.GS*r, zz=z+Math.sin(a*Math.PI/4)*KAMI.GS*r; if(kamiCls(xx,zz)!==2){ all=false; break; } } if(!all) break; d=r; }
@@ -11243,7 +11332,7 @@ function p3dUi(){ if(!P3D.ui){ const d=document.createElement('div'); d.id='fish
 function p3dUiGauge(){ const F=P3D.fish; if(!F||!P3D.ui) return; const g=$('fishGauge'); g.style.width=(F.st==='aim'?Math.round(F.g*100):F.st==='bite'?Math.round(100*(1-F.t/F.win)):0)+'%'; if(P3D.lastSt!==F.st){ P3D.lastSt=F.st; p3dUi(); } }
 // ---- 外で：釣りをする・川底をのぞく ----
 function p3dOutside(L){ if(P3D.fish) return; const sh=p3dShore(); if(sh){ const rod=p3dRod(); L.push({d:1.6,label:rod?`釣りをする（${P3D_ROD[rod].name}）`:'釣りをする（釣り竿が要る：作業台で作る）',act:p3dStart}); L.push({d:1.7,label:'水辺の石の下を調べる（水生生物）',act:p3dSearch}); }
-  for(const f of P3A.fishSpots||[]){ const d=dist(P.x,P.z,f.x,f.z); if(d<2.4) L.push({d:d+0.3,label:'川底をのぞく',act:()=>p3dLook(f)}); } }
+  for(const f of P3A.fishSpots||[]){ const d=dist(P.x,P.z,f.x,f.z); if(d<2.4) L.push({d:d+0.3,label:'川底をのぞく',act:()=>p3dLook(f)}); } rivObsOutside(L); }
 // 川底をのぞく：石の多い瀬の底に、まれにアラレガコの姿が見える（目撃。§14.2）。1回で 20%（暫定）
 function p3dLook(f){ if(P3D.look>0){ toast('水面がまだ揺れている。少し待とう'); return; } P3D.look=8; const st=p3dState(); const see=Math.random()<0.2||P3D.forceSee;
   if(!see){ toast(['小さな魚の群れが、石のあいだを泳いでいる。','川底の石に、藻がびっしりついている。','水が澄んでいて、川底の砂利までよく見える。'][Math.floor(Math.random()*3)]); return; }
@@ -11252,7 +11341,7 @@ function p3dLook(f){ if(P3D.look>0){ toast('水面がまだ揺れている。少
 // ---- 図鑑（魚類。水生生物は D-2）----
 const BOOK={sel:'fAyu',tab:'fish',det:false};
 function p3dOpenBook(){ if(S.mode!=='playing'&&S.mode!=='menu') return; hideAllOv(); stopBeastVoices51(); S.mode='menu'; keys.clear(); BOOK.det=false; p3dRenderBook(); $('bookOv').hidden=false; }
-function p3dRenderBook(){ p3dBookTabs(); if(BOOK.tab==='aqua'){ p3dRenderAqua(); return; } const st=p3dState(), all=FISH.concat([ARAGAKO]), n=all.filter(f=>st.book[f.id]&&st.book[f.id].seen).length; $('bookSub').textContent=`魚類 ${n}/${all.length}　釣った数 ${st.catches}${p3cState().soichi.coop?'　記録：川村宗一':''}`;
+function p3dRenderBook(){ p3dBookTabs(); if(BOOK.tab==='aqua'){ p3dRenderAqua(); return; } if(BOOK.tab==='obs'){ p3dRenderObs(); return; } const st=p3dState(), all=FISH.concat([ARAGAKO]), n=all.filter(f=>st.book[f.id]&&st.book[f.id].seen).length; $('bookSub').textContent=`魚類 ${n}/${all.length}　釣った数 ${st.catches}${p3cState().soichi.coop?'　記録：川村宗一':''}`;
   const list=$('bookList'); list.innerHTML=''; for(const f of all){ const e=st.book[f.id], seen=!!(e&&e.seen); const el=document.createElement('div'); el.className='wkCard'+(BOOK.sel===f.id?' sel':'')+(seen?'':' lock'); el.id='bookCard_'+f.id;
     el.innerHTML=`${seen?icImg('p3d_'+f.id,'wkIc'):'<span class="wkIc"></span>'}<div class="wkNm">${seen?f.name:'？？？'}</div><div class="tag" style="font-size:11px;color:var(--washi-dim)">${seen?(f===ARAGAKO?(st.ara.reported?'保護報告済み':st.ara.caughtReleased?'川へ戻した':'目撃'):`${e.n}匹・最大 ${e.max}cm`):'まだ'}</div>`;
     el.onclick=()=>{ BOOK.sel=f.id; BOOK.det=true; p3dRenderBook(); }; list.appendChild(el); }
@@ -11321,13 +11410,64 @@ function p3dSearch(){ if(P3D.srch>0){ toast('さっき調べたばかり。少�
   let msg=''; if(got.use==='bait'){ const n=1+(Math.random()<0.5?1:0); inv.kawamushi=(inv.kawamushi||0)+n; msg=`${got.name}：川虫 +${n}（釣りの餌）`; }
   else if(got.use==='food'){ foodAdd('zugani',1); msg=`${got.name}をつかまえた（食材）`; } else msg=`${got.name}を観察した。${got.note}`;
   sfx('pickup'); saveGame(); if(first) banner(`図鑑に記録：${got.name}`,`${e.where}・${e.band}`,2.4); toast(msg,first); }
-function p3dBookTabs(){ const t=$('bookTabs'); if(!t) return; const st=p3dState(); t.innerHTML=''; for(const [id,nm] of [['fish','魚類'],['aqua','水生生物']]){ const b=document.createElement('button'); b.className='wkTab'+(BOOK.tab===id?' on':''); b.id='bookTab_'+id; b.textContent=nm; b.onclick=()=>{ BOOK.tab=id; BOOK.sel=id==='aqua'?AQUA[0].id:'fAyu'; p3dRenderBook(); }; t.appendChild(b); } }
+function p3dBookTabs(){ const t=$('bookTabs'); if(!t) return; const st=p3dState(); t.innerHTML=''; for(const [id,nm] of [['fish','魚類'],['aqua','水生生物'],['obs','観察']]){ const b=document.createElement('button'); b.className='wkTab'+(BOOK.tab===id?' on':''); b.id='bookTab_'+id; b.textContent=nm; b.onclick=()=>{ BOOK.tab=id; BOOK.sel=id==='aqua'?AQUA[0].id:id==='obs'?P3D_OBS[0].id:'fAyu'; p3dRenderBook(); }; t.appendChild(b); } }
 function p3dRenderAqua(){ const st=p3dState(), B2=st.book2||{}, n=AQUA.filter(a=>B2[a.id]&&B2[a.id].seen).length; $('bookSub').textContent=`水生生物 ${n}/${AQUA.length}　川虫 ${inv.kawamushi||0}`;
   const list=$('bookList'); list.innerHTML=''; for(const a of AQUA){ const e=B2[a.id], seen=!!(e&&e.seen); const el=document.createElement('div'); el.className='wkCard'+(BOOK.sel===a.id?' sel':'')+(seen?'':' lock'); el.id='bookCard_'+a.id;
     el.innerHTML=`${seen?icImg('p3d_'+a.id,'wkIc'):'<span class="wkIc"></span>'}<div class="wkNm">${seen?a.name:'？？？'}</div><div class="tag" style="font-size:11px;color:var(--washi-dim)">${seen?`${e.n}回・${a.use==='bait'?'釣りの餌':a.use==='food'?'食材':'観察だけ'}`:'まだ'}</div>`;
     el.onclick=()=>{ BOOK.sel=a.id; BOOK.det=true; p3dRenderBook(); }; list.appendChild(el); }
   const a=AQUA_BY[BOOK.sel]||AQUA[0], e=B2[a.id], det=$('bookDet'); det.classList.toggle('hide',!BOOK.det); setTimeout(()=>{ const b=det.querySelector('.back'); if(b) b.onclick=()=>{ BOOK.det=false; p3dRenderBook(); }; },0); if(!(e&&e.seen)){ det.innerHTML=`<button class="back">← 一覧へ</button><div class="tag">水生生物</div><h3>？？？</h3><div class="ds">まだ見つけていない。水辺の石の下を調べると見つかる。</div>`; return; }
   det.innerHTML=`<button class="back">← 一覧へ</button>${icImg('p3d_'+a.id,'bigIc')}<div class="tag">水生生物（${a.use==='bait'?'釣りの餌':a.use==='food'?'食材':'観察だけ'}）</div><h3>${a.name}</h3><div class="ds">生息環境：${a.hab}<br>発見場所：${e.where||'—'}<br>見つけた時間帯：${e.band||'—'}<br>見つけた回数：${e.n}<br>観察記録：${a.note}</div>`; }
+// ---- v0.85 P3-D（D-3）§19.4：川底の鉱石（浅瀬の黒い石をつるはし・槌で割る。C-4 の素材）と、特別な観察地点（2026-11-20 07:19 ユーザー「その案でいきましょう」）----
+const RIV_ORE={max:3,xs:[6205,6340,6505,6600,6720,7000,7120]}; // 1か所 3つ・岩と同じく 300秒で戻る（P3-A の案。暫定）。本部のまわりの南岸7か所
+const P3D_OBS=[
+ {id:'oAyu',name:'瀬のアユの群れ',x:6660,into:4.5,bands:['day','dawn'],hab:'流れの速い瀬の、苔のついた石のまわり',note:'流れの速い瀬で、アユの群れが石の苔をはんでいた。体をひるがえすたびに、銀色に光る。'},
+ {id:'oSagi',name:'中州のサギ',x:6950,into:7,bands:['day','dawn','dusk'],hab:'浅瀬と中州の水際',note:'浅瀬に、白いサギが一羽じっと立っている。首を伸ばし、魚が近づくのを待っている。'},
+ {id:'oKawasemi',name:'カワセミの止まり木',x:6255,into:2.2,bands:['day'],hab:'水の上に張り出した枝',note:'水の上に張り出した枝に、青と橙の小さな鳥がとまっている。ときどき水面へ飛び込み、小魚をくわえて枝に戻る。'} ];
+const P3D_OBS_BY={}; for(const o of P3D_OBS) P3D_OBS_BY[o.id]=o;
+// 南岸の水際：x の線で、歩ける陸と隣の水の区画（水の側へ into m 入った所も）
+function rivShoreAt(x,into){ const K=KAMI, F=RIV.F; if(!K||!F) return null; for(let z=200;z<1100;z+=0.8){ if(kamiCls(x,z)===2||!kamiReach(x,z)) continue; let w=null;
+    for(const [a,b] of [[0,1],[0,-1],[1,0],[-1,0]]){ const xx=x+a*K.GS, zz=z+b*K.GS; if(kamiCls(xx,zz)===2){ w=[a,b]; break; } } if(!w) continue;
+    const wx=x+w[0]*(1.6+into), wz=z+w[1]*(1.6+into), n=rivCell(wx,wz); if(n<0||K.C[n]!==2) continue; return {sx:x,sz:z,ex:x+w[0]*1.45,ez:z+w[1]*1.45,wx,wz,wy:F.wlv[n]-0.12,dir:Math.atan2(w[0],w[1])}; } return null; }
+function rivOreLook(){ const g=new THREE.Group(); const body=mesh(G.ico||G.sphLo,mat(0x46443e),0,0.32,0,0.85,0.55,0.7); body.rotation.y=0.4; g.add(outline(J(body,0.14),0.04));
+  for(const [x,y,z,c] of [[0.22,0.66,0.12,0xb8783a],[-0.2,0.64,-0.15,0xa86a34],[0.02,0.7,-0.02,0xe8cc70],[-0.28,0.56,0.22,0xd09850],[0.3,0.5,-0.25,0xe8cc70]]){ const s=mesh(G.box,mat(c),x,y,z,0.34,0.07,0.16); s.rotation.y=x*4; g.add(s); } // 錆色と金色の筋（上から見える）
+  return g; }
+function rivBuildOre(ctx,put){ const kw=ctx.kw; RIV_ORE.xs.forEach((x,i)=>{ const s=rivShoreAt(x,0); if(!s) return; const yb=s.wy-0.3-groundH(s.ex,s.ez); const m=put(rivOreLook(),s.ex,s.ez,hash2(x,s.sz)*TAU,yb), mr=put(f5Rubble(),s.ex,s.ez,null,yb+0.1); // 水際の浅瀬に、頭を水の上に出して置く
+    kw.nodes.push({k:'rock',ore:1,max:RIV_ORE.max,key:'q'+i,x:s.ex,z:s.ez,m,mr,col:ctx.circle(s.ex,s.ez,0.5,'rock'),acc:0}); }); }
+// ---- 観察地点の形（サギ・カワセミ・アユの群れ）----
+function rivBuildObs(ctx){ RIV.obs=[]; const vw=vcMat;
+  for(const o of P3D_OBS){ const s=rivShoreAt(o.x,o.into); if(!s) continue; const g=new GB(); g.jit=0.04; const R={o,s,meshes:[]};
+    if(o.id==='oSagi'){ g.frame(s.wx,s.wy,s.wz,s.dir+1.2); for(const z of [-0.07,0.07]) g.box(0,0.25,z,0.035,0.62,0.035,cc(0x3a3428)); g.box(0,0.72,0,0.62,0.26,0.24,cc(0xf2f0e8)); g.box(-0.36,0.72,0,0.26,0.12,0.16,cc(0xe6e4dc)); // 脚・胴・尾
+      g.box(0.27,0.98,0,0.08,0.42,0.08,cc(0xf2f0e8)); g.box(0.38,1.2,0,0.2,0.08,0.08,cc(0xf2f0e8)); g.box(0.5,1.24,0,0.12,0.12,0.12,cc(0xf2f0e8)); g.box(0.68,1.24,0,0.26,0.035,0.04,cc(0xd8b040)); g.box(0.52,1.27,0.06,0.02,0.02,0.02,cc(0x111111)); // 首・頭・くちばし
+      for(let k=0;k<6;k++){ const a=k/6*TAU; g.box(Math.cos(a)*0.32,0.02,Math.sin(a)*0.32,0.18,0.015,0.05,cc(0xe8f0f0)); } } // 足もとの波
+    else if(o.id==='oKawasemi'){ const bx=(s.ex+s.wx)/2, bz=(s.ez+s.wz)/2, by=kamiH(s.ex,s.ez); g.frame(s.ex,by,s.ez,Math.PI/2-s.dir); g.box(0,0.6,0,0.12,1.2,0.12,cc(0x5a4632)); // 岸の杭（ローカルの x を水の向きに）
+      const L=dist(s.ex,s.ez,s.wx,s.wz)+0.6; for(let k=0;k<4;k++) g.box(L*k/4+L/8,1.15+k*0.05,0,L/4+0.05,0.07,0.07,cc(0x6a5440)); g.box(L*0.6,1.3,0.15,0.5,0.04,0.04,cc(0x6a5440)); // 張り出した枯れ枝
+      const tx=L*0.82, ty=1.32; g.box(tx,ty+0.07,0,0.16,0.09,0.08,cc(0x2a8ac0)); g.box(tx,ty+0.02,0,0.12,0.05,0.07,cc(0xe07a2a)); g.box(tx+0.1,ty+0.12,0,0.07,0.07,0.07,cc(0x2070a8)); g.box(tx+0.18,ty+0.12,0,0.1,0.02,0.02,cc(0x1a1a1a)); g.box(tx-0.1,ty+0.07,0,0.08,0.03,0.05,cc(0x1c5a8a)); } // 青い背・橙の腹・長いくちばし
+    else { g.frame(s.wx,s.wy-0.06,s.wz,s.dir); for(let k=0;k<6;k++){ const a=k/6*TAU+0.3; g.box(Math.cos(a)*1.4,-0.32,Math.sin(a)*1.2,0.9,0.3,0.7,cc(k%2?0x6a6a5a:0x7a7462)); } } // アユの瀬：苔のついた石
+    if(g.i.length){ const m=new THREE.Mesh(ctx.own(g.geo()),vw); m.castShadow=true; ctx.add(m); R.meshes.push(m); }
+    if(o.id==='oAyu'){ const fg=new GB(); fg.frame(0,0,0,0); fg.box(0,0,0,0.34,0.02,0.07,cc(0x2a3430)); fg.box(-0.2,0,0,0.08,0.02,0.1,cc(0x2a3430)); const im=new THREE.InstancedMesh(ctx.own(fg.geo()),ctx.own(new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:0.55,depthWrite:false})),11); im.renderOrder=3; ctx.add(im); R.fish=im; R.meshes.push(im); }
+    RIV.obs.push(R); } }
+function rivObsTick(dt){ if(!RIV.obs) return; const ph=f10Phase(); for(const R of RIV.obs){ const on=R.o.bands.includes(ph), near=dist(P.x,P.z,R.s.sx,R.s.sz)<160; for(const m of R.meshes) m.visible=on&&near&&!P3A.inside;
+    if(R.fish&&R.fish.visible){ const t=P3A.t, m4=new THREE.Matrix4(), q=new THREE.Quaternion(), e=new THREE.Euler(), v=new THREE.Vector3(), one=new THREE.Vector3(1,1,1);
+      for(let j=0;j<11;j++){ const a=t*(0.35+j*0.03)+j*0.57, r=0.6+((j*37)%10)/10*1.6, x=R.s.wx+Math.cos(a)*r, z=R.s.wz+Math.sin(a*1.3)*r*0.7, ang=Math.atan2(Math.cos(a*1.3)*1.3*r*0.7,-Math.sin(a)*r);
+        e.set(0,-ang,0); q.setFromEuler(e); v.set(x,R.s.wy-0.18-((j*13)%5)*0.03,z); m4.compose(v,q,one); R.fish.setMatrixAt(j,m4); } R.fish.instanceMatrix.needsUpdate=true; } } }
+function rivObsOutside(L){ if(!RIV.obs||P3D.fish) return; for(const R of RIV.obs){ const d=dist(P.x,P.z,R.s.sx,R.s.sz); if(d<4.5) L.push({d:d+0.4,label:`観察する（${R.o.name}）`,act:()=>rivObserve(R)}); } }
+function rivObserve(R){ const o=R.o, ph=f10Phase(); if(!o.bands.includes(ph)){ toast(ph==='night'?'暗くて、よく見えない。明るいうちに来よう':'いまは姿が見えない。時間を変えて来てみよう'); return; }
+  const st=p3dState(); if(!st.obs) st.obs={}; const e=st.obs[o.id]||(st.obs[o.id]={n:0,band:''}); const first=!e.n; e.n++; if(first) e.band=P3D_BAND[p3dBand()]; saveGame(); sfx('pickup');
+  const s=R.s, fx=Math.sin(s.dir), fz=Math.cos(s.dir), bx=s.sx-fx*0.6+fz*2.4, bz=s.sz-fz*0.6-fx*2.4; cam.override={p:new THREE.Vector3(bx,kamiH(bx,bz)+1.5,bz),l:new THREE.Vector3(s.wx,s.wy+(o.id==='oAyu'?-0.2:o.id==='oSagi'?0.8:1.0),s.wz),fov:38}; RIV.camT=4.5; // 主人公の横から（頭で隠れないように）
+  if(first) banner(`図鑑に記録：${o.name}`,o.note,4.2); else toast(o.note); }
+function rivCamTick(dt){ if(RIV.camT>0){ RIV.camT-=dt; if(RIV.camT<=0&&!P3D.fish) cam.override=null; } }
+function p3dObsIcon(id){ const g=new THREE.Group(), B=(c,w,h,d,x,y,z)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color:c})); m.position.set(x,y,z); g.add(m); };
+  if(id==='oSagi'){ B(0xf2f0e8,0.6,0.26,0.24,0,0.5,0); B(0xf2f0e8,0.08,0.4,0.08,0.26,0.75,0); B(0xf2f0e8,0.14,0.12,0.12,0.36,0.98,0); B(0xd8b040,0.26,0.04,0.04,0.54,0.98,0); for(const z of [-0.07,0.07]) B(0x3a3428,0.035,0.5,0.035,0,0.12,z); }
+  else if(id==='oKawasemi'){ B(0x6a5440,1.0,0.07,0.07,0,0.3,0); B(0x2a8ac0,0.3,0.16,0.14,0,0.48,0); B(0xe07a2a,0.22,0.08,0.12,0,0.39,0); B(0x2070a8,0.13,0.13,0.13,0.18,0.56,0); B(0x1a1a1a,0.2,0.03,0.03,0.33,0.56,0); }
+  else { for(let k=0;k<3;k++){ B(0xb8c4c0,0.55,0.12,0.1,(k-1)*0.2,0.35+k*0.18,(k-1)*0.1); B(0x8a9a94,0.12,0.16,0.04,(k-1)*0.2-0.32,0.35+k*0.18,(k-1)*0.1); } }
+  g.rotation.y=-0.5; return g; }
+function p3dRenderObs(){ const st=p3dState(), O=st.obs||{}, n=P3D_OBS.filter(o=>O[o.id]&&O[o.id].n).length; $('bookSub').textContent=`観察 ${n}/${P3D_OBS.length}`;
+  const list=$('bookList'); list.innerHTML=''; for(const o of P3D_OBS){ const e=O[o.id], seen=!!(e&&e.n); const el=document.createElement('div'); el.className='wkCard'+(BOOK.sel===o.id?' sel':'')+(seen?'':' lock'); el.id='bookCard_'+o.id;
+    el.innerHTML=`${seen?icImg('p3d_'+o.id,'wkIc'):'<span class="wkIc"></span>'}<div class="wkNm">${seen?o.name:'？？？'}</div><div class="tag" style="font-size:11px;color:var(--washi-dim)">${seen?`${e.n}回`:'まだ'}</div>`;
+    el.onclick=()=>{ BOOK.sel=o.id; BOOK.det=true; p3dRenderBook(); }; list.appendChild(el); }
+  const o=P3D_OBS_BY[BOOK.sel]||P3D_OBS[0], e=O[o.id], det=$('bookDet'); det.classList.toggle('hide',!BOOK.det); setTimeout(()=>{ const b=det.querySelector('.back'); if(b) b.onclick=()=>{ BOOK.det=false; p3dRenderBook(); }; },0);
+  if(!(e&&e.n)){ det.innerHTML=`<button class="back">← 一覧へ</button><div class="tag">観察</div><h3>？？？</h3><div class="ds">まだ見ていない。九頭竜川の南岸のどこかで観察できる。</div>`; return; }
+  det.innerHTML=`<button class="back">← 一覧へ</button>${icImg('p3d_'+o.id,'bigIc')}<div class="tag">観察</div><h3>${o.name}</h3><div class="ds">場所：${o.hab}<br>はじめて見た時間帯：${e.band||'—'}<br>観察した回数：${e.n}<br>観察記録：${o.note}</div>`; }
 // ---- 宗一（§7.3・§8.2・§11）：川辺で初めて釣りをしたときに出会う → 加入依頼（釣り道具の修理と失くした道具の探索）→ 協力者 → Lv2 の空き部屋で正式居住 ----
 P3C_WHO.soichi={name:'宗一'};
 const P3D_LINES={
@@ -11389,7 +11529,7 @@ function p3dRodIcon(k){ const g=new THREE.Group(), M=c=>new THREE.MeshLambertMat
   rod.rotation.z=-0.75; rod.position.set(-0.55,-0.35,0); g.add(rod);
   const bob=new THREE.Mesh(new THREE.SphereGeometry(0.13,10,8),M(0xe04030)); bob.position.set(0.75,0.15,0); g.add(bob); const st=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.22,6),M(0xf2efe6)); st.position.set(0.75,0.32,0); g.add(st);
   g.position.y=0.5; return g; }
-function p3dIconObj(id){ if(AQUA_BY[id]) return p3dAquaIcon(id); if(id.startsWith('rod_')) return p3dRodIcon(id.slice(4)); const f=FISH_BY[id]||(id==='ara'?ARAGAKO:null); if(!f) return null; const g=new THREE.Group(), M=c=>new THREE.MeshLambertMaterial({color:c}), B=(c,w,h,d,x,y,z)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c)); m.position.set(x,y,z); g.add(m); };
+function p3dIconObj(id){ if(AQUA_BY[id]) return p3dAquaIcon(id); if(P3D_OBS_BY[id]) return p3dObsIcon(id); if(id.startsWith('rod_')) return p3dRodIcon(id.slice(4)); const f=FISH_BY[id]||(id==='ara'?ARAGAKO:null); if(!f) return null; const g=new THREE.Group(), M=c=>new THREE.MeshLambertMaterial({color:c}), B=(c,w,h,d,x,y,z)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c)); m.position.set(x,y,z); g.add(m); };
   if(f===ARAGAKO){ B(f.col[0],0.5,0.18,0.42,0.3,0.5,0); B(f.col[0],0.8,0.15,0.26,-0.3,0.5,0); for(let k=0;k<5;k++) B(f.col[1],0.1,0.02,0.1,-0.5+k*0.2,0.6,(k%2?0.07:-0.07)); B(f.col[1],0.08,0.15,0.24,-0.75,0.5,0); }
   else { B(f.col[0],1.1,0.3,0.16,0,0.55,0); B(0xe8e8e0,0.9,0.12,0.14,0,0.45,0); B(f.col[0],0.25,0.36,0.06,-0.7,0.55,0); B(f.col[1],0.3,0.12,0.04,0.05,0.74,0); B(0x101010,0.05,0.05,0.18,0.42,0.6,0); }
   g.rotation.y=-0.5; return g; }
@@ -11515,20 +11655,32 @@ function p3aSzFollow(){ if(typeof szHere!=='function'||!szHere()||SZ.order!=='fo
 function p3aInteractables(L){ if(!P3A.on||REG.cur!=='kamishihi') return;
   if(P3A.inside){ const I=P3A.interior; if(!I) return; const fac=I.id==='factory'; for(const k of I.marks){ const d=dist(P.x,P.z,k.x,k.z); if(d>(k.r||1.8)) continue; L.push({d,label:k.rep?p3bRepLabel(k.rep[0],k.rep[1]):k.req?p3cStepLabel(P3C_REQ_BY[k.req[0]],p3cReq(k.req[0]),k.req[1]):k.label,act:()=>k.req?p3cReqDo(k.req[0],k.req[1]):fac?p3cFactoryInteract(k):p3bInteract(k)}); } p3cResInteractables(L); return; }
   p3bOutside(L); }
-let P3A_SND=null;
-function p3aUpdate(dt){ if(!P3A.on) return; P3A.t+=dt; if(P3A.waterU) P3A.waterU.value=P3A.t; const M=P3A.mats; if(M&&M.swayU) M.swayU.value=P3A.t;
+// ---- v0.85 P3-D（D-3）川の音（§19.3）：本流の流れ（いちばん近い本流までの距離）・支流と水路のせせらぎ・浅瀬の水音（ときどき）・河原の風。鳥は f31Sched（昼） ----
+let RIVSND=null;
+function rivSoundTick(dt){ if(typeof AU==='undefined'||!AU.ok||!AC||!noiseBuf) return; const on=REG.cur==='kamishihi'&&!P3A.inside&&S.mode!=='title'&&!!KAMI;
+  if(!RIVSND){ const mk=(lp,pk,pg)=>{ const s=AC.createBufferSource(); s.buffer=noiseBuf; s.loop=true; const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=lp; const f2=AC.createBiquadFilter(); f2.type='peaking'; f2.frequency.value=pk; f2.gain.value=pg; const g=AC.createGain(); g.gain.value=0; s.connect(f); f.connect(f2); f2.connect(g); g.connect(AU.amb); s.start(AC.currentTime,Math.random()*0.9); return g; };
+    RIVSND={main:mk(700,1600,6),brook:mk(2600,3400,8),t:0,dm:999,ds:999,splT:0,wind:0}; }
+  const R=RIVSND; R.t-=dt; if(R.t<=0){ R.t=0.25; if(on){ const dl=rivDl(P.x,P.z); R.dm=dl>=255?999:dl*KAMI.GS; let ds=999; for(const g of rivStreamSegs()){ if(P.x<g.x0-30||P.x>g.x1+30||P.z<g.z0-30||P.z>g.z1+30) continue; ds=Math.min(ds,segDist(P.x,P.z,g.ax,g.az,g.bx,g.bz)-g.st.w/2); } R.ds=Math.max(0,ds); } else { R.dm=999; R.ds=999; } }
+  const wm=on?Math.pow(clamp(1-R.dm/95,0,1),1.4)*0.11:0, ws=on?clamp(1-R.ds/26,0,1)*0.05:0; // 本流は約95m・支流と水路は約26m で聞こえなくなる（暫定）
+  R.main.gain.value+=(wm-R.main.gain.value)*Math.min(1,dt*2); R.brook.gain.value+=(ws-R.brook.gain.value)*Math.min(1,dt*2); R.wind=on?clamp(1-R.dm/60,0,1):0;
+  if(on&&SND.amb&&(R.dm<15||R.ds<5)){ R.splT-=dt; if(R.splT<=0){ R.splT=0.25+Math.random()*1.1; rivSplash(R.dm<15?clamp(1-R.dm/15,0.2,1):0.6); } } } // 浅瀬の水音
+function rivSplash(k){ const now=AC.currentTime+0.02, s=AC.createBufferSource(); s.buffer=noiseBuf; const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=900+Math.random()*1800; f.Q.value=4+Math.random()*4; const g=AC.createGain();
+  g.gain.setValueAtTime(0.0001,now); g.gain.linearRampToValueAtTime(0.035*k,now+0.015); g.gain.exponentialRampToValueAtTime(0.0001,now+0.09+Math.random()*0.08); s.connect(f); f.connect(g); g.connect(AU.amb); s.start(now,Math.random()*0.8,0.2); s.onended=()=>{ s.disconnect(); f.disconnect(); g.disconnect(); }; }
+function rivBird(t){ const kind=Math.floor(Math.random()*3), base=2600+Math.random()*1400, n=kind===0?3+Math.floor(Math.random()*3):kind===1?2:5; // 鳥（昼）：短いさえずり3種（特定の鳥のまねはしない）
+  for(let j=0;j<n;j++){ const t0=t+j*(kind===2?0.09:0.16), o=AC.createOscillator(), g=AC.createGain(); o.type='sine'; const f0=base*(kind===1&&j===1?0.75:1)*(1+(Math.random()-0.5)*0.06);
+    o.frequency.setValueAtTime(f0,t0); o.frequency.exponentialRampToValueAtTime(f0*(kind===0?1.35:kind===1?0.8:1.15),t0+0.07);
+    g.gain.setValueAtTime(0.0001,t0); g.gain.linearRampToValueAtTime(0.012,t0+0.012); g.gain.exponentialRampToValueAtTime(0.0001,t0+0.1); o.connect(g); g.connect(AU.amb); o.start(t0); o.stop(t0+0.12); o.onended=()=>{ o.disconnect(); g.disconnect(); }; } }
+function p3aUpdate(dt){ if(!P3A.on) return; P3A.t+=dt; RIV.uT.value=P3A.t; const M=P3A.mats; if(M&&M.swayU) M.swayU.value=P3A.t;
   const px=camera.position.x, pz=camera.position.z; for(const o of P3A.near||[]) o.m.visible=!P3A.inside&&dist(px,pz,o.x,o.z)<o.r; // 近いときだけ描く
   if(P3A.sunSpots) P3A.sunSpots.material.opacity=lightMode==='day'?0.55:0.15;
   if(P3A.interior){ const I=P3A.interior; for(const s of I.mk){ s.rotation.y+=dt*1.5; s.position.y=1.2+Math.sin(P3A.t*2+s.position.x)*0.1; } p3bInteriorTick(dt); }
   if(P3A.inside){ P3A.tc=(P3A.tc||0)+dt; if(P3A.tc>0.5){ P3A.tc=0; p3bTalkCheck(false); } } else p3bOutsideTick(); // v0.81 P3-B
   p3cUpdate(dt); // v0.82 P3-C：住民・救助
   if(P3D.look>0) P3D.look-=dt; if(P3D.srch>0) P3D.srch-=dt; p3dTick(dt); // v0.84 P3-D：釣り・宗一
-  // 川の音：九頭竜川の河原に近いほど大きく（環境音の帯に重ねる）
-  if(typeof AU!=='undefined'&&AU.ok&&AC){ if(!P3A_SND){ const s=AC.createBufferSource(); s.buffer=noiseBuf; s.loop=true; const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=700; const f2=AC.createBiquadFilter(); f2.type='peaking'; f2.frequency.value=1600; f2.gain.value=6; const g=AC.createGain(); g.gain.value=0; s.connect(f); f.connect(f2); f2.connect(g); g.connect(AU.amb); s.start(); P3A_SND={g}; }
-    const R=P3A.RIVER, dx=Math.max(0,R.x0-P.x,P.x-R.x1), dz=Math.max(0,R.z0-P.z,P.z-R.z1), d=Math.hypot(dx,dz), want=(REG.cur==='kamishihi'&&!P3A.inside)?clamp(1-d/70,0,1)*0.09:0; P3A_SND.g.gain.value+=(want-P3A_SND.g.gain.value)*Math.min(1,dt*2); } }
+  rivSoundTick(dt); rivObsTick(dt); rivCamTick(dt); } // v0.85 P3-D（D-3）：川の音（本流・支流・浅瀬・河原の風）・観察地点
 function p3inDispose(){ if(!P3A.interior) return; const I=P3A.interior; for(const c of I.cols) gridRemove(c); scene.remove(I.g); I.g.traverse(o=>{ if(o.geometry&&o.geometry!==G.box) o.geometry.dispose(); if(o.material&&o.material!==vcMat&&o.material!==inkMat&&o.material!==P3B_DM) o.material.dispose(); }); P3A.interior=null; }
 function p3aDispose(){ p3inDispose(); p3cResHideAll();
-  if(P3A.inside){ P3A.inside=false; REG.inB=null; if(P3A.ret) REG.hfn=P3A.ret.hfn; } P3A.near=[]; P3A.doors=[]; P3A.fishSpots=[]; P3A.yardTruck=null; P3A.waterU=null; P3A.sunSpots=null; if(P3A_SND) P3A_SND.g.gain.value=0; }
+  if(P3A.inside){ P3A.inside=false; REG.inB=null; if(P3A.ret) REG.hfn=P3A.ret.hfn; } P3A.near=[]; P3A.doors=[]; P3A.fishSpots=[]; P3A.yardTruck=null; P3A.waterU=null; P3A.sunSpots=null; if(RIVSND){ RIVSND.main.gain.value=0; RIVSND.brook.gain.value=0; RIVSND.wind=0; } }
 
 const NEAR_D=120; // 上志比：細かい地面を描く距離（区画の端から）
 function kamishihiBuild(ctx){
@@ -11546,11 +11698,12 @@ function kamishihiBuild(ctx){
   ctx.h=kamiH; ctx.cls=kamiCls; ctx.bounds=Object.assign({},D.play); ctx.arrival=D.arrival; ctx.respawn=D.arrival; // 作る間は地形の高さそのまま（橋の帯は ribbon が両端の高さから作る）
   ctx.severity=0.5; // 荒れ具合（暫定）：家の傷みと「警戒区域」の表示に使う
   const toU=x=>(x-K.X0)/K.W, toV=z=>(z-K.Z0)/K.DD;
+  const RVF=rivField(K); // v0.85 P3-D（D-3）：岸からの距離（水の中・陸）
   // ---- 1) 地面の絵（分類・田畑・庭・小川・道を塗る。光明寺と同じ色づかい） ----
   const TW=2048, TH=Math.round(2048*K.DD/K.W), cv=document.createElement('canvas'); cv.width=TW; cv.height=TH; const c=cv.getContext('2d');
   { const sm=document.createElement('canvas'); sm.width=K.nx; sm.height=K.ny; const sc=sm.getContext('2d'), id=sc.createImageData(K.nx,K.ny);
     const pal=[[118,152,74],[52,78,44],[64,110,124],[186,178,156],[132,166,86],[150,146,138],[160,150,110],[176,176,172]];
-    for(let n=0;n<K.nx*K.ny;n++){ const p=pal[K.C[n]]||pal[0], v=(hash2(n%K.nx,(n/K.nx)|0)-0.5)*14; id.data[n*4]=clamp(p[0]+v,0,255); id.data[n*4+1]=clamp(p[1]+v,0,255); id.data[n*4+2]=clamp(p[2]+v*0.6,0,255); id.data[n*4+3]=255; }
+    for(let n=0;n<K.nx*K.ny;n++){ const p=rivPaintCell(n,pal[K.C[n]]||pal[0]), v=(hash2(n%K.nx,(n/K.nx)|0)-0.5)*14; id.data[n*4]=clamp(p[0]+v,0,255); id.data[n*4+1]=clamp(p[1]+v,0,255); id.data[n*4+2]=clamp(p[2]+v*0.6,0,255); id.data[n*4+3]=255; }
     sc.putImageData(id,0,0); c.imageSmoothingEnabled=true; c.drawImage(sm,0,0,TW,TH); }
   const path=(pts,close)=>{ c.beginPath(); pts.forEach((p,i)=>{ const u=toU(p[0])*TW, v=toV(p[1])*TH; if(i) c.lineTo(u,v); else c.moveTo(u,v); }); if(close) c.closePath(); };
   const pxm=TW/K.W;
@@ -11588,15 +11741,10 @@ function kamishihiBuild(ctx){
   const nearDrop=t=>{ ctx.group.remove(t.near); t.near.geometry.dispose(); t.near=null; };
   const HT=TL*K.GS/2, rectD=(t,x,z)=>Math.hypot(Math.max(0,Math.abs(x-t.cx)-HT),Math.max(0,Math.abs(z-t.cz)-HT)); // 区画の端までの距離
   for(const t of tiles) if(rectD(t,D.arrival.x,D.arrival.z)<NEAR_D) nearMake(t); // 着いた所のまわりは先に作る
-  // ---- 3) 九頭竜川の水面 ----
-  const p3aCells=[]; // P3-A：河原の試作の範囲の水は別の作りにする
-  { const pos=[], idx=[], vid=new Int32Array(K.nx*K.ny).fill(-1);
-    for(let k=0;k<K.ny;k++) for(let i=0;i<K.nx;i++){ let wl=-999; for(let b=-1;b<=1;b++) for(let a=-1;a<=1;a++){ const ii=i+a, kk=k+b; if(ii>=0&&kk>=0&&ii<K.nx&&kk<K.ny) wl=Math.max(wl,K.WL[kk*K.nx+ii]); }
-      if(wl<-900) continue; vid[k*K.nx+i]=pos.length/3; pos.push(K.X0+i*K.GS,wl-0.15,K.Z0+k*K.GS); }
-    for(let k=0;k<K.ny-1;k++) for(let i=0;i<K.nx-1;i++){ const a=vid[k*K.nx+i], b=vid[k*K.nx+i+1], cc2=vid[(k+1)*K.nx+i], d2=vid[(k+1)*K.nx+i+1]; if(a<0||b<0||cc2<0||d2<0) continue; if(p3aInRiver(K.X0+(i+0.5)*K.GS,K.Z0+(k+0.5)*K.GS)){ p3aCells.push(k*K.nx+i); continue; } idx.push(a,cc2,b,b,cc2,d2); }
-    if(idx.length){ const g=own(new THREE.BufferGeometry()); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals(); g.computeBoundingSphere();
-      ctx.add(new THREE.Mesh(g,own(new THREE.MeshLambertMaterial({color:0x5f9fb8,transparent:true,opacity:0.86})))); } }
-  if(p3aCells.length) p3aBuildRiver(ctx,K,p3aCells);
+  // ---- 3) 九頭竜川の水面（v0.85 P3-D の D-3：本流の全部を P3-A の水面に。区画ごと・川底は浅い所だけ）と、近くの河原（区画ごとに作る・捨てる）----
+  rivBuildWater(ctx,K,RVF); rivTilesInit(ctx,K,RVF,TL);
+  if(P3A.on) p3aBuildRiver(ctx,K); // P3-A の試作の範囲の河原（承認済みの形のまま）
+  rivBuildObs(ctx); // 特別な観察地点（§19.4）
   // ---- 4) 道・線路・小川（光明寺と同じ帯の作り方） ----
   const tileOf=(x,z)=>{ const ci=clamp(Math.floor((x-K.X0)/(TL*K.GS)),0,NCX-1), ck=clamp(Math.floor((z-K.Z0)/(TL*K.GS)),0,NCZ-1); return tiles[ck*NCX+ci]; };
   const rmat=own(new THREE.MeshLambertMaterial({vertexColors:true,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
@@ -11612,6 +11760,7 @@ function kamishihiBuild(ctx){
         else if(r.k==='unclassified'){ for(const sd of [-1,1]) ribbon(gb,pc,0.12,0.1,white,{off:sd*(r.w/2-0.3),step:6}); ribbon(gb,pc,0.5,0.095,rust,{step:6}); } }); }
     for(const r of D.rails) each(r,(gb,pc)=>{ ribbon(gb,pc,3.4,0.12,gravel,{step:3}); for(const sd of [-1,1]) ribbon(gb,pc,0.12,0.32,cc(0x5a4a42),{off:sd*0.55,step:3}); });
     for(const st of D.streams) if(!st.cul) each(st.p,(gb,pc)=>ribbon(gb,pc,st.w,-0.25,cc(0x5a8fa2),{step:3}));
+    { const gOf=(x,z)=>gbOf(x,z); rivStreams(ctx,D,gOf); rivRevet(gOf,D.roads,K); } // v0.85 P3-D（D-3）：支流・水路の流れる水面と水路の壁・本流のそばの道の護岸
     for(const [t,gb] of gbs){ const m=new THREE.Mesh(own(gb.geo()),rmat); m.receiveShadow=true; m.visible=false; ctx.add(m); t.road=m; }
     if(deco.i.length) ctx.add(new THREE.Mesh(own(deco.geo()),vcMat)); }
   // ---- 5) 建物（光明寺と同じ作り方。いくつかは獣に荒らされている） ----
@@ -11642,11 +11791,11 @@ function kamishihiBuild(ctx){
     g.position.set(ex.x+6,kamiH(ex.x+6,ex.z+6)+0,ex.z+6); g.rotation.y=Math.PI/2; ctx.add(g); }
   if(P3A.on){ try{ p3aBuildHQ(ctx); p3aBuildHouses(ctx); p3aBuildForest(ctx); p3cBuildSites(ctx); p3cBuildDefense(ctx); p3cBuildFac2(ctx); p3cReqBuild(ctx); p3dReqBuild(ctx); }catch(e){ console.error('P3-A',e); } } // P3-A：4地点の試作
   ctx.h=(x,z)=>{ const h=kamiH(x,z), b=bridgeAt(x,z); return b!==null&&b>h?b:h; }; ctx.bridgeAt=bridgeAt; // 作り終えたら、橋の上を歩けるようにする
-  ctx.onDispose=()=>{ for(const m of ctx.instanced||[]) if(m.dispose) m.dispose(); p3aDispose(); KAMI=null; };
+  ctx.onDispose=()=>{ for(const m of ctx.instanced||[]) if(m.dispose) m.dispose(); rivDispose(ctx); p3aDispose(); KAMI=null; };
   // ---- 毎フレーム：区画の細かさ・木・建物の表示と、光明寺へ戻る出口 ----
   ctx.leaving=false;
   let dryX=D.arrival.x, dryZ=D.arrival.z, wetT=-99;
-  ctx.update=dt=>{ const px=camera.position.x, pz=camera.position.z; let made=0; p3aUpdate(dt);
+  ctx.update=dt=>{ const px=camera.position.x, pz=camera.position.z; let made=0; p3aUpdate(dt); rivTilesUpdate(ctx,px,pz); /* v0.85 近くの河原 */
     // 歩けるのは川の南側と市荒川まで（2026-11-12 ユーザー決定）。九頭竜川・北岸へ渡る橋・範囲の外に出たら、直前の所へ戻す
     if(S.mode==='playing'&&!REG.busy&&!P3A.inside){ if(!kamiReach(P.x,P.z)){ const msg=bridgeAt(P.x,P.z)!==null?'川の向こうへは渡れない':kamiCls(P.x,P.z)===2?'九頭竜川は深くて入れない':'この先へは行けない';
         P.x=dryX; P.z=dryZ; if(stats.time-wetT>6){ wetT=stats.time; toast(msg); } } else { dryX=P.x; dryZ=P.z; } }
@@ -11769,6 +11918,7 @@ function kamiBuildNodes(ctx,plan){ const kw=ctx.kw;
   plan.stone.forEach((p,i)=>kw.nodes.push({k:'stone',key:'s'+i,x:p.x,z:p.z,m:put(f5Pile('stone'),p.x,p.z)}));
   plan.bamboo.forEach((p,i)=>{ const m=put(f5Grove(),p.x,p.z,null,-0.1); ctx.circle(p.x,p.z,1.6,'tree',{h:groundH(p.x,p.z)+6}); kw.nodes.push({k:'bamboo',key:'b'+i,x:p.x,z:p.z,m}); });
   plan.rock.forEach((p,i)=>{ const m=put(f5Rock(false),p.x,p.z,hash2(p.z,p.x)*TAU,-0.05), mr=put(f5Rubble(),p.x,p.z); kw.nodes.push({k:'rock',key:'r'+i,x:p.x,z:p.z,m,mr,col:ctx.circle(p.x,p.z,0.95,'rock'),acc:0}); });
+  rivBuildOre(ctx,put); // v0.85 P3-D（D-3）：川底の鉱石
   plan.straw.forEach((p,i)=>kw.nodes.push({k:'straw',key:'w'+i,x:p.x,z:p.z,m:put(f5Pile('straw'),p.x,p.z,hash2(p.x,p.z)*3),mh:put(f5Pile('stubble'),p.x,p.z)}));
   plan.wood.forEach((p,i)=>kw.nodes.push({k:'wood',key:'p'+i,x:p.x,z:p.z,m:put(nodeLook('wood'),p.x,p.z,hash2(p.x,p.z)*TAU)}));
   plan.food.forEach((p,i)=>kw.nodes.push({k:'food',key:'o'+i,x:p.x,z:p.z,chest:p.chest,m:put(nodeLook('food',p.chest),p.x,p.z)}));
@@ -11809,12 +11959,12 @@ function kamiFindTarget(maxD,bs){ const kw=REG.live.kw; let best=null;
   for(const n of kw.nodes){ if(n.k!=='rock'||kamiRockLeft(n)<=0) continue; const d=dist(P.x,P.z,n.x,n.z)-1.0; if(d>maxD) continue; if(d+0.05<bs){ bs=d+0.05; best={type:'krock',r:n,x:n.x,z:n.z,d}; } }
   return best; }
 // ---- 採集 ----
-function kamiRockLeft(n){ const v=prog.kami.r[n.key]; return v==null?ROCK_MAX:v; }
+function kamiRockLeft(n){ const v=prog.kami.r[n.key]; return v==null?(n.max||ROCK_MAX):v; } // v0.85：川底の鉱石は n.max
 function kamiNodesUpdate(ctx,T){ const k=prog.kami; if(!ctx||!ctx.kw) return;
   for(const n of ctx.kw.nodes){ const d=dist(P.x,P.z,n.x,n.z), near=d<KW.show;
     if(n.k==='scrap'){ n.m.visible=near&&!k.sc.includes(n.key); continue; }
-    if(n.k==='rock'){ let left=kamiRockLeft(n); if(left<=0&&(k.n[n.key]||0)<=T&&d>2.2){ delete k.r[n.key]; delete k.n[n.key]; left=ROCK_MAX; } // 岩は人が離れてから戻る（光明寺と同じ）
-      const gone=left<=0; n.m.visible=near&&!gone; n.mr.visible=near&&gone; n.col.active=!gone; if(!gone){ const s=0.6+0.4*left/ROCK_MAX; n.m.scale.set(s,s,s); } continue; }
+    if(n.k==='rock'){ let left=kamiRockLeft(n); if(left<=0&&(k.n[n.key]||0)<=T&&d>2.2){ delete k.r[n.key]; delete k.n[n.key]; left=n.max||ROCK_MAX; } // 岩は人が離れてから戻る（光明寺と同じ）
+      const gone=left<=0; n.m.visible=near&&!gone; n.mr.visible=near&&gone; n.col.active=!gone; if(!gone){ const s=0.6+0.4*left/(n.max||ROCK_MAX); n.m.scale.set(s,s,s); } continue; }
     const t=k.n[n.key]; if(t!=null&&t<=T&&!((n.k==='wood'||n.k==='food')&&d<14)) delete k.n[n.key]; // 薪・畑は14m 離れてから戻る（光明寺と同じ）
     const off=k.n[n.key]!=null;
     if(n.k==='bamboo'){ n.m.visible=near; continue; }
@@ -11836,8 +11986,9 @@ function kamiQuarry(n){ const k=prog.kami, left=kamiRockLeft(n); if(left<=0) ret
   const pw=f5QuarryPower(); n.acc=(n.acc||0)+pw; const got=Math.min(left,Math.floor(n.acc+1e-6)); n.acc-=got;
   const d0=prog.f5.tools[tool]; prog.f5.tools[tool]=Math.max(0,d0-1); if(d0>0&&prog.f5.tools[tool]===0) toast(`${TOOLS[tool].name}が欠けた（作業台で手入れ。それまで力は半分）`,true);
   sfx('hit'); S.hitstop=Math.max(S.hitstop,0.05); S.shake=Math.max(S.shake,0.12); chips(n.x,groundH(n.x,n.z)+0.8,n.z,8,0xb8b6ac); f10Noise(n.x,n.z,14,'rock');
-  if(got>0){ inv.stone=(inv.stone||0)+got; k.r[n.key]=left-got; floatText(n.x,1.6,n.z,`石+${got}`,'#e8e4d8'); } else floatText(n.x,1.6,n.z,'ひびが入った','#e8e4d8');
-  if(left-got<=0){ k.r[n.key]=0; k.n[n.key]=stats.time+F5.regrow.rock; n.acc=0; toast(`岩を採り切った：石 合計${ROCK_MAX}（${inv.stone}）。しばらくするとまた割れる`); sfx('break'); }
+  const it=n.ore?'ore':'stone', nm=n.ore?'川底の鉱石':'石'; // v0.85：川底の鉱石（C-4 の素材）
+  if(got>0){ inv[it]=(inv[it]||0)+got; k.r[n.key]=left-got; floatText(n.x,1.6,n.z,`${nm}+${got}`,'#e8e4d8'); if(n.ore) toast(`川底の鉱石 +${got}（${inv.ore}）`); } else floatText(n.x,1.6,n.z,'ひびが入った','#e8e4d8');
+  if(left-got<=0){ k.r[n.key]=0; k.n[n.key]=stats.time+F5.regrow.rock; n.acc=0; toast(n.ore?`鉱石の石を割り切った：川底の鉱石 合計${n.max}（${inv.ore}）。しばらくするとまた割れる`:`岩を採り切った：石 合計${ROCK_MAX}（${inv.stone}）。しばらくするとまた割れる`); sfx('break'); }
   else if(got>0) toast(`石 +${got}（${inv.stone}）　岩の残り ${left-got}`);
   kamiNodesUpdate(REG.live,stats.time); g4CheckQuests(); saveGame(); }
 function kamiInteractables(ctx,L){ const kw=ctx.kw; if(!kw) return; const k=prog.kami, T=stats.time;
@@ -13342,6 +13493,10 @@ function iconDesign(id,g,M,B,C,S){ const P=(o,x,y,z)=>{ o.position.set(x,y,z); g
   case 'mat_straw': { const b=P(cyl(0xd8bf62,0.3,0.36,1.0,14),0,0,0); b.rotation.z=1.25; for(let i=0;i<8;i++){ const st=P(cyl(0xc9ad4a,0.03,0.03,1.06,5),Math.cos(i)*0.0,Math.sin(i*1.7)*0.2,Math.cos(i*1.7)*0.2); st.rotation.z=1.25; } const t=P(cyl(0x8a5a2e,0.33,0.33,0.1,14),0,0,0); t.rotation.z=1.25; return true; }
   case 'mat_bamboo': for(let i=0;i<3;i++){ const x=(i-1)*0.24; const b=P(cyl(0x7aa04a,0.1,0.1,1.1),x,0,i*0.05); b.rotation.z=0.12*(i-1); for(const y of [-0.3,0.1,0.45]) P(cyl(0x5f8a3a,0.115,0.115,0.04),x+0.12*(i-1)*y,y,i*0.05); } return true;
   case 'mat_hide': { const a=B(0x8a5a34,0.95,0.07,0.7,0,-0.1,0); a.rotation.y=0.3; const b=B(0xa06a40,0.8,0.07,0.55,0.06,0.0,0.02); b.rotation.y=-0.2; b.rotation.z=0.08; P(dod(0x7a4a2a,0.12),0.42,0.04,0.25); return true; }
+  case 'mat_ore': { const a=P(dod(0x46443e,0.36),0,-0.05,0); a.scale.y=0.7; for(const [x,y,z,c] of [[0.18,0.12,0.2,0xa8743a],[-0.15,0.14,0.18,0xd8c070],[0.05,0.2,-0.1,0x9a6a34]]){ const b=B(c,0.22,0.05,0.1,x,y,z); b.rotation.y=x*5; } P(dod(0x55524a,0.18),0.3,-0.2,-0.15); return true; } // v0.85：川底の鉱石
+  case 'mat_hardwood': { for(const [x,y,r] of [[-0.18,-0.15,0.17],[0.18,-0.15,0.17],[0,0.15,0.17]]){ const a=P(cyl(0x5a3a22,r,r,0.95),x,y,0); a.rotation.z=Math.PI/2; const e=P(cyl(0xb08a5a,r*0.9,r*0.9,0.02),x+0.48,y,0); e.rotation.z=Math.PI/2; P(cyl(0x7a5a38,r*0.4,r*0.4,0.025),x+0.49,y,0).rotation.z=Math.PI/2; } return true; } // 山地の硬木（濃い色の丸太）
+  case 'mat_steel': { for(let i=0;i<3;i++){ const b=B(i===1?0xa8b0b6:0x8e969c,0.95,0.14,0.32,0,-0.2+i*0.16,(i-1)*0.04); b.rotation.y=(i-1)*0.12; } B(0x6a7076,0.95,0.02,0.04,0,0.03,0.17); return true; } // 鋼材（延べ板）
+  case 'mat_spindle': { const a=P(cyl(0x9aa0a6,0.09,0.09,1.2),0,0,0); a.rotation.z=1.0; for(const t of [-0.35,0,0.35]){ const c=P(cyl(0x7a8086,0.18,0.18,0.08),Math.cos(1.0)*t*-1,Math.sin(1.0)*t,0); c.rotation.z=1.0; } P(cyl(0xb88a3a,0.13,0.13,0.06),-0.45,-0.3,0).rotation.z=1.0; return true; } // 加工機の主軸
   case 'mat_charcoal': P(dod(0x26262a,0.24),-0.2,-0.15,0); P(dod(0x333338,0.2),0.18,-0.18,0.1); P(dod(0x1e1e22,0.22),0.02,0.14,-0.05); P(dod(0x3a2a22,0.1),0.28,0.08,0.15); return true;
   case 'mat_procScale': { const h=P(cyl(0x3fb0b8,0.42,0.42,0.08,6),0,0,0); h.rotation.x=1.2; const k=P(cyl(0x9fe6e6,0.24,0.24,0.1,6),0,0.02,0.04); k.rotation.x=1.2; return true; }
   case 'mat_mutScale': { const a=P(cone(0x5a3a7a,0.4,0.9,5),0,0,0); a.scale.z=0.25; a.rotation.z=-0.3; const b=P(cone(0x8a5ab0,0.22,0.5,5),-0.05,0.08,0.06); b.scale.z=0.2; b.rotation.z=-0.3; return true; }
