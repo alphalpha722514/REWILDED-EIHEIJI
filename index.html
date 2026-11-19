@@ -8924,9 +8924,9 @@ function craftRope(max){ const n=Math.min(max,Math.floor((inv.straw||0)/3)); if(
 const CRAFT_CATS=[{id:'weapon',name:'武器',ic:'spear'},{id:'armor',name:'防具',ic:'gear_forest_chest'},{id:'tool',name:'道具と罠',ic:'trapKit'},{id:'food',name:'食べ物',ic:'onigiri'},{id:'build',name:'建てる',ic:'kamaBuild'},{id:'care',name:'手入れ',ic:'repair'}];
 function craftCat(r){ const id=r.id; if(WEAPONS[id]||SCALE_ARMS[id]) return 'weapon'; if(id.startsWith('gear_')) return 'armor'; if(id==='onigiri'||id==='bento') return 'food';
   if(['convBuild','kamaBuild','depotBuild'].includes(id)) return 'build'; if(['repair','toolRepair','boomerFix','fenceFix'].includes(id)) return 'care'; return 'tool'; }
-const CRAFT_ICON={fence:'fenceKit',trap:'trapKit',spikeFence:'spikeKit',pitTrap:'pitKit',bait:'baitKit',stake:'stakeKit',rope:'mat_rope'};
+const CRAFT_ICON={fence:'fenceKit',trap:'trapKit',spikeFence:'spikeKit',pitTrap:'pitKit',bait:'baitKit',stake:'stakeKit',rope:'mat_rope',rod1:'p3d_rod_basic',rod2:'p3d_rod_pro'}; // v0.84：釣り竿
 function craftIcon(r){ return CRAFT_ICON[r.id]||r.id; }
-function matIcon(k){ return FOODS[k]?k:'mat_'+k; }
+function matIcon(k){ return FOODS[k]?k:k==='oldParts'?'p3c_parts':'mat_'+k; } // v0.84：古い機械部品は拠点の管理画面と同じ絵（川漁師の竿）
 // 絵は描いてあればすぐ出し、まだなら空の枠を出して、1コマに少しずつ描いて差し替える（防具の絵は体に着せて写すので、まとめて描くとスマホで一瞬止まるため）
 const IC_Q=[], IC_BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; let IC_T=0;
 // 武器の絵は、正式な形（GLB）を読んでから撮る（2026-11-18 ユーザー「作業台の武器の絵は実際のGLBモデルを撮影したもの」）。まだ持っていない武器の形もここで読む。読めないときと、GLB の無い武器（石の手斧・竹槍）はコードの形
@@ -11380,7 +11380,16 @@ function p3dReqBuild(ctx){ const mk=(x,z,rot,fn)=>{ const g=new GB(); g.jit=0.03
   { const p=S(2), a=0.3; mk(p.x,p.z,a,g=>{ for(const [x,z] of [[-1.4,-1.1],[1.4,-1.1],[-1.4,1.1],[1.4,1.1]]) g.box(x,1.0,z,0.12,2.0,0.12,cc(0x6a5440)); g.box(0,2.05,0,3.2,0.1,2.6,cc(0x5a5c5e)); g.box(0,1.0,-1.15,2.8,2.0,0.06,cc(0x8a6a44)); g.box(-1.0,0.9,-0.9,0.9,0.06,0.4,cc(0x7a5a3a)); g.box(0.6,0.25,-0.6,0.9,0.5,0.6,cc(0x8a8a82)); });
     const bx=mk(p.x,p.z,a,g=>{ g.box(-1.0,1.05,-0.9,0.6,0.25,0.36,cc(0x8a3a2a)); }); reg(2,{pre:[bx]}); ctx.obox(p.x+Math.sin(a)*1.15,p.z-Math.cos(a)*1.15,2.8,0.2,a,'house',{h:kamiH(p.x,p.z)+2,p3a:1}); }
   p3cReqVis(); } // 光る印は p3cReqBuild がすべての依頼に作る
-function p3dIconObj(id){ if(AQUA_BY[id]) return p3dAquaIcon(id); const f=FISH_BY[id]||(id==='ara'?ARAGAKO:null); if(!f) return null; const g=new THREE.Group(), M=c=>new THREE.MeshLambertMaterial({color:c}), B=(c,w,h,d,x,y,z)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c)); m.position.set(x,y,z); g.add(m); };
+// 釣り竿の絵（作業台のカード）：basic 竹の竿・pro 濃い色の竿とリール・guard 紺の竿と金の帯
+function p3dRodIcon(k){ const g=new THREE.Group(), M=c=>new THREE.MeshLambertMaterial({color:c}), C={basic:[0xc8b070,0x7a6040],pro:[0x4a3a2a,0x2a2018],guard:[0x2a3a5a,0x1a2030]}[k]||[0xc8b070,0x7a6040];
+  const rod=new THREE.Group(); const sh=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.05,2.2,8),M(C[0])); sh.position.y=1.1; rod.add(sh); const gr=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.45,8),M(C[1])); gr.position.y=0.22; rod.add(gr);
+  if(k==='basic') for(let i=0;i<4;i++){ const n=new THREE.Mesh(new THREE.CylinderGeometry(0.055-i*0.006,0.055-i*0.006,0.04,8),M(0x9a8450)); n.position.y=0.6+i*0.4; rod.add(n); }
+  else { const r=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.16,0.1,12),M(0xb0b4b8)); r.rotation.z=Math.PI/2; r.position.set(0.14,0.55,0); rod.add(r); }
+  if(k==='guard') for(const y of [0.5,1.0]){ const b=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.06,8),M(0xd8b048)); b.position.y=y; rod.add(b); }
+  rod.rotation.z=-0.75; rod.position.set(-0.55,-0.35,0); g.add(rod);
+  const bob=new THREE.Mesh(new THREE.SphereGeometry(0.13,10,8),M(0xe04030)); bob.position.set(0.75,0.15,0); g.add(bob); const st=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.22,6),M(0xf2efe6)); st.position.set(0.75,0.32,0); g.add(st);
+  g.position.y=0.5; return g; }
+function p3dIconObj(id){ if(AQUA_BY[id]) return p3dAquaIcon(id); if(id.startsWith('rod_')) return p3dRodIcon(id.slice(4)); const f=FISH_BY[id]||(id==='ara'?ARAGAKO:null); if(!f) return null; const g=new THREE.Group(), M=c=>new THREE.MeshLambertMaterial({color:c}), B=(c,w,h,d,x,y,z)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c)); m.position.set(x,y,z); g.add(m); };
   if(f===ARAGAKO){ B(f.col[0],0.5,0.18,0.42,0.3,0.5,0); B(f.col[0],0.8,0.15,0.26,-0.3,0.5,0); for(let k=0;k<5;k++) B(f.col[1],0.1,0.02,0.1,-0.5+k*0.2,0.6,(k%2?0.07:-0.07)); B(f.col[1],0.08,0.15,0.24,-0.75,0.5,0); }
   else { B(f.col[0],1.1,0.3,0.16,0,0.55,0); B(0xe8e8e0,0.9,0.12,0.14,0,0.45,0); B(f.col[0],0.25,0.36,0.06,-0.7,0.55,0); B(f.col[1],0.3,0.12,0.04,0.05,0.74,0); B(0x101010,0.05,0.05,0.18,0.42,0.6,0); }
   g.rotation.y=-0.5; return g; }
