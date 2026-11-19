@@ -7,6 +7,7 @@ index.html のコピーに、内部の作り（makeHuman・村人・主人公）
 使い方：
   python3 tools/char-studio.py 出力.png [並べる人 ...]
   並べる人：player（主人公）／suzuki（スズキ・試作）／gen／tome／eshin／yone／村人のID
+  STUDIO_CANDS=tools/p3c-npc-candidates.js で、その中の候補（sumieA など）も並べられる
   例：python3 tools/char-studio.py /tmp/suzuki.png player suzuki gen
 環境変数 THREE_JS に three.js r128 の three.min.js のパスを入れる。
 """
@@ -20,6 +21,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 THREE = open(os.environ.get('THREE_JS', '/home/claude/v010/node_modules/three/build/three.min.js')).read()
 SRC = open(os.path.join(ROOT, os.environ.get('STUDIO_HTML', 'index.html')), encoding='utf8').read()
 HOOK = ("window.__studio={THREE,makeHuman,get pm(){return pm},get NPCS(){return NPCS},"
+        "mesh:(...a)=>mesh(...a),mat:(...a)=>mat(...a),bmat:(...a)=>bmat(...a),outline:(...a)=>outline(...a),get G(){return G},"
         "get SUZUKI_OPTS(){return typeof SUZUKI_OPTS!=='undefined'?SUZUKI_OPTS:null},"
         "get F60_GARMENTS(){return typeof F60_GARMENTS!=='undefined'?F60_GARMENTS:null}};\n")
 ANCHOR = 'function updateNPCs(dt){'
@@ -52,6 +54,7 @@ async (who) => {
       m.setWear(w); window.__armorMs = (window.__armorMs || []).concat([[id, Math.round(performance.now() - t0)]]);
       g = m.g; }
     else if (id === 'suzuki') g = S.makeHuman(S.SUZUKI_OPTS).g;
+    else if (window.__cands && window.__cands[id]) g = S.makeHuman(window.__cands[id]).g; // STUDIO_CANDS の候補（P3-C の住民など）
     else { const n = S.NPCS.find(n => n.id === id); if (n) g = n.m.g; }
     if (!g) throw new Error('unknown ' + id);
     g.parent && g.parent.remove(g); sc.add(g); models.push(g);
@@ -96,13 +99,15 @@ async def main():
         await pg.route('**/*', route)
         await pg.goto('http://game.local/', wait_until='load', timeout=240000)
         await pg.wait_for_function('window.__studio', timeout=240000)
+        if os.environ.get('STUDIO_CANDS'):  # 見た目の候補をまとめた JS（例 tools/p3c-npc-candidates.js）。その中の名前で並べられる
+            print('candidates:', await pg.evaluate(open(os.path.join(ROOT, os.environ['STUDIO_CANDS']), encoding='utf8').read()))
         if os.environ.get('STUDIO_POSE'):
             await pg.evaluate('window.__pose=true')
         imgs = await pg.evaluate(STUDIO_JS, who)
         print('armor build ms:', await pg.evaluate('window.__armorMs||[]'))
         html = '<body style="margin:0;background:#e9e4d8">' + ''.join(
             f'<div style="font:20px sans-serif;padding:6px 12px">{t}</div><img src="{u}" style="display:block;width:1500px">'
-            for t, u in zip(['正面', '横', '背面'], imgs)) + '</body>'
+            for t, u in zip(['正面', '横', '背面'], imgs)) + (f'<div style="font:18px sans-serif;padding:6px 12px">左から：{"・".join(who)}</div>' if os.environ.get('STUDIO_CANDS') else '') + '</body>'
         p2 = await (await b.new_context(viewport={'width': 1500, 'height': 400})).new_page()
         await p2.set_content(html)
         await p2.screenshot(path=out, full_page=True, timeout=240000)

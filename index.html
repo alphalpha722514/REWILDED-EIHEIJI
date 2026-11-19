@@ -5249,8 +5249,10 @@ function makeHumanClassic(o){
   // ---- 髪 ----
   const hr=O.hair||{style:'short'}; const hairC=hr.col||0x2a2018;
   if(hr.style!=='bald'){
-    const lineF=(x,y,z)=>{ const yr=(y-headY)/R, zr=z/R; const line=(hr.style==='bun'?-0.15:-0.05)+0.55*zr+0.12*Math.abs(x/R); const h1=line-yr, hb=Math.max(zr+0.2,-0.6-yr); return Math.min(h1,hb)*R*0.5; };
-    const t=hr.style==='cropped'?0.016:0.03;
+    const soft=hr.style==='bob'||hr.style==='perm', lo=hr.style==='perm'?-0.32:-0.5; // v0.82 P3-C：短い髪の女性（bob＝耳の下までの丸い髪・前髪あり／perm＝耳までの細かい巻き髪）。ほかの髪形は変えない
+    const lineF=soft?(x,y,z)=>{ const yr=(y-headY)/R, zr=z/R; const fr=hr.style==='perm'?0.42:0.3, line=lo+(fr-lo)*Math.pow(Math.max(0,zr),1.6)+0.05*Math.abs(x/R)*Math.max(0,zr); const h1=line-yr, hb=Math.max(zr+0.3,lo-0.12-yr); return Math.min(h1,hb)*R*0.5; }
+      :(x,y,z)=>{ const yr=(y-headY)/R, zr=z/R; const line=(hr.style==='bun'?-0.15:-0.05)+0.55*zr+0.12*Math.abs(x/R); const h1=line-yr, hb=Math.max(zr+0.2,-0.6-yr); return Math.min(h1,hb)*R*0.5; };
+    const t=hr.style==='cropped'?0.016:hr.style==='bob'?0.045:hr.style==='perm'?0.05:0.03;
     const tufts=[];
     if(hr.style==='short'){
       for(const [xi,yi,zl] of [[-0.42,0.62,0.12],[-0.13,0.7,0.2],[0.17,0.68,0.16],[0.45,0.58,0.1]]) // 前髪の束
@@ -5267,7 +5269,8 @@ function makeHumanClassic(o){
       tufts.push((x,y,z)=>SDF.cone(x,y,z,[0,headY+R*0.1,-R*0.85],[0,headY-R*0.36,-R*1.06],0.09*R/0.33,0.014)); }
     if(hr.style==='bun') tufts.push((x,y,z)=>SDF.ell(x,y,z,[0,headY+R*0.78,-R*0.5],[R*0.42,R*0.4,R*0.42]));
     const partF=hr.style==='center'?(x,y,z)=>(z>-R*0.2&&y>headY+R*0.2)?0.016-Math.abs(x):-1:null; // 分け目のすじ
-    add('hair',(x,y,z)=>{ let d=Math.max(headF(x,y,z)-t,lineF(x,y,z)); for(const f of tufts) d=SDF.smin(d,f(x,y,z),0.025); if(partF) d=Math.max(d,partF(x,y,z)); return d; },headY-R*1.3,top,(x,y,z)=>{
+    const curl=hr.style==='perm'?(x,y,z)=>0.009*Math.sin(x*75)*Math.sin(y*75+1.3)*Math.sin(z*75+2.1):null; // パーマの細かい巻き
+    add('hair',(x,y,z)=>{ let d=Math.max(headF(x,y,z)-t,lineF(x,y,z)); for(const f of tufts) d=SDF.smin(d,f(x,y,z),0.025); if(partF) d=Math.max(d,partF(x,y,z)); if(curl) d+=curl(x,y,z); return d; },headY-R*1.3,top,(x,y,z)=>{
       return hairC; },true);
   }
   // ---- 手ぬぐい（鉢巻き）----
