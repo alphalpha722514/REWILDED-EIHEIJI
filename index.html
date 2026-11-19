@@ -8958,7 +8958,7 @@ function renderCraft(){
 const DEPOT_TABS=[{id:'repair',name:'修理',ic:'wrench'},{id:'up',name:'改修',ic:'upgrade'},{id:'fac',name:'荷台の施設',ic:'fac_bench'},{id:'fuel',name:'燃料',ic:'fuel'}];
 const DEPOT_UI={tab:'repair',sel:null,det:false};
 function openDepot(){ if(!depotParked()){ toast('車両基地：KEI truck を屋根の下に止めると、直す・改修・荷台の施設を作るができる'); return; } if(trk().tip){ toast('先に KEI truck を起こす',true); return; }
-  stopBeastVoices51(); S.mode='menu'; keys.clear(); DEPOT_UI.det=false; renderDepot(); $('depotOv').hidden=false; }
+  stopBeastVoices51(); S.mode='menu'; keys.clear(); DEPOT_UI.det=false; { const h=$('depotOv').querySelector('h2'); if(h) h.textContent=typeof p3cGarageParked==='function'&&p3cGarageParked()?'車両整備場（上志比）':'車両基地'; } renderDepot(); $('depotOv').hidden=false; }
 function depotCards(){ const t=trk(), L=TRUCK_SYS, hm=trkHpMax(t), out=[];
   if(DEPOT_UI.tab==='repair'){ out.push({id:'fix1',name:`車体を直す（+${L.repair.step}）`,ic:'truckRepair',cost:L.repair.cost,can:t.hp<hm&&bedAfford(L.repair.cost),why:t.hp>=hm?'傷んでいない':'',act:()=>truckRepairStep(false),desc:`車体を${L.repair.step}直す。今 ${Math.round(t.hp)}/${hm}。`});
     const need=Math.ceil((hm-t.hp)/L.repair.step), cAll=Object.fromEntries(Object.entries(L.repair.cost).map(([k,v])=>[k,v*Math.max(1,need)]));
@@ -11002,10 +11002,10 @@ function p3cLvReady(){ const L=p3cLevel(); if(L>=3) return false; const q=p3cLvC
 function p3cLevelUp(){ if(!p3cLvReady()) return; const c=p3cState(); c.lv=Math.min(3,c.lv+1); const U=P3C_LVUP[c.lv]; saveGame(); sfx('craft'); P3C.hqPlan=null; if(P3A.inside&&P3A.inId==='hq') p3bRebuildSoon(); p3cFac2Vis();
   p3cMgClose(); p3cSay(U.lines,()=>{ banner(`上志比の復興 Lv${c.lv}`,U.sub,3.6); saveGame(); }); }
 // Lv2 で2階の閉じた部屋（西）を開ける：共同住居3（避難住民の部屋）
-function p3cHqPlan(){ if(p3cLevel()<2) return P3B_PLAN; if(P3C.hqPlan) return P3C.hqPlan; const PL=Object.assign({},P3B_PLAN);
-  PL.rooms=P3B_PLAN.rooms.map(r=>r[0]==='lock1'?['home3','共同住居3',r[2],r[3],r[4],r[5],0x9a8a6a]:r);
-  PL.walls=[]; for(const w of P3B_PLAN.walls){ if(w[0]===44&&w[1]===12&&w[2]===80&&w[3]===12){ PL.walls.push([44,12,62,12,0,[8.3,9.7],1]); PL.walls.push([62,12,80,12,0]); } else PL.walls.push(w); }
-  return P3C.hqPlan=PL; }
+function p3cHqPlan(){ const L=p3cLevel(); if(L<2) return P3B_PLAN; if(P3C.hqPlan&&P3C.hqPlanLv===L) return P3C.hqPlan; const PL=Object.assign({},P3B_PLAN); // Lv3 でもう一つ（東）も開ける：共同住居4
+  PL.rooms=P3B_PLAN.rooms.map(r=>r[0]==='lock1'?['home3','共同住居3',r[2],r[3],r[4],r[5],0x9a8a6a]:r[0]==='lock2'&&L>=3?['home4','共同住居4',r[2],r[3],r[4],r[5],0x9a8a6a]:r);
+  PL.walls=[]; for(const w of P3B_PLAN.walls){ if(w[0]===44&&w[1]===12&&w[2]===80&&w[3]===12){ PL.walls.push([44,12,62,12,0,[8.3,9.7],1]); PL.walls.push(L>=3?[62,12,80,12,0,[8.3,9.7],1]:[62,12,80,12,0]); } else PL.walls.push(w); }
+  P3C.hqPlanLv=L; return P3C.hqPlan=PL; }
 // ---- 仕事（住民の担当）：農園・収集運搬 ----
 function p3cJobName(job){ if(!job) return '待機'; if(job.startsWith('b:')) return `${P3C_FAC[job.slice(2)].name}の工事`; if(job==='w:farm') return '農園の世話'; if(job==='w:haul') return '町の素材集め（収集運搬）'; return '待機'; }
 function p3cJobState(k){ const c=p3cState(), job=c.job[k]||''; if(!job) return '待機'; if(!p3cDay()) return '勤務時間外'; if(job.startsWith('b:')) return p3cStocked(job.slice(2))?'工事中':'素材を待っている'; return '働いている'; }
@@ -11182,6 +11182,7 @@ function p3aInteriorBuild(){ if(P3A.interior) return P3A.interior; const id=P3A.
   prop(6.2,17.6,1.6,1.4,0.12,0x6a5440,false,0.6); prop(6.2,17.55,1.3,1.0,0.04,0xe8e4d8,false,0.8); // 拠点の管理の掲示板（v0.82）
   prop(O+8,6,1.2,0.5,0.6,0x7a6a5a); prop(O+18,6,1.2,0.5,0.6,0x7a6a5a); // 共同住居の低い机（v0.83：v0.82 で消えていたのを戻した）
   if(p3cLevel()>=2){ for(const x of [O+3,O+6]){ prop(x,15.4,1.0,0.12,2.0,0xe8e2d0,false); prop(x,15.6,1.05,0.14,2.0,0x8a7a9a,false,0.05); prop(x,14.7,0.7,0.12,0.4,0xf2efe6,false,0.19); } prop(O+14,13.0,0.6,0.9,0.4,0x8a6a44); prop(O+16.5,16.8,0.42,0.5,0.3,0x7a6a42,false); prop(O+1.2,13.0,0.3,0.6,0.3,0xf6e7a0,false,0.9); } // v0.83 Lv2：共同住居3（避難住民の部屋）
+  if(p3cLevel()>=3){ for(const x of [O+21,O+24]){ prop(x,15.4,1.0,0.12,2.0,0xe8e2d0,false); prop(x,15.6,1.05,0.14,2.0,0x6a8a6a,false,0.05); prop(x,14.7,0.7,0.12,0.4,0xf2efe6,false,0.19); } prop(O+32,13.0,0.6,0.9,0.4,0x8a6a44); } // Lv3：共同住居4
   prop(O+28,8,3.0,0.75,1.4,0x7a6a5a); prop(O+34.6,8,0.15,1.6,2.4,0xd8d2c2,false); prop(O+22,10.5,1.0,1.1,0.6,0x3e4a52);
   for(const [x,z] of PL.boarded){ gb.frame(X+x,0,Z+z,0); gb.box(0,1.0,0,1.6,2.0,0.3,cc(0x6a5440)); for(const dy of [-0.4,0.3]) gb.box(0,1.0+dy,0.18,1.9,0.18,0.06,cc(0x8a6a44)); }
   } // 本部の中の物ここまで
