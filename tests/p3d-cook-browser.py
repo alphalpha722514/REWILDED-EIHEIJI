@@ -146,7 +146,7 @@ async def main():
         await E("(BOOK.tab='aqua', BOOK.sel='aMokuzu', p3dRenderBook(), 1)")
         bk = await E("[document.querySelectorAll('#bookList .wkCard').length, document.querySelectorAll('#bookList .wkCard.lock').length, $('bookSub').textContent, $('bookDet').textContent, document.querySelectorAll('#bookTabs .wkTab').length]")
         await E("closeOverlay()")
-        check(bk[0] == 7 and bk[1] == 4 and '水生生物 3/7' in bk[2] and 'モクズガニ' in bk[3] and '食材' in bk[3] and bk[4] == 2, f'図鑑：水生生物のタブ（7種・見つけた3つ）{bk[:3]}')
+        check(bk[0] == 7 and bk[1] == 4 and '水生生物 3/7' in bk[2] and 'モクズガニ' in bk[3] and '食材' in bk[3] and bk[4] == 3, f"図鑑：水生生物のタブ（7種・見つけた3つ。タブは魚類・水生生物・観察）{bk}")
         # ---- つづきから ----
         await E("saveGame()")
         await boot()
