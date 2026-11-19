@@ -110,9 +110,19 @@
 
 ## 7. テスト
 
-- 新しいテスト `python3 tests/p3c-requests-browser.py`（約8分）：（結果は下に書く）
-- `node tests/chapter2-save.cjs`（`lv`・`req`・`trk`・`ev`・`out`・`acc`・`got`・仕事の値）：PASS。
+- 新しいテスト `python3 tests/p3c-requests-browser.py`（約4〜8分）：**PASS**（30項目）。依頼のタブの状態・必須の依頼（台詞・目的の表示・光る印・素材が無いと直せない・報告と報酬）・物置（当たりが消える）・農業倉庫・半鐘（見張り台に付く）・Lv2（共同住居3）・避難住民・用水路・倒木（当たりが消える）・整備工場跡の屋内・Lv2 の施設・農園と収集運搬の仕事（9時間で野菜3・木材5 など）・収穫箱・車両整備場（車両基地の画面・本部の倉庫の素材）・Lv3 の条件・つづきから・古いセーブ・エラーなし。
+- `node tests/chapter2-save.cjs`（`lv`・`req`・`trk`・`ev`・`out`・`acc`・`got`・仕事の値）：PASS。ほかの node のテスト（`chapter2-defense`・`classic-body`・`death-penalty`・`combat-aim`・`truck-physics`）：PASS。
 - C-2 のテスト `p3c-manage-browser.py`：担当の保存の形に `evac` が増えたので期待値を直した。
+- 今までのブラウザテスト（作業ブランチで1本ずつ順に。2026-11-19）：`p3c-manage`・`p3c-residents`・`p3b-hq`・`region`・`kamishihi`・`kami-wild`・`kami-fort`・`kami-watch`・`suzuki`・`suzuki-save`・`story-f`・`hud-layout`・`kei-truck-systems`・`mutant`・`suzuki-combat`・`suzuki-rescue`・`suzuki-defense`・`wardrobe`：**18本すべて PASS**。
+  - `story-f` は1回目に「仲間になったあと、戦いが始まるとスズキが叫ぶ」の1項目だけ落ち、もう一度流すと PASS（近くに置いた獣との戦いが始まるまでの時間で揺れる。C-3 で変えた所とは関係しない場所）。
+
+## 7.1 画面
+
+`docs/p3c/` の画面のない Chromium で撮った実際のゲーム画面：`c3_01_req.jpg`（依頼のタブ）・`c3_02_trace.jpg`（倒された柵と光る印）・`c3_03_tower.jpg`（火の見やぐら）・`c3_04_kura.jpg`（蔵の前の避難住民）・`c3_05_fac2.jpg`（本部と Lv2 の施設：東の農園・北東の車両整備場）・`c3_06_garage.jpg`（車両整備場に止めた KEI truck）・`c3_07_lv.jpg`（Lv2 の復興段階：Lv3 の条件）・`c3_08_home3.jpg`（2階の共同住居3・夜）・`c3_evac.jpg`（澄江・避難住民・リオ）。
+
+## 7.2 重さ
+
+本部の前（入口から南東へ 40m・高さ 30m から見下ろす同じ画面）で、main（v0.82）と比べた：描く回数 109 → **113**、三角形 328,138 → **328,448**、場面の中の形の数 3,360 → 3,413（依頼の場所の形・Lv2 の施設の形。遠くの分は画面の外）。画面のない Chromium（SwiftShader）で測った値。
 
 ## 8. 決めてほしいこと・確かめてほしいこと
 
