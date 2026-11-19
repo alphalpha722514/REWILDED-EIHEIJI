@@ -43,7 +43,7 @@
 - 新しいテスト `python3 tests/p3c-manage-browser.py`：**PASS**（19項目）。
 - `node tests/chapter2-save.cjs`（`fac`・`job` のおかしな値）：PASS。
 - `python3 tests/p3c-residents-browser.py`（C-1）：PASS。`python3 tests/p3b-hq-browser.py`：PASS（もう一度入ったときの印に、管理の掲示板と机が加わったので期待値を足した）。
-- 今までのブラウザテスト：（下に記入）
+- 今までのブラウザテスト（作業ブランチで1本ずつ順に。2026-11-19 13:55〜14:48）：`p3b-hq`・`p3c-residents`・`region`・`kamishihi`・`kami-wild`・`kami-fort`・`kami-watch`・`suzuki`・`suzuki-save`・`story-f`・`hud-layout`（管理画面を足したあと）・`kei-truck-systems`・`mutant`・`suzuki-combat`・`suzuki-rescue`・`suzuki-defense`・`wardrobe`：**17本すべて PASS**。
 
 ## 4. 画面
 
