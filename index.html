@@ -10650,7 +10650,7 @@ function p3cWhere(k){ const c=p3cState(); if(REG.cur!=='kamishihi'||!P3A.on) ret
   if(k==='sumie'){ if(c.sumie.done){ if(P3A.inside&&P3A.inId==='hq'){ const sp=P3C.spots.sumie[p3cDay()?'day':'night']; return {x:P3A_IN.x+sp[0],z:P3A_IN.z+sp[1],y:0}; } if(!P3A.inside&&P3C.sumieOut>0){ const d=p3cSumieDoor(); if(d&&dist(P.x,P.z,d.ox,d.oz)<30) return {x:d.ox,z:d.oz}; P3C.sumieOut=0; } return null; } // 助けたあと、しばらく戸口にいる（離れたら本部へ）
     return null; } // 助ける前は家の中
   if(k==='rio'){ if(c.rio.done){ if(P3A.inside&&P3A.inId==='hq'){ const sp=P3C.spots.rio[p3cDay()?'day':'night']; return {x:P3A_IN.x+sp[0],z:P3A_IN.z+sp[1],y:0}; } return null; }
-    if(c.rio.shelf&&P3A.inside&&P3A.inId==='factory'){ const o=P3IN.factory.o, at=c.rio.fixed?[13.6,11.6]:[13.4,11.4]; return {x:o.x+at[0],z:o.z+at[1],y:0}; } return null; }
+    if(c.rio.shelf&&P3A.inside&&P3A.inId==='factory'){ const o=P3IN.factory.o, at=!c.rio.talk?[21.0,3.6]:c.rio.fixed?[13.6,11.6]:[13.4,11.4]; return {x:o.x+at[0],z:o.z+at[1],y:0}; } return null; } // 見つけた直後は部品庫の戸口、話のあとはコンプレッサーのそば
   return null; }
 function p3cResVis(){ for(const k of ['sumie','rio']){ const w=p3cWhere(k); if(!w){ if(P3CM[k]) P3CM[k].m.g.visible=false; continue; } const R=p3cModel(k); R.x=w.x; R.z=w.z; R.m.g.position.set(w.x,w.y!=null?w.y:groundH(w.x,w.z),w.z); R.m.g.visible=true; } }
 function p3cUpdate(dt){ const c=prog&&prog.p3c; if(!c||REG.cur!=='kamishihi') return; if(P3C.sumieOut>0){ P3C.sumieOut-=dt; if(P3C.sumieOut<=0) p3cResVis(); }
