@@ -11,7 +11,7 @@
 - 倒された守りは、遊んだ時間で10分たち、主人公が100m 以上離れているときに戻る
 - 320m 離れると片付き、近づくと覚えた位置から出る。90m 先でも形の位置は合っている
 - 物資置き場：1回目は大量・すぐには取れない・60分（遊んだ時間）で少し貯まる。保存・読み込みされる
-- 光明寺に戻ると何も残らない／エラーなし
+- 光明寺に戻ると何も残らない／エラーなし（KEI truck の当たりは数えない：止めてある車の当たりは、ゲームが毎コマ付け外しするので、最初に数えた時に付いていないことがある。2026-11-19）
 
 使い方：THREE_JS=…/three.min.js python3 tests/kami-watch-browser.py
 """
@@ -77,7 +77,7 @@ async def main():
             await pg.click('#dialog')
             await pg.wait_for_timeout(200)
         await pg.wait_for_timeout(800)
-        base = await pg.evaluate("() => { const W = window.__w; let cells = 0; for (const a of W.cgrid.values()) cells += a.length; return {circles: W.circles.length, oboxes: W.oboxes.length, cells}; }")
+        base = await pg.evaluate("() => { const W = window.__w; let cells = 0; for (const a of W.cgrid.values()) cells += a.filter(o => o.tag !== 'truck').length; return {circles: W.circles.length, oboxes: W.oboxes.filter(o => o.tag !== 'truck').length, cells}; }")
         # 遠くの所（どの拠点からも 320m 以上）に着いてから止める
         await pg.evaluate("""async () => { const W = window.__w; W.prog.bossDefeated = true; W.prog.stage = 'cleared'; W.prog.chapter2.unlocked = true; W.prog.chapter2.progress.defenseComplete = true;
           await W.regionTravel('kamishihi', null, {force: true}); W.P.x = 5600; W.P.z = 900; W.S.mode = 'paused'; W.P.maxHp = 9999; W.P.hp = 9999; }""")
@@ -228,7 +228,7 @@ async def main():
 
         await pg.evaluate("async () => { await window.__w.regionTravel('komyoji', null, {force: true}); }")
         await pg.wait_for_timeout(500)
-        end = await pg.evaluate("() => { const W = window.__w; let cells = 0; for (const a of W.cgrid.values()) cells += a.length; return {circles: W.circles.length, oboxes: W.oboxes.length, cells, kami: W.enemies.filter(e => !e.removed && e.x > 4000).length}; }")
+        end = await pg.evaluate("() => { const W = window.__w; let cells = 0; for (const a of W.cgrid.values()) cells += a.filter(o => o.tag !== 'truck').length; return {circles: W.circles.length, oboxes: W.oboxes.filter(o => o.tag !== 'truck').length, cells, kami: W.enemies.filter(e => !e.removed && e.x > 4000).length}; }")
         check(end['circles'] == base['circles'] and end['oboxes'] == base['oboxes'] and end['cells'] == base['cells'] and end['kami'] == 0, f'光明寺に戻ると何も残らない {end}')
         check(not errs, f'エラーなし {errs[:3]}')
         await b.close()
