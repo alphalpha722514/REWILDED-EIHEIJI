@@ -287,7 +287,7 @@ async def main():
         await act('拠点本部に入る')
         await wait_playing()
         mk = await E("P3A.interior.marks.map(k=>k.id).sort().join(',')")
-        check(mk == 'craft,down,exit,stair,stash', f'もう一度入ると、倉庫の棚と総合作業場が使える（直す所・調べる所は出ない）{mk}')
+        check(mk == 'craft,down,exit,mgmt,mgmt2,stair,stash', f'もう一度入ると、倉庫の棚と総合作業場が使える（直す所・調べる所は出ない。v0.82 から拠点の管理の掲示板と机も）{mk}')
         await E("(()=>{ const m=P3A.interior.marks.find(k=>k.exit); P.x=m.x; P.z=m.z; return 1; })()")
         await pg.wait_for_timeout(250)
         await act('外へ出る')

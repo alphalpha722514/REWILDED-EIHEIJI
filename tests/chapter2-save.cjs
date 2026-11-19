@@ -99,7 +99,7 @@ assert.match(html,/prog\.chapter2=chapter2State\(null,false\)/);
   for(const bad of [undefined,null,{v:2,komyoji:{wood:5}},'x']) assert.deepEqual(S(bad),{v:1,komyoji:{},kami:{}},'old or malformed stash: empty');
   assert.deepEqual(S({v:1,komyoji:{wood:12,gold:9,stone:-3,iron:'x'},kami:{rope:4.7}}),{v:1,komyoji:{wood:12},kami:{rope:4}},'only known materials, whole numbers'); }
 { // v0.82 P3-C：住民 p3c の読み込み（古いセーブ・不正な値・進み具合のつじつま）
-  const code=html.slice(html.indexOf('function p3cFresh()'),html.indexOf('function p3cState()'));
+  const code=html.slice(html.indexOf('function p3cFresh()'),html.indexOf('function p3cState()'))+html.slice(html.indexOf('const P3C_FAC='),html.indexOf('function p3cFac()'));
   const c4=vm.createContext({}); vm.runInContext(`const P3C={hits:3}; function num(v,def,min=0,max=9999){ return (typeof v==='number'&&isFinite(v))?Math.max(min,Math.min(max,Math.floor(v))):def; } let prog={};`+code,c4);
   const J=x=>JSON.parse(JSON.stringify(x)), L=q=>J(c4.p3cLoad(q)), F=J(c4.p3cFresh());
   for(const bad of [undefined,null,42,'x',[],{v:2,sumie:{done:1}}]) assert.deepEqual(L(bad),F,'old or malformed p3c: nobody yet');
@@ -108,5 +108,10 @@ assert.match(html,/prog\.chapter2=chapter2State\(null,false\)/);
   assert.deepEqual(L({v:1,rio:{done:1}}).rio,{met:1,shelf:1,talk:1,parts:[1,1],fixed:1,done:1},'Rio joined: all steps done');
   assert.deepEqual(L({v:1,rio:{met:1,parts:[1,1]}}).rio.parts,[0,0],'parts only after the talk');
   assert.deepEqual(L({v:1,rio:{talk:1,parts:[1,'a']}}).rio,{met:1,shelf:1,talk:1,parts:[1,1],fixed:0,done:0});
-  assert.deepEqual(L({v:1,soichi:{coop:1,job:5}}).soichi,{found:0,coop:1,joinDone:0,resident:0,job:''},'Soichi: separate flags (P3-D)'); }
+  assert.deepEqual(L({v:1,soichi:{coop:1,job:5}}).soichi,{found:0,coop:1,joinDone:0,resident:0,job:''},'Soichi: separate flags (P3-D)');
+  // v0.82 C-2：施設の工事（納めた素材・進み）と住民の担当
+  const f=L({v:1,fac:{housing:{dl:{wood:30,straw:5,gold:9,rope:-2},h:9,done:0},defense:{dl:{wood:20},h:1.5,done:0},farm:{done:1}},job:{sumie:'b:housing',rio:'b:farm',x:'b:defense'}});
+  assert.deepEqual(f.fac,{housing:{dl:{wood:24,straw:5},h:4,done:0},defense:{dl:{wood:20},h:1.5,done:0}},'delivered capped at the cost, unknown facilities and materials dropped, progress capped');
+  assert.deepEqual(f.job,{sumie:'b:housing',rio:''},'only buildable facilities as jobs');
+  assert.deepEqual(L({v:1,fac:{housing:{done:1}}}).fac.housing,{dl:{},h:4,done:1},'done: full progress'); }
 console.log('PASS: inline script syntax; legacy/malformed defaults; boss unlock; save round trip; existing key, version, inventory and durability; v0.67 kami state; v0.73 suzuki state; v0.81 p3/stash state; v0.82 p3c residents');
