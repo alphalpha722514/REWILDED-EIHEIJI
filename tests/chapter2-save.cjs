@@ -33,7 +33,7 @@ const P={weapon:'nata1',dur:83,full:75};
 const inv={wood:9},stats={kills:3},GAPS=[],traps=[],NODES=[];
 const checkpointStage=()=>prog.stage; const saveTrap=x=>x; const stfNoSave=()=>false, stfNormalize=()=>{}; // v0.77：作業F（tests/story-f-browser.py で確かめる）
 const f31SaveProg=()=>({level:2});
-const f5Save=()=>({}),f4Save=f5Save,f7Save=f5Save,f8Save=f5Save,f9Save=f5Save,f10Save=f5Save,facSave=id=>({v:1,built:0,id}),kamaSave=()=>({v:1,built:0,q:[],t:0,out:{}}),kamiSave=()=>({v:1,n:{},r:{},sc:[],f:[],sp:{},g:{},st:{},fm:{}}),szSave=()=>({v:1,joined:false}),p3Save=()=>({v:1,hq:{sv:[0,0,0]}}),stashSave=()=>({v:1,komyoji:{},kami:{}}),paddySave=()=>({v:1,st:2,t:300,care:0}); // v0.79：田んぼ paddy。v0.63：変換炉・v0.64：かまど（v0.66 で形を変えた）・v0.67：上志比・v0.73：スズキ
+const f5Save=()=>({}),f4Save=f5Save,f7Save=f5Save,f8Save=f5Save,f9Save=f5Save,f10Save=f5Save,facSave=id=>({v:1,built:0,id}),kamaSave=()=>({v:1,built:0,q:[],t:0,out:{}}),kamiSave=()=>({v:1,n:{},r:{},sc:[],f:[],sp:{},g:{},st:{},fm:{}}),szSave=()=>({v:1,joined:false}),p3Save=()=>({v:1,hq:{sv:[0,0,0]}}),stashSave=()=>({v:1,komyoji:{},kami:{}}),p3cSave=()=>({v:1,sumie:{done:0}}),paddySave=()=>({v:1,st:2,t:300,care:0}); // v0.79：田んぼ paddy。v0.63：変換炉・v0.64：かまど（v0.66 で形を変えた）・v0.67：上志比・v0.73：スズキ
 ${save}
 saveGame();
 `,ctx);
@@ -46,6 +46,7 @@ assert.deepEqual(saved.kami,{v:1,n:{},r:{},sc:[],f:[],sp:{},g:{},st:{},fm:{}}); 
 assert.deepEqual(saved.paddy,{v:1,st:2,t:300,care:0}); // v0.79：拠点の田んぼは新しいキー paddy
 assert.deepEqual(saved.suzuki,{v:1,joined:false}); // v0.73：スズキは新しいキー suzuki
 assert.deepEqual(saved.p3,{v:1,hq:{sv:[0,0,0]}}); assert.deepEqual(saved.stash,{v:1,komyoji:{},kami:{}}); // v0.81：拠点本部 p3・資材置き場 stash は新しいキー
+assert.deepEqual(saved.p3c,{v:1,sumie:{done:0}}); // v0.82：住民 p3c は新しいキー
 assert.equal(saved.arms.nata1,83);
 assert.equal(saved.chapter2.unlocked,false);
 vm.runInContext("prog.bossDefeated=true;prog.stage='cleared';saveGame();",ctx);
@@ -69,7 +70,7 @@ assert.match(html,/prog\.chapter2=chapter2State\(null,false\)/);
   assert.deepEqual(s2,{v:1,n:{s0:1200},r:{r1:0},sc:[4],f:['k0_0_1'],sp:{a1:1500},g:{g0:{d:[1,1,0],w:0}},st:{outB:{n:1,t:950}},fm:{f1:1600}},'round trip keeps pending times only'); }
 // v0.73：スズキの状態 suzuki（古いセーブ・不正な値は「まだ仲間でない」）
 { const sc=vm.createContext({});
-  vm.runInContext(html.slice(html.indexOf("const SZ_ORDERS=['follow'"),html.indexOf('// 読み込む：ついて来ているスズキと')),sc);
+  vm.runInContext('let prog=null; '+html.slice(html.indexOf('function szKamiBaseOK()'),html.indexOf('function szKamiBase()'))+html.slice(html.indexOf("const SZ_ORDERS=['follow'"),html.indexOf('// 読み込む：ついて来ているスズキと')),sc);
   const L=q=>JSON.parse(JSON.stringify(vm.runInContext('szLoadState('+JSON.stringify(q)+',180)',sc)));
   for(const bad of [undefined,null,42,'x',[],{v:2,joined:true},{v:1},{v:1,joined:false},{v:1,joined:'yes'}]) assert.equal(L(bad===undefined?null:bad).joined,false,'old/malformed save: not joined');
   const full=L({v:1,joined:true,order:'wait',region:'kamishihi',x:5070.25,z:759.5,wx:5071,wz:760,hp:120,down:false});
@@ -80,7 +81,8 @@ assert.match(html,/prog\.chapter2=chapter2State\(null,false\)/);
   const w=L({v:1,joined:true,order:'wait',region:'komyoji',x:7,z:8}); assert.deepEqual([w.order,w.wx,w.wz],['wait',7,8],'wait spot falls back to the position');
   assert.equal(L({v:1,joined:true,order:'wait',region:'komyoji'}).order,'follow','no position: follow');
   assert.equal(L({v:1,joined:true,order:'base',region:'kamishihi',x:5000,z:700}).order,'follow','base only in Komyoji');
-  assert.match(html,/kami:kamiSave\(\),suzuki:szSave\(\),p3:p3Save\(\),stash:stashSave\(\)\}/); assert.match(html,/szApplyLoad\(d\.suzuki\)/); }
+  vm.runInContext('prog={p3:{hq:{plan:1}}}',sc); assert.equal(L({v:1,joined:true,order:'base',region:'kamishihi',x:5000,z:700}).order,'base','v0.82: base in Kamishihi after the founding talk');
+  assert.match(html,/kami:kamiSave\(\),suzuki:szSave\(\),p3:p3Save\(\),stash:stashSave\(\),p3c:p3cSave\(\)\}/); assert.match(html,/prog\.p3c=p3cLoad\(d\.p3c\)/); assert.match(html,/szApplyLoad\(d\.suzuki\)/); }
 { // v0.81 P3-B：拠点本部 p3・資材置き場 stash の読み込み（古いセーブ・不正な値）
   const code=html.slice(html.indexOf('function p3Fresh()'),html.indexOf('function stashHere()'));
   const c3=vm.createContext({}); vm.runInContext(`const P3B={carry:{mats:['wood','stone','iron','rope','straw','bamboo','hide','charcoal','oldParts']}}; const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)); function num(v,def,min=0,max=9999){ return (typeof v==='number'&&isFinite(v))?clamp(Math.floor(v),min,max):def; } let prog={}; let inv={};\n${code}`,c3);
@@ -96,4 +98,15 @@ assert.match(html,/prog\.chapter2=chapter2State\(null,false\)/);
   const S=q=>J(c3.stashLoad(q));
   for(const bad of [undefined,null,{v:2,komyoji:{wood:5}},'x']) assert.deepEqual(S(bad),{v:1,komyoji:{},kami:{}},'old or malformed stash: empty');
   assert.deepEqual(S({v:1,komyoji:{wood:12,gold:9,stone:-3,iron:'x'},kami:{rope:4.7}}),{v:1,komyoji:{wood:12},kami:{rope:4}},'only known materials, whole numbers'); }
-console.log('PASS: inline script syntax; legacy/malformed defaults; boss unlock; save round trip; existing key, version, inventory and durability; v0.67 kami state; v0.73 suzuki state; v0.81 p3/stash state');
+{ // v0.82 P3-C：住民 p3c の読み込み（古いセーブ・不正な値・進み具合のつじつま）
+  const code=html.slice(html.indexOf('function p3cFresh()'),html.indexOf('function p3cState()'));
+  const c4=vm.createContext({}); vm.runInContext(`const P3C={hits:3}; function num(v,def,min=0,max=9999){ return (typeof v==='number'&&isFinite(v))?Math.max(min,Math.min(max,Math.floor(v))):def; } let prog={};`+code,c4);
+  const J=x=>JSON.parse(JSON.stringify(x)), L=q=>J(c4.p3cLoad(q)), F=J(c4.p3cFresh());
+  for(const bad of [undefined,null,42,'x',[],{v:2,sumie:{done:1}}]) assert.deepEqual(L(bad),F,'old or malformed p3c: nobody yet');
+  assert.deepEqual(L({v:1,sumie:{done:1}}).sumie,{met:1,hits:3,done:1},'rescued Sumie: met and pile cleared');
+  assert.deepEqual(L({v:1,sumie:{met:1,hits:9}}).sumie,{met:1,hits:3,done:0},'hits capped');
+  assert.deepEqual(L({v:1,rio:{done:1}}).rio,{met:1,shelf:1,talk:1,parts:[1,1],fixed:1,done:1},'Rio joined: all steps done');
+  assert.deepEqual(L({v:1,rio:{met:1,parts:[1,1]}}).rio.parts,[0,0],'parts only after the talk');
+  assert.deepEqual(L({v:1,rio:{talk:1,parts:[1,'a']}}).rio,{met:1,shelf:1,talk:1,parts:[1,1],fixed:0,done:0});
+  assert.deepEqual(L({v:1,soichi:{coop:1,job:5}}).soichi,{found:0,coop:1,joinDone:0,resident:0,job:''},'Soichi: separate flags (P3-D)'); }
+console.log('PASS: inline script syntax; legacy/malformed defaults; boss unlock; save round trip; existing key, version, inventory and durability; v0.67 kami state; v0.73 suzuki state; v0.81 p3/stash state; v0.82 p3c residents');
