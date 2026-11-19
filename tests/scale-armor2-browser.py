@@ -4,7 +4,7 @@
 - 8種類（蒼鱗・変異した鱗 × 頭・胸・脚・靴）を1つずつ着られ、その部位の形だけが見える（ほかの部位・ほかの系統は見えない）
 - 着替えると古い形・演出（ゆらぎ・光の筋・火の粉の吹き出し口）が残らない。脱ぐと何も見えない
 - 形は初めて着たときに1回だけ作る（同じ部位を何度着替えても増えない）
-- 防御力・最大体力・移動など（f47Stats・f31MaxHp）は v0.75 と同じ値
+- 防御力・最大体力・移動など（f47Stats・f31MaxHp）は v0.78 の決定の値（変異した鱗の一式の被ダメージは v0.75 の -12% から -30% に。2026-11-17 ユーザー決定）
 - 走る・攻撃・回避の間、防具は体と同じ骨で動く（体の骨の行列を使う skinning。骨に付いたまま離れない）
 - 光・ゆらぎ：変異はゆっくり脈打ち、戦闘中は少し強い。蒼鱗は光る。どちらも防具を着ているときだけ動く
 - セーブ→読み直し→続きから：着ていた防具が戻り、形が出る（保存の形式は変えない）
@@ -108,7 +108,7 @@ async def main():
 
         # ---- 防御力などは同じ ----
         st = await pg.evaluate("""() => { const T = window.__t, out = {}; for (const k of ['head','chest','legs','feet']) T.f47Equip(k, k === 'head' ? null : 'work_' + k); const base0 = T.P.maxHp; for (const set of ['blue', 'raw']) { for (const k of ['head','chest','legs','feet']) T.f47Equip(k, set + '_' + k); const s = T.f47Stats(); out[set] = {cut: Math.round(s.cut * 1000) / 1000, speed: Math.round(s.speed * 100) / 100, dodge: Math.round(s.dodge * 1000) / 1000, set: s.set, max: T.P.maxHp, base: base0}; } return out; }""")
-        check(st['blue']['cut'] == 0.3 and st['blue']['set'] == 'blue' and st['blue']['max'] == st['blue']['base'] and st['raw']['cut'] == 0.12 and st['raw']['speed'] == 0.3 and st['raw']['dodge'] == 0.3 and st['raw']['max'] == round(st['raw']['base'] * 0.7), f'防御力・移動・最大体力は前と同じ（v0.75 と同じ値）{st}')
+        check(st['blue']['cut'] == 0.3 and st['blue']['set'] == 'blue' and st['blue']['max'] == st['blue']['base'] and st['raw']['cut'] == 0.3 and st['raw']['speed'] == 0.3 and st['raw']['dodge'] == 0.3 and st['raw']['max'] == round(st['raw']['base'] * 0.7), f'防御力・移動・最大体力（v0.78 の決定：変異した鱗の一式も被ダメージ -30%・移動+30%・最大体力0.7倍。docs/kei-truck-systems.md）{st}')
 
         # ---- 一式を着て、走る・攻撃・回避（骨と一緒に動く）・光 ----
         mv = await pg.evaluate("""async () => { const T = window.__t, P = T.P, pm = T.pm, out = {};
