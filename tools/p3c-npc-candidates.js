@@ -21,7 +21,7 @@
   // 山下澄江（60代後半の女性・短い白髪・作業用の上着とズボン）
   const sumie = {scale: 0.84, girth: 1.12, waist: 1.02, headR: 0.44, limb: 0.9};
   // リオ（20代前半の女性・短髪・作業着・腰に工具ポーチ）
-  const rio = {scale: 0.8, tall: 1.14, legLen: 1.75, armLen: 1.4, girth: 0.8, waist: 0.78, neck: 0.88, headR: 0.44, limb: 0.78, legGap: 1.15}; // 若い人は主人公・スズキと同じすらっとした体（年配の村人は丸い体）
+  const rio = {scale: 0.8, tall: 1.14, legLen: 1.75, armLen: 1.4, girth: 0.8, waist: 0.74, neck: 0.84, headR: 0.38, limb: 0.76, legGap: 1.15, bust: 1}; // 2026-11-19 ユーザー指定：顔をほかの人より小さく・胸のふくらみを若干 // 若い人は主人公・スズキと同じすらっとした体（年配の村人は丸い体）
   // 川村宗一（50代の男性・作業着・長靴・使い込まれた釣り具）
   const soichi = {scale: 1.0, girth: 1.12, headR: 0.41, limb: 0.95};
   const C = window.__cands = {
@@ -54,7 +54,7 @@
       top: {col: 0xc8642a, col2: 0xa84e20, hem: 0.38, sleeve: 'rolled', cut: 0.62, collar: 'stand', zip: true, pockets: true, t: 0.032},
       bottom: {col: 0x2e3440, col2: 0x242a34, top: 0.48, cargo: true, t: 0.03},
       belt: {col: 0x2a2420, w: 0.04, y: 0.43, over: true, pouch: 0x5a5a48, buckle: true},
-      shoes: {kind: 'boots', col: 0x2a2a2a, col2: 0x3a3a3a}, hair: {style: 'bob', col: 0x4a3020}, armband: false},
+      shoes: {kind: 'boots', col: 0x2a2a2a, col2: 0x3a3a3a}, hair: {style: 'pony', col: 0x4a3020, tie: 0xc8463a}, armband: false},
       extra: goggles(0xd8e8ec, 0x2a2a2a)}),
     soichiA: Object.assign({}, soichi, {outfit: { // A 釣りのベスト・長靴・つばの帽子・背中の竿と腰の魚籠
       top: {col: 0x6a6e66, col2: 0x5a5e56, hem: 0.4, sleeve: 'long', cut: 0.93, collar: 'stand', pockets: true, t: 0.032},
