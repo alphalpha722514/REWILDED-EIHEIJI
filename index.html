@@ -10519,7 +10519,7 @@ function rivTileMake(ctx,K,F,rt){ const rnd=p3aRng(rt.ci*7919+rt.ck*104729+13), 
 function rivTileDrop(ctx,rt){ const o=rt.o; if(!o) return; for(const m of o.meshes){ ctx.group.remove(m); if(m.isInstancedMesh&&m.dispose) m.dispose(); } for(const g of o.own) g.dispose(); for(const c of o.cols) gridRemove(c); rt.o=null; }
 function rivTilesUpdate(ctx,px,pz){ if(!RIV.tiles) return; let made=0; for(const m of RIV.beds||[]){ const s=m.geometry.boundingSphere; m.visible=Math.hypot(s.center.x-px,s.center.z-pz)-s.radius<450; } /* 川底は遠いと見えないので描かない */ for(const rt of RIV.tiles){ const d=Math.hypot(Math.max(0,Math.abs(px-rt.cx)-rt.hw),Math.max(0,Math.abs(pz-rt.cz)-rt.hw));
     if(d<RIV.near&&!rt.o&&made<1){ rivTileMake(ctx,KAMI,RIV.F,rt); made++; RIV.made++; } else if(d>RIV.far&&rt.o) rivTileDrop(ctx,rt); } }
-function rivDispose(ctx){ if(RIV.tiles) for(const rt of RIV.tiles) rivTileDrop(ctx,rt); RIV.tiles=null; RIV.F=null; RIV.geo=null; RIV.streamSegs=null; RIV.obs=null; RIV.beds=null; if(RIV.camT>0){ RIV.camT=0; cam.override=null; } }
+function rivDispose(ctx){ if(RIV.tiles) for(const rt of RIV.tiles) rivTileDrop(ctx,rt); if(RIV.geo) for(const k in RIV.geo) RIV.geo[k].dispose(); /* 区画を捨てたあと場面に残らない共有の形も捨てる */ RIV.tiles=null; RIV.F=null; RIV.geo=null; RIV.streamSegs=null; RIV.obs=null; RIV.beds=null; if(RIV.camT>0){ RIV.camT=0; cam.override=null; } }
 // ---- 護岸：本流のそばを通る道の、川の側の土手にコンクリートブロックの斜面（P3-A の試作と同じ形。試作の範囲は除く）----
 function rivRevet(gbOf,roads,K){ for(const r of roads){ if(r.b||r.tn||r.w<4) continue; const p=r.p;
     for(let s=0;s<p.length-1;s++){ const [ax,az]=p[s],[bx,bz]=p[s+1], Ls=dist(ax,az,bx,bz); if(Ls<0.5) continue; const ux=(bx-ax)/Ls, uz=(bz-az)/Ls;
