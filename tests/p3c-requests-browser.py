@@ -132,7 +132,7 @@ async def main():
         h2 = await E("p3cState().hint2")
         cards = await mg('req')
         st = await E("P3C_REQ.map(q=>q.id+':'+p3cReqState(q)).join(' ')")
-        check(h2 == 1 and st == 'trace:open salvage:open tools:open bell:wait evac:lock water:lock lift:lock road:lock soichi:wait' and any(c.startswith('q_trace|') and '【必須】' in c and '受けられる' in c for c in cards),
+        check(h2 == 1 and st == 'trace:open salvage:open tools:open bell:wait evac:lock water:lock lift:lock road:lock soichi:wait spindle:lock' and any(c.startswith('q_trace|') and '【必須】' in c and '受けられる' in c for c in cards),
               f'住民が2人：澄江の依頼の案内・依頼のタブ（受けられる／条件がまだ／段階がまだ）{st} 案内{h2} {[c[:30] for c in cards[:2]]}')
         lv = await mg('lv')
         check(any(c.startswith('lvup|') and '条件がまだ' in c for c in lv) and not await E("!!document.getElementById('mgmt_lvup')"), f'復興 Lv2 に上げるボタンは、条件がそろうまで出ない {[c for c in lv if c.startswith("lvup")]}')
@@ -211,7 +211,7 @@ async def main():
         lvs = await E("[p3cLevel(), P3C.cap[p3cLevel()], $('banner').textContent]")
         check(ok and any('指定の復興依頼達成' in c for c in lv) and lvs[0] == 2 and lvs[1] == 4 and '上志比の復興 Lv2' in lvs[2] and ll[0].startswith('澄江｜建物も人も'), f'条件がそろうと Lv2 に上げられる（住める人 4）{lvs}')
         st = await E("P3C_REQ.map(q=>q.id+':'+p3cReqState(q)).join(' ')")
-        check(st == 'trace:done salvage:done tools:done bell:done evac:open water:open lift:open road:open soichi:wait', f'Lv2 の依頼が受けられる {st}')
+        check(st == 'trace:done salvage:done tools:done bell:done evac:open water:open lift:open road:open soichi:wait spindle:lock', f'Lv2 の依頼が受けられる {st}')
         hq = await E("(()=>{ const d=P3A.doors.find(d=>d.id==='hq'); return [d.x,d.z]; })()")
         await E(f"(P.x={hq[0]},P.z={hq[1]},1)")
         await pg.wait_for_timeout(300)
