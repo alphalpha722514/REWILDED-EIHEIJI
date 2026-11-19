@@ -257,7 +257,7 @@ async def main():
         lp = await E("[p3dRod(), JSON.stringify(p3dState().ara), p3dState().book.fUgui&&p3dState().book.fUgui.n, inv.fUgui, p3cState().soichi.coop, p3cState().soichi.resident, p3cReqDone('soichi')]")
         check(lp == ['guard', '{"observed":1,"caughtReleased":1,"reported":1,"rodRewardClaimed":1}', 1, 1, 1, 1, True], f'つづきから：釣り竿・アラレガコの記録・図鑑・魚・宗一が残る {lp}')
         old = await E("JSON.stringify(p3dLoad(undefined))")
-        check(old == '{"v":1,"rod":{"basic":0,"pro":0,"guard":0},"book":{},"book2":{},"ara":{"observed":0,"caughtReleased":0,"reported":0,"rodRewardClaimed":0},"casts":0,"catches":0}', f'古いセーブ（p3d なし）：釣り竿も記録もない {old}')
+        check(old == '{"v":1,"rod":{"basic":0,"pro":0,"guard":0},"book":{},"book2":{},"obs":{},"ara":{"observed":0,"caughtReleased":0,"reported":0,"rodRewardClaimed":0},"casts":0,"catches":0}', f'古いセーブ（p3d なし）：釣り竿も記録もない {old}')
         check(not errs, f'エラーなし {errs[:3]}')
         await b.close()
     print('PASS: P3-D 釣りと宗一' if ok else 'FAILED')
