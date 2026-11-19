@@ -11541,7 +11541,7 @@ function p3cForgeLoad(q){ const o={w:{},a:{}}; if(!q||typeof q!=='object') retur
 function p3cVupLoad(q){ const o={plate:0,tank:0,frame:0}; if(q&&typeof q==='object') for(const k in o) o[k]=q[k]?1:0; return o; }
 // KEI truck の高度加工：TRUCK_SYS の値を、元の値から付け直す（読み込み・新しく始める・加工したとき）
 let TRUCK_BASE0=null;
-function p3cVehApply(){ if(typeof TRUCK_SYS==='undefined') return; const S=TRUCK_SYS; if(!TRUCK_BASE0) TRUCK_BASE0={max:S.hp.max.slice(),beast:S.hp.beast,perKm:S.gas.perKm,cap:S.bed.cap,logs:S.bed.maxLogs};
+function p3cVehApply(){ let S; try{ S=TRUCK_SYS; }catch(e){ return; } /* 起動の途中（TRUCK_SYS がまだ）では何もしない */ if(!TRUCK_BASE0) TRUCK_BASE0={max:S.hp.max.slice(),beast:S.hp.beast,perKm:S.gas.perKm,cap:S.bed.cap,logs:S.bed.maxLogs};
   const B=TRUCK_BASE0, v=(prog&&prog.p3c&&prog.p3c.vup)||{}, V=P3C_FORGE.v;
   S.hp.max=B.max.map(x=>x+(v.plate?V.plate.hp:0)); S.hp.beast=v.plate?V.plate.beast:B.beast; S.gas.perKm=v.tank?V.tank.perKm:B.perKm; S.bed.cap=v.frame?V.frame.cap:B.cap; S.bed.maxLogs=v.frame?V.frame.logs:B.logs; }
 // 総合加工設備の画面（作業台と同じ画面。タブ：素材・武器の鍛え直し・防具の補強・車両）
@@ -11730,7 +11730,7 @@ function p3aInteractables(L){ if(!P3A.on||REG.cur!=='kamishihi') return;
   if(P3A.inside){ const I=P3A.interior; if(!I) return; const fac=I.id==='factory'; for(const k of I.marks){ const d=dist(P.x,P.z,k.x,k.z); if(d>(k.r||1.8)) continue; L.push({d,label:k.rep?p3bRepLabel(k.rep[0],k.rep[1]):k.req?p3cStepLabel(P3C_REQ_BY[k.req[0]],p3cReq(k.req[0]),k.req[1]):k.label,act:()=>k.req?p3cReqDo(k.req[0],k.req[1]):fac?p3cFactoryInteract(k):p3bInteract(k)}); } p3cResInteractables(L); return; }
   p3bOutside(L); }
 // ---- v0.85 P3-D（D-3）川の音（§19.3）：本流の流れ（いちばん近い本流までの距離）・支流と水路のせせらぎ・浅瀬の水音（ときどき）・河原の風。鳥は f31Sched（昼） ----
-let RIVSND=null;
+var RIVSND=null; // var：起動の途中で参照されても止まらないように
 function rivSoundTick(dt){ if(typeof AU==='undefined'||!AU.ok||!AC||!noiseBuf) return; const on=REG.cur==='kamishihi'&&!P3A.inside&&S.mode!=='title'&&!!KAMI;
   if(!RIVSND){ const mk=(lp,pk,pg)=>{ const s=AC.createBufferSource(); s.buffer=noiseBuf; s.loop=true; const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=lp; const f2=AC.createBiquadFilter(); f2.type='peaking'; f2.frequency.value=pk; f2.gain.value=pg; const g=AC.createGain(); g.gain.value=0; s.connect(f); f.connect(f2); f2.connect(g); g.connect(AU.amb); s.start(AC.currentTime,Math.random()*0.9); return g; };
     RIVSND={main:mk(700,1600,6),brook:mk(2600,3400,8),t:0,dm:999,ds:999,splT:0,wind:0}; }
@@ -11931,10 +11931,10 @@ function kamiSave(){ const k=prog.kami, T=stats.time, n={}, sp={}, g={};
   const fm={}; for(const a in (k.fm||{})) if(k.fm[a]>T) fm[a]=Math.ceil(k.fm[a]); // v0.69：倒された守りのサルが戻る時刻
   return {v:1,n,r:Object.assign({},k.r),sc:k.sc.slice(-200),f:k.f.slice(-KW.felledMax),sp,g,st,fm}; }
 function kamiLoad(q){ const k=kamiFresh(); if(!q||typeof q!=='object'||q.v!==1) return k; const N=v=>typeof v==='number'&&isFinite(v);
-  if(q.n&&typeof q.n==='object') for(const a in q.n) if(/^[sbrwpo]\d+$/.test(a)&&N(q.n[a])) k.n[a]=clamp(q.n[a],0,1e7);
-  if(q.r&&typeof q.r==='object') for(const a in q.r) if(/^r\d+$/.test(a)&&N(q.r[a])) k.r[a]=clamp(Math.floor(q.r[a]),0,ROCK_MAX);
+  if(q.n&&typeof q.n==='object') for(const a in q.n) if(/^[sbrwpoq]\d+$/.test(a)&&N(q.n[a])) k.n[a]=clamp(q.n[a],0,1e7); /* v0.85：q は川底の鉱石 */
+  if(q.r&&typeof q.r==='object') for(const a in q.r) if(/^[rq]\d+$/.test(a)&&N(q.r[a])) k.r[a]=clamp(Math.floor(q.r[a]),0,a[0]==='q'?3:ROCK_MAX);
   if(Array.isArray(q.sc)) k.sc=q.sc.filter(v=>Number.isInteger(v)&&v>=0&&v<999).slice(-200);
-  if(Array.isArray(q.f)) k.f=q.f.filter(v=>typeof v==='string'&&/^k\d+_\d+_\d+$/.test(v)).slice(-KW.felledMax);
+  if(Array.isArray(q.f)) k.f=q.f.filter(v=>typeof v==='string'&&/^(k\d+_\d+_\d+|kp\d+)$/.test(v)).slice(-KW.felledMax); /* v0.85：kp は林道の広葉樹 */
   if(q.sp&&typeof q.sp==='object') for(const a in q.sp) if(/^a\d+$/.test(a)&&N(q.sp[a])) k.sp[a]=clamp(q.sp[a],0,1e7);
   if(q.g&&typeof q.g==='object') for(const a in q.g){ const v=q.g[a]; if(/^g\d+$/.test(a)&&v&&Array.isArray(v.d)) k.g[a]={d:[0,1,2].map(i=>v.d[i]?1:0),w:N(v.w)?clamp(v.w,0,1e7):0}; }
   if(q.fm&&typeof q.fm==='object') for(const a in q.fm) if(/^[fab]\d$/.test(a)&&N(q.fm[a])) k.fm[a]=clamp(q.fm[a],0,1e7);

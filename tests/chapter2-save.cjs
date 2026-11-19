@@ -65,6 +65,7 @@ assert.match(html,/prog\.chapter2=chapter2State\(null,false\)/);
   assert.deepEqual(L(null),fresh,'old save: nothing taken');
   const q=L({v:1,n:{s0:1200,zz:5,b1:'x',o3:-5},r:{r1:3,r2:99,s0:1},sc:[1,2,'a',-1],f:['k1_2_3','bad','f1_1_1'],sp:{a0:1500,b:1},g:{g0:{d:[1,0,1,1],w:2000},x:{d:[1]}},st:{fort:{n:2,t:300},outB:{n:0,t:5},bad:{n:1},outA:{n:'x'}},fm:{f3:2000,a1:'x',z9:5,b2:-4}});
   assert.deepEqual(q.n,{s0:1200,o3:0}); assert.deepEqual(q.r,{r1:3,r2:8}); assert.deepEqual(q.sc,[1,2]); assert.deepEqual(q.f,['k1_2_3']); assert.deepEqual(q.sp,{a0:1500}); assert.deepEqual(q.g,{g0:{d:[1,0,1],w:2000}}); assert.deepEqual(q.st,{fort:{n:2,t:300}}); assert.deepEqual(q.fm,{f3:2000,b2:0}); // v0.68：物資置き場・v0.69：守りのサル
+  { const q2=L({v:1,n:{q1:50,q:3},r:{q2:9,q3:1,r1:2},f:['kp3','kp','k1_2_3','kpx']}); assert.deepEqual(q2.n,{q1:50}); assert.deepEqual(q2.r,{q2:3,q3:1,r1:2},'v0.85: river ore (q) up to 3'); assert.deepEqual(q2.f,['kp3','k1_2_3'],'v0.85: felled broadleaf trees (kp)'); }
   vm.runInContext('prog.kami=kamiLoad('+JSON.stringify({v:1,n:{s0:1200},r:{r1:0},sc:[4],f:['k0_0_1'],sp:{a0:900,a1:1500},g:{g0:{d:[1,1,0],w:0},g1:{d:[0,0,0],w:500}},st:{outB:{n:1,t:950}},fm:{f1:1600,b0:200}})+')',kc);
   const s2=JSON.parse(JSON.stringify(vm.runInContext('kamiSave()',kc)));
   assert.deepEqual(s2,{v:1,n:{s0:1200},r:{r1:0},sc:[4],f:['k0_0_1'],sp:{a1:1500},g:{g0:{d:[1,1,0],w:0}},st:{outB:{n:1,t:950}},fm:{f1:1600}},'round trip keeps pending times only'); }
