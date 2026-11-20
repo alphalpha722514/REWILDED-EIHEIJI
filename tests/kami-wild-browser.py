@@ -73,17 +73,17 @@ async def main():
           K.toolGain('hammerStone'); K.prog.arms.axeIron = 140; await K.regionTravel('kamishihi', null, {force: true}); }""")
         await pg.wait_for_timeout(800)
         A = await pg.evaluate("""() => { const K = window.__k, L = K.REG.live, kw = L.kw, cnt = {}, nodes = {};
-          for (const s of kw.sp) cnt[s.type] = (cnt[s.type] || 0) + 1; for (const n of kw.nodes) nodes[n.k] = (nodes[n.k] || 0) + (n.k === 'food' && n.chest ? 0 : 1);
+          for (const s of kw.sp) cnt[s.type] = (cnt[s.type] || 0) + 1; for (const n of kw.nodes) if (!n.ore) nodes[n.k] = (nodes[n.k] || 0) + (n.k === 'food' && n.chest ? 0 : 1); nodes.ore = kw.nodes.filter(n => n.ore).length; /* v0.85：川底の鉱石は水際の浅瀬（別に数える） */
           nodes.chest = kw.nodes.filter(n => n.chest).length;
           const D = window.KAMISHIHI_MAP, KM = K.REG.live; let bad = [];
           const chk = (x, z, what) => { const g = (window.__kr = window.__kr || 0); };
           return {cur: K.REG.cur, cnt, groups: kw.groups.length, nodes, ktrees: L.ktrees.size,
-            pts: kw.sp.map(s => [s.x, s.z]).concat(kw.groups.map(g => [g.x, g.z]), kw.nodes.map(n => [n.x, n.z]))}; }""")
+            pts: kw.sp.map(s => [s.x, s.z]).concat(kw.groups.map(g => [g.x, g.z]), kw.nodes.filter(n => !n.ore).map(n => [n.x, n.z]))}; }""")
         print('上志比：', {k: v for k, v in A.items() if k != 'pts'})
         check(A['cur'] == 'kamishihi', '上志比へ移った')
         check(A['cnt'] == {'bear': 4, 'boar': 8, 'deer': 3, 'weasel': 2, 'monkey': 3} and A['groups'] == 4,
               f'獣の置き場所 {A["cnt"]}・群れ {A["groups"]}（暫定の推奨案どおり）')
-        want = {'stone': 12, 'bamboo': 6, 'rock': 6, 'straw': 8, 'wood': 10, 'food': 6, 'chest': 2}
+        want = {'stone': 12, 'bamboo': 6, 'rock': 6, 'straw': 8, 'wood': 10, 'food': 6, 'chest': 2, 'ore': 7}  # v0.85：川底の鉱石7か所
         check(all(A['nodes'].get(k) == v for k, v in want.items()) and A['nodes'].get('scrap', 0) >= 10,
               f'採集場所 {A["nodes"]}')
         R = await pg.evaluate("""(pts) => { const K = window.__k; let bad = 0; for (const [x, z] of pts) { if (!K.kamiReach(x, z) || K.kamiCls(x, z) === 2) bad++; } return bad; }""", A['pts'])
