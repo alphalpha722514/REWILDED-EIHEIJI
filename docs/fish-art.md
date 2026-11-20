@@ -86,7 +86,7 @@
 ## 6. テスト
 
 - 新しいテスト `python3 tests/fish-art-browser.py`（画面のない Chromium・5分ほど）：**PASS**（11項目）。図鑑の絵（魚12・水生生物7）／持ち物の生の魚とモクズガニの絵（料理の絵は今まで通り）／形と絵の使い回しと三角形の数／釣れた魚を見せる → 揺れる → 消える／次を投げると消える／アラレガコの近景（新しい形・くねる・川へ戻すと消える）／石の下の生き物を見せる → 消える／アユの群れの影の形／上志比を出ると消える／エラーなし。
-- 回帰：`p3d-fishing`・`p3d-cook`・`p3d-river-works`・`kamishihi`（上志比の往復で形が残らない）：PASS。node のテスト6本：PASS。
+- 回帰：`p3d-fishing`・`p3d-cook`・`p3d-river-works`・`kamishihi`（上志比の往復で形が残らない）・`kamado`（料理の絵）・`hud-layout`（手持ちバー）・`region`：PASS。node のテスト6本：PASS。
 
 ## 7. 未実装・気になる所
 
