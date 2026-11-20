@@ -123,7 +123,7 @@ async def main():
         await dlg()
         await E("(P.x=6493, P.z=468, 1)")
         await until("S.mode==='playing'&&RIVSND&&RIVSND.dm<10", 15000)
-        await pg.wait_for_timeout(2500)
+        await until("RIVSND.main.gain.value>0.03", 40000)  # 音量はなめらかに上がる（画面のない Chromium はコマが少ないので時間がかかる）
         snd = await E("[typeof RIVSND!=='undefined'&&!!RIVSND, RIVSND&&+RIVSND.main.gain.value.toFixed(3), RIVSND&&Math.round(RIVSND.dm), S.mode]")
         check(snd[0] and snd[1] > 0.03 and snd[2] < 10, f'川の音：本流のそば（{snd[2]}m）で大きい {snd}')
         # 川底の鉱石
