@@ -111,7 +111,7 @@ async def main():
         # ---- 近くへ行く ----
         await E("(()=>{ E1.off=false; return 1; })()")
         x, z, lx, lz = VIEW
-        await E(f"(()=>{{ P.x={x}; P.z={z}; cam.override={{p:new THREE.Vector3({x},groundH({x},{z})+1.7,{z}), l:new THREE.Vector3({lx},groundH({lx},{lz})+1.5,{lz}), fov:60}}; return 1; }})()")
+        await E(f"(()=>{{ P.x=6200; P.z=900; cam.override={{p:new THREE.Vector3({x},groundH({x},{z})+1.7,{z}), l:new THREE.Vector3({lx},groundH({lx},{lz})+1.5,{lz}), fov:60}}; return 1; }})()")
         done = await until(f"!E1.busy&&[...E1.cells.values()].every(c=>c.o||e1RectD(c,{x},{z})>=gfxRad().in)", 240000)
         near = await E(f"""(()=>{{ let nc=0, nb=0, nm=0, nv=0, cols=0, hid=0, flat=0; for(const c of E1.cells.values()) if(c.o){{ nc++; nb+=c.bld.length; cols+=c.o.cols.length; nm+=c.o.meshes.length; for(const m of c.o.meshes) if(m.geometry&&!m.isInstancedMesh) nv+=m.geometry.attributes.position.count;
             for(const [a,s,save] of c.o.hide){{ hid++; const v=a.array; let same=true; for(let i=s+3;i<s+save.length;i+=3) if(v[i]!==v[s]||v[i+1]!==v[s+1]||v[i+2]!==v[s+2]){{ same=false; break; }} if(same) flat++; }} }}
