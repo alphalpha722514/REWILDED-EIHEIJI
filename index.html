@@ -11300,8 +11300,8 @@ function p3dLanded(){ const F=P3D.fish, f=F.fishPick, st=p3dState(); const cm=Ma
 // アラレガコ：専用のカメラで姿を見せ、すぐ川へ戻す（持ち物に入らない。§14）
 function p3dAragako(cm){ const F=P3D.fish, st=p3dState(); F.st='ara'; F.t=0; const first=!st.ara.caughtReleased; st.ara.observed=1; st.ara.caughtReleased=1;
   const e=st.book.ara||(st.book.ara={n:0,max:0,where:'',band:'',seen:1}); e.n++; e.seen=1; e.max=Math.max(e.max,cm); if(!e.where){ e.where=`${F.place}（${P3D_AREA[F.area]}）`; e.band=P3D_BAND[p3dBand()]; }
-  const ux=(P.x+F.x)/2, uz=(P.z+F.z)/2, y=F.y; p3dFishMesh(ARAGAKO,cm,P.x+Math.sin(P.facing)*1.2,y+0.9,P.z+Math.cos(P.facing)*1.2);
-  P3D.camOv=1; cam.override={p:new THREE.Vector3(P.x+Math.sin(P.facing+1.2)*2.6,y+1.6,P.z+Math.cos(P.facing+1.2)*2.6), l:new THREE.Vector3(P.x+Math.sin(P.facing)*1.2,y+0.9,P.z+Math.cos(P.facing)*1.2), fov:42};
+  const ux=(P.x+F.x)/2, uz=(P.z+F.z)/2, y=Math.max(F.y,groundH(P.x,P.z)); /* v0.86：岸が高いときに地面に埋もれないように */ p3dFishMesh(ARAGAKO,cm,P.x+Math.sin(P.facing)*1.2,y+0.9,P.z+Math.cos(P.facing)*1.2);
+  P3D.camOv=1; cam.override={p:new THREE.Vector3(P.x+Math.sin(P.facing+1.2)*2.2,y+1.5,P.z+Math.cos(P.facing+1.2)*2.2), l:new THREE.Vector3(P.x+Math.sin(P.facing)*1.2,y+0.9,P.z+Math.cos(P.facing)*1.2), fov:42};
   saveGame(); sfx('pickup'); banner('アラレガコ',`${cm}cm。頭が大きく、石のような模様。すぐに川へ戻そう`,3.4);
   setTimeout(()=>{ if(!P3D.fish||P3D.fish.st!=='ara') return; P3D.fish.st='release'; P3D.fish.t=0; toast(first?'アラレガコを、そっと川へ戻した。（図鑑に記録：釣ったあと川へ戻した）':'アラレガコを、そっと川へ戻した',true); },3400); }
 function p3dAfterCast(){ const c=p3cState(); if(c.soichi.found||REG.cur!=='kamishihi') return; if(!P3D.meetT) P3D.meetT=1.2; } // 初めて釣りをしたとき、宗一が来る
@@ -11309,13 +11309,13 @@ function p3dAfterCast(){ const c=p3cState(); if(c.soichi.found||REG.cur!=='kamis
 function p3dFishMesh(f,cm,x,y,z){ let m=P3D.fm; if(!m||m.parent!==scene){ m=new THREE.Mesh(); scene.add(m); P3D.fm=m; } // v0.86：体の断面・ひれ・模様の絵の形（使い回す。前は箱を並べた形）
   const id=fishArtId(f); m.geometry=fishGeo(id,1); m.material=fishMat(id,true); m.scale.setScalar(Math.max(0.5,cm/20)*0.42/1.24); m.position.set(x,y,z); m.rotation.set(0,P.facing+Math.PI/2,0); P3D.fmY=m.rotation.y; m.visible=true; return m; }
 // v0.86：釣れた魚を、主人公の前に少しのあいだ吊るして見せる（持ち物に入るのは今までどおり）
-function p3dShowCatch(f,cm){ const m=p3dFishMesh(f,cm,P.x+Math.sin(P.facing)*0.8,groundH(P.x,P.z)+1.15,P.z+Math.cos(P.facing)*0.8); m.rotation.set(0,P.facing+Math.PI,Math.PI/2*0.92); P3D.fmY=m.rotation.y; P3D.fmT=1.9; }
+function p3dShowCatch(f,cm){ const fx=Math.sin(P.facing), fz=Math.cos(P.facing), x=P.x+fz*0.6+fx*0.3, z=P.z-fx*0.6+fz*0.3; const m=p3dFishMesh(f,cm,x,groundH(P.x,P.z)+1.25,z); /* 主人公の右の、顔の高さ（後ろのカメラから体で隠れない）*/ m.rotation.set(0,P.facing+Math.PI,Math.PI/2*0.92); P3D.fmY=m.rotation.y; P3D.fmT=1.9; }
 // v0.86：石の下で見つけた生き物を、水際に少しのあいだ出して見せる
-function p3dShowAqua(id,x,z){ let m=P3D.am; if(!m||m.parent!==scene){ m=new THREE.Mesh(); scene.add(m); P3D.am=m; } const fish=id==='aYoshinobori';
+function p3dShowAqua(id,x,z,wy){ { const fx=Math.sin(P.facing), fz=Math.cos(P.facing), g0=groundH(P.x,P.z); x=P.x+fx*0.15; z=P.z+fz*0.15; for(const [a,b] of [[0.45,0.12],[-0.45,0.12],[0.3,0.3]]){ const qx=P.x+fz*a+fx*b, qz=P.z-fx*a+fz*b; if(!p3dWater(qx,qz)&&groundH(qx,qz)>g0-0.15){ x=qx; z=qz; break; } } } /* 主人公の横の足もと（水際の水面の板の下に隠れないように）*/ let m=P3D.am; if(!m||m.parent!==scene){ m=new THREE.Mesh(); scene.add(m); P3D.am=m; } const fish=id==='aYoshinobori';
   m.geometry=fish?fishGeo(id,1):aquaGeo(id); m.material=fish?fishMat(id,true):vcMat; const sc=fish?0.1:id==='aKawanina'?0.1:id==='aSawagani'||id==='aMokuzu'?0.1:0.075; m.scale.setScalar(sc);
   const y=groundH(x,z); m.position.set(x,y+(fish?0.03:id==='aKawanina'?0.04:0.01),z); m.rotation.set(id==='aKawanina'?Math.PI/2:0,P.facing+Math.PI+(Math.random()-0.5)*1.2,0); P3D.amY=m.rotation.y; m.visible=true; P3D.amT=2.8; }
 function p3dShowTick(dt){ const F=P3D.fish;
-  if(P3D.fmT>0){ P3D.fmT-=dt; const m=P3D.fm; if(m){ if((F&&F.st!=='ready')||P3D.fmT<=0||REG.cur!=='kamishihi'){ m.visible=false; P3D.fmT=0; } else { m.rotation.y=P3D.fmY+Math.sin(P3D.fmT*3)*0.5; m.rotation.z=Math.PI/2*0.92+Math.sin(P3D.fmT*11)*0.12; } } }
+  if(P3D.fmT>0){ P3D.fmT-=dt; const m=P3D.fm; if(m){ if((F&&F.st!=='ready')||P3D.fmT<=0||REG.cur!=='kamishihi'){ m.visible=false; P3D.fmT=0; } else { m.rotation.y=P3D.fmY+Math.sin(P3D.fmT*3)*0.3; m.rotation.z=Math.PI/2*0.92+Math.sin(P3D.fmT*11)*0.12; } } }
   if(P3D.amT>0){ P3D.amT-=dt; const m=P3D.am; if(m){ if(P3D.amT<=0||REG.cur!=='kamishihi'){ m.visible=false; P3D.amT=0; } else m.rotation.y=P3D.amY+Math.sin(P3D.amT*2.2)*0.15; } }
   if(F&&F.st==='ara'&&P3D.fm) P3D.fm.rotation.y=P3D.fmY+Math.sin(F.t*5)*0.14; } // アラレガコは、ゆっくり体をくねらせる
 // ---- 毎フレーム ----
@@ -11426,7 +11426,7 @@ function p3dSearch(){ if(P3D.srch>0){ toast('さっき調べたばかり。少�
   const st=p3dState(); if(!st.book2) st.book2={}; const e=st.book2[got.id]||(st.book2[got.id]={n:0,where:'',band:'',seen:1}); const first=!e.n; e.n++; e.seen=1; if(first){ e.where=`${place}（${P3D_AREA[area]}）`; e.band=P3D_BAND[p3dBand()]; }
   let msg=''; if(got.use==='bait'){ const n=1+(Math.random()<0.5?1:0); inv.kawamushi=(inv.kawamushi||0)+n; msg=`${got.name}：川虫 +${n}（釣りの餌）`; }
   else if(got.use==='food'){ foodAdd('zugani',1); msg=`${got.name}をつかまえた（食材）`; } else msg=`${got.name}を観察した。${got.note}`;
-  p3dShowAqua(got.id,sh.x,sh.z); // v0.86：見つけた生き物を水際に出して見せる
+  p3dShowAqua(got.id,sh.x,sh.z,sh.w&&sh.w.y); // v0.86：見つけた生き物を水際に出して見せる
   sfx('pickup'); saveGame(); if(first) banner(`図鑑に記録：${got.name}`,`${e.where}・${e.band}`,2.4); toast(msg,first); }
 function p3dBookTabs(){ const t=$('bookTabs'); if(!t) return; const st=p3dState(); t.innerHTML=''; for(const [id,nm] of [['fish','魚類'],['aqua','水生生物'],['obs','観察']]){ const b=document.createElement('button'); b.className='wkTab'+(BOOK.tab===id?' on':''); b.id='bookTab_'+id; b.textContent=nm; b.onclick=()=>{ BOOK.tab=id; BOOK.sel=id==='aqua'?AQUA[0].id:id==='obs'?P3D_OBS[0].id:'fAyu'; p3dRenderBook(); }; t.appendChild(b); } }
 function p3dRenderAqua(){ const st=p3dState(), B2=st.book2||{}, n=AQUA.filter(a=>B2[a.id]&&B2[a.id].seen).length; $('bookSub').textContent=`水生生物 ${n}/${AQUA.length}　川虫 ${inv.kawamushi||0}`;

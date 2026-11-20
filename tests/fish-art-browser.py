@@ -163,7 +163,7 @@ async def main():
         await E("(P3D.forceAqua=null, 1)")
         await until("!P3D.am.visible", 8000)
         ag = await E("[P3D.am.visible, P3D.amT]")
-        check(all(x[0] and x[1] and 0 <= x[2] < 0.1 and x[3] for x in aq) and ag == [False, 0], f'石の下で見つけた生き物を水際に見せる（モクズガニ・ヨシノボリは魚の形・カワニナ）→ 3秒ほどで消える {aq} {ag}')
+        check(all(x[0] and x[1] and -0.01 <= x[2] < 0.6 and x[3] for x in aq) and ag == [False, 0], f'石の下で見つけた生き物を水際に見せる（モクズガニ・ヨシノボリは魚の形・カワニナ）→ 3秒ほどで消える {aq} {ag}')
 
         # ---- 観察地点のアユの群れ ----
         ay = await E("(()=>{ const R=RIV.obs.find(r=>r.o.id==='oAyu'); if(!R||!R.fish) return null; const g=R.fish.geometry; return [g.attributes.position.count, !!g.attributes.uv, g!==fishGeo('fAyu',0), R.fish.count]; })()")
