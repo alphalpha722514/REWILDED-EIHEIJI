@@ -658,7 +658,7 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.85 防衛戦テスト版（本編とは別に保存）　第二章・九頭竜川の改修と総合加工設備（P3-D・C-4）</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.86 防衛戦テスト版（本編とは別に保存）　第二章・魚と水生生物の形</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -10538,7 +10538,7 @@ function rivTileMake(ctx,K,F,rt){ const rnd=p3aRng(rt.ci*7919+rt.ck*104729+13), 
 function rivTileDrop(ctx,rt){ const o=rt.o; if(!o) return; for(const m of o.meshes){ ctx.group.remove(m); if(m.isInstancedMesh&&m.dispose) m.dispose(); } for(const g of o.own) g.dispose(); for(const c of o.cols) gridRemove(c); rt.o=null; }
 function rivTilesUpdate(ctx,px,pz){ if(!RIV.tiles) return; let made=0; for(const m of RIV.beds||[]){ const s=m.geometry.boundingSphere; m.visible=Math.hypot(s.center.x-px,s.center.z-pz)-s.radius<450; } /* 川底は遠いと見えないので描かない */ for(const rt of RIV.tiles){ const d=Math.hypot(Math.max(0,Math.abs(px-rt.cx)-rt.hw),Math.max(0,Math.abs(pz-rt.cz)-rt.hw));
     if(d<RIV.near&&!rt.o&&made<1){ rivTileMake(ctx,KAMI,RIV.F,rt); made++; RIV.made++; } else if(d>RIV.far&&rt.o) rivTileDrop(ctx,rt); } }
-function rivDispose(ctx){ if(RIV.tiles) for(const rt of RIV.tiles) rivTileDrop(ctx,rt); if(RIV.geo) for(const k in RIV.geo) RIV.geo[k].dispose(); /* 区画を捨てたあと場面に残らない共有の形も捨てる */ RIV.tiles=null; RIV.F=null; RIV.geo=null; RIV.streamSegs=null; RIV.obs=null; RIV.beds=null; if(RIV.camT>0){ RIV.camT=0; cam.override=null; } }
+function rivDispose(ctx){ if(P3D.fm) P3D.fm.visible=false; if(P3D.am) P3D.am.visible=false; P3D.fmT=P3D.amT=0; /* v0.86：見せている魚と生き物 */ if(RIV.tiles) for(const rt of RIV.tiles) rivTileDrop(ctx,rt); if(RIV.geo) for(const k in RIV.geo) RIV.geo[k].dispose(); /* 区画を捨てたあと場面に残らない共有の形も捨てる */ RIV.tiles=null; RIV.F=null; RIV.geo=null; RIV.streamSegs=null; RIV.obs=null; RIV.beds=null; if(RIV.camT>0){ RIV.camT=0; cam.override=null; } }
 // ---- 護岸：本流のそばを通る道の、川の側の土手にコンクリートブロックの斜面（P3-A の試作と同じ形。試作の範囲は除く）----
 function rivRevet(gbOf,roads,K){ for(const r of roads){ if(r.b||r.tn||r.w<4) continue; const p=r.p;
     for(let s=0;s<p.length-1;s++){ const [ax,az]=p[s],[bx,bz]=p[s+1], Ls=dist(ax,az,bx,bz); if(Ls<0.5) continue; const ux=(bx-ax)/Ls, uz=(bz-az)/Ls;
@@ -11315,22 +11315,30 @@ function p3dLanded(){ const F=P3D.fish, f=F.fishPick, st=p3dState(); const cm=Ma
   if(f===ARAGAKO){ p3dAragako(cm); return; }
   foodAdd(f.id,1); st.catches++; const e=st.book[f.id]||(st.book[f.id]={n:0,max:0,where:'',band:'',seen:1}); const first=!e.n; e.n++; e.seen=1; e.max=Math.max(e.max,cm); if(first){ e.where=`${F.place}（${P3D_AREA[F.area]}）`; e.band=P3D_BAND[p3dBand()]; }
   sfx('pickup'); floatText(F.x,F.y+0.8,F.z,`${f.name} ${cm}cm`,'#e8f0ff',true); if(first) banner(`図鑑に記録：${f.name}`,`${e.where}・${e.band}・${cm}cm`,2.6); else toast(`${f.name}（${cm}cm）を釣った`);
-  p3dEnd(); }
+  p3dEnd(); p3dShowCatch(f,cm); }
 // アラレガコ：専用のカメラで姿を見せ、すぐ川へ戻す（持ち物に入らない。§14）
 function p3dAragako(cm){ const F=P3D.fish, st=p3dState(); F.st='ara'; F.t=0; const first=!st.ara.caughtReleased; st.ara.observed=1; st.ara.caughtReleased=1;
   const e=st.book.ara||(st.book.ara={n:0,max:0,where:'',band:'',seen:1}); e.n++; e.seen=1; e.max=Math.max(e.max,cm); if(!e.where){ e.where=`${F.place}（${P3D_AREA[F.area]}）`; e.band=P3D_BAND[p3dBand()]; }
-  const ux=(P.x+F.x)/2, uz=(P.z+F.z)/2, y=F.y; p3dFishMesh(ARAGAKO,cm,P.x+Math.sin(P.facing)*1.2,y+0.9,P.z+Math.cos(P.facing)*1.2);
-  P3D.camOv=1; cam.override={p:new THREE.Vector3(P.x+Math.sin(P.facing+1.2)*2.6,y+1.6,P.z+Math.cos(P.facing+1.2)*2.6), l:new THREE.Vector3(P.x+Math.sin(P.facing)*1.2,y+0.9,P.z+Math.cos(P.facing)*1.2), fov:42};
+  const ux=(P.x+F.x)/2, uz=(P.z+F.z)/2, y=Math.max(F.y,groundH(P.x,P.z)); /* v0.86：岸が高いときに地面に埋もれないように */ p3dFishMesh(ARAGAKO,cm,P.x+Math.sin(P.facing)*1.2,y+0.9,P.z+Math.cos(P.facing)*1.2);
+  P3D.camOv=1; cam.override={p:new THREE.Vector3(P.x+Math.sin(P.facing+1.2)*2.2,y+1.5,P.z+Math.cos(P.facing+1.2)*2.2), l:new THREE.Vector3(P.x+Math.sin(P.facing)*1.2,y+0.9,P.z+Math.cos(P.facing)*1.2), fov:42};
   saveGame(); sfx('pickup'); banner('アラレガコ',`${cm}cm。頭が大きく、石のような模様。すぐに川へ戻そう`,3.4);
   setTimeout(()=>{ if(!P3D.fish||P3D.fish.st!=='ara') return; P3D.fish.st='release'; P3D.fish.t=0; toast(first?'アラレガコを、そっと川へ戻した。（図鑑に記録：釣ったあと川へ戻した）':'アラレガコを、そっと川へ戻した',true); },3400); }
 function p3dAfterCast(){ const c=p3cState(); if(c.soichi.found||REG.cur!=='kamishihi') return; if(!P3D.meetT) P3D.meetT=1.2; } // 初めて釣りをしたとき、宗一が来る
 // 魚の形（釣れたとき・川底をのぞいたとき）
-function p3dFishMesh(f,cm,x,y,z){ if(P3D.fm){ scene.remove(P3D.fm); P3D.fm.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); } const g=new GB(); g.jit=0.01; const s=Math.max(0.5,cm/20), L=0.42*s;
-  if(f===ARAGAKO){ g.box(0.05,0,0,L*0.38,0.09*s,0.2*s,cc(f.col[0])); g.box(-L*0.25,0,0,L*0.55,0.08*s,0.13*s,cc(f.col[0])); for(let k=0;k<6;k++) g.box(-L*0.4+k*L*0.13,0.05*s,(k%2?0.04:-0.04)*s,0.05*s,0.01,0.05*s,cc(f.col[1])); g.box(-L*0.6,0,0,0.04*s,0.08*s,0.12*s,cc(f.col[1])); g.box(0.15*s,0,0.11*s,0.06*s,0.01,0.16*s,cc(f.col[1])); g.box(0.15*s,0,-0.11*s,0.06*s,0.01,0.16*s,cc(f.col[1])); }
-  else { g.box(0,0,0,L*0.75,0.12*s,0.07*s,cc(f.col[0])); g.box(0,-0.03*s,0,L*0.6,0.05*s,0.06*s,cc(0xe8e8e0)); g.box(-L*0.5,0,0,L*0.2,0.14*s,0.03*s,cc(f.col[0])); g.box(L*0.05,0.08*s,0,L*0.2,0.05*s,0.02*s,cc(f.col[1])); g.box(L*0.32,0.02*s,0.036*s,0.02*s,0.02*s,0.01,cc(0x101010)); }
-  const m=new THREE.Mesh(g.geo(),vcMat); m.position.set(x,y,z); m.rotation.y=P.facing+Math.PI/2; scene.add(m); P3D.fm=m; return m; }
+function p3dFishMesh(f,cm,x,y,z){ let m=P3D.fm; if(!m||m.parent!==scene){ m=new THREE.Mesh(); scene.add(m); P3D.fm=m; } // v0.86：体の断面・ひれ・模様の絵の形（使い回す。前は箱を並べた形）
+  const id=fishArtId(f); m.geometry=fishGeo(id,1); m.material=fishMat(id,true); m.scale.setScalar(Math.max(0.5,cm/20)*0.42/1.24); m.position.set(x,y,z); m.rotation.set(0,P.facing+Math.PI/2,0); P3D.fmY=m.rotation.y; m.visible=true; return m; }
+// v0.86：釣れた魚を、主人公の前に少しのあいだ吊るして見せる（持ち物に入るのは今までどおり）
+function p3dShowCatch(f,cm){ const fx=Math.sin(P.facing), fz=Math.cos(P.facing), x=P.x+fz*0.6+fx*0.3, z=P.z-fx*0.6+fz*0.3; const m=p3dFishMesh(f,cm,x,groundH(P.x,P.z)+1.25,z); /* 主人公の右の、顔の高さ（後ろのカメラから体で隠れない）*/ m.rotation.set(0,P.facing+Math.PI,Math.PI/2*0.92); P3D.fmY=m.rotation.y; P3D.fmT=1.9; }
+// v0.86：石の下で見つけた生き物を、水際に少しのあいだ出して見せる
+function p3dShowAqua(id,x,z,wy){ { const fx=Math.sin(P.facing), fz=Math.cos(P.facing), g0=groundH(P.x,P.z); x=P.x+fx*0.15; z=P.z+fz*0.15; for(const [a,b] of [[0.45,0.12],[-0.45,0.12],[0.3,0.3]]){ const qx=P.x+fz*a+fx*b, qz=P.z-fx*a+fz*b; if(!p3dWater(qx,qz)&&groundH(qx,qz)>g0-0.15){ x=qx; z=qz; break; } } } /* 主人公の横の足もと（水際の水面の板の下に隠れないように）*/ let m=P3D.am; if(!m||m.parent!==scene){ m=new THREE.Mesh(); scene.add(m); P3D.am=m; } const fish=id==='aYoshinobori';
+  m.geometry=fish?fishGeo(id,1):aquaGeo(id); m.material=fish?fishMat(id,true):vcMat; const sc=fish?0.1:id==='aKawanina'?0.1:id==='aSawagani'||id==='aMokuzu'?0.1:0.075; m.scale.setScalar(sc);
+  const y=groundH(x,z); m.position.set(x,y+(fish?0.03:id==='aKawanina'?0.04:0.01),z); m.rotation.set(id==='aKawanina'?Math.PI/2:0,P.facing+Math.PI+(Math.random()-0.5)*1.2,0); P3D.amY=m.rotation.y; m.visible=true; P3D.amT=2.8; }
+function p3dShowTick(dt){ const F=P3D.fish;
+  if(P3D.fmT>0){ P3D.fmT-=dt; const m=P3D.fm; if(m){ if((F&&F.st!=='ready')||P3D.fmT<=0||REG.cur!=='kamishihi'||!m.visible){ /* やめた・宗一が来たなどで先に隠れたときも終わり */ m.visible=false; P3D.fmT=0; } else { m.rotation.y=P3D.fmY+Math.sin(P3D.fmT*3)*0.3; m.rotation.z=Math.PI/2*0.92+Math.sin(P3D.fmT*11)*0.12; } } }
+  if(P3D.amT>0){ P3D.amT-=dt; const m=P3D.am; if(m){ if(P3D.amT<=0||REG.cur!=='kamishihi'){ m.visible=false; P3D.amT=0; } else m.rotation.y=P3D.amY+Math.sin(P3D.amT*2.2)*0.15; } }
+  if(F&&F.st==='ara'&&P3D.fm) P3D.fm.rotation.y=P3D.fmY+Math.sin(F.t*5)*0.14; } // アラレガコは、ゆっくり体をくねらせる
 // ---- 毎フレーム ----
-function p3dTick(dt){ if(P3D.meetT>0){ P3D.meetT-=dt; if(P3D.meetT<=0) p3dMeet(); } if(P3D.so) p3dMeetTick(dt);
+function p3dTick(dt){ if(P3D.meetT>0){ P3D.meetT-=dt; if(P3D.meetT<=0) p3dMeet(); } if(P3D.so) p3dMeetTick(dt); p3dShowTick(dt);
   const F=P3D.fish; if(!F) return; F.t+=dt; if(P.dead||REG.cur!=='kamishihi'||S.mode==='title'){ p3dStop(); return; }
   if(F.st==='aim'){ F.g+=F.gd*dt*0.9; if(F.g>1){ F.g=1; F.gd=-1; } if(F.g<0){ F.g=0; F.gd=1; } }
   else if(F.st==='fly'){ if(F.t>0.55){ F.st='wait'; F.t=0; sfx('dodge'); } }
@@ -11437,6 +11445,7 @@ function p3dSearch(){ if(P3D.srch>0){ toast('さっき調べたばかり。少�
   const st=p3dState(); if(!st.book2) st.book2={}; const e=st.book2[got.id]||(st.book2[got.id]={n:0,where:'',band:'',seen:1}); const first=!e.n; e.n++; e.seen=1; if(first){ e.where=`${place}（${P3D_AREA[area]}）`; e.band=P3D_BAND[p3dBand()]; }
   let msg=''; if(got.use==='bait'){ const n=1+(Math.random()<0.5?1:0); inv.kawamushi=(inv.kawamushi||0)+n; msg=`${got.name}：川虫 +${n}（釣りの餌）`; }
   else if(got.use==='food'){ foodAdd('zugani',1); msg=`${got.name}をつかまえた（食材）`; } else msg=`${got.name}を観察した。${got.note}`;
+  p3dShowAqua(got.id,sh.x,sh.z,sh.w&&sh.w.y); // v0.86：見つけた生き物を水際に出して見せる
   sfx('pickup'); saveGame(); if(first) banner(`図鑑に記録：${got.name}`,`${e.where}・${e.band}`,2.4); toast(msg,first); }
 function p3dBookTabs(){ const t=$('bookTabs'); if(!t) return; const st=p3dState(); t.innerHTML=''; for(const [id,nm] of [['fish','魚類'],['aqua','水生生物'],['obs','観察']]){ const b=document.createElement('button'); b.className='wkTab'+(BOOK.tab===id?' on':''); b.id='bookTab_'+id; b.textContent=nm; b.onclick=()=>{ BOOK.tab=id; BOOK.sel=id==='aqua'?AQUA[0].id:id==='obs'?P3D_OBS[0].id:'fAyu'; p3dRenderBook(); }; t.appendChild(b); } }
 function p3dRenderAqua(){ const st=p3dState(), B2=st.book2||{}, n=AQUA.filter(a=>B2[a.id]&&B2[a.id].seen).length; $('bookSub').textContent=`水生生物 ${n}/${AQUA.length}　川虫 ${inv.kawamushi||0}`;
@@ -11472,7 +11481,7 @@ function rivBuildObs(ctx){ RIV.obs=[]; const vw=vcMat;
       const tx=L*0.82, ty=1.32; g.box(tx,ty+0.07,0,0.16,0.09,0.08,cc(0x2a8ac0)); g.box(tx,ty+0.02,0,0.12,0.05,0.07,cc(0xe07a2a)); g.box(tx+0.1,ty+0.12,0,0.07,0.07,0.07,cc(0x2070a8)); g.box(tx+0.18,ty+0.12,0,0.1,0.02,0.02,cc(0x1a1a1a)); g.box(tx-0.1,ty+0.07,0,0.08,0.03,0.05,cc(0x1c5a8a)); } // 青い背・橙の腹・長いくちばし
     else { g.frame(s.wx,s.wy-0.06,s.wz,s.dir); for(let k=0;k<6;k++){ const a=k/6*TAU+0.3; g.box(Math.cos(a)*1.4,-0.32,Math.sin(a)*1.2,0.9,0.3,0.7,cc(k%2?0x6a6a5a:0x7a7462)); } } // アユの瀬：苔のついた石
     if(g.i.length){ const m=new THREE.Mesh(ctx.own(g.geo()),vw); m.castShadow=true; ctx.add(m); R.meshes.push(m); }
-    if(o.id==='oAyu'){ const fg=new GB(); fg.frame(0,0,0,0); fg.box(0,0,0,0.34,0.02,0.07,cc(0x2a3430)); fg.box(-0.2,0,0,0.08,0.02,0.1,cc(0x2a3430)); const im=new THREE.InstancedMesh(ctx.own(fg.geo()),ctx.own(new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:0.55,depthWrite:false})),11); im.renderOrder=3; ctx.add(im); R.fish=im; R.meshes.push(im); }
+    if(o.id==='oAyu'){ const fgeo=fishGeo('fAyu',0,false); fgeo.scale(0.34,0.34,0.34); /* v0.86：アユの形（前は箱2つ） */ const im=new THREE.InstancedMesh(ctx.own(fgeo),ctx.own(new THREE.MeshBasicMaterial({color:0x2a3430,transparent:true,opacity:0.55,depthWrite:false})),11); im.renderOrder=3; ctx.add(im); R.fish=im; R.meshes.push(im); }
     RIV.obs.push(R); } }
 function rivObsTick(dt){ if(!RIV.obs) return; const ph=f10Phase(); for(const R of RIV.obs){ const on=R.o.bands.includes(ph), near=dist(P.x,P.z,R.s.sx,R.s.sz)<160; for(const m of R.meshes) m.visible=on&&near&&!P3A.inside;
     if(R.fish&&R.fish.visible){ const t=P3A.t, m4=new THREE.Matrix4(), q=new THREE.Quaternion(), e=new THREE.Euler(), v=new THREE.Vector3(), one=new THREE.Vector3(1,1,1);
@@ -11626,16 +11635,254 @@ function p3dRodIcon(k){ const g=new THREE.Group(), M=c=>new THREE.MeshLambertMat
   rod.rotation.z=-0.75; rod.position.set(-0.55,-0.35,0); g.add(rod);
   const bob=new THREE.Mesh(new THREE.SphereGeometry(0.13,10,8),M(0xe04030)); bob.position.set(0.75,0.15,0); g.add(bob); const st=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.22,6),M(0xf2efe6)); st.position.set(0.75,0.32,0); g.add(st);
   g.position.y=0.5; return g; }
-function p3dIconObj(id){ if(id.startsWith('vu_')) return p3cVehIcon(id.slice(3)); if(AQUA_BY[id]) return p3dAquaIcon(id); if(P3D_OBS_BY[id]) return p3dObsIcon(id); if(id.startsWith('rod_')) return p3dRodIcon(id.slice(4)); const f=FISH_BY[id]||(id==='ara'?ARAGAKO:null); if(!f) return null; const g=new THREE.Group(), M=c=>new THREE.MeshLambertMaterial({color:c}), B=(c,w,h,d,x,y,z)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c)); m.position.set(x,y,z); g.add(m); };
-  if(f===ARAGAKO){ B(f.col[0],0.5,0.18,0.42,0.3,0.5,0); B(f.col[0],0.8,0.15,0.26,-0.3,0.5,0); for(let k=0;k<5;k++) B(f.col[1],0.1,0.02,0.1,-0.5+k*0.2,0.6,(k%2?0.07:-0.07)); B(f.col[1],0.08,0.15,0.24,-0.75,0.5,0); }
-  else { B(f.col[0],1.1,0.3,0.16,0,0.55,0); B(0xe8e8e0,0.9,0.12,0.14,0,0.45,0); B(f.col[0],0.25,0.36,0.06,-0.7,0.55,0); B(f.col[1],0.3,0.12,0.04,0.05,0.74,0); B(0x101010,0.05,0.05,0.18,0.42,0.6,0); }
-  g.rotation.y=-0.5; return g; }
-function p3dAquaIcon(id){ const g=new THREE.Group(), M=c=>new THREE.MeshLambertMaterial({color:c}), B=(c,w,h,d,x,y,z,ry)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c)); m.position.set(x,y,z); if(ry) m.rotation.y=ry; g.add(m); };
-  if(id==='aMokuzu'||id==='aSawagani'){ const c=id==='aMokuzu'?0x5a4a3a:0xc8603a; B(c,0.8,0.25,0.6,0,0.4,0); for(const s of [-1,1]){ B(c,0.3,0.2,0.2,s*0.55,0.45,0.35); if(id==='aMokuzu') B(0x2a2420,0.2,0.18,0.18,s*0.55,0.45,0.42); for(let k=0;k<3;k++) B(c,0.4,0.06,0.06,s*0.5,0.3,-0.2+k*0.18); } }
-  else if(id==='aKawanina'){ for(let k=0;k<4;k++) B(0x3a3428,0.36-k*0.07,0.2,0.36-k*0.07,0,0.3+k*0.15,0); }
-  else if(id==='aYoshinobori'){ B(0x8a7a5a,1.0,0.22,0.2,0,0.5,0); B(0x6a5a3a,0.2,0.3,0.06,-0.6,0.5,0); for(let k=0;k<3;k++) B(0x4a3a2a,0.12,0.04,0.21,-0.25+k*0.25,0.6,0); }
-  else { const c=id==='aYago'?0x6a7a3a:id==='aKawagera'?0x8a6a3a:0x7a6a4a; B(c,0.9,0.18,0.24,0,0.45,0); B(c,0.25,0.2,0.3,0.5,0.45,0); for(let k=0;k<3;k++) for(const s of [-1,1]) B(c,0.05,0.04,0.35,0.2-k*0.2,0.38,s*0.2); if(id==='aTobikera') B(0x9a8a6a,0.7,0.3,0.34,-0.05,0.45,0); }
-  g.rotation.y=-0.5; return g; }
+function p3dIconObj(id){ if(id.startsWith('vu_')) return p3cVehIcon(id.slice(3)); if(AQUA_BY[id]) return p3dAquaIcon(id); if(P3D_OBS_BY[id]) return p3dObsIcon(id); if(id.startsWith('rod_')) return p3dRodIcon(id.slice(4)); const f=FISH_BY[id]||(id==='ara'?ARAGAKO:null); if(!f) return null;
+  return fishIconObj(fishArtId(f)); } // v0.86：体の断面・ひれ・模様の絵で作った形（前は箱を並べた形）
+function p3dAquaIcon(id){ return aquaIconObj(id); } // v0.86：形は下の aquaGeo（前は箱を並べた形）
+// ================= v0.86：魚と水生生物の形（2026-11-20 ユーザー「魚と水生生物の３ｄデザインをもう少し頑張ってほしい」。docs/fish-art.md） =================
+// 魚：体は、断面（背・腹・幅）を尾から頭までつないだ形。ひれは薄い板。色と模様（背の色・斑点・パーマーク・鱗・えら・目・口）は種類ごとに 256×256 の絵を描いて貼る。
+//   体の長さ（尾びれを除く）＝1・頭が +x・背が +y。絵の上の 256×128 が体（横＝尾→頭、縦＝背の中心→腹の中心。左右は同じ絵）。その下の 64 の帯がひれ（左から背びれ・尾びれ・胸びれと腹びれ・しりびれ）。
+// D 体高・W 体幅・tm いちばん高い所（尾 0→頭 1）・ph/pw 尾のつけ根の高さと幅・fp/fq 頭の細り（wp/wq は幅）・top 背の側の割合・fb 腹の平たさ（1＝丸い）
+// eye [位置・高さ（背 0→腹 1）・大きさ・目の色]・mouth 口の高さ・gill えらぶた・barb ひげ [対の数・長さ]
+// ひれ：dor/dor2/adi 背びれ・あぶらびれ [始め・終わり・高さ・形・後ろへの傾き]・anal しりびれ・pec 胸びれ・pel 腹びれ [位置・長さ・下へ・外へ・形]・tail 尾びれ [長さ・切れ込み・形・広がり]
+const FISHART={
+ fAyu:{D:.2,W:.1,tm:.58,ph:.34,pw:.3,fp:1.7,fq:.62,top:.54,fb:1,eye:[.925,.4,.028,'#c9b26a'],mouth:.53,gill:.79,
+   dor:[.43,.58,.16,'sail',.45],adi:[.13,.19,.05],anal:[.17,.31,.09,'tri',.35],pec:[.77,.13,.45,.35,'point'],pel:[.48,.09,.6,.25,'point'],tail:[.24,.55,'fork',.8],
+   fin:{dor:['#6a6a4e','#c4b04e'],tail:['#76765a','#bcac6a'],pair:['#cbc198','#ddd4ae'],anal:['#d2c79c','#e6dcb8']},
+   paint(P){ P.grad([[0,'#34402f'],[.2,'#5f6b4c'],[.38,'#a7a585'],[.55,'#d6d6c6'],[1,'#f2f0e8']]); P.band(.1,.8,.28,.46,'#c9b55a',.28,.06);
+     P.dot(.735,.37,.034,'#f0cc3a',1,.55,1.5); P.latline(.47,'#55604a',.35); P.gill(.79,'#4a5040',.55); P.head(.8,'#3a4632',.25); } },
+ fUgui:{D:.22,W:.11,tm:.56,ph:.38,pw:.32,fp:1.8,fq:.62,top:.54,fb:1,eye:[.92,.42,.03,'#d8c070'],mouth:.56,gill:.78,
+   dor:[.44,.56,.15,'tri',.4],anal:[.2,.3,.1,'tri',.35],pec:[.76,.12,.5,.35,'point'],pel:[.46,.09,.6,.25,'point'],tail:[.24,.5,'fork',.85],
+   fin:{dor:['#5a6058','#8a8e84'],tail:['#5e6458','#a08a6a'],pair:['#d0704a','#e09a6a'],anal:['#d0704a','#e2a070']},
+   paint(P){ P.grad([[0,'#2c3430'],[.22,'#55605a'],[.42,'#a3a8a0'],[.6,'#dcdcd4'],[1,'#f0eee6']]); P.scales(.022,'#1e2620',.13,.06,.78);
+     P.band(.08,.8,.4,.47,'#d4542e',.6,.02); P.band(.05,.82,.52,.6,'#1c2018',.55,.02); P.band(.06,.86,.64,.73,'#dc4a2a',.85,.03); P.band(.3,.82,.83,.92,'#d4522e',.5,.03);
+     P.gill(.78,'#3c4440',.55); P.head(.8,'#2c3430',.2); } },
+ fOikawa:{D:.25,W:.1,tm:.55,ph:.36,pw:.28,fp:1.6,fq:.6,top:.56,fb:1,eye:[.925,.42,.03,'#d0b070'],mouth:.52,gill:.79,
+   dor:[.45,.57,.17,'tri',.4],anal:[.12,.36,.22,'oik',.55],pec:[.77,.13,.5,.35,'point'],pel:[.47,.1,.6,.25,'point'],tail:[.25,.55,'fork',.85],
+   fin:{dor:['#5e7c7c','#8eb0aa'],tail:['#6a8686','#a8bcb2'],pair:['#e09480','#f0b8a0'],anal:['#e2907a','#f4c0a8']},
+   paint(P){ P.grad([[0,'#2c4848'],[.2,'#4f7a7c'],[.42,'#8ab4b4'],[.62,'#e8d4d0'],[1,'#f4e0dc']]);
+     for(let i=0;i<9;i++) P.ell(P.X(.2+i*.068),P.Y(.5),5.5,40,'#e0607a',.62,.55); P.dot(.86,.62,.04,'#e04a48',.75,.7); P.dot(.75,.85,.06,'#e88a7a',.45,.9);
+     P.gill(.79,'#2e4444',.5); P.head(.8,'#24403e',.25); } },
+ fAbura:{D:.23,W:.12,tm:.56,ph:.42,pw:.36,fp:2.2,fq:.55,top:.54,fb:1,eye:[.91,.42,.032,'#c8a860'],mouth:.56,gill:.77,
+   dor:[.45,.56,.13,'round',.3],anal:[.2,.3,.09,'round',.3],pec:[.75,.11,.5,.35,'round'],pel:[.46,.08,.6,.25,'round'],tail:[.22,.35,'fork',.8],
+   fin:{dor:['#6a6448','#8a8262'],tail:['#6a6448','#8c8464'],pair:['#a89a70','#c4b48a'],anal:['#a89a70','#c4b48a']},
+   paint(P){ P.grad([[0,'#3a3622'],[.22,'#6a6240'],[.42,'#9a8e64'],[.62,'#d4c8a4'],[1,'#ece4cc']]); P.band(.04,.86,.42,.56,'#2e2a1a',.55,.05);
+     P.speck(70,.05,.9,.08,.62,.005,.009,'#221e12',.55); P.gill(.77,'#2e2a1c',.5); P.head(.78,'#2e2a1a',.2); } },
+ fMutsu:{D:.25,W:.11,tm:.56,ph:.38,pw:.3,fp:1.8,fq:.6,top:.55,fb:1,eye:[.92,.42,.04,'#e0c060'],mouth:.54,gill:.78,
+   dor:[.45,.56,.15,'tri',.4],anal:[.16,.32,.14,'tri',.45],pec:[.76,.12,.5,.35,'point'],pel:[.47,.09,.6,.25,'point'],tail:[.25,.5,'fork',.85],
+   fin:{dor:['#5e5c44','#7c7a5a'],tail:['#5a5a44','#7e7c5e'],pair:['#d8b058','#ecc878'],anal:['#d8b058','#eccc80']},
+   paint(P){ P.grad([[0,'#3a3a24'],[.2,'#62623e'],[.36,'#8e8c64'],[.6,'#e0d8b8'],[1,'#f0e8d0']]); P.band(.02,.9,.38,.55,'#1a2440',.88,.05);
+     P.dot(.72,.9,.13,'#e48a46',.55,1); P.gill(.78,'#2a2c22',.5); P.head(.8,'#2a2c1c',.22); } },
+ fKoi:{D:.3,W:.16,tm:.55,ph:.44,pw:.38,fp:2,fq:.58,top:.6,fb:1,eye:[.9,.4,.026,'#d8a840'],mouth:.62,gill:.77,barb:[2,.09],
+   dor:[.3,.66,.16,'long',.3],anal:[.18,.28,.12,'tri',.35],pec:[.75,.14,.55,.35,'round'],pel:[.45,.11,.6,.25,'round'],tail:[.26,.42,'fork',.75],
+   fin:{dor:['#4e4024','#6a5632'],tail:['#6a5430','#b0603a'],pair:['#9a6a3c','#b8784a'],anal:['#9a6a3c','#b8784a']},
+   paint(P){ P.grad([[0,'#2c2410'],[.2,'#5e4c22'],[.42,'#9a8040'],[.62,'#c8aa64'],[1,'#e8d8a8']]); P.scales(.042,'#20180a',.42,.06,.8);
+     P.latline(.5,'#3a2e14',.3); P.gill(.77,'#3a2c12',.55); P.head(.79,'#3a2e14',.2); } },
+ fFuna:{D:.4,W:.15,tm:.56,ph:.4,pw:.34,fp:2,fq:.55,top:.58,fb:1,eye:[.9,.4,.03,'#d8c070'],mouth:.52,gill:.76,
+   dor:[.32,.64,.15,'long',.3],anal:[.18,.27,.12,'tri',.35],pec:[.74,.14,.55,.35,'round'],pel:[.46,.11,.6,.25,'round'],tail:[.24,.45,'fork',.7],
+   fin:{dor:['#4c4e3c','#6c6e58'],tail:['#54564a','#7a7c68'],pair:['#7a7c66','#9a9c84'],anal:['#7a7c66','#9a9c84']},
+   paint(P){ P.grad([[0,'#2e3022'],[.2,'#5c5e48'],[.42,'#9a9c84'],[.62,'#cacbb8'],[1,'#ecece2']]); P.scales(.036,'#22241a',.36,.06,.8);
+     P.latline(.5,'#3a3c2c',.3); P.gill(.76,'#33352a',.55); P.head(.78,'#2e3022',.2); } },
+ fYamame:{D:.24,W:.12,tm:.56,ph:.38,pw:.32,fp:1.7,fq:.6,top:.55,fb:1,eye:[.915,.42,.03,'#c8b070'],mouth:.53,gill:.79,
+   dor:[.47,.6,.15,'tri',.35],adi:[.14,.2,.05],anal:[.18,.29,.1,'tri',.3],pec:[.77,.13,.5,.35,'point'],pel:[.46,.1,.6,.25,'point'],tail:[.22,.25,'fork',.85],
+   fin:{dor:['#6e6e50','#8e8c6c'],tail:['#6e6e52','#8c8a6a'],pair:['#e0c49a','#ecd6b4'],anal:['#e6d4b4','#f2e6d0']},
+   paint(P){ P.grad([[0,'#3e4630'],[.22,'#6e7a52'],[.42,'#a8aa88'],[.62,'#e0d8c8'],[1,'#f4f0ea']]); P.band(.15,.8,.44,.56,'#e0a0a0',.25,.05);
+     for(let i=0;i<9;i++) P.ell(P.X(.13+i*.075),P.Y(.52),6,17,'#4a5070',.62,.45);
+     P.speck(36,.08,.9,.05,.38,.006,.008,'#16160e',.85); P.gill(.79,'#3a4030',.5); P.head(.8,'#2e3624',.22); },
+   finx:{dor:(P,x0)=>P.finDots(x0,10,'#1a1a12'),tail:(P,x0)=>P.finDots(x0,10,'#1a1a12')} },
+ fIwana:{D:.21,W:.12,tm:.57,ph:.38,pw:.34,fp:1.8,fq:.6,top:.54,fb:1,eye:[.91,.4,.028,'#b89a58'],mouth:.54,gill:.78,
+   dor:[.47,.6,.14,'tri',.35],adi:[.14,.2,.05],anal:[.18,.29,.1,'tri',.3],pec:[.76,.13,.5,.35,'round'],pel:[.46,.1,.6,.25,'round'],tail:[.22,.12,'fork',.8],
+   fin:{dor:['#4c4c36','#5e5e44'],tail:['#4c4c36','#606046'],pair:['#c8783e','#d88a4a'],anal:['#c8783e','#d88a4a']},
+   paint(P){ P.grad([[0,'#2c2c20'],[.24,'#4e4c36'],[.46,'#7e7854'],[.66,'#c8a46a'],[1,'#e8c890']]);
+     P.speck(90,.05,.95,.05,.6,.007,.011,'#e6dcc2',.78); P.speck(16,.12,.85,.5,.74,.011,.014,'#e8883e',.85); P.gill(.78,'#26261a',.5); P.head(.8,'#24241a',.2); },
+   finx:{pair:(P,x0)=>P.finEdge(x0,'#f6f2e8','#1a1a12'),anal:(P,x0)=>P.finEdge(x0,'#f6f2e8','#1a1a12'),dor:(P,x0)=>P.finDots(x0,8,'#d8d0b0')} },
+ fNigoi:{D:.19,W:.11,tm:.58,ph:.36,pw:.3,fp:1.3,fq:.8,top:.55,fb:1,eye:[.9,.38,.026,'#c8b480'],mouth:.7,gill:.78,barb:[1,.05],
+   dor:[.5,.62,.18,'tri',.3],anal:[.18,.26,.1,'tri',.3],pec:[.76,.12,.6,.3,'point'],pel:[.46,.1,.6,.25,'point'],tail:[.25,.55,'fork',.85],
+   fin:{dor:['#5e5e52','#7e7e72'],tail:['#5e5e52','#82827a'],pair:['#9a988a','#b4b2a4'],anal:['#a8a698','#c2c0b4']},
+   paint(P){ P.grad([[0,'#34342c'],[.22,'#5e5e52'],[.42,'#9c9c90'],[.62,'#d4d4cc'],[1,'#f0f0ea']]); P.scales(.022,'#22221c',.16,.06,.8);
+     for(let i=0;i<8;i++) P.dot(.12+i*.085,.5,.022,'#30302a',.42,.5); P.latline(.48,'#40403a',.3); P.gill(.78,'#3a3a32',.5); P.head(.8,'#2e2e26',.2); } },
+ fKamatsuka:{D:.16,W:.12,tm:.6,ph:.4,pw:.36,fp:1.25,fq:.85,wp:1.6,wq:.7,top:.62,fb:.6,eye:[.88,.27,.03,'#c8a868'],mouth:.82,gill:.77,barb:[1,.06],
+   dor:[.52,.64,.17,'tri',.3],anal:[.18,.26,.08,'tri',.3],pec:[.76,.13,.75,.45,'round'],pel:[.47,.1,.7,.35,'round'],tail:[.22,.4,'fork',.85],
+   fin:{dor:['#b0a07c','#d0c4a4'],tail:['#a89878','#ccc0a0'],pair:['#c8b894','#e0d4b8'],anal:['#d0c4a4','#e6dcc8']},
+   paint(P){ P.grad([[0,'#5a4a32'],[.22,'#8e7c58'],[.44,'#bca684'],[.64,'#e2d4b8'],[1,'#f2ecdc']]);
+     for(let i=0;i<6;i++) P.dot(.14+i*.13,.06,.04,'#3e3020',.62,.5,1.3); for(let i=0;i<9;i++) P.dot(.1+i*.085,.48,.024,'#3e3020',.58,.5,1.4);
+     P.speck(60,.05,.95,.05,.5,.004,.007,'#2e2418',.6); P.gill(.77,'#4a3a26',.45); },
+   finx:{dor:(P,x0)=>P.finBands(x0,4,'#5a4a30'),tail:(P,x0)=>P.finBands(x0,4,'#5a4a30'),pair:(P,x0)=>P.finBands(x0,3,'#6a5a3c')} },
+ ara:{D:.17,W:.3,tm:.8,ph:.34,pw:.18,fp:3.2,fq:.36,wp:3.6,wq:.32,top:.6,fb:.55,eye:[.9,.14,.022,'#b8a470'],mouth:.6,gill:.73,
+   dor:[.58,.7,.07,'round',.3],dor2:[.22,.56,.1,'flat',.25],anal:[.2,.48,.08,'flat',.25],pec:[.73,.34,.22,1,'fan'],pel:[.68,.08,.7,.3,'round'],tail:[.17,0,'trunc',.62],
+   fin:{dor:['#5e5444','#8a7e68'],tail:['#5e5444','#8a7e68'],pair:['#6e6450','#a69a80'],anal:['#8a8070','#b4aa96']},
+   paint(P){ P.grad([[0,'#2e2a20'],[.25,'#544c3c'],[.5,'#857a64'],[.7,'#b8ae98'],[1,'#e2dccc']]);
+     P.speck(90,.02,.98,.04,.6,.01,.022,'#3a3428',.5); for(const t of [.12,.32,.52]) P.ell(P.X(t),P.Y(.2),9,30,'#221e16',.72,.5); P.ell(P.X(.7),P.Y(.12),8,16,'#221e16',.55,.5);
+     P.speck(40,.04,.95,.03,.42,.004,.007,'#d8d2c0',.45); P.gill(.73,'#2a261c',.5); },
+   finx:{pair:(P,x0)=>P.finBands(x0,4,'#2c261c'),dor:(P,x0)=>P.finBands(x0,3,'#2c261c'),tail:(P,x0)=>P.finBands(x0,3,'#2c261c')} },
+ aYoshinobori:{D:.17,W:.15,tm:.72,ph:.44,pw:.36,fp:2.4,fq:.5,wp:2.6,wq:.48,top:.52,fb:.7,eye:[.9,.22,.034,'#d0a858'],mouth:.6,gill:.76,
+   dor:[.58,.68,.13,'round',.25],dor2:[.25,.54,.11,'flat',.2],anal:[.24,.47,.08,'flat',.2],pec:[.74,.2,.5,.55,'fan'],pel:[.66,.1,.95,.1,'round'],tail:[.2,0,'round',.6],
+   fin:{dor:['#7a6a4a','#a8987a'],tail:['#7a6a4a','#a89878'],pair:['#a89a7a','#c4b89c'],anal:['#a89a7a','#c4b89c']},
+   paint(P){ P.grad([[0,'#4a3c26'],[.22,'#7a6844'],[.44,'#a8946c'],[.64,'#d4c4a0'],[1,'#ece2cc']]);
+     for(let i=0;i<6;i++) P.dot(.1+i*.12,.5,.032,'#3a2e1c',.6,.5,1.4); for(let i=0;i<5;i++) P.dot(.16+i*.13,.08,.03,'#3a2e1c',.5,.5);
+     P.ctx.strokeStyle='rgba(220,120,70,.7)'; P.ctx.lineWidth=1.6; for(const v of [.52,.62]){ P.ctx.beginPath(); P.ctx.moveTo(P.X(.82),P.Y(v)); P.ctx.lineTo(P.X(.97),P.Y(v-.05)); P.ctx.stroke(); }
+     P.gill(.76,'#3a2e1c',.45); },
+   finx:{dor:(P,x0)=>{ P.finDots(x0,8,'#4a3a26'); P.ell(x0+46,170,7,10,'#2a3a6a',.8,.4); },tail:(P,x0)=>P.finBands(x0,4,'#5a4a30')} }
+};
+// 体の断面（t：尾 0 → 頭 1）
+function fishProf(S){ const ph=S.ph, pw=S.pw||.32;
+  return t=>{ let h,w; if(t<S.tm){ const a=Math.max(0,(t-.04)/(S.tm-.04)), e=1-Math.pow(1-a,2.2); h=ph+(1-ph)*e; w=pw+(1-pw)*e; }
+    else { const b=(t-S.tm)/(1-S.tm); h=Math.pow(Math.max(0,1-Math.pow(b,S.fp)),S.fq); w=Math.pow(Math.max(0,1-Math.pow(b,S.wp||S.fp)),S.wq||S.fq); }
+    return {top:h*S.D*S.top, bot:h*S.D*(1-S.top), w:w*S.W/2}; }; }
+// 断面の上の点（vv：背 0 → 腹 1・side：+1 右／-1 左）
+function fishRing(S,p,vv,side){ const th=vv*Math.PI, cy=Math.cos(th), sz=Math.sin(th);
+  if(cy>=0) return [cy*p.top, side*sz*p.w];
+  const fb=S.fb||1; return [-Math.pow(-cy,fb)*p.bot, side*Math.pow(sz,fb)*p.w]; }
+function fishHex(c,a){ const n=parseInt(c.slice(1),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; }
+// 模様の絵（種類ごとに1枚。使い回す）
+const FISHTEX={};
+function fishTex(id){ if(FISHTEX[id]) return FISHTEX[id]; const S=FISHART[id], cv=document.createElement('canvas'); cv.width=cv.height=256; const x=cv.getContext('2d'), pr=fishProf(S);
+  let sd=0; for(const ch of id) sd=(sd*31+ch.charCodeAt(0))>>>0; const rnd=()=>{ sd=(sd+0x6D2B79F5)>>>0; let r=Math.imul(sd^sd>>>15,1|sd); r^=r+Math.imul(r^r>>>7,61|r); return ((r^r>>>14)>>>0)/4294967296; };
+  const chf=t=>{ const p=pr(Math.min(.995,Math.max(.01,t))), a=(p.top+p.bot)/2, b=Math.max(.004,p.w); return Math.PI/2*(3*(a+b)-Math.sqrt((3*a+b)*(a+3*b))); };
+  const X=t=>t*256, Y=v=>v*128;
+  const P={ctx:x,X,Y,rnd,
+    grad(st){ const g=x.createLinearGradient(0,0,0,128); for(const [o,c] of st) g.addColorStop(o,c); x.fillStyle=g; x.fillRect(0,0,256,128); },
+    ell(px,py,rx,ry,col,al=1,soft=0){ x.save(); x.translate(px,py); x.scale(Math.max(.5,rx),Math.max(.5,ry)); x.globalAlpha=al;
+      if(soft>0){ const g=x.createRadialGradient(0,0,0,0,0,1); g.addColorStop(0,col); g.addColorStop(Math.max(0,1-soft),col); g.addColorStop(1,fishHex(col,0)); x.fillStyle=g; } else x.fillStyle=col;
+      x.beginPath(); x.arc(0,0,1,0,Math.PI*2); x.fill(); x.restore(); },
+    dot(t,v,R,col,al=1,soft=0,sx=1){ P.ell(X(t),Y(v),R*256*sx,Math.min(64,R*128/chf(t)),col,al,soft); },
+    band(t0,t1,v0,v1,col,al,f){ const N=24; for(let i=0;i<N;i++){ const a=i/N, b=(i+1)/N, ea=Math.min(1,Math.min(a,1-b)*6+.15);
+        const g=x.createLinearGradient(0,Y(v0),0,Y(v1)); g.addColorStop(0,fishHex(col,0)); g.addColorStop(Math.min(.49,f/(v1-v0)),fishHex(col,al*ea)); g.addColorStop(Math.max(.51,1-f/(v1-v0)),fishHex(col,al*ea)); g.addColorStop(1,fishHex(col,0));
+        x.fillStyle=g; x.fillRect(X(t0+(t1-t0)*a),Y(v0),X((t1-t0)/N)+.6,Y(v1-v0)); } },
+    speck(n,t0,t1,v0,v1,r0,r1,col,al){ for(let i=0;i<n;i++) P.dot(t0+(t1-t0)*rnd(),v0+(v1-v0)*rnd(),r0+(r1-r0)*rnd(),col,al,.35); },
+    scales(R,col,al,v0,v1){ x.save(); x.strokeStyle=fishHex(col,al); x.lineWidth=1.1; for(let t=.06,r=0;t<.8;t+=R*1.15,r++){ const ry=R*128/chf(t), rx=R*256; if(ry>30) continue;
+        for(let v=v0+(r%2?ry/256:0);v<v1;v+=ry*1.6/128){ x.beginPath(); x.ellipse(X(t),Y(v),rx,ry,0,Math.PI*.45,Math.PI*1.55); x.stroke(); } } x.restore(); },
+    latline(v,col,al){ x.fillStyle=fishHex(col,al); for(let t=.06;t<.78;t+=.012){ const vv=v-.06*Math.max(0,(t-.55)/.25); x.fillRect(X(t),Y(vv)-.6,1.6,1.4); } },
+    gill(t,col,al){ x.save(); x.strokeStyle=fishHex(col,al); x.lineWidth=2.2; x.beginPath(); x.moveTo(X(t+.025),Y(.18)); x.quadraticCurveTo(X(t-.045),Y(.55),X(t+.01),Y(.93)); x.stroke();
+      x.strokeStyle='rgba(255,255,255,.18)'; x.lineWidth=1.4; x.beginPath(); x.moveTo(X(t+.015),Y(.2)); x.quadraticCurveTo(X(t-.055),Y(.55),X(t),Y(.92)); x.stroke(); x.restore(); },
+    head(t,col,al){ const g=x.createLinearGradient(X(t),0,X(1),0); g.addColorStop(0,fishHex(col,0)); g.addColorStop(.4,fishHex(col,al)); g.addColorStop(1,fishHex(col,al)); x.fillStyle=g; x.fillRect(X(t),0,X(1-t),Y(.45)); },
+    fin(x0,c0,c1){ const g=x.createLinearGradient(0,128,0,192); g.addColorStop(0,c0); g.addColorStop(1,c1); x.fillStyle=g; x.fillRect(x0,128,64,64);
+      x.fillStyle='rgba(0,0,0,.16)'; for(let k=3;k<64;k+=5) x.fillRect(x0+k,128,1.2,64); x.fillStyle='rgba(255,255,255,.1)'; for(let k=5;k<64;k+=5) x.fillRect(x0+k,128,.8,64); },
+    finDots(x0,n,col){ for(let i=0;i<n;i++) P.ell(x0+4+rnd()*56,134+rnd()*48,1.6,1.6,col,.9); },
+    finBands(x0,n,col){ for(let i=0;i<n;i++){ const y=136+i*(52/n)+rnd()*4; x.fillStyle=fishHex(col,.55); x.fillRect(x0,y,64,3.5); } },
+    finEdge(x0,c,d){ x.fillStyle=c; x.fillRect(x0+56,128,8,64); x.fillStyle=d; x.fillRect(x0+51,128,4,64); } };
+  S.paint(P);
+  const e=S.eye; P.dot(e[0],e[1],e[2]*1.18,'#14140e',.85); P.dot(e[0],e[1],e[2],e[3]); P.dot(e[0]+e[2]*.06,e[1],e[2]*.56,'#060606'); P.dot(e[0]+e[2]*.3,e[1]-.03,e[2]*.2,'#ffffff',.85);
+  x.strokeStyle='rgba(20,16,10,.75)'; x.lineWidth=2; x.beginPath(); x.moveTo(X(.952),Y(S.mouth)); x.lineTo(256,Y(S.mouth)); x.stroke();
+  const fk=['dor','tail','pair','anal']; fk.forEach((k,i)=>{ const c=S.fin[k]; P.fin(i*64,c[0],c[1]); if(S.finx&&S.finx[k]) S.finx[k](P,i*64); });
+  x.fillStyle='#d8ccb0'; x.fillRect(0,200,16,16); // ひげの色
+  const tx=new THREE.CanvasTexture(cv); tx.anisotropy=4; FISHTEX[id]=tx; return tx; }
+// 形（det 1：図鑑・持ち物の絵・近くで見せる／0：遠くの群れ）。cache=false で使い捨て（地域の後片付けで捨てるとき）
+const FISHGEO={};
+function fishGeo(id,det,cache){ const key=id+':'+det; if(cache!==false&&FISHGEO[key]) return FISHGEO[key]; const S=FISHART[id], pr=fishProf(S);
+  const NR=det?44:12, NS=det?24:8, pos=[], uv=[], idx=[]; const rings=[];
+  const V=(x,y,z,u,v)=>{ pos.push(x,y,z); uv.push(u,v); return pos.length/3-1; };
+  for(let i=0;i<NR;i++){ const s=i/(NR-1), t=1-Math.pow(1-s,1.35), p=pr(t), r=[]; rings.push({t,p,r});
+    for(let j=0;j<NS;j++){ const a=j/NS, vv=a<=.5?a*2:(1-a)*2, side=a<=.5?1:-1, q=fishRing(S,p,vv,side); r.push(V(t-.5,q[0],q[1],t,1-vv*.5)); } }
+  for(let i=0;i<NR-1;i++) for(let j=0;j<NS;j++){ const a=rings[i].r[j], b=rings[i].r[(j+1)%NS], c=rings[i+1].r[(j+1)%NS], d=rings[i+1].r[j]; idx.push(a,b,c,a,c,d); }
+  const tc=V(-.5,0,0,.004,.75); for(let j=0;j<NS;j++) idx.push(tc,rings[0].r[(j+1)%NS],rings[0].r[j]);
+  const nBody=pos.length/3;
+  // 目のふくらみ
+  if(det){ const e=S.eye, pe=pr(e[0]); for(const side of [1,-1]){ const q=fishRing(S,pe,e[1],side), ex=e[0]-.5, R=e[2]*1.5;
+      for(let k=0;k<nBody;k++){ const dx=pos[k*3]-ex, dy=pos[k*3+1]-q[0], dz=pos[k*3+2]-q[1], d=Math.hypot(dx,dy,dz); if(d>=R||pos[k*3+2]*side<=0) continue;
+        const rl=Math.hypot(pos[k*3+1],pos[k*3+2])||1, f=e[2]*.45*Math.sqrt(1-(d/R)*(d/R)); pos[k*3+1]+=pos[k*3+1]/rl*f; pos[k*3+2]+=pos[k*3+2]/rl*f; } } }
+  // ひれ（帯の絵：sx 帯の左端）
+  const strip=(sx,pts)=>{ // pts：[[根もと, 先, s(0..1)]...]
+    const ids=pts.map(([b,e,s])=>[V(b[0],b[1],b[2],(sx+1+s*62)/256,1-129/256),V(e[0],e[1],e[2],(sx+1+s*62)/256,1-191/256)]);
+    for(let k=0;k<ids.length-1;k++){ const [a,b]=ids[k], [c,d]=ids[k+1]; idx.push(a,c,d,a,d,b); } };
+  const K=det?10:4, sh={tri:s=>.16+.84*Math.pow(s,.85), sail:s=>.3+.7*Math.pow(s,.45), round:s=>.3+.7*Math.pow(Math.sin(Math.PI*(.12+.8*s)),.6), long:s=>.42+.58*Math.pow(s,7), flat:s=>.55+.45*Math.pow(Math.sin(Math.PI*(.1+.85*s)),.5), oik:s=>.25+.75*Math.pow(s,.6), adi:s=>Math.pow(Math.sin(Math.PI*s),.7)};
+  const median=(f,sx,dn,shape)=>{ if(!f) return; const [t0,t1,H,nm,rk]=f, fn=sh[shape||nm]||sh.tri, pts=[];
+    for(let k=0;k<=K;k++){ const s=k/K, t=t0+(t1-t0)*s, p=pr(t), y=dn?-p.bot*(S.fb<1?.9:.97):p.top*.97, h=H*fn(s)*(dn?-1:1); pts.push([[t-.5,y,0],[t-.5-(rk||.35)*Math.abs(h),y+h,0],s]); } strip(sx,pts); };
+  median(S.dor,0,false); median(S.dor2,0,false); if(S.adi) median([S.adi[0],S.adi[1],S.adi[2],'adi',.6],0,false,'adi'); median(S.anal,192,true);
+  // 尾びれ
+  { const [Lc,fork,shp,spr]=S.tail, p=pr(.02), pts=[], x0=-.5+.02, Hs=S.D*spr/2;
+    for(let k=0;k<=K*2;k++){ const s=-1+k/K, b=[x0,(s<0?p.bot:p.top)*.92*s,0]; let L, y;
+      if(shp==='fork'){ L=1-fork*Math.pow(1-Math.abs(s),1.3); y=s*Hs; } else if(shp==='round'){ L=.62+.38*Math.sqrt(Math.max(0,1-s*s)); y=s*Hs*.92; } else { L=1-.08*Math.abs(s); y=s*Hs; }
+      pts.push([b,[x0-Lc*L,y,0],(s+1)/2]); } strip(64,pts); }
+  // 胸びれ・腹びれ（左右）
+  const paired=(f)=>{ if(!f) return; const [t,len,dn,out,shp]=f, spr=shp==='fan'?.85:shp==='round'?.4:.15; for(const side of [1,-1]){ const pts=[], bs=[], tb=Math.max(.05,t-len*(shp==='fan'?.22:.28));
+      for(let k=0;k<=K;k++){ const s=k/K, tt=tb+(t-tb)*s, p=pr(tt), vv=shp==='fan'?.56+.08*(1-s):.62+.08*(1-s), q=fishRing(S,p,Math.min(.97,vv+(f===S.pel?.3:0)),side); bs.push(new THREE.Vector3(tt-.5,q[0],q[1])); }
+      const D=new THREE.Vector3(shp==='fan'?-.6:-1,-dn,out*side).normalize(), Bd=bs[K].clone().sub(bs[0]).normalize(), Bn=Bd.clone().addScaledVector(D,-Bd.dot(D)).normalize(); // 根もとから扇のように広がる
+      for(let k=0;k<=K;k++){ const s=k/K, L=len*(shp==='point'?(.35+.65*Math.pow(Math.sin(Math.PI*(.1+.7*s)),.7)):shp==='fan'?(.7+.3*Math.sin(Math.PI*s)):(.4+.6*Math.pow(Math.sin(Math.PI*(.08+.84*s)),.5))), ph=spr*(s-.5)*2, r=D.clone().multiplyScalar(Math.cos(ph)).addScaledVector(Bn,Math.sin(ph)), b=bs[k];
+        pts.push([[b.x,b.y,b.z],[b.x+r.x*L,b.y+r.y*L,b.z+r.z*L],s]); }
+      strip(128,pts); } };
+  paired(S.pec); paired(S.pel);
+  // ひげ
+  if(S.barb&&det){ const p=pr(.975); for(let n=0;n<S.barb[0];n++) for(const side of [1,-1]){ const q=fishRing(S,p,Math.min(.9,S.mouth+.05),side), bx=.475-n*.03, L=S.barb[1]*(n?.6:1);
+      const a=V(bx,q[0],q[1]*.9,.035,1-208/256), b=V(bx,q[0]-.012,q[1]*.9,.035,1-208/256), c=V(bx-L*.2,q[0]-L*.9,q[1]*1.2+side*L*.3,.035,1-208/256); idx.push(a,b,c,a,c,b); } }
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); g.setIndex(idx); g.computeVertexNormals(); g.computeBoundingSphere();
+  if(cache!==false) FISHGEO[key]=g; return g; }
+// 魚の材質（絵の材質は種類ごとに使い回す）
+const FISHMAT={};
+function fishMat(id,toon){ const k=id+(toon?':t':':l'); if(FISHMAT[k]) return FISHMAT[k]; const o={map:fishTex(id),side:THREE.DoubleSide};
+  return FISHMAT[k]=toon?new THREE.MeshToonMaterial(Object.assign(o,{gradientMap:toneW})):new THREE.MeshLambertMaterial(o); }
+function fishArtId(f){ return f===ARAGAKO?'ara':f&&f.id; }
+// 図鑑・持ち物の絵：頭を右上に少し上げて、体の横を見せる
+function fishIconObj(id){ const g=new THREE.Group(), m=new THREE.Mesh(fishGeo(id,1),fishMat(id,false)); m.rotation.z=id==='ara'||id==='aYoshinobori'?.12:.22; if(id==='ara'){ m.rotation.x=.38; } g.add(m); g.rotation.y=.68; return g; }
+// ---- 水生生物（川虫・ヤゴ・カニ・貝）：単純な立体を組み、頂点に色を塗る ----
+function aqB(){ return {p:[],n:[],c:[]}; }
+function aqAdd(A,geo,col,pos,rot,scl,shade){ const g=geo.index?geo.toNonIndexed():geo; const m=new THREE.Matrix4().compose(new THREE.Vector3(pos[0],pos[1],pos[2]),new THREE.Quaternion().setFromEuler(new THREE.Euler(...(rot||[0,0,0]))),new THREE.Vector3(...(scl||[1,1,1])));
+  const nm=new THREE.Matrix3().getNormalMatrix(m), pa=g.attributes.position, na=g.attributes.normal, ca=g.attributes.color, v=new THREE.Vector3(), n=new THREE.Vector3(), c=new THREE.Color(col);
+  for(let i=0;i<pa.count;i++){ v.fromBufferAttribute(pa,i).applyMatrix4(m); n.fromBufferAttribute(na,i).applyMatrix3(nm).normalize(); A.p.push(v.x,v.y,v.z); A.n.push(n.x,n.y,n.z);
+    const k=shade?shade(v,n):1; A.c.push(c.r*k*(ca?ca.getX(i):1),c.g*k*(ca?ca.getY(i):1),c.b*k*(ca?ca.getZ(i):1)); }
+  if(g!==geo) g.dispose(); geo.dispose(); }
+function aqSeg(A,a,b,r0,r1,col,shade){ const d=new THREE.Vector3(b[0]-a[0],b[1]-a[1],b[2]-a[2]), L=d.length(); if(L<1e-4) return; const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize()), e=new THREE.Euler().setFromQuaternion(q);
+  aqAdd(A,new THREE.CylinderGeometry(r1,r0,L,7,1),col,[(a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2],[e.x,e.y,e.z],null,shade); aqAdd(A,new THREE.SphereGeometry(r1,7,5),col,b,null,null,shade); }
+function aqChain(A,pts,r0,r1,col,shade){ for(let i=0;i<pts.length-1;i++){ const f0=i/(pts.length-1), f1=(i+1)/(pts.length-1); aqSeg(A,pts[i],pts[i+1],r0+(r1-r0)*f0,r0+(r1-r0)*f1,col,shade); } }
+function aqEll(A,col,pos,scl,rot,shade,seg){ aqAdd(A,new THREE.SphereGeometry(1,seg||12,Math.max(6,Math.round((seg||12)*.6))),col,pos,rot,scl,shade); }
+function aqGeo(A){ const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(A.p,3)); g.setAttribute('normal',new THREE.Float32BufferAttribute(A.n,3)); g.setAttribute('color',new THREE.Float32BufferAttribute(A.c,3)); g.computeBoundingSphere(); return g; }
+const AQGEO={};
+function aquaGeo(id){ if(AQGEO[id]) return AQGEO[id]; const A=aqB(), up=(k0,k1)=>(v,n)=>n.y>0?k0:k1; let r=1; const R=()=>{ r=(r*16807)%2147483647; return r/2147483647; };
+  if(id==='aKawagera'){ // カワゲラの幼虫：平たい体・長い触角と2本の尾・横に張った6本の脚・翅の芽
+    const dk='#5a3c1c', md='#8a6430', lt='#c49a58', sd=up(1,1.25);
+    aqEll(A,dk,[.36,.02,0],[.12,.05,.13],null,sd); for(const s of [1,-1]){ aqEll(A,'#1a120a',[.4,.045,s*.085],[.025,.022,.022]); aqEll(A,lt,[.3,.06,s*.05],[.04,.012,.025]); }
+    for(const s of [1,-1]) aqChain(A,[[.46,.03,s*.04],[.6,.06,s*.1],[.76,.07,s*.2],[.9,.06,s*.32]],.009,.004,md);
+    aqEll(A,dk,[.21,.02,0],[.09,.045,.15],null,sd); aqEll(A,lt,[.21,.05,0],[.06,.01,.03]);
+    for(const [x,w] of [[.09,.14],[-.03,.13]]){ aqEll(A,md,[x,.02,0],[.075,.045,w],null,sd); for(const s of [1,-1]) aqEll(A,dk,[x-.05,.05,s*.07],[.09,.018,.05],[0,s*.45,0],sd); }
+    for(let k=0;k<9;k++){ const x=-.12-k*.058, w=.11-k*.008; aqEll(A,k%2?md:dk,[x,.015,0],[.04,.04,w],null,sd); aqEll(A,lt,[x-.03,.03,0],[.012,.02,w*.9],null,sd); }
+    for(const s of [1,-1]) aqChain(A,[[-.64,.01,s*.02],[-.82,.02,s*.07],[-1.02,.02,s*.15]],.01,.003,md);
+    [[.2,.12],[.08,0],[-.04,-.14]].forEach(([x,dx])=>{ for(const s of [1,-1]){ const k=[x+dx*.7,.05,s*.27], f=[x+dx*1.4,-.06,s*.42]; aqSeg(A,[x,-.01,s*.1],k,.026,.02,md); aqSeg(A,k,f,.016,.008,lt); aqSeg(A,f,[f[0]+dx*.3+.02,-.07,s*.48],.007,.004,dk); } }); }
+  else if(id==='aTobikera'){ // トビケラの幼虫：小石を綴った筒の巣から、頭と脚を出す
+    const cols=['#6e665a','#5a5448','#7a6e5c','#4e4a40','#8a7e6a','#625a4c','#9a8c74','#746a5a'];
+    aqSeg(A,[-.56,0,0],[.22,.02,0],.075,.085,'#6a604e');
+    for(let k=0;k<72;k++){ const t=R(), x=-.55+t*.78, a=R()*Math.PI*2, rr=.08+.01*Math.sin(t*3), y=Math.cos(a)*rr+t*.02, z=Math.sin(a)*rr, s=.028+R()*.034;
+      aqAdd(A,new THREE.IcosahedronGeometry(1,0),cols[k%cols.length],[x,y,z],[R()*3,R()*3,R()*3],[s*(1+R()*.5),s*(.6+R()*.4),s*(.8+R()*.4)],(v,n)=>.72+.22*Math.max(0,n.y)); }
+    aqEll(A,'#2a1e12',[.23,.02,0],[.02,.07,.07]);
+    aqEll(A,'#8a6434',[.27,.025,0],[.045,.05,.065]); aqEll(A,'#5a3818',[.33,.03,0],[.065,.05,.055],null,up(1,1.15)); aqEll(A,'#a07040',[.37,.06,0],[.028,.01,.018]); for(const s of [1,-1]) aqEll(A,'#120c06',[.37,.045,s*.042],[.012,.012,.012]);
+    [.3,.28,.26].forEach((x,i)=>{ for(const s of [1,-1]){ const k=[x+.05-i*.02,.04,s*(.11+i*.02)], f=[x+.1-i*.05,-.07,s*(.15+i*.035)]; aqSeg(A,[x,0,s*.04],k,.013,.011,'#6a4a24'); aqSeg(A,k,f,.01,.006,'#9a7444'); } }); }
+  else if(id==='aYago'){ // ヤゴ：大きな目・幅の広い平たい腹・背中の翅の芽・横に張った脚
+    const g1='#5e6434', g2='#4a5028', lt='#8a8a50', sd=up(1,1.2);
+    aqEll(A,g1,[.42,.02,0],[.08,.06,.13],null,sd); for(const s of [1,-1]) aqEll(A,'#2c2e18',[.44,.05,s*.12],[.06,.05,.055],null,(v,n)=>.9+.4*Math.max(0,n.y));
+    aqEll(A,lt,[.47,-.04,0],[.06,.016,.08]); for(const s of [1,-1]) aqChain(A,[[.5,.05,s*.05],[.57,.06,s*.08],[.62,.06,s*.1]],.006,.003,g2);
+    aqEll(A,g1,[.26,.02,0],[.12,.07,.12],null,sd);
+    for(const s of [1,-1]){ aqEll(A,g2,[.08,.075,s*.045],[.2,.016,.06],[0,s*.12,0],sd); aqEll(A,'#3c4220',[.02,.07,s*.06],[.17,.014,.05],[0,s*.18,0],sd); }
+    aqEll(A,g1,[-.2,.01,0],[.05,.34,.19],[0,0,Math.PI/2],(v,n)=>{ const f=((v.x+2)/.075)%1; return (f<.18?.7:1)*(n.y>.2?1:1.18)*(.9+.2*hash3(Math.round(v.x*40),0,Math.round(v.z*40))); },40);
+    for(let k=0;k<7;k++){ const x=.06-k*.075; aqEll(A,lt,[x,.055-k*.004,0],[.022,.006,.02]); for(const s of [1,-1]) aqEll(A,'#3a4020',[x-.02,.03,s*(.17*Math.sin(Math.PI*(.25+k/8*.7))+.01)],[.028,.01,.028]); }
+    for(let k=0;k<3;k++){ const a=(k-1)*.35; aqAdd(A,new THREE.ConeGeometry(.018,.08,6),g2,[-.55,.01+Math.cos(a)*.01,Math.sin(a)*.03],[0,0,Math.PI/2+a*.3]); }
+    [[.3,.2],[.24,.0],[.18,-.22]].forEach(([x,dx])=>{ for(const s of [1,-1]){ const k=[x+dx*.45,.06,s*.26], f=[x+dx*1.15,-.06,s*.38]; aqSeg(A,[x,-.02,s*.08],k,.028,.02,g2); aqSeg(A,k,f,.018,.009,lt); aqSeg(A,f,[f[0]+dx*.3+.03,-.07,f[2]+s*.04],.007,.004,g2); } }); }
+  else if(id==='aSawagani'||id==='aMokuzu'){ const mk=id==='aMokuzu'; // サワガニ（赤茶・つるりとした甲羅）／モクズガニ（緑がかった茶・はさみに黒い毛）
+    const top=mk?'#4e4c2e':'#9a3422', edge=mk?'#76683e':'#c8602e', leg=mk?'#5e5232':'#c0552e', tip=mk?'#c8a868':'#f0c08a', palm=mk?'#4a3a24':'#c44e2c', fing=mk?'#ece2cc':'#e8a070';
+    aqEll(A,top,[0,.22,0],[.34,.13,.44],null,(v,n)=>{ let k=n.y>.6?.95:n.y>.2?1.08:1.3; if(n.y>.55){ const az=Math.abs(v.z); if((az<.03&&v.x>-.16&&v.x<.06)||(Math.abs(az-.13-.12*(v.x-.04))<.022&&v.x>-.1&&v.x<.2)) k*=.7; } return k; },36);
+    aqEll(A,edge,[0,.17,0],[.33,.07,.43],null,null,28);
+    for(const s of [1,-1]) for(let k=0;k<(mk?4:2);k++) aqAdd(A,new THREE.ConeGeometry(.022,.06,5),edge,[.25-k*.08,.22,s*(.36+k*.028)],[0,0,-s*Math.PI/2],[1,1,1]);
+    for(const s of [1,-1]){ aqSeg(A,[.3,.24,s*.08],[.38,.3,s*.1],.018,.015,mk?'#8a7a50':'#d87a48'); aqEll(A,'#0c0806',[.39,.305,s*.102],[.032,.032,.032],null,(v,n)=>.6+.8*Math.max(0,n.y)); }
+    for(const s of [1,-1]){ const big=s>0?(mk?1.15:1.3):1, w=[.42,.21,s*.42], p=[.58,.22,s*.32]; aqSeg(A,[.24,.17,s*.28],w,.05,.045,leg); aqSeg(A,w,p,.045,.05,leg);
+      aqEll(A,palm,[p[0]+.03,p[1],p[2]],[.12*big,.085*big,.07*big],[0,-s*.5,0],(v,n)=>n.y>.3?1:1.2);
+      if(mk) for(let k=0;k<150;k++){ const a=R()*Math.PI*2, b=(R()-.5)*Math.PI*.9, rx=.125*big, rz=.075*big; const hx=Math.cos(a)*Math.cos(b)*rx; if(hx>.07*big) continue;
+        aqAdd(A,new THREE.IcosahedronGeometry(1,0),['#2e2216','#3a2a1a','#46321e'][k%3],[p[0]+.02+hx,p[1]+Math.sin(b)*.09*big,p[2]+Math.sin(a)*Math.cos(b)*rz],[R()*3,R()*3,0],[.04,.04,.04]); }
+      const f0=[p[0]+.11*big,p[1]+.02,p[2]-s*.03]; aqAdd(A,new THREE.ConeGeometry(.036*big,.2*big,7),fing,[f0[0]+.08*big,f0[1]+.03,f0[2]],[0,-s*.4,-Math.PI/2+.22]);
+      aqAdd(A,new THREE.ConeGeometry(.032*big,.18*big,7),fing,[f0[0]+.07*big,f0[1]-.04,f0[2]],[0,-s*.4,-Math.PI/2-.2]); }
+    [.14,.03,-.08,-.18].forEach((x,i)=>{ for(const s of [1,-1]){ const L=(mk?1.12:1)*(1-.03*i), k=[x-.03*i,.32,s*(.5*L)], f=[x-.08-.04*i,.0,s*(.7*L)];
+      aqSeg(A,[x,.18,s*.34],k,.042,.036,leg); aqSeg(A,k,f,.034,.016,leg); aqSeg(A,f,[f[0]-.02,-.01,f[2]+s*.05],.014,.006,tip);
+      if(mk) for(let h=0;h<5;h++){ const tt=.15+h*.16; aqAdd(A,new THREE.IcosahedronGeometry(1,0),'#2e2414',[k[0]+(f[0]-k[0])*tt-.02,k[1]+(f[1]-k[1])*tt+.012,k[2]+(f[2]-k[2])*tt],null,[.026,.014,.02]); } } }); }
+  else if(id==='aKawanina'){ // カワニナ：細長い巻き貝（先は削れて白っぽい）・殻の口から体と触角
+    const pos=[], cl=[], idx=[], NU=7*18, NC=12, gr=1.3, U0=1.2, U=7, Rf=.11, rf=.125, Y0=.139, gU=Math.pow(gr,U);
+    for(let i=0;i<=NU;i++){ const u=U0+(U-U0)*i/NU, g=Math.pow(gr,u)/gU, ang=2*Math.PI*u, Rr=Rf*g, rr=rf*g, yc=-Y0*gU*g, rv=[Math.cos(ang),0,Math.sin(ang)];
+      for(let j=0;j<NC;j++){ const ph=j/NC*Math.PI*2; pos.push(rv[0]*(Rr+rr*Math.cos(ph)),yc+rr*Math.sin(ph),rv[2]*(Rr+rr*Math.cos(ph)));
+        const worn=Math.max(0,1-(u-U0)/1.6), rib=(j%3===0?.82:1)*(i%9===0?.86:1), c=new THREE.Color('#2e2a1e').lerp(new THREE.Color('#bcb39c'),worn*.85); cl.push(c.r*rib,c.g*rib,c.b*rib); } }
+    for(let i=0;i<NU;i++) for(let j=0;j<NC;j++){ const a=i*NC+j, b=i*NC+(j+1)%NC, c=(i+1)*NC+(j+1)%NC, d=(i+1)*NC+j; idx.push(a,b,c,a,c,d); }
+    const sg=new THREE.BufferGeometry(); sg.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); sg.setAttribute('color',new THREE.Float32BufferAttribute(cl,3)); sg.setIndex(idx); sg.computeVertexNormals();
+    sg.computeBoundingBox(); const cy=(sg.boundingBox.min.y+sg.boundingBox.max.y)/2; aqAdd(A,sg,'#ffffff',[0,-cy,0]);
+    const ang=2*Math.PI*U, ax=Math.cos(ang)*(Rf), az=Math.sin(ang)*Rf, ay=-Y0*gU-cy; aqEll(A,'#4a2e18',[ax,ay,az],[.11,.02,.11],[Math.PI/2,0,ang],null);
+    aqEll(A,'#5e5850',[ax+.02,ay-.09,az+.04],[.11,.04,.07],null,up(1,.85)); for(const s of [1,-1]) aqChain(A,[[ax+.1,ay-.08,az+.05+s*.03],[ax+.2,ay-.04,az+.05+s*.07]],.012,.005,'#5a554c'); }
+  const g=aqGeo(A); AQGEO[id]=g; return g; }
+function aquaIconObj(id){ if(id==='aYoshinobori') return fishIconObj('aYoshinobori'); const g=new THREE.Group(), m=new THREE.Mesh(aquaGeo(id),new THREE.MeshLambertMaterial({vertexColors:true}));
+  if(id==='aKawanina'){ m.rotation.z=-.5; m.rotation.x=.2; } else if(id==='aSawagani'||id==='aMokuzu'){ m.rotation.y=-.75; m.rotation.x=.2; } else { m.rotation.y=.68; m.rotation.x=id==='aKawagera'?.3:.5; m.rotation.z=.08; }
+  g.add(m); return g; }
 // 管理画面の絵（施設・住民）
 function p3cIconObj(id){ const g=new THREE.Group(), M=c=>new THREE.MeshLambertMaterial({color:c}); const B=(c,sx,sy,sz,x,y,z)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),M(c)); m.position.set(x,y,z); g.add(m); return m; };
   if(id.startsWith('res_')){ const k=id.slice(4); const m=makeHuman(P3C_LOOK[k]); g.add(m.g); m.g.updateMatrixWorld(true); const bb=new THREE.Box3().setFromObject(m.g), top=bb.max.y; g.userData.iconFrame=[0,top*0.76,0,top*0.34]; return g; }
@@ -13554,6 +13801,7 @@ let ICON_FLAT_SPIN=0.785, ICON_FLAT_TILT=0.3; // 飛去来器の絵：画面の�
 function makeIconObj(id){
   if(id.startsWith('p3c_')){ try{ return p3cIconObj(id.slice(4)); }catch(e){ return null; } }
   if(id.startsWith('p3d_')){ try{ return p3dIconObj(id.slice(4)); }catch(e){ return null; } } // v0.84：魚の絵 // v0.82：拠点の管理画面の絵
+  if(FISH_BY[id]||id==='zugani'){ try{ return id==='zugani'?aquaIconObj('aMokuzu'):fishIconObj(id); }catch(e){ return null; } } /* v0.86：持ち物・手持ちバーの生の魚とモクズガニ（前は椀の絵になっていた） */
   if(id.startsWith('gear_')&&G47[id.slice(5)]){ try{ const o=gearIconObj(id.slice(5)); if(o) return o; }catch(e){} }
   if(id==='boomer'){ try{ const g=new THREE.Group(); // v0.79.2：飛去来器は手に持つ向き（立てる）ではなく、平らな面を正面に向けて「くの字」が見えるように撮る（2026-11-18 ユーザー）
       if(wglbOk('boomer')){ const r=WG.files.boomer; g.add(new THREE.Mesh(r.geo,r.mat)); } else g.add(boomerShape(new THREE.Group())); // 読めないときはコードの形（飛ぶときと同じ平らな向き）
