@@ -105,6 +105,21 @@ async def main():
         await E("(closeOverlay(), 1)")
         st = await E("(()=>{ renderStore(); return [...document.querySelectorAll('#storeList img.fic')].length; })()")
         check(st == 19, f'食料庫の画面：料理19品の行に絵 {st}')
+        # ---- かまどの選択肢（v0.86.2）----
+        await E("(()=>{ if(!prog.kama.built){ prog.kama.built=1; facApply(); } for(const k of ['fAyu','fKoi','fYamame','fOikawa','fAbura','zugani','rice','veg']) foodAdd(k,3); inv.wood=40; P.x=FAC.kama.pos.x+1.6; P.z=FAC.kama.pos.z; return 1; })()")
+        await pg.wait_for_timeout(300)
+        fd = await E("(()=>{ p3dDishUI(); const bs=[...document.querySelectorAll('#defenseChoice button')]; return [bs.length, bs.filter(b=>b.querySelector('img')).length, bs[0].textContent.slice(0,9), (bs[0].querySelector('img')||{}).getAttribute&&bs[0].querySelector('img').getAttribute('src')]; })()")
+        if SHOTS:
+            await pg.screenshot(path=os.path.join(SHOTS, 'kamado_fish.png'), timeout=300000)
+        await E("(()=>{ const d=document.getElementById('defenseChoice'); if(d) d.remove(); S.mode='playing'; return 1; })()")
+        check(fd[0] == 11 and fd[1] == 10 and fd[2] == '鮎の塩焼き：アユ1' and fd[3] == 'assets/food/ayuShio.webp', f'かまど「魚を料理する」：10品の選択肢に料理の絵（名前の文字は今までどおり）{fd}')
+        ck = await E("(()=>{ kamaCookUI({meat:0,veg:0,rice:2,food:0}); const r=[...document.querySelectorAll('#defenseChoice .chIcons img')].map(i=>i.getAttribute('src').slice(12)); const t=$('defenseChoice').querySelector('.chIcons').textContent; return [r, t]; })()")
+        if SHOTS:
+            await pg.screenshot(path=os.path.join(SHOTS, 'kamado_cook.png'), timeout=300000)
+        await E("(()=>{ const d=document.getElementById('defenseChoice'); if(d) d.remove(); S.mode='playing'; return 1; })()")
+        check('onigiri.webp' in ck[0] and '◎おにぎり' in ck[1], f'かまど「料理する」：できやすい料理を絵で並べる（◎○△と名前）{ck}')
+        to = await E("(()=>{ prog.kama.out={ayuShio:1,koikoku:2,charcoal:1}; const L=[]; kamaInteract(L,1); L[0].act(); const b=[...document.querySelectorAll('#defenseChoice button')].find(b=>b.textContent.startsWith('取り出す')); const r=b?[...b.querySelectorAll('img')].map(i=>i.getAttribute('src').slice(12)):null; const d=document.getElementById('defenseChoice'); if(d) d.remove(); S.mode='playing'; return r; })()")
+        check(to == ['ayuShio.webp', 'koikoku.webp'], f'かまど「取り出す」：できた料理の絵（木炭は絵なし）{to}')
         check(not errs, f'エラーなし（本編）{errs[:3]}')
         await ctx.close()
 
