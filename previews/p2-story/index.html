@@ -659,7 +659,7 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.86.1 作業F 物語イベント テスト版（本編とは別に保存）　第二章・料理の絵</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.86.2 作業F 物語イベント テスト版（本編とは別に保存）　第二章・かまどの料理の絵</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -3698,7 +3698,7 @@ function kamaOutText(){ const o=prog.kama.out; return Object.keys(o).filter(k=>o
 function kamaState(){ const c=prog.kama; if(!c.q.length) return '火は落ちている'; const job=c.q[0], T=kamaTime(job), k=Math.min(3,Math.floor(c.t/T*3));
   return `${job==='charcoal'?'木炭を焼いている':'料理している'} ${'■'.repeat(k)+'□'.repeat(3-k)} 残り${Math.ceil(T-c.t)}秒${c.q.length>1?`（あと${c.q.length-1}つ待ち）`:''}`; }
 function kamaInteract(L,d){ const c=prog.kama, F=FAC.kama, ch=[], full=c.q.length>=F.maxQ;
-  if(kamaOutN()>0) ch.push({label:`取り出す（${kamaOutText()}）`,act:kamaTake});
+  if(kamaOutN()>0) ch.push({label:`取り出す（${kamaOutText()}）`,ics:Object.keys(c.out).filter(k=>c.out[k]>0&&FOOD_ART_OK[k]).slice(0,4).map(k=>FOOD_ART_OK[k]),act:kamaTake}); // v0.86.1：できた料理の絵
   if(!full) ch.push({label:`料理する（食材を${F.cook.min}〜${F.cook.max}つ・薪に木材${F.cook.fuel.wood}・${F.cook.time}秒）`,act:()=>kamaCookUI({meat:0,veg:0,rice:0,food:0})});
   if(!full&&p3dHasFish()) ch.push({label:`魚を料理する（魚料理10品から選ぶ・薪に木材${F.cook.fuel.wood}・${F.cook.time}秒）`,act:p3dDishUI}); // v0.84
   if(!full) ch.push({label:`木炭を焼く（木材${F.coal.wood}・${F.coal.time}秒）　所持 木材${inv.wood}`,act:()=>kamaCoal(1)});
@@ -3716,7 +3716,8 @@ function kamaCookUI(pot){ f7Flush(); const F=FAC.kama, n=RAW_FOODS.reduce((a,k)=
   if(!ch.length){ sfx('deny'); toast('食材がない（肉・野菜・米・食料のどれかが2つ要る）',true); return; }
   const hint=n?`　できやすい料理：${kamaHint(pot)||'—'}`:'　食材の組み合わせで、できる料理が変わる（◎出やすい ○ときどき △まれに）';
   if(ch.length===1) ch.push({label:'やめる',act:()=>{}}); // 選択肢が1つだと、選ぶ画面を出さずに実行されてしまうため
-  chooseDefense(`かまどで料理　鍋：${kamaPotText(pot)}${hint}`,ch); }
+  const icons=n?Object.entries(kamaOdds(pot)).sort((a,b)=>b[1]-a[1]).filter(a=>a[1]>=0.08).slice(0,4).filter(([id])=>FOOD_ART_OK[id]).map(([id,pr])=>[FOOD_ART_OK[id],(pr>=0.5?'◎':pr>=0.25?'○':'△')+FOODS[id].name]):[]; // v0.86.1：できやすい料理の絵
+  chooseDefense(`かまどで料理　鍋：${kamaPotText(pot)}${hint}`,ch,false,{icons}); }
 function kamaCook(pot){ f7Flush(); const c=prog.kama, F=FAC.kama, n=RAW_FOODS.reduce((a,k)=>a+pot[k],0);
   if(c.q.length>=F.maxQ){ sfx('deny'); toast('いっぱい。できあがるまで待つ',true); return null; }
   if(n<F.cook.min||n>F.cook.max||RAW_FOODS.some(k=>(inv[k]||0)<pot[k])){ sfx('deny'); toast('食材が足りない',true); return null; }
@@ -8784,17 +8785,19 @@ function talkTo(n){
 
 // ================= インタラクト =================
 let curInter=null; const objOpen={t:0,pin:false,last:null,lastQ:null};
-function chooseDefense(title,options,keep){
+function chooseDefense(title,options,keep,ex){ // v0.86.1：opt.ic／opt.ics（絵の URL）があればボタンの左に絵。ex.icons＝[[絵, 名前]] は見出しの下に絵を並べる（かまどの料理）
   if(!options.length)return;if(options.length===1&&!keep){options[0].act();return;} // v0.78：keep のときは1つでも一覧を出す（荷台・車両基地の状態を見せる）
   const old=document.getElementById('defenseChoice');if(old)old.remove();
   const wrap=document.createElement('div');wrap.id='defenseChoice';wrap.tabIndex=-1;
   wrap.style.cssText='position:fixed;inset:0;z-index:99998;background:#0009;display:flex;align-items:center;justify-content:center;padding:18px;box-sizing:border-box';
   const panel=document.createElement('div');panel.style.cssText='width:min(360px,92vw);max-height:80vh;overflow:auto;background:#202b25;border:2px solid #d4b66b;border-radius:12px;padding:14px;color:#f5efdf;box-shadow:0 4px 20px #000a;font:15px system-ui';
   const titleEl=document.createElement('div');titleEl.textContent=title;titleEl.style.cssText='font-weight:bold;margin-bottom:10px';panel.appendChild(titleEl);
+  if(ex&&ex.icons&&ex.icons.length){ const row=document.createElement('div'); row.className='chIcons'; row.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin:-2px 0 8px'; for(const [u,nm] of ex.icons){ const f=document.createElement('div'); f.style.cssText='width:72px;text-align:center;font-size:11px;line-height:1.3'; const im=document.createElement('img'); im.src=u; im.alt=''; im.style.cssText='width:56px;height:56px;object-fit:contain;display:block;margin:0 auto 2px;filter:drop-shadow(0 1px 2px #000a)'; f.appendChild(im); f.appendChild(document.createTextNode(nm)); row.appendChild(f); } panel.appendChild(row); }
   const close=()=>{wrap.remove();S.mode='playing';cv.focus();};
   for(const opt of [...options,{label:'戻る',act:null}]){
     const b=document.createElement('button');b.type='button';b.textContent=opt.label;
     b.style.cssText='display:block;width:100%;min-height:44px;margin:7px 0;padding:9px;border:1px solid #d4b66b;border-radius:7px;background:#33453a;color:#fff;font:15px system-ui;touch-action:manipulation';
+    const ics=(opt.ic?[opt.ic]:opt.ics||[]).filter(Boolean); if(ics.length){ b.textContent=''; b.style.display='flex'; b.style.alignItems='center'; b.style.gap='8px'; b.style.textAlign='left'; b.style.padding='6px 9px'; for(const u of ics){ const im=document.createElement('img'); im.src=u; im.alt=''; im.style.cssText='width:40px;height:40px;object-fit:contain;flex:none;filter:drop-shadow(0 1px 2px #000a)'; b.appendChild(im); } const sp=document.createElement('span'); sp.textContent=opt.label; sp.style.cssText='flex:1;min-width:0'; b.appendChild(sp); }
     b.onclick=()=>{close();if(opt.act)opt.act();};panel.appendChild(b);
   }
   wrap.appendChild(panel);wrap.onclick=e=>{if(e.target===wrap)close();};
@@ -11446,7 +11449,7 @@ function p3dScoutDraw(c,X,Z,big){ const pts=p3dScoutPts(); if(!pts) return; for(
     if(p.req){ c.strokeStyle='#7ad0e0'; c.lineWidth=2; c.beginPath(); c.arc(x,y,big?8:4.5,0,TAU); c.stroke(); if(big){ c.font='bold 11px "Zen Kaku Gothic New",sans-serif'; c.lineWidth=3; c.strokeStyle='rgba(0,0,0,.75)'; c.strokeText('依頼',x+10,y-6); c.fillStyle='#9fe6f0'; c.fillText('依頼',x+10,y-6); } }
     else { c.fillStyle=p.col; c.strokeStyle='#000'; c.lineWidth=1; c.beginPath(); c.arc(x,y,big?3.4:2,0,TAU); c.fill(); c.stroke(); } } }
 function p3dHasFish(){ return FISH.some(f=>(inv[f.id]||0)>0)||(inv.zugani||0)>0; }
-function p3dDishUI(){ const F=FAC.kama, ch=[]; for(const id in FISH_DISH){ const d=FISH_DISH[id], ok=!!p3dDishPlan(id); ch.push({label:`${ok?'':'（素材が足りない）'}${d.name}：${p3dNeedText(id)}　${p3dEffText(d)}`,act:()=>p3dDishCook(id)}); }
+function p3dDishUI(){ const F=FAC.kama, ch=[]; for(const id in FISH_DISH){ const d=FISH_DISH[id], ok=!!p3dDishPlan(id); ch.push({label:`${ok?'':'（素材が足りない）'}${d.name}：${p3dNeedText(id)}　${p3dEffText(d)}`,ic:FOOD_ART_OK[id],act:()=>p3dDishCook(id)}); } // v0.86.1：料理の絵
   chooseDefense(`かまどで魚を料理（薪に木材${F.cook.fuel.wood}・${F.cook.time}秒）`,ch); }
 function p3dDishCook(id){ const c=prog.kama, F=FAC.kama, d=FISH_DISH[id]; if(c.q.length>=F.maxQ){ sfx('deny'); toast('いっぱい。できあがるまで待つ',true); return null; }
   const plan=p3dDishPlan(id); if(!plan){ sfx('deny'); toast(`${d.name}：素材が足りない（${p3dNeedText(id)}）`,true); return null; }
