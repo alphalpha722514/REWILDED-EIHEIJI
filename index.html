@@ -11315,7 +11315,7 @@ function p3dShowAqua(id,x,z,wy){ { const fx=Math.sin(P.facing), fz=Math.cos(P.fa
   m.geometry=fish?fishGeo(id,1):aquaGeo(id); m.material=fish?fishMat(id,true):vcMat; const sc=fish?0.1:id==='aKawanina'?0.1:id==='aSawagani'||id==='aMokuzu'?0.1:0.075; m.scale.setScalar(sc);
   const y=groundH(x,z); m.position.set(x,y+(fish?0.03:id==='aKawanina'?0.04:0.01),z); m.rotation.set(id==='aKawanina'?Math.PI/2:0,P.facing+Math.PI+(Math.random()-0.5)*1.2,0); P3D.amY=m.rotation.y; m.visible=true; P3D.amT=2.8; }
 function p3dShowTick(dt){ const F=P3D.fish;
-  if(P3D.fmT>0){ P3D.fmT-=dt; const m=P3D.fm; if(m){ if((F&&F.st!=='ready')||P3D.fmT<=0||REG.cur!=='kamishihi'){ m.visible=false; P3D.fmT=0; } else { m.rotation.y=P3D.fmY+Math.sin(P3D.fmT*3)*0.3; m.rotation.z=Math.PI/2*0.92+Math.sin(P3D.fmT*11)*0.12; } } }
+  if(P3D.fmT>0){ P3D.fmT-=dt; const m=P3D.fm; if(m){ if((F&&F.st!=='ready')||P3D.fmT<=0||REG.cur!=='kamishihi'||!m.visible){ /* やめた・宗一が来たなどで先に隠れたときも終わり */ m.visible=false; P3D.fmT=0; } else { m.rotation.y=P3D.fmY+Math.sin(P3D.fmT*3)*0.3; m.rotation.z=Math.PI/2*0.92+Math.sin(P3D.fmT*11)*0.12; } } }
   if(P3D.amT>0){ P3D.amT-=dt; const m=P3D.am; if(m){ if(P3D.amT<=0||REG.cur!=='kamishihi'){ m.visible=false; P3D.amT=0; } else m.rotation.y=P3D.amY+Math.sin(P3D.amT*2.2)*0.15; } }
   if(F&&F.st==='ara'&&P3D.fm) P3D.fm.rotation.y=P3D.fmY+Math.sin(F.t*5)*0.14; } // アラレガコは、ゆっくり体をくねらせる
 // ---- 毎フレーム ----
@@ -11804,7 +11804,7 @@ function aqAdd(A,geo,col,pos,rot,scl,shade){ const g=geo.index?geo.toNonIndexed(
 function aqSeg(A,a,b,r0,r1,col,shade){ const d=new THREE.Vector3(b[0]-a[0],b[1]-a[1],b[2]-a[2]), L=d.length(); if(L<1e-4) return; const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize()), e=new THREE.Euler().setFromQuaternion(q);
   aqAdd(A,new THREE.CylinderGeometry(r1,r0,L,7,1),col,[(a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2],[e.x,e.y,e.z],null,shade); aqAdd(A,new THREE.SphereGeometry(r1,7,5),col,b,null,null,shade); }
 function aqChain(A,pts,r0,r1,col,shade){ for(let i=0;i<pts.length-1;i++){ const f0=i/(pts.length-1), f1=(i+1)/(pts.length-1); aqSeg(A,pts[i],pts[i+1],r0+(r1-r0)*f0,r0+(r1-r0)*f1,col,shade); } }
-function aqEll(A,col,pos,scl,rot,shade,seg){ aqAdd(A,new THREE.SphereGeometry(1,seg||16,Math.max(6,Math.round((seg||16)*.6))),col,pos,rot,scl,shade); }
+function aqEll(A,col,pos,scl,rot,shade,seg){ aqAdd(A,new THREE.SphereGeometry(1,seg||12,Math.max(6,Math.round((seg||12)*.6))),col,pos,rot,scl,shade); }
 function aqGeo(A){ const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(A.p,3)); g.setAttribute('normal',new THREE.Float32BufferAttribute(A.n,3)); g.setAttribute('color',new THREE.Float32BufferAttribute(A.c,3)); g.computeBoundingSphere(); return g; }
 const AQGEO={};
 function aquaGeo(id){ if(AQGEO[id]) return AQGEO[id]; const A=aqB(), up=(k0,k1)=>(v,n)=>n.y>0?k0:k1; let r=1; const R=()=>{ r=(r*16807)%2147483647; return r/2147483647; };
@@ -11844,12 +11844,12 @@ function aquaGeo(id){ if(AQGEO[id]) return AQGEO[id]; const A=aqB(), up=(k0,k1)=
     for(const s of [1,-1]){ const big=s>0?(mk?1.15:1.3):1, w=[.42,.21,s*.42], p=[.58,.22,s*.32]; aqSeg(A,[.24,.17,s*.28],w,.05,.045,leg); aqSeg(A,w,p,.045,.05,leg);
       aqEll(A,palm,[p[0]+.03,p[1],p[2]],[.12*big,.085*big,.07*big],[0,-s*.5,0],(v,n)=>n.y>.3?1:1.2);
       if(mk) for(let k=0;k<150;k++){ const a=R()*Math.PI*2, b=(R()-.5)*Math.PI*.9, rx=.125*big, rz=.075*big; const hx=Math.cos(a)*Math.cos(b)*rx; if(hx>.07*big) continue;
-        aqEll(A,['#2e2216','#3a2a1a','#46321e'][k%3],[p[0]+.02+hx,p[1]+Math.sin(b)*.09*big,p[2]+Math.sin(a)*Math.cos(b)*rz],[.038,.038,.038],null,null,6); }
+        aqAdd(A,new THREE.IcosahedronGeometry(1,0),['#2e2216','#3a2a1a','#46321e'][k%3],[p[0]+.02+hx,p[1]+Math.sin(b)*.09*big,p[2]+Math.sin(a)*Math.cos(b)*rz],[R()*3,R()*3,0],[.04,.04,.04]); }
       const f0=[p[0]+.11*big,p[1]+.02,p[2]-s*.03]; aqAdd(A,new THREE.ConeGeometry(.036*big,.2*big,7),fing,[f0[0]+.08*big,f0[1]+.03,f0[2]],[0,-s*.4,-Math.PI/2+.22]);
       aqAdd(A,new THREE.ConeGeometry(.032*big,.18*big,7),fing,[f0[0]+.07*big,f0[1]-.04,f0[2]],[0,-s*.4,-Math.PI/2-.2]); }
     [.14,.03,-.08,-.18].forEach((x,i)=>{ for(const s of [1,-1]){ const L=(mk?1.12:1)*(1-.03*i), k=[x-.03*i,.32,s*(.5*L)], f=[x-.08-.04*i,.0,s*(.7*L)];
       aqSeg(A,[x,.18,s*.34],k,.042,.036,leg); aqSeg(A,k,f,.034,.016,leg); aqSeg(A,f,[f[0]-.02,-.01,f[2]+s*.05],.014,.006,tip);
-      if(mk) for(let h=0;h<5;h++){ const tt=.15+h*.16; aqEll(A,'#2e2414',[k[0]+(f[0]-k[0])*tt-.02,k[1]+(f[1]-k[1])*tt+.012,k[2]+(f[2]-k[2])*tt],[.026,.014,.02],null,null,5); } } }); }
+      if(mk) for(let h=0;h<5;h++){ const tt=.15+h*.16; aqAdd(A,new THREE.IcosahedronGeometry(1,0),'#2e2414',[k[0]+(f[0]-k[0])*tt-.02,k[1]+(f[1]-k[1])*tt+.012,k[2]+(f[2]-k[2])*tt],null,[.026,.014,.02]); } } }); }
   else if(id==='aKawanina'){ // カワニナ：細長い巻き貝（先は削れて白っぽい）・殻の口から体と触角
     const pos=[], cl=[], idx=[], NU=7*18, NC=12, gr=1.3, U0=1.2, U=7, Rf=.11, rf=.125, Y0=.139, gU=Math.pow(gr,U);
     for(let i=0;i<=NU;i++){ const u=U0+(U-U0)*i/NU, g=Math.pow(gr,u)/gU, ang=2*Math.PI*u, Rr=Rf*g, rr=rf*g, yc=-Y0*gU*g, rv=[Math.cos(ang),0,Math.sin(ang)];

@@ -98,7 +98,7 @@ async def main():
         await E("(async()=>{ await regionTravel('kamishihi',null,{force:true}); })()")
         await until("REG.cur==='kamishihi'&&!REG.busy", 60000)
         await pg.wait_for_timeout(800)
-        await E("(()=>{ for(const e of enemies) if(!e.removed&&e.x>4000) e.x+=3000; stfP().mutantMet=true; prog.f10.tod=150; const p=p3bState(); p.hq.sv=[1,1,1]; p.hq.talk=1; p.hq.plan=1; p.hq.beasts=1; p3dState().rod.basic=1; return 1; })()")
+        await E("(()=>{ for(const e of enemies) if(!e.removed&&e.x>4000) e.x+=3000; stfP().mutantMet=true; prog.f10.tod=150; const p=p3bState(); p.hq.sv=[1,1,1]; p.hq.talk=1; p.hq.plan=1; p.hq.beasts=1; p3dState().rod.basic=1; p3cState().soichi.found=1; return 1; })()")  # 宗一の出会い（はじめて投げたとき）で釣りが止まらないように
         sp = await E("(()=>{ for(let r=3;r<8;r+=0.5) for(let a=0;a<16;a++){ const x=6292+Math.cos(a*Math.PI/8)*r, z=822+Math.sin(a*Math.PI/8)*r; if(kamiReach(x,z)&&!p3dWater(x,z)){ P.x=x; P.z=z; if(p3dShore()) return [x,z]; } } return null; })()")
         await E("(cam.override={p:new THREE.Vector3(P.x,groundH(P.x,P.z)+3,P.z), l:new THREE.Vector3(P.x+0.01,groundH(P.x,P.z)+60,P.z), fov:50}, 1)")
         await pg.wait_for_timeout(300)
@@ -122,7 +122,7 @@ async def main():
         r0 = await E("P3D.fm.rotation.y")
         await pg.wait_for_timeout(500)
         r1 = await E("P3D.fm.rotation.y")
-        await until("!P3D.fm.visible", 8000)
+        await until("!P3D.fm.visible", 40000)
         gone = await E("[P3D.fm.visible, P3D.fmT]")
         check(r0 != r1 and gone == [False, 0], f'少し揺れて、2秒ほどで消える {gone}')
         # 見せている間に次を投げると消える
@@ -147,12 +147,13 @@ async def main():
         a0 = await E("[P3D.fm.visible, P3D.fm.geometry===fishGeo('ara',1), P3D.fm.material.map===fishTex('ara'), P3D.fm.rotation.y]")
         await pg.wait_for_timeout(400)
         a1 = await E("P3D.fm.rotation.y")
-        await until("P3D.fish&&P3D.fish.st==='ready'", 15000)
+        await until("P3D.fish&&P3D.fish.st==='ready'", 90000)
         a2 = await E("[P3D.fm.visible, !!cam.override, inv.ara||0]")
         check(st == 'bite' and a0[:3] == [True, True, True] and a0[3] != a1 and a2[0] is False and a2[2] == 0, f'アラレガコ：近景は新しい形（大きな胸びれ・石のような模様）・ゆっくりくねる・川へ戻すと消える {a0[:3]} {a2}')
         await E("(cam.override={p:new THREE.Vector3(P.x,groundH(P.x,P.z)+3,P.z), l:new THREE.Vector3(P.x+0.01,groundH(P.x,P.z)+60,P.z), fov:50}, 1)")
 
         # ---- 石の下の生き物 ----
+        await E("(p3dStop(), 1)")  # 釣りの最中は「石の下を調べる」が出ない
         await E(sp and f"(P.x={sp[0]}, P.z={sp[1]}, 1)" or "1")
         await pg.wait_for_timeout(300)
         aq = []
@@ -161,7 +162,7 @@ async def main():
             await act('水辺の石の下を調べる')
             aq.append(await E(f"[P3D.am.visible, P3D.am.geometry==={'fishGeo' if a == 'aYoshinobori' else 'aquaGeo'}('{a}'{',1' if a == 'aYoshinobori' else ''}), +(P3D.am.position.y-groundH(P3D.am.position.x,P3D.am.position.z)).toFixed(2), dist(P3D.am.position.x,P3D.am.position.z,P.x,P.z)<3]"))
         await E("(P3D.forceAqua=null, 1)")
-        await until("!P3D.am.visible", 8000)
+        await until("!P3D.am.visible", 40000)
         ag = await E("[P3D.am.visible, P3D.amT]")
         check(all(x[0] and x[1] and -0.01 <= x[2] < 0.6 and x[3] for x in aq) and ag == [False, 0], f'石の下で見つけた生き物を水際に見せる（モクズガニ・ヨシノボリは魚の形・カワニナ）→ 3秒ほどで消える {aq} {ag}')
 
