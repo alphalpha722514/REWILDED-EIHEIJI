@@ -64,11 +64,16 @@
 
 - `python3 tests/p3d-river-works-browser.py`：**PASS**（18項目）。C-4 の分：広葉樹33本を切る → 硬木2・切った記録／主軸の依頼（台詞・手順・報酬）／素材を納める（倉庫の硬木も）→ 2人で工期8時間 → 完成・担当は待機へ／「総合加工設備を使う」と画面のタブ・倉庫の素材／鋼材／鉈の鍛え直し（威力 10 → 11.5・4回で3しか減らない）／作業着の補強（-2%）／車両の3つ（車体 140・獣 0.45・燃料 9・広さ 80・丸太 8）／つづきから／新しく始めると元の数値／エラーなし。
 - `node tests/chapter2-save.cjs`（`p3c.forge`・`p3c.vup`・`works` の工事・`kami` の `kp`）：PASS。node のテスト6本：PASS。
-- C-2・C-3 のテストの期待値：施設の一覧に `works` が増えた分は、読み込みのテストで直した。
+- C-3 のテスト（`p3c-requests`）・釣り・料理・上志比の獣のテストの期待値を、増えた物に合わせて直した（§6）。
 
 ## 6. 回帰テスト
 
-（回帰テストの結果をここに書く）
+回帰テスト（画面のない Chromium、28本。2026-11-20）：**すべて PASS**（回し直しを含む）。p3d-river-works・p3d-fishing・p3d-cook・p3c-requests・p3c-manage・p3c-residents・p3b-hq・kamado・kamishihi・region・kami-wild・kami-fort・kami-watch・suzuki（5本）・story-f・story-f-touch・kei-truck-systems・hud-layout・kei-truck-glb・weapon-glb・wardrobe・scale-armor2・scale-gear・mutant。node のテスト6本も PASS。
+
+1回目に落ちた5本と直したこと：
+- **kamishihi（本当の不具合）**：上志比を出るとき、近くの河原の草の形（共有の2つ）が捨てられず、往復ごとに2つ残っていた → 出るときに捨てるようにした → PASS。
+- p3d-fishing・p3d-cook・p3c-requests・kami-wild（テストの期待値）：古いセーブの形に `obs` が増えた・図鑑のタブが3つになった・依頼の一覧に「加工機の主軸を探す」が増えた・川底の鉱石（水際の浅瀬）が「岩」として数えられていた → 期待値を直した（鉱石は別に数える）→ PASS。
+- p3d-river-works（回し直しで1回）：川の音の大きさがなめらかに上がり切る前に確かめていた → 上がり切るまで待つようにした → PASS。
 
 ## 7. 未実装・決めてほしいこと
 
