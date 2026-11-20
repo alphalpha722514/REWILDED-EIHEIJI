@@ -658,7 +658,7 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.86 作業F 物語イベント テスト版（本編とは別に保存）　第二章・魚と水生生物の形</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.86.1 作業F 物語イベント テスト版（本編とは別に保存）　第二章・料理の絵</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -13785,6 +13785,13 @@ try{
   spawnFieldEnemies(); setupBoss();
 }catch(e){ console.error(e); fatal('ゲーム世界の構築中にエラーが発生しました：'+e.message); return; }
 try{ warmIcons(); }catch(e){} // v0.45：アイコンを一度だけ生成
+// v0.86.1：料理の絵（2026-11-20 ユーザーが ChatGPT で作った絵 19枚。assets/food/<料理ID>.webp・256×256・背景は透明。元の絵は assets/food/src/。docs/food-image-request.md）
+// 読めたら、手持ちバー・持ち物・作業台などの絵を、この絵に差し替える。読めないとき（古い端末・ファイルが無い）は今までの立体の絵のまま。試遊版（previews/…）からは ../../ を試す
+const FOOD_ART=['onigiri','bento','grilledVeg','herbPorridge','gomadofu','koroni','kushi','katsudon','botan','ayuShio','keiShio','ayuMeshi','koikoku','funaKanro','kawaKushi','zakoTen','kawaZosui','zuganiJiru','nigoiTsumire'];
+const FOOD_ART_OK={};
+function foodArtLoad(){ for(const id of FOOD_ART){ if(FOOD_ART_OK[id]) continue; let i=0; const im=new Image();
+    const next=()=>{ if(i>=WG_BASE.length) return; const u=WG_BASE[i++]+'assets/food/'+id+'.webp'; im.onload=()=>{ ICONS[id]=u; FOOD_ART_OK[id]=u; for(const el of document.querySelectorAll(`img[data-ic="${id}"]`)){ el.removeAttribute('data-ic'); el.classList.remove('ld'); el.src=u; } }; im.onerror=next; im.src=u; }; next(); } }
+try{ foodArtLoad(); }catch(e){}
 
 
 // タイトル
