@@ -216,4 +216,5 @@ No.19 ファイル名 nigoiTsumire.png「にごいのつみれ汁」
 
 - 選ぶ画面（`chooseDefense`）に、絵を付けられるようにした（`ic`・`ics`・見出しの下の `icons`）。絵を付けない選択肢（荷台・車両基地など）は今までどおり。
 - 絵が読めないときは、今までどおり文字だけ。
-- テスト：`python3 tests/food-art-browser.py` に3項目を足した（魚料理の10品・できやすい料理・取り出す）。
+- テスト：`python3 tests/food-art-browser.py` に3項目を足した（魚料理の10品・できやすい料理・取り出す）。**PASS**（14項目）。回帰：`kamado`・`p3d-cook`・`kei-truck-systems`（選ぶ画面を多く使う）：PASS。
+- 状態：**コードに存在・作業ブランチにコミット済み・PC（画面のない Chromium）で確認**。公開していない・PC の実機と iPhone は未確認。
