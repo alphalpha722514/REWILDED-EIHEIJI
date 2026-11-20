@@ -288,6 +288,7 @@ button:disabled{opacity:.4;cursor:not-allowed;}
 .invgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;margin:8px 0 14px;}
 .invgrid div{border:1px solid var(--line);border-radius:5px;padding:6px 10px;display:flex;justify-content:space-between;font-size:13px;}
 .invgrid b{color:var(--gold);font-variant-numeric:tabular-nums;}
+.fic{width:40px;height:40px;object-fit:contain;flex:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));} .fsp{display:flex;align-items:center;gap:8px;} /* v0.86.1：料理の絵（持ち物・食料庫） */
 .clue{border-left:3px solid var(--moss);padding:4px 10px;margin:6px 0;font-size:13px;line-height:1.7;}
 #dialog{align-items:flex-end;background:transparent;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));}
 #dialog .card{max-width:720px;background:rgba(22,25,26,.94);}
@@ -658,7 +659,7 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.86 上志比の獣・採集 テスト版（本編とは別に保存）　第二章・魚と水生生物の形</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.86.1 上志比の獣・採集 テスト版（本編とは別に保存）　第二章・料理の絵</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -3473,7 +3474,7 @@ function renderStore(){
   $('storeInfo').textContent=`食料庫の中は傷みにくい（経過がふつうの${f.up?'1/5':'1/3'}）。食料と料理を預けられる。古いものから動く。`+(F7.spoil?'':'　※この版ではまだ食べ物は傷みません');
   for(const k of F7K){ const h=f7Count(k,'hand'), s=f7Count(k,'store'), wh=f7Warn(k,'hand'), ws=f7Warn(k,'store');
     const d=document.createElement('div'); d.className='rc st';
-    const nm=document.createElement('div'); nm.className='nm'; nm.textContent=`${FOODS[k].name}　手持ち ${h}${wh?`（うち傷みかけ ${wh}）`:''}／食料庫 ${s}${ws?`（うち傷みかけ ${ws}）`:''}`; d.appendChild(nm);
+    const nm=document.createElement('div'); nm.className='nm'; nm.textContent=`${FOODS[k].name}　手持ち ${h}${wh?`（うち傷みかけ ${wh}）`:''}／食料庫 ${s}${ws?`（うち傷みかけ ${ws}）`:''}`; if(typeof FOOD_ART_OK!=='undefined'&&FOOD_ART_OK[k]){ const im=document.createElement('img'); im.className='fic'; im.src=FOOD_ART_OK[k]; im.alt=''; nm.classList.add('fsp'); nm.prepend(im); } d.appendChild(nm); // v0.86.1：料理の絵
     const ds=document.createElement('div'); ds.className='ds'; ds.textContent=`最短の残り　手持ち ${f7Min(f7Left(k,'hand'))}・食料庫 ${f7Min(f7Left(k,'store'))}`; d.appendChild(ds);
     const bx=document.createElement('div'); bx.className='stb';
     for(const [glab,from] of [['預ける','hand'],['取り出す','store']]){ const gp=document.createElement('span'); gp.className='stg'; const lb=document.createElement('span'); lb.className='stl'; lb.textContent=glab; gp.appendChild(lb);
@@ -9063,12 +9064,12 @@ function openInv(){ f31Inv(); f34Body(); renderHuntRecords(); { const st=p3dStat
   f7Flush(); const fk={'食料':'food','おにぎり':'onigiri','精進弁当':'bento','肉':'meat','野菜':'veg','米':'rice'}; for(const f of FISH) fk[f.name]=f.id; fk['モクズガニ']='zugani';
   for(const [n,v] of items){ if(v===0&&(n==='ヌシの牙'||n==='杭柵キット'||n==='大根の種'||n==='肉'||n==='野菜'||n==='米'||n==='古い機械部品'||n==='棚の金具'||n==='作業場の工具一式'||n==='水門の部品'||n==='整備工場の特殊部品'||n==='巻き上げ機の部品'||n==='半鐘'||n==='モクズガニ'||n==='川虫'||FISH.some(f=>f.name===n))) continue; const d=document.createElement('div'); const k=fk[n]; let sub='';
     if(k&&v>0&&F7.store){ const w=f7Warn(k,'hand'); sub=`<small class="f7s">${w?`うち傷みかけ ${w}・`:''}最短の残り${f7Min(f7Left(k,'hand'))}</small>`; }
-    d.innerHTML=`<span>${n}${sub}</span><b>${v}</b>`; g.appendChild(d); }
+    d.innerHTML=(k&&FOOD_ART_OK[k]&&v>0?`<span class="fsp"><img class="fic" src="${FOOD_ART_OK[k]}" alt=""><span>${n}${sub}</span></span>`:`<span>${n}${sub}</span>`)+`<b>${v}</b>`; g.appendChild(d); } // v0.86.1：おにぎり・精進弁当は絵つき
   for(const k of [...STRAW_MEALS,'gomadofu','koroni','kushi','katsudon','botan',...Object.keys(FISH_DISH)]){ // v0.66：かまどの料理も「食べる」で食べられる（v0.84：魚料理も）
     if(inv[k]<=0)continue;
     const row=document.createElement('div'); row.style.gridColumn='1 / -1';
     const warning=f7Warn(k,'hand');
-    row.innerHTML=`<span>${FOODS[k].name} <b>${inv[k]}</b><small class="f7s">${warning?`うち傷みかけ ${warning}・`:''}最短の残り${f7Min(f7Left(k,'hand'))}</small></span>`;
+    row.innerHTML=`<span class="fsp">${FOOD_ART_OK[k]?`<img class="fic" src="${FOOD_ART_OK[k]}" alt="">`:''}<span>${FOODS[k].name} <b>${inv[k]}</b><small class="f7s">${warning?`うち傷みかけ ${warning}・`:''}最短の残り${f7Min(f7Left(k,'hand'))}</small></span></span>`; // v0.86.1：料理の絵
     const button=document.createElement('button'); button.type='button'; button.textContent='食べる';
     button.addEventListener('click',()=>{ eat(k); openInv(); });
     row.appendChild(button); g.appendChild(row);
@@ -13768,6 +13769,13 @@ try{
   spawnFieldEnemies(); setupBoss();
 }catch(e){ console.error(e); fatal('ゲーム世界の構築中にエラーが発生しました：'+e.message); return; }
 try{ warmIcons(); }catch(e){} // v0.45：アイコンを一度だけ生成
+// v0.86.1：料理の絵（2026-11-20 ユーザーが ChatGPT で作った絵 19枚。assets/food/<料理ID>.webp・256×256・背景は透明。元の絵は assets/food/src/。docs/food-image-request.md）
+// 読めたら、手持ちバー・持ち物・作業台などの絵を、この絵に差し替える。読めないとき（古い端末・ファイルが無い）は今までの立体の絵のまま。試遊版（previews/…）からは ../../ を試す
+const FOOD_ART=['onigiri','bento','grilledVeg','herbPorridge','gomadofu','koroni','kushi','katsudon','botan','ayuShio','keiShio','ayuMeshi','koikoku','funaKanro','kawaKushi','zakoTen','kawaZosui','zuganiJiru','nigoiTsumire'];
+const FOOD_ART_OK={};
+function foodArtLoad(){ for(const id of FOOD_ART){ if(FOOD_ART_OK[id]) continue; let i=0; const im=new Image();
+    const next=()=>{ if(i>=WG_BASE.length) return; const u=WG_BASE[i++]+'assets/food/'+id+'.webp'; im.onload=()=>{ ICONS[id]=u; FOOD_ART_OK[id]=u; for(const el of document.querySelectorAll(`img[data-ic="${id}"]`)){ el.removeAttribute('data-ic'); el.classList.remove('ld'); el.src=u; } }; im.onerror=next; im.src=u; }; next(); } }
+try{ foodArtLoad(); }catch(e){}
 
 
 // タイトル
