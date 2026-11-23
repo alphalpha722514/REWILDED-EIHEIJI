@@ -3,7 +3,7 @@
 このリポジトリで作業する Claude は、最初にこのファイルを読み、必ず守ること。返答はすべて日本語。
 
 ## 基準
-- 現行コードの唯一の基準は、このリポジトリの `main/index.html`（1ファイルのブラウザ3Dゲーム、three.js r128）。
+- 現行コードの唯一の基準は、このリポジトリの **`main` ブランチ直下の `index.html`**（1ファイルのブラウザ3Dゲーム、three.js r128）。`main/` というフォルダは無い。`previews/` の下の `index.html` は試遊版で、基準ではない。
 - 公開先：https://alphalpha722514.github.io/REWILDED-EIHEIJI/（main を GitHub Pages で配信）。
 - 古いHTML・試作・過去の会話内のコードで、丸ごと上書きしない。
 
