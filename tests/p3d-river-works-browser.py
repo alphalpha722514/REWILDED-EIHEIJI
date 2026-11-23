@@ -151,8 +151,8 @@ async def main():
         check(bk == [3, '観察 3/3', 3, True], f'図鑑の「観察」のタブ {bk}')
 
         # ================= C-4 =================
-        kp = await E("(()=>{ const L=[...REG.live.ktrees.values()].filter(k=>k.kona); return [L.length, L.every(k=>k.col&&k.col.active)]; })()")
-        hw = await E("(()=>{ const kt=[...REG.live.ktrees.values()].find(k=>k.kona&&!k.felled); P.x=kt.x+3; P.z=kt.z+3; const rec=kamiTreeRec(kt); f4Fell(rec,0.7); const tr=F4.trunks[F4.trunks.length-1]; tr.fall=-1; f4Buck(tr); const logs=REG.live.kw.logs.filter(l=>dist(l[0],l[1],kt.x,kt.z)<9); inv.hardwood=0; const w0=inv.wood; for(const l of logs.slice()) kamiSplitLog(l,99); return [kt.key, logs.length, logs.filter(l=>l[5]).length, inv.hardwood, inv.wood-w0, prog.kami.f.includes(kt.key), kt.felled]; })()")
+        kp = await E("(()=>{ const L=[...REG.live.ktrees.values()].filter(k=>k.kona&&k.key.startsWith('kp')); return [L.length, L.every(k=>k.col&&k.col.active)]; })()")  # v0.88（E-2）：広葉樹は全域にある。林道の試作の33本（kp）を数える
+        hw = await E("(()=>{ const kt=[...REG.live.ktrees.values()].find(k=>k.kona&&!k.felled&&k.key.startsWith('kp')); P.x=kt.x+3; P.z=kt.z+3; const rec=kamiTreeRec(kt); f4Fell(rec,0.7); const tr=F4.trunks[F4.trunks.length-1]; tr.fall=-1; f4Buck(tr); const logs=REG.live.kw.logs.filter(l=>dist(l[0],l[1],kt.x,kt.z)<9); inv.hardwood=0; const w0=inv.wood; for(const l of logs.slice()) kamiSplitLog(l,99); return [kt.key, logs.length, logs.filter(l=>l[5]).length, inv.hardwood, inv.wood-w0, prog.kami.f.includes(kt.key)||(prog.kami.fb||[]).includes(kt.key), kt.felled]; })()")  # v0.88（E-2）：切った広葉樹は生えてこない記録（fb）へ
         check(kp[0] == 33 and kp[1] and hw[3] == 2 and hw[2] == 2 and hw[5] and hw[6], f'林道の広葉樹33本は切れる → 丸太を割ると山地の硬木2・切った木の記録 {kp} {hw}')
         # Lv3 と主軸の依頼
         await E("(()=>{ const c=p3cState(); c.lv=3; c.ev.res=1; c.soichi.found=1; c.soichi.coop=1; c.soichi.resident=1; return 1; })()")
