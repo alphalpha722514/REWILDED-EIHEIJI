@@ -60,7 +60,7 @@ assert.match(html,/prog\.chapter2=chapter2State\(null,false\)/);
 { const kc=vm.createContext({clamp:(v,a,b)=>Math.min(b,Math.max(a,v)),ROCK_MAX:8,stats:{time:1000},prog:{}});
   vm.runInContext(html.slice(html.indexOf('const KW={beasts:'),html.indexOf('// ---- 場所を決める ----')),kc);
   const L=q=>JSON.parse(JSON.stringify(vm.runInContext('kamiLoad('+JSON.stringify(q)+')',kc)));
-  const fresh={v:1,n:{},r:{},sc:[],f:[],sp:{},g:{},st:{},fm:{}};
+  const fresh={v:1,n:{},r:{},sc:[],f:[],sp:{},g:{},st:{},fm:{},fb:[],pl:{}}; // v0.88：fb 切った広葉樹・pl 苗木を植えた時刻
   for(const bad of [null,42,'x',[],{v:2,n:{s0:5}}]) assert.deepEqual(L(bad),fresh,'malformed: fresh');
   assert.deepEqual(L(null),fresh,'old save: nothing taken');
   const q=L({v:1,n:{s0:1200,zz:5,b1:'x',o3:-5},r:{r1:3,r2:99,s0:1},sc:[1,2,'a',-1],f:['k1_2_3','bad','f1_1_1'],sp:{a0:1500,b:1},g:{g0:{d:[1,0,1,1],w:2000},x:{d:[1]}},st:{fort:{n:2,t:300},outB:{n:0,t:5},bad:{n:1},outA:{n:'x'}},fm:{f3:2000,a1:'x',z9:5,b2:-4}});
@@ -68,7 +68,8 @@ assert.match(html,/prog\.chapter2=chapter2State\(null,false\)/);
   { const q2=L({v:1,n:{q1:50,q:3},r:{q2:9,q3:1,r1:2},f:['kp3','kp','k1_2_3','kpx']}); assert.deepEqual(q2.n,{q1:50}); assert.deepEqual(q2.r,{q2:3,q3:1,r1:2},'v0.85: river ore (q) up to 3'); assert.deepEqual(q2.f,['kp3','k1_2_3'],'v0.85: felled broadleaf trees (kp)'); }
   vm.runInContext('prog.kami=kamiLoad('+JSON.stringify({v:1,n:{s0:1200},r:{r1:0},sc:[4],f:['k0_0_1'],sp:{a0:900,a1:1500},g:{g0:{d:[1,1,0],w:0},g1:{d:[0,0,0],w:500}},st:{outB:{n:1,t:950}},fm:{f1:1600,b0:200}})+')',kc);
   const s2=JSON.parse(JSON.stringify(vm.runInContext('kamiSave()',kc)));
-  assert.deepEqual(s2,{v:1,n:{s0:1200},r:{r1:0},sc:[4],f:['k0_0_1'],sp:{a1:1500},g:{g0:{d:[1,1,0],w:0}},st:{outB:{n:1,t:950}},fm:{f1:1600}},'round trip keeps pending times only'); }
+  assert.deepEqual(s2,{v:1,n:{s0:1200},r:{r1:0},sc:[4],f:['k0_0_1'],sp:{a1:1500},g:{g0:{d:[1,1,0],w:0}},st:{outB:{n:1,t:950}},fm:{f1:1600},fb:[],pl:{}},'round trip keeps pending times only');
+  { const q3=L({v:1,n:{t12:1300,h3:1400,x1:5},f:['k1_1_1'],fb:['k2_2_2','kp4','bad',7],pl:{k2_2_2:900,kp9:5,k3_3_3:'x'}}); assert.deepEqual(q3.n,{t12:1300,h3:1400},'v0.88: bamboo grove (t) and mountain herb (h)'); assert.deepEqual(q3.fb,['k2_2_2','kp4'],'v0.88: felled broadleaf (fb)'); assert.deepEqual(q3.pl,{k2_2_2:900},'v0.88: planted only on felled broadleaf (pl)'); } }
 // v0.73：スズキの状態 suzuki（古いセーブ・不正な値は「まだ仲間でない」）
 { const sc=vm.createContext({});
   vm.runInContext('let prog=null; '+html.slice(html.indexOf('function szKamiBaseOK()'),html.indexOf('function szKamiBase()'))+html.slice(html.indexOf("const SZ_ORDERS=['follow'"),html.indexOf('// 読み込む：ついて来ているスズキと')),sc);
