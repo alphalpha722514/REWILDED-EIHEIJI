@@ -143,6 +143,9 @@ async def main():
         done = await until(f"!E1.busy&&[...E1.cells.values()].every(c=>c.o||e1RectD(c,{x}+3,{z}+6)>=gfxRad().in)", 240000)
         fl = await E("""(()=>{ let fern=0, sun=0, cols=0, rock=0, log=0; window.__fc=[]; for(const c of E1.cells.values()) if(c.o){ if(c.o.fern) fern+=c.o.fern.count; if(c.o.sun) sun++; cols+=c.o.cols.length; for(const k of c.o.cols){ __fc.push(k); if(k.tag==='rock') rock++; if(k.tag==='log') log++; } } return [fern, sun, rock, log]; })()""")
         check(done and fl[0] > 100 and fl[1] >= 1 and fl[2] + fl[3] >= 1, f"近くの林床：下草 {fl[0]}・木漏れ日の区画 {fl[1]}・苔の岩 {fl[2]}・倒木 {fl[3]}")
+        q = await E("""(()=>{ let nq=0, fq=0, dup=0, miss=0; for(const e of E2.lo){ const A=e.lo.instanceMatrix.array; for(const Q of e.q){ if(!Q) continue; if(Q.near){ nq++; if(!Q.hi.visible) miss++; for(let i=Q.i0;i<Q.i0+Q.n;i++) if(A[i*16+15]!==0) dup++; } else if(Q.hi.visible) fq++; } }
+          return [nq, fq, dup, miss]; })()""")
+        check(q[0] >= 1 and q[1] == 0 and q[2] == 0 and q[3] == 0, f"近い4分の1の区画だけ細かい形・そこの遠い形は消す（近い {q[0]}・遠いのに細かい {q[1]}・二重 {q[2]}・抜け {q[3]}）")
         if SHOTS:
             os.makedirs(SHOTS, exist_ok=True)
             await E("($('hud').hidden=true, 1)")
@@ -154,7 +157,8 @@ async def main():
             await pg.screenshot(path=os.path.join(SHOTS, 'above.png'), timeout=300000)
             await E("($('hud').hidden=false, 1)")
         # 軽量：遠くの木を減らす
-        r = await E("""(()=>{ applyDetail('lite'); const a=E2.lo.every(e=>e.lo.count===e.keep), red=E2.lo.reduce((s,e)=>s+e.n-e.keep,0), all=E2.lo.reduce((s,e)=>s+e.n,0); applyDetail('std'); const b=E2.lo.every(e=>e.lo.count===e.n); return [a, b, Math.round(red/all*100)]; })()""")
+        r = await E("""(()=>{ const thinOn=()=>{ let on=0, n=0; for(const e of E2.lo){ const A=e.lo.instanceMatrix.array; for(let i=0;i<e.n;i++) if(e.thin[i]&&e.orig[i*16+15]!==0){ n++; if(A[i*16+15]!==0) on++; } } return [on,n]; };
+          applyDetail('lite'); const [on1,n]=thinOn(), red=E2.lo.reduce((s,e)=>s+e.n-e.keep,0), all=E2.lo.reduce((s,e)=>s+e.n,0); applyDetail('std'); const [on2]=thinOn(); return [on1===0, on2>n*0.9, Math.round(red/all*100)]; })()""")
         check(r[0] and r[1] and 30 <= r[2] <= 50, f"「描く細かさ：軽量」で遠くの木を {r[2]}% 減らす・標準で戻す {r[:2]}")
         await E("(()=>{ P.x=6500; P.z=470; cam.override={p:new THREE.Vector3(6500,groundH(6500,470)+30,470), l:new THREE.Vector3(6520,groundH(6520,430),430), fov:55}; return 1; })()")
         await until("!E1.busy&&[...E1.cells.values()].every(c=>!c.o||e1RectD(c,6500,470)<=gfxRad().out)", 120000)
