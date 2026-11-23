@@ -12368,11 +12368,11 @@ function e2Classify(all){ const D=KAMI.D, H=kamiH, cell=new Set(), road=new Set(
   const rest=cand.filter(o=>!o.ty).sort((a,b)=>b.kScore-a.kScore); rest.forEach((o,i)=>{ o.ty=i<nk?'kona':'sugi'; });
   const c={sugi:0,kona:0,take:0}; for(const o of all) c[o.ty]++; return c; }
 // 遠くの形（軽い）：杉は細い円錐、広葉樹は丸い樹冠、竹は細長い葉の塊
-function e2LoGeo(kind){ return cached('e2lo2_'+kind,()=>{ const g=new THREE.Group();
+function e2LoGeo(kind){ const g=new THREE.Group(); // 上志比を出るときに捨てる（ctx.own）
   if(kind==='sugi'){ g.add(mesh(new THREE.ConeGeometry(1.6,11.5,6,1,true),mat(0x2a4a2e),0,8.1,0)); } // 遠くは幹を描かない（三角形を減らす）
   else if(kind==='kona'){ g.add(mesh(new THREE.CylinderGeometry(0.16,0.3,4.4,3,1,true),mat(0x6e5d4c),0,2.2,0)); const c=mesh(new THREE.IcosahedronGeometry(1,0),mat(0x5f8a3a),0,6.0,0,2.7,2.0,2.7); g.add(c); }
   else { g.add(mesh(new THREE.ConeGeometry(1.5,12,5,1,true),mat(0x86a852),0,6.0,0)); }
-  return bakeGeo(g,0.1); }); }
+  return bakeGeo(g,0.1); }
 // 竹林の近くの形：P3-A の竹（1100三角形）を軽くした（稈9本・稈ごとに葉1つ＋上の葉3つ。約300三角形）。見た目は同じ作り
 function e2TakeGeo(){ const g=new THREE.Group(), rnd=p3aRng(44), ico=cached('p3ico',()=>new THREE.IcosahedronGeometry(1,0)); let cx=0, cz=0;
   for(let k=0;k<9;k++){ const a=rnd()*TAU, rr=rnd()*1.5, h=9+rnd()*3.5, x=Math.sin(a)*rr, z=Math.cos(a)*rr, lean=(rnd()-0.5)*0.12; const cu=mesh(new THREE.CylinderGeometry(0.055,0.075,h,4,1,true),mat(k%3?0x7aa24a:0x8bb056),x,h/2,z); cu.rotation.set(lean,0,lean*0.7); g.add(cu);
@@ -12385,7 +12385,7 @@ function e2Mat4(o,m4,ty){ const [x,y,z,s]=o.tr, g=E2GS[ty], q=new THREE.Quaterni
   return m4.compose(new THREE.Vector3(x,y,z),q,new THREE.Vector3(s*g,s*g*sy,s*g)); }
 function e2BuildTrees(ctx,perTile){ const own=g=>ctx.own(g), all=[]; for(const [t,L] of perTile) L.forEach((tr,j)=>all.push({t,j,tr}));
   const cnt=e2Classify(all), M=p3aMats(); E2.all=all; E2.count=cnt; E2.take=[]; E2.tg=new Map(); E2.lo=[];
-  const GEO=E2.geo={sugi:{hi:own(p3aTreeGeo('sugi')),lo:e2LoGeo('sugi')},kona:{hi:own(p3aTreeGeo('kona')),lo:e2LoGeo('kona')},take:{hi:own(e2TakeGeo()),lo:e2LoGeo('take')}};
+  const GEO=E2.geo={sugi:{hi:own(p3aTreeGeo('sugi')),lo:own(e2LoGeo('sugi'))},kona:{hi:own(p3aTreeGeo('kona')),lo:own(e2LoGeo('kona'))},take:{hi:own(e2TakeGeo()),lo:own(e2LoGeo('take'))}}; E2.stumpGeo=own(e2StumpGeo());
   GEO.sugi.ink=own(inkGeo(GEO.sugi.hi,0.06)); GEO.kona.ink=own(inkGeo(GEO.kona.hi,0.06)); E2.sugiGeo=GEO.sugi.hi; E2.konaGeo=GEO.kona.hi; // 倒れる木の形にも使う
   const KT=ctx.ktrees=new Map(), m4=new THREE.Matrix4(), B=ctx.bounds, byT=new Map(); let nTree=0;
   for(const o of all){ let a=byT.get(o.t); if(!a){ a={sugi:[],kona:[],take:[]}; byT.set(o.t,a); } a[o.ty].push(o); }
@@ -12424,12 +12424,12 @@ function e2Plant(kt){ const k=prog.kami; if(!(inv.naegi>0)){ sfx('deny'); toast(
 function e2Grow(T){ const k=prog.kami; let n=0; for(const key in k.pl){ if(T<k.pl[key]+E2.grow) continue; const kt=e2Kt(key); delete k.pl[key]; const i=k.fb.indexOf(key); if(i>=0) k.fb.splice(i,1); if(kt) e2ShowTree(kt); n++; }
   if(n){ E2.dirty=true; toast(n>1?`植えた広葉樹が${n}本育った（また切れる）`:'植えた広葉樹が育った（また切れる）'); saveGame(); } }
 // 切り株と苗木の形（全体で1つずつ。数は切った広葉樹の数）
-function e2StumpGeo(){ return cached('e2stump',()=>{ const gb=new GB(); gb.box(0,0.22,0,0.62,0.44,0.62,cc(0x6a5440)); gb.box(0,0.45,0,0.52,0.03,0.52,cc(0xd0b080)); gb.box(0,0.462,0,0.22,0.02,0.22,cc(0xb89060)); for(const [x,z] of [[0.36,0],[-0.36,0.1],[0,0.36]]) gb.box(x,0.06,z,0.34,0.12,0.18,cc(0x5a4636)); return gb.geo(); }); }
+function e2StumpGeo(){ { const gb=new GB(); gb.box(0,0.22,0,0.62,0.44,0.62,cc(0x6a5440)); gb.box(0,0.45,0,0.52,0.03,0.52,cc(0xd0b080)); gb.box(0,0.462,0,0.22,0.02,0.22,cc(0xb89060)); for(const [x,z] of [[0.36,0],[-0.36,0.1],[0,0.36]]) gb.box(x,0.06,z,0.34,0.12,0.18,cc(0x5a4636)); return gb.geo(); } }
 function e2StumpsUpdate(ctx){ if(!ctx||!ctx.ktrees) return; E2.dirty=false; const k=prog.kami, T=stats.time, A=[], S=[];
   for(const key of k.fb){ const kt=ctx.ktrees.get(key); if(!kt||!kt.felled) continue; A.push(kt); if(k.pl[key]!=null) S.push([kt,clamp((T-k.pl[key])/E2.grow,0,1)]); }
   const mk=(geo,mt,n)=>{ const m=new THREE.InstancedMesh(geo,mt,Math.max(1,n)); m.frustumCulled=false; m.castShadow=true; m.receiveShadow=true; ctx.add(m); return m; }, m4=new THREE.Matrix4(), q=new THREE.Quaternion(), v=new THREE.Vector3(), sc=new THREE.Vector3();
-  if(!E2.stumpIM||E2.stumpIM.userData.cap<A.length){ if(E2.stumpIM){ ctx.group.remove(E2.stumpIM); E2.stumpIM.dispose(); } E2.stumpIM=mk(e2StumpGeo(),vcMat,A.length+32); E2.stumpIM.userData.cap=A.length+32; }
-  if(!E2.sapIM||E2.sapIM.userData.cap<S.length){ if(E2.sapIM){ ctx.group.remove(E2.sapIM); E2.sapIM.dispose(); } E2.sapIM=mk(E2.konaGeo||P3A.konaGeo||e2LoGeo('kona'),p3aMats().sway,S.length+16); E2.sapIM.userData.cap=S.length+16; }
+  if(!E2.stumpIM||E2.stumpIM.userData.cap<A.length){ if(E2.stumpIM){ ctx.group.remove(E2.stumpIM); E2.stumpIM.dispose(); } E2.stumpIM=mk(E2.stumpGeo,vcMat,A.length+32); E2.stumpIM.userData.cap=A.length+32; }
+  if(!E2.sapIM||E2.sapIM.userData.cap<S.length){ if(E2.sapIM){ ctx.group.remove(E2.sapIM); E2.sapIM.dispose(); } E2.sapIM=mk(E2.konaGeo||P3A.konaGeo,p3aMats().sway,S.length+16); E2.sapIM.userData.cap=S.length+16; }
   A.forEach((kt,i)=>{ const s=0.7+kt.s*0.35; q.setFromEuler(new THREE.Euler(0,hash2(kt.x,kt.z)*TAU,0)); m4.compose(v.set(kt.x,kamiH(kt.x,kt.z)-0.05,kt.z),q,sc.set(s,s,s)); E2.stumpIM.setMatrixAt(i,m4); }); E2.stumpIM.count=A.length; E2.stumpIM.instanceMatrix.needsUpdate=true;
   S.forEach(([kt,g],i)=>{ const s=kt.s*(kt.gs||0.82)*(0.18+0.82*g); q.setFromEuler(new THREE.Euler(0,hash2(kt.z,kt.x)*TAU,0)); m4.compose(v.set(kt.x+0.9,kamiH(kt.x+0.9,kt.z)-0.05,kt.z),q,sc.set(s,s,s)); E2.sapIM.setMatrixAt(i,m4); }); E2.sapIM.count=S.length; E2.sapIM.instanceMatrix.needsUpdate=true; }
 // ---- 山の薬草（森の奥の木陰。2026-11-20 ユーザー「追加する」。数・戻る時間は暫定） ----
@@ -12457,7 +12457,7 @@ function e2Interactables(ctx,L){ if(!E2.tg) return; const k=prog.kami, T=stats.t
     if(k.pl[key]!=null) L.push({d:d+0.6,label:`植えた広葉樹の苗木：育つまで あと${fmtTime(Math.max(0,k.pl[key]+E2.grow-T))}`,act:()=>{}});
     else L.push((inv.naegi||0)>0?{d,label:`広葉樹の切り株に苗木を植える（苗木 ${inv.naegi}）`,act:()=>e2Plant(kt)}:{d:d+0.6,label:'広葉樹の切り株：苗木を植えると、また育つ（苗木は広葉樹を切ると取れる）',act:()=>{}}); } }
 function e2Tick(ctx){ E2.t-=0.25; if(E2.t<=0){ E2.t=5; e2Grow(stats.time); if(Object.keys(prog.kami.pl).length) E2.dirty=true; } if(E2.dirty) e2StumpsUpdate(ctx); }
-function e2Dispose(){ E2.all=null; E2.take=null; E2.tg=null; E2.geo=null; E2.lo=[]; E2.stumpIM=null; E2.sapIM=null; E2.dirty=true; E2.herbs=[]; E2.grid=null; }
+function e2Dispose(){ E2.all=null; E2.take=null; E2.tg=null; E2.geo=null; E2.lo=[]; E2.stumpIM=null; E2.sapIM=null; E2.stumpGeo=null; E2.dirty=true; E2.herbs=[]; E2.grid=null; }
 // ---- 森の音（木々のざわめき・杉の梢の風・竹のきしみと打ち合う音・森の鳥。2026-11-20 案 6 のとおり） ----
 let E2SND=null;
 function e2Density(){ const G=E2.grid; if(!G) return {kona:0,sugi:0,take:0}; const c={kona:0,sugi:0,take:0}, i0=Math.floor(P.x/20), k0=Math.floor(P.z/20);
