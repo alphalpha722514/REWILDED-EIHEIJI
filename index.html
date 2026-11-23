@@ -12469,10 +12469,10 @@ function e2Bird(t){ const kind=Math.floor(Math.random()*3), base=1500+Math.rando
 function e2Drum(t){ const n=12+Math.floor(Math.random()*8); for(let j=0;j<n;j++){ const t0=t+j*0.055*(1+j*0.015), s=AC.createBufferSource(); s.buffer=noiseBuf; const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1100; f.Q.value=6; const g=AC.createGain(); // 木をたたく音（遠く）
     g.gain.setValueAtTime(0.0001,t0); g.gain.linearRampToValueAtTime(0.02*(1-j/n*0.5),t0+0.004); g.gain.exponentialRampToValueAtTime(0.0001,t0+0.04); s.connect(f); f.connect(g); g.connect(AU.amb); s.start(t0,Math.random()*0.8,0.05); s.onended=()=>{ s.disconnect(); f.disconnect(); g.disconnect(); }; } }
 // ---- 林床（近くの区画だけ。E-1 の区画と一緒に作る・捨てる）：落ち葉・下草（シダ）・苔の岩・倒木・切り株・木漏れ日 ----
-const E2F={litter:{sugi:[0x5e4030,0x6b4a34,0x56402c],kona:[0x8a6a3a,0x7a6236,0x94743e],take:[0x9a8a5a,0x8c7e50]},fern:{sugi:2,kona:3,take:1},rock:0.04,log:0.015,stump:0.03,sun:0.1}; // 1本あたり（暫定）
+const E2F={litter:{sugi:[0x4a3a2c,0x52402f,0x47392b],kona:[0x5f5636,0x585030,0x645a38],take:[0x6e6a46,0x666240]},fern:{sugi:2,kona:3,take:1},rock:0.04,log:0.015,stump:0.03,sun:0.1}; // 1本あたり（暫定）
 function e2Floor(J,c){ if(!c.tr||!c.tr.length) return; const A=J.A, B=J.lite?null:J.B, rnd=p3aRng(c.k*31+5), pr=J.prop;
   for(const o of c.tr){ const [x,y,z,s]=o.tr, ty=o.ty, r=rnd();
-    if(B){ const rr=(1.5+rnd()*1.2)*s, n=7, cols=E2F.litter[ty], col=cc(cols[Math.floor(rnd()*cols.length)]), P0=[x,kamiH(x,z)+0.05,z], pts=[]; B.frame(0,0,0,0); // 落ち葉（木のまわりの地面に薄く）
+    if(B&&rnd()<0.7){ const rr=(0.9+rnd()*0.8)*s, n=7, cols=E2F.litter[ty], col=cc(cols[Math.floor(rnd()*cols.length)]), P0=[x,kamiH(x,z)+0.05,z], pts=[]; B.frame(0,0,0,0); // 落ち葉（木のまわりの地面に薄く）
       for(let q=0;q<n;q++){ const a=q/n*TAU+rnd()*0.5, d=rr*(0.6+rnd()*0.4), px=x+Math.cos(a)*d, pz=z+Math.sin(a)*d; pts.push([px,kamiH(px,pz)+0.04,pz]); }
       for(let q=0;q<n;q++) B.tri(P0,pts[(q+1)%n],pts[q],col); }
     const nf=Math.round(E2F.fern[ty]*(pr<1?0.5:1)); for(let q=0;q<nf;q++){ const a=rnd()*TAU, d=(1.0+rnd()*2.2)*s, px=x+Math.cos(a)*d, pz=z+Math.sin(a)*d; if(kamiCls(px,pz)!==2) J.F.push([px,pz]); } // 下草
