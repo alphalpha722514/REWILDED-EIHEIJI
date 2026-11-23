@@ -27,6 +27,15 @@ body.nushiFarewell52 #hud,body.nushiFarewell52 #touch{visibility:hidden!importan
 #nushiFarewell52 .nushiLine52{font:clamp(15px,2.5vw,20px)/1.85 "Zen Kaku Gothic New",sans-serif;min-height:4em;white-space:pre-wrap;margin:0 0 12px}
 #nushiFarewell52 .nushiNext52{float:right;min-height:42px;padding:8px 22px;border:1px solid #ae9770;background:#4b4031;color:white;font:14px sans-serif;cursor:pointer}
 @media(max-height:500px){#nushiFarewell52{padding-bottom:6px;border-top-width:3vh;border-bottom-width:3vh}#nushiFarewell52 .nushiPanel52{padding:9px 14px}#nushiFarewell52 .nushiLine52{min-height:2em;margin-bottom:5px;line-height:1.4}#nushiFarewell52 .nushiSpeaker52{margin-bottom:5px}}
+</style><style>/* 試遊版だけ（previews/p3e2-forest）：「調べる」の案内を小さく。docs/prompt-ui.md */
+#prompt.cmp{display:flex;align-items:center;gap:6px;left:var(--pui-x,50%)!important;right:auto!important;top:var(--pui-y,44px)!important;transform:none!important;bottom:auto!important;width:max-content!important;max-width:min(420px,calc(100vw - 24px))!important;margin:0!important;box-sizing:border-box;font-size:12px!important;line-height:1.45!important;padding:3px 10px!important;border-radius:13px!important;white-space:nowrap!important;text-align:left!important;background:rgba(22,24,20,.58)!important;box-shadow:none!important;border-color:rgba(255,255,255,.18)!important;pointer-events:auto;cursor:default;opacity:.94;}
+#prompt.cmp[hidden]{display:none!important}
+#prompt.cmp .k{flex:none;font-size:11px;line-height:16px;padding:0 5px;margin:0;border-radius:3px;}
+#prompt.cmp .tx{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#prompt.cmp .mo{flex:none;font-size:10.5px;color:var(--gold);opacity:.9;border-left:1px solid rgba(255,255,255,.2);padding-left:6px;}
+#prompt.cmp.more{cursor:pointer;}
+#prompt.cmp.open{white-space:normal!important;width:auto!important;max-width:min(520px,calc(100vw - 24px))!important;align-items:flex-start;}
+#prompt.cmp.open .tx{white-space:normal;overflow:visible;}
 </style></head><body>
 <noscript>
   <div id="noScriptHelp">
@@ -7186,7 +7195,7 @@ function ftTime(sec){ stats.time+=sec; if(typeof p3bAdvance==='function') p3bAdv
 function ftNoon(){ prog.f10.tod=150; f10LightNow(); toast('試遊：朝9時にした（昼の間は鳥の声がする）'); }
 function ftStat(){ const k=prog.kami||{pl:{}}, T=stats.time, pl=Object.values(k.pl||{}), nx=pl.length?Math.max(0,Math.min(...pl)+E2.grow-T):0, h=p3bClock();
  return `${REG.cur==='kamishihi'?'上志比':'光明寺'}　${h[0]}:${String(h[1]).padStart(2,'0')}　苗木 ${inv.naegi||0}・山の薬草 ${inv.mherb||0}・米 ${inv.rice||0}・木材 ${inv.wood||0}`+
-   `<br>植えた苗木 ${pl.length}${pl.length?`（次に育つまで ${fmtTime(nx)}）`:''}・救急箱の薬草 ${stats.time<(TRUCK.herbT||0)?'あと'+fmtTime(TRUCK.herbT-stats.time):'なし'}・描く細かさ ${GFX.detail==='lite'?'軽量':'標準'}`; }
+   `<br>植えた苗木 ${pl.length}${pl.length?`（次に育つまで ${fmtTime(nx)}）`:''}・救急箱の薬草 ${stats.time<(TRUCK.herbT||0)?'あと'+fmtTime(TRUCK.herbT-stats.time):'なし'}・描く細かさ ${GFX.detail==='lite'?'軽量':'標準'}・案内 ${PUI.on?'新しい形':'今までの形'}`; }
 async function ftStart(){ if(FT.busy) return; ftBase(); if(!(await ftTravel('kamishihi'))) return; for(let i=0;i<4;i++){ await ftGo('kona'); if(ftTruck()) break; } prog.f10.tod=150; f10LightNow(); saveGame();
  banner('試遊：上志比の森（v0.88）','広葉樹の林の中から始めます。画面の左上の「試遊メニュー」で、場所を移る・素材を足す・時間を進めることができます（本編とは別に保存）',8); }
 { const b=document.getElementById('btnFTStart'); if(b) b.addEventListener('click',()=>ftStart());
@@ -7201,7 +7210,7 @@ async function ftStart(){ if(FT.busy) return; ftBase(); if(!(await ftTravel('kam
    G('かまど（光明寺）',[['kamado','光明寺のかまどの前へ'],['back','上志比の森へ戻る']])+
    G('持ち物',[['items','苗木・山の薬草・米・木材を足す'],['heal','体力を戻す・食料を足す']])+
    G('時間',[['t5','5分進める'],['t20','20分進める（薬草が戻る）'],['t40','40分進める（苗木が育つ）'],['noon','朝9時にする']])+
-   G('画面',[['detail','描く細かさを切り替える'],['close','メニューを閉じる']])+
+   G('画面',[['detail','描く細かさを切り替える'],['pui','案内の表示：新しい形 ⇄ 今までの形'],['close','メニューを閉じる']])+
    `<div style="margin-top:6px;opacity:.75">時間を進めると、食べ物の傷み・工事なども同じだけ進みます。数はすべて暫定です。</div>`;
   document.body.appendChild(tg); document.body.appendChild(pn); tg.hidden=true; pn.hidden=true;
   const stat=()=>{ const el=document.getElementById('ftStat'); if(el&&!pn.hidden) el.innerHTML=ftStat(); };
@@ -7216,12 +7225,47 @@ async function ftStart(){ if(FT.busy) return; ftBase(); if(!(await ftTravel('kam
     else if(k==='items') ftItems(); else if(k==='heal') ftHeal();
     else if(k==='t5') ftTime(300); else if(k==='t20') ftTime(1200); else if(k==='t40') ftTime(2400); else if(k==='noon') ftNoon();
     else if(k==='detail') applyDetail(GFX.detail==='lite'?'std':'lite'); else if(k==='close') close();
+    else if(k==='pui'){ puiSet(!PUI.on); toast(PUI.on?'試遊：案内の表示を「新しい形」にした（名前だけ小さく。押すと詳しく）':'試遊：案内の表示を「今までの形」にした（比べる用）'); }
     stat(); });
   // 置き場所：画面の左の上にある表示（体力・目標の帯など）のすぐ下。PC とスマホで表示の大きさが違うので、毎回測る（いつも出ている体力の欄 #stats と目標の帯 #objective だけを測る。通知や案内の文では動かさない。スマホのスティックの範囲は画面の下側なので、その上に収まる）
-  const place=()=>{ let y=4; for(const id of ['stats','objective']){ const el=document.getElementById(id); if(!el) continue; const b=el.getBoundingClientRect(), cs=getComputedStyle(el); if(b.width<4||b.height<4||cs.visibility==='hidden'||cs.opacity==='0') continue;
-      if(b.top<innerHeight*0.35&&b.left<innerWidth*0.45) y=Math.max(y,b.bottom); }
+  const place=()=>{ let y=4; const tb=tg.getBoundingClientRect(), tw=Math.max(tb.width,100); const els=['stats','objective'].map(id=>document.getElementById(id)).concat(touchMode?[...document.querySelectorAll('#touch button')]:[]);
+    for(const el of els){ if(!el) continue; const b=el.getBoundingClientRect(), cs=getComputedStyle(el); if(b.width<4||b.height<4||cs.visibility==='hidden'||cs.display==='none'||cs.opacity==='0'||el.closest('[hidden]')) continue;
+      if(b.top<innerHeight*0.35&&b.left<8+tw) y=Math.max(y,b.bottom); } // 左上の、ボタンが入る幅にある物（体力の欄・目標の帯・スマホの地図ボタンなど）の下
     tg.style.top=Math.round(y+6)+'px'; pn.style.top=Math.round(y+42)+'px'; pn.style.maxHeight=Math.max(180,Math.round(innerHeight-y-42-120))+'px'; };
   setInterval(()=>{ const on=S.mode==='playing'; tg.hidden=!on; if(!on) pn.hidden=true; if(on) place(); stat(); },500); }
+
+// ---- 「調べる」の案内を小さく（試遊版 previews/p3e2-forest だけ。docs/prompt-ui.md） ----
+const PUI={on:true,key:'',open:false,t:0};
+// 名前だけ：全角の括弧（素材の数・秒数などの説明）を省く。操作の説明（長押し）は残す
+function puiShort(l){ const s=String(l).replace(/（[^（）]*）/g,m=>/長押し/.test(m)?m:'').replace(/[ 　]+$/,'').replace(/[ 　]{2,}/g,'　'); return s||String(l); }
+// 置き場所：まわりの表示（体力の欄・目標の帯・持ち物の数・地図・防衛戦とボス戦の帯・操作の説明・手持ちバー・スマホのボタン・試遊メニュー）を測って、
+// 重ならない所へ。まず画面の上の真ん中（目標の帯のすぐ下。主人公の頭より上）、だめなら右寄せ、左寄せ。PC もスマホも同じ。測るのは中身が変わったときと0.5秒に1回
+function puiRects(skip){ const out=[], add=el=>{ if(!el||el===skip) return; const b=el.getBoundingClientRect(), cs=getComputedStyle(el); if(b.width<4||b.height<4||cs.visibility==='hidden'||cs.display==='none'||cs.opacity==='0'||el.closest('[hidden]')) return; out.push([b.left,b.top,b.right,b.bottom]); };
+  for(const id of ['stats','notice','objective','res','coreBar','bossBar','mini','help','items']) add(document.getElementById(id));
+  if(touchMode) for(const el of document.querySelectorAll('#touch button')) add(el);
+  add(document.getElementById('ftToggle')); return out; }
+// x0〜x1 の幅で、画面の上半分にある物の下へ落とした y
+function puiDrop(R,x0,x1,y0){ let y=y0; for(const r of R) if(r[0]<x1&&x0<r[2]&&r[1]<innerHeight*0.45) y=Math.max(y,r[3]+6); return y; }
+function puiPlace(pr){ PUI.t=0.5; const R=puiRects(pr), b=pr.getBoundingClientRect(), w=b.width, h=b.height, W=innerWidth, H=innerHeight, top0=8;
+  const hit=(x,y)=>R.some(r=>x<r[2]&&r[0]<x+w&&y<r[3]&&r[1]<y+h);
+  let best=null; for(const x of [(W-w)/2, W-w-10, 10]){ const y=puiDrop(R,x,x+w,top0); if(y+h<=H*0.62&&!hit(x,y)){ best=[x,y]; break; } }
+  if(!best){ const x=(W-w)/2; best=[x,puiDrop(R,x,x+w,top0)]; }
+  pr.style.setProperty('--pui-x',Math.round(Math.max(4,best[0]))+'px'); pr.style.setProperty('--pui-y',Math.round(best[1])+'px'); }
+function puiUpdate(pr,ci){
+  if(!ci){ if(!pr.hidden){ pr.hidden=true; } PUI.key=''; PUI.open=false; return; }
+  const full=String(ci.label), sh=puiShort(full), more=sh!==full;
+  if(sh!==PUI.key){ PUI.key=sh; PUI.open=false; } // 別の物に近づいたら、詳しい説明は閉じる
+  const open=PUI.open&&more; pr.hidden=false; pr.classList.add('cmp'); pr.classList.toggle('open',open); pr.classList.toggle('more',more);
+  const t='P'+(touchMode?'T':'E')+(open?'1':'0')+(more?'+':'-')+(open?full:sh);
+  if(txtCache.get('prompt')!==t){ txtCache.set('prompt',t); pr.innerHTML='';
+    if(!touchMode){ const k=document.createElement('span'); k.className='k'; k.textContent='E'; pr.appendChild(k); } // スマホは「調べる」ボタンが光るので、字の札は付けない
+    const tx=document.createElement('span'); tx.className='tx'; tx.textContent=open?full:sh; pr.appendChild(tx);
+    if(more){ const m=document.createElement('span'); m.className='mo'; m.textContent=open?'閉じる':'詳しく'; pr.appendChild(m); }
+    pr.title=more?(open?'押すと閉じる':'押すと詳しい説明'):''; puiPlace(pr); }
+  PUI.t-=1/30; if(PUI.t<=0) puiPlace(pr); }
+function puiSet(on){ PUI.on=!!on; PUI.key=''; PUI.open=false; const pr=$('prompt'); pr.classList.remove('cmp','open','more'); pr.style.removeProperty('--pui-x'); pr.style.removeProperty('--pui-y'); pr.title=''; txtCache.delete('prompt'); }
+{ const pr=document.getElementById('prompt'); if(pr){ pr.addEventListener('click',e=>{ e.stopPropagation(); if(!PUI.on||!pr.classList.contains('more')) return; PUI.open=!PUI.open; txtCache.delete('prompt'); try{ cv.focus(); }catch(_){} });
+  pr.addEventListener('pointerdown',e=>{ if(PUI.on) e.stopPropagation(); }); } }
 // ================= NPC =================
 const NPCS=[]; const TOMIO_SCALE=1.035;
 function addNPC(id,name,x,z,o,y=0){
@@ -9939,10 +9983,11 @@ function updateHUD(dt){
   // プロンプト
   curInter=(S.mode==='playing'&&!P.dead)?interactables():null;
   const pr=$('prompt');
+  if(PUI.on) puiUpdate(pr,curInter); else { // 試遊版：今までの形（比べる用。下の2行は v0.88 のまま）
   if(curInter){ pr.hidden=false; const t=(touchMode?'T':'E')+curInter.label; if(txtCache.get('prompt')!==t){ txtCache.set('prompt',t); pr.innerHTML=''; const k=document.createElement('span'); k.className='k'; k.textContent=touchMode?'調べる':'E'; pr.appendChild(k); pr.appendChild(document.createTextNode(curInter.label)); } }
-  else pr.hidden=true;
+  else pr.hidden=true; }
   $('tbAct').classList.toggle('ready',!!curInter);
-  $('tbAct').classList.toggle('quiet',!!curInter&&touchMode); // v0.33：帯が出ている間はボタンの光を弱める
+  $('tbAct').classList.toggle('quiet',!!curInter&&touchMode&&!PUI.on); // v0.33：帯が出ている間はボタンの光を弱める（新しい形では帯が小さいので弱めない）
   if(bannerT>0){ bannerT-=dt; if(bannerT<=0) $('banner').classList.remove('show'); }
   miniT-=dt; if(miniT<=0){ miniT=0.12; drawMini(); }
 }
