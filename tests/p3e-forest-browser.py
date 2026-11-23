@@ -120,8 +120,8 @@ async def main():
         check(r == [True, 2, True, True], f"竹林の竹を切る：竹+2・待ち時間（t の記録）{r}")
         r = await E("""(()=>{ const H=REG.live.kw.nodes.filter(n=>n.k==='herb'), D=KAMI.D; let mb=1e9, mr=1e9; for(const n of H){ for(const b of D.bld) mb=Math.min(mb,dist(n.x,n.z,b[0],b[1])); for(const r of D.roads){ if(r.b) continue; for(let i=0;i<r.p.length-1;i++) mr=Math.min(mr,segDist(n.x,n.z,r.p[i][0],r.p[i][1],r.p[i+1][0],r.p[i+1][1])); } }
           const n=H[0]; P.x=n.x+0.8; P.z=n.z; const L=[]; REG.live.inter(L); const a=L.find(o=>o.label.includes('山の薬草を摘む')); inv.mherb=0; if(a) a.act(); const L2=[]; REG.live.inter(L2);
-          return [H.length, Math.round(mb), Math.round(mr), !!a, inv.mherb>=1, prog.kami.n[n.key]!=null, L2.some(o=>o.label.startsWith('山の薬草：もう摘んだ'))]; })()""")
-        check(r[0] >= 18 and r[1] >= 70 and r[2] >= 25 and r[3:] == [True, True, True, True], f"山の薬草：{r[0]}か所（家から {r[1]}m・道から {r[2]}m 以上）・摘む・待ち時間 {r[3:]}")
+          return [H.length, Math.round(mb), Math.round(mr), !!a, inv.mherb>=1, prog.kami.n[n.key]!=null, L2.some(o=>o.label.startsWith('山の薬草：もう摘んだ')), H.every(n=>kamiReach(n.x,n.z)&&kamiCls(n.x,n.z)!==2)]; })()""")
+        check(r[0] >= 18 and r[1] >= 70 and r[2] >= 25 and r[3:] == [True, True, True, True, True], f"山の薬草：{r[0]}か所（家から {r[1]}m・道から {r[2]}m 以上・すべて歩ける所）・摘む・待ち時間 {r[3:]}")
         r = await E("""(()=>{ const sv=JSON.parse(JSON.stringify(kamiSave())), k2=kamiLoad(sv); return [JSON.stringify(k2.fb)===JSON.stringify(prog.kami.fb), Object.keys(k2.pl).length===Object.keys(prog.kami.pl).length,
           Object.keys(k2.n).filter(a=>/^[th]/.test(a)).length===Object.keys(prog.kami.n).filter(a=>/^[th]/.test(a)).length, k2.f.length===prog.kami.f.length]; })()""")
         check(r == [True, True, True, True], f"セーブの読み書き（fb・pl・竹林と薬草の待ち時間・f）{r}")

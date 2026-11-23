@@ -12442,7 +12442,7 @@ function e2HerbPlan(){ if(!E2.all) return []; const D=KAMI.D, road=new Set(), bc
   const near=(S,g,x,z,r)=>{ const i0=Math.floor(x/g), k0=Math.floor(z/g); for(let i=i0-r;i<=i0+r;i++) for(let k=k0-r;k<=k0+r;k++) if(S.has(i*7919+k)) return true; return false; };
   const C=[]; for(const o of E2.all){ const [x,,z]=o.tr; if(o.tr[4]||o.ty==='take'||!kamiReach(x,z)) continue; if(near(road,20,x,z,2)||near(bc,40,x,z,2)) continue; // 道から 40m 以上・家から 80m 以上（暫定）
     let den=0; for(let i=-1;i<=1;i++) for(let k=-1;k<=1;k++) den+=grid.get((Math.floor(x/12)+i)*7919+Math.floor(z/12)+k)||0; if(den<6) continue; C.push({x:x+1.4,z:z+0.6,sc:den+hash2(x*0.3,z*0.9)*6}); }
-  C.sort((a,b)=>b.sc-a.sc); const out=[]; for(const c of C){ if(out.length>=E2.herbN) break; if(out.some(p=>dist(p.x,p.z,c.x,c.z)<70)) continue; if(!f4Free(c.x,c.z,0.4)) continue; out.push(c); } return out; }
+  C.sort((a,b)=>b.sc-a.sc); const out=[]; for(const c of C){ if(out.length>=E2.herbN) break; if(out.some(p=>dist(p.x,p.z,c.x,c.z)<70)) continue; if(!kamiReach(c.x,c.z)||kamiCls(c.x,c.z)===2||!f4Free(c.x,c.z,0.4)) continue; out.push(c); } return out; } // 置く所そのものが歩ける所か確かめる
 function e2BuildHerbs(ctx,put){ const kw=ctx.kw; E2.herbs=e2HerbPlan(); E2.herbs.forEach((p,i)=>kw.nodes.push({k:'herb',key:'h'+i,x:p.x,z:p.z,m:put(e2HerbLook(),p.x,p.z,hash2(p.x,p.z)*TAU,-0.02)})); }
 // かまど：山の薬草で薬草粥（米1・山の薬草1・薪）
 function e2HerbPorridge(){ const c=prog.kama, F=FAC.kama; f7Flush(); if(c.q.length>=F.maxQ){ sfx('deny'); toast('いっぱい。できあがるまで待つ',true); return; }
