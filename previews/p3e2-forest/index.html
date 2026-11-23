@@ -2665,7 +2665,7 @@ function f4FindTarget(maxD=1.6){ let best=null,bs=1e9; const fa=P.facing;
   const score=(d,x,z)=>d+Math.abs(angDiff(fa,Math.atan2(x-P.x,z-P.z)))*0.5;
   for(const o of gridQuery(P.x-3.5,P.x+3.5,P.z-3.5,P.z+3.5)){ if(o.k!=='c'||!o.active) continue; let rec=null;
     if(o.ftree&&!o.ftree.felled&&o.ftree[0]>BOUNDS.minX) rec=forestRec(o.ftree); else if(o.chopThin&&!o.chopThin.felled) rec=thinRec(o.chopThin); else if(o.ktree&&!o.ktree.felled) rec=kamiTreeRec(o.ktree); if(!rec) continue;
-    const d=dist(P.x,P.z,o.x,o.z)-o.r; if(d>maxD) continue; const sc=score(d,o.x,o.z); if(sc<bs){ bs=sc; best={type:'tree',rec,x:o.x,z:o.z,d}; } }
+    const d=dist(P.x,P.z,o.x,o.z)-o.r; if(d>maxD) continue; const sc=score(d,o.x,o.z); if(sc<bs){ bs=sc; best={type:'tree',rec,x:o.x,z:o.z,d,r:o.r}; } } // v0.88 伐採の修正：r（案内の木がまだ届くか確かめる）
   for(const tr of F4.trunks){ if(tr.fall>=0) continue; const [ax,az,bx,bz]=trunkSeg(tr); const d=segDist(P.x,P.z,ax,az,bx+(ax-bx)*0.05,bz+(az-bz)*0.05)-0.4; if(d>maxD) continue; const sc=d+0.2; if(sc<bs){ bs=sc; best={type:'trunk',tr,x:(ax+bx)/2,z:(az+bz)/2,d}; } }
   for(const l of prog.f4.logs){ const sa=Math.sin(l[2])*LOG_LEN/2, ca=Math.cos(l[2])*LOG_LEN/2; const d=segDist(P.x,P.z,l[0]-sa,l[1]-ca,l[0]+sa,l[1]+ca)-0.25; if(d>maxD) continue; const sc=d+0.1; if(sc<bs){ bs=sc; best={type:'log',l,x:l[0],z:l[1],d}; } }
   for(const n of F5.rock){ if(rockLeft(n)<=0) continue; const d=dist(P.x,P.z,n.x,n.z)-1.0; if(d>maxD) continue; if(d+0.05<bs){ bs=d+0.05; best={type:'rock',r:n,x:n.x,z:n.z,d}; } }
@@ -2673,10 +2673,12 @@ function f4FindTarget(maxD=1.6){ let best=null,bs=1e9; const fa=P.facing;
   CLOSURES.forEach((c,i)=>{ if(prog.f4.closures[i]) return; const d=dist(P.x,P.z,c.x,c.z)-3; if(d>maxD+0.6) return; if(d+0.3<bs){ bs=d+0.3; best={type:'closure',c,i,x:c.x,z:c.z,d}; } });
   return best; }
 function f4AttachChop(a){ let tg=P.chopReq; P.chopReq=null;
-  if(!tg){ if(enemies.some(e=>e.state!=='dead'&&!e.removed&&dist(e.x,e.z,P.x,P.z)<6)) return; tg=f4FindTarget(1.3); }
+  if(!tg){ if(enemies.some(e=>e.state!=='dead'&&!e.removed&&dist(e.x,e.z,P.x,P.z)<6)) return; tg=f4ShownTarget()||f4FindTarget(1.3); } // v0.88 伐採の修正
   if(!tg) return; a.chop=tg; P.facing=Math.atan2(tg.x-P.x,tg.z-P.z); const tool=tg.type==='rock'||tg.type==='krock'?f5QuarryTool():f5BestTool(); if(tool&&tool!==P.weapon) showWeapon(tool); a.toolId=tool||null;
   if(tg.type==='trunk'){ const [ax,az,bx,bz]=trunkSeg(tg.tr); const dx=bx-ax, dz=bz-az, L2=dx*dx+dz*dz||1; const t=clamp(((P.x-ax)*dx+(P.z-az)*dz)/L2,0,1); P.facing=Math.atan2(ax+dx*t-P.x,az+dz*t-P.z); } }
 function f4Swing(tg){ P.chopReq=tg; tryAttack('light'); }
+// v0.88 伐採の修正：上志比では、攻撃（J・クリック・攻撃ボタン）で木を切るときも、案内に出ている木（curInter.chop）を切る。光明寺は今までどおり
+function f4ShownTarget(){ if(REG.cur!=='kamishihi') return null; const tg=curInter&&curInter.chop; if(!tg||tg.type!=='tree'||!tg.rec||!tg.rec.t||tg.rec.t.felled) return null; if(dist(P.x,P.z,tg.x,tg.z)-(tg.r||0)>1.9) return null; return tg; }
 function chips(x,y,z,n=6,col=0xd8b888){ for(let i=0;i<n;i++) puff(x,y,z,rr(-2,2),rr(1,3),rr(-2,2),0.1,col,0.5); }
 function f4Hit(tg,kind){ if(tg.type==='rock'){ f5Quarry(tg.r); return; } if(tg.type==='krock'){ kamiQuarry(tg.r); return; } const tool=f5BestTool(); const cp=f5ChopPower(); if(!cp){ toast('木を切る道具がない',true); return; } const pw=(kind==='heavy'?2:1)*cp; f5Wear(tool); sfx('wood'); S.hitstop=Math.max(S.hitstop,0.05); S.shake=Math.max(S.shake,0.12);
   if(tg.type==='tree'){ const rec=tg.rec; if(rec.t.felled) return; const S2=TSIZE[rec.size]; let st=F4.chop.get(rec.key);
@@ -2709,7 +2711,7 @@ function f4Noise(x,z,R){ if(f10Has('E')){ f10Noise(x,z,R,'tree'); return; } let 
     if(!e.home0) e.home0={x:e.home.x,z:e.home.z}; const k=(d-7)/d; e.home={x:x+(e.x-x)*(1-k),z:z+(e.z-z)*(1-k)}; e.lureT=40; setState(e,'return'); n++; }
   if(n&&S.time-F4.noiseT>20){ F4.noiseT=S.time; toast('斧の音が山に響いた……何かが近づいてくる',true); } }
 function f4Fell(rec,a){ F4.chop.delete(rec.key); hideTree(rec); const tr=makeTrunk(rec,a,0,true); if(rec.kind==='k') kamiFelled(rec.key); else prog.f4.felled.push(rec.key); sfx('break'); floatText(rec.x,2.4,rec.z,'倒れるぞ！','#ffb060',true); }
-function f4Buck(tr){ const S2=TSIZE[tr.size]; const n=S2.logs; const LL=tr.kami&&REG.live&&REG.live.kw?REG.live.kw.logs:prog.f4.logs; /* v0.67：上志比の丸太は上志比の物（運べない・保存しない） */ for(let i=0;i<n;i++){ const k=n===1?0.5:0.12+0.74*i/(n-1); LL.push([tr.x+Math.sin(tr.a)*tr.len*k,tr.z+Math.cos(tr.a)*tr.len*k,tr.a+(hash2(i,tr.x)-0.5)*0.3,S2.code]); if(i<2&&tr.rec&&tr.rec.t&&tr.rec.t.kona) LL[LL.length-1][5]=1; } /* v0.85：広葉樹の丸太（はじめの2本）は割ると硬木 */
+function f4Buck(tr){ const S2=TSIZE[tr.size]; const n=S2.logs; const LL=tr.kami&&REG.live&&REG.live.kw?REG.live.kw.logs:prog.f4.logs; /* v0.67：上志比の丸太は上志比の物（運べない・保存しない） */ for(let i=0;i<n;i++){ const k=n===1?0.5:0.12+0.74*i/(n-1); LL.push([tr.x+Math.sin(tr.a)*tr.len*k,tr.z+Math.cos(tr.a)*tr.len*k,tr.a+(hash2(i,tr.x)-0.5)*0.3,S2.code]); if(i<2&&tr.rec&&tr.rec.t&&tr.rec.t.kona) LL[LL.length-1][5]=1; if(tr.kami&&tr.rec&&tr.rec.t&&tr.rec.t.kona) LL[LL.length-1][6]=1; } /* v0.85：広葉樹の丸太（はじめの2本）は割ると硬木。v0.88 伐採の修正：上志比の広葉樹の丸太に印（名前に使う。保存しない） */
   removeTrunk(tr); if(tr.kami) kamiLogsDirty(); else f4LogsDirty(); sfx('craft'); saveGame(); }
 function removeTrunk(tr){ if(tr.piv.parent) tr.piv.parent.remove(tr.piv); if(tr.ob){ tr.ob.active=false; if(tr.kami) gridRemove(tr.ob); } const i=F4.trunks.indexOf(tr); if(i>=0) F4.trunks.splice(i,1); }
 // ---- 丸太の描画 ----
@@ -2740,11 +2742,11 @@ function f4Interactables(L){ const f=prog.f4; const yd=F4.yard?dist(P.x,P.z,F4.y
     L.push({d:dist(P.x,P.z,l[0],l[1])-0.2,label:`${S2.name}の丸太　担ぐ→拠点で木材+${S2.wpl}／${split}`,act:()=>f4PickLog(li)}); }
   const tg=f4FindTarget(1.6); if(tg){
     const cp=f5ChopPower()||1, tl=f5BestTool(), tn=tl?WEAPONS[tl].name:'素手', R=v=>Math.max(0,Math.ceil(v/cp-1e-6));
-    if(tg.type==='tree'){ const S2=TSIZE[tg.rec.size], st=F4.chop.get(tg.rec.key);
-      const lab=!st?`${S2.name}を切る［${tn}・約${R(S2.hp)}回］最初に刃を入れた側へ倒れる`:st.notch<S2.notch?`${S2.name}：受け口を切る あと${R(S2.notch-st.notch)}回［${tn}］`:`${S2.name}：追い口を切る あと${R(S2.hp-st.hits)}回（倒れる向きに立つな）`;
-      L.push({d:tg.d+0.6,label:lab,act:()=>f4Swing(tg)}); }
+    if(tg.type==='tree'){ const S2=TSIZE[tg.rec.size], st=F4.chop.get(tg.rec.key), nm=tg.rec.name||S2.name; // v0.88 伐採の修正：上志比の広葉樹は「広葉樹」
+      const lab=!st?`${nm}を切る［${tn}・約${R(S2.hp)}回］最初に刃を入れた側へ倒れる`:st.notch<S2.notch?`${nm}：受け口を切る あと${R(S2.notch-st.notch)}回［${tn}］`:`${nm}：追い口を切る あと${R(S2.hp-st.hits)}回（倒れる向きに立つな）`;
+      L.push({d:tg.d+0.6,label:lab,act:()=>f4Swing(tg),chop:tg}); } // v0.88 伐採の修正：chop＝案内に出ている木（上志比では攻撃でもこの木を切る）
     else if(tg.type==='log'||tg.type==='rock'||tg.type==='krock'){ }
-    else if(tg.type==='klog'){ const l=tg.l, S2=TSIZE[SIZE_OF[l[3]]], LS=LOG_SPLIT[l[3]]; L.push({d:tg.d,label:f5ChopPower()?`${S2.name}の丸太（ここからは運べない）　割る：木材+${LS.wood}［${tn}・あと${R(LS.work-(l[4]||0))}回］`:`${S2.name}の丸太：割るには刃物が要る`,act:()=>f4Swing(tg)}); }
+    else if(tg.type==='klog'){ const l=tg.l, S2=TSIZE[SIZE_OF[l[3]]], LS=LOG_SPLIT[l[3]], nm=l[6]?(l[3]==='k'?'太い広葉樹':'広葉樹'):S2.name; L.push({d:tg.d,label:f5ChopPower()?`${nm}の丸太（ここからは運べない）　割る：木材+${LS.wood}${l[5]?'・山地の硬木+1':''}［${tn}・あと${R(LS.work-(l[4]||0))}回］`:`${nm}の丸太：割るには刃物が要る`,act:()=>f4Swing(tg)}); /* v0.88 伐採の修正：広葉樹の丸太の名前・硬木 */ }
     else if(tg.type==='trunk') L.push({d:tg.d+0.2,label:`枝を払う あと${R(tg.tr.limbs)}回（丸太${TSIZE[tg.tr.size].logs}本になる）`,act:()=>f4Swing(tg)});
     else L.push({d:tg.d+0.4,label:`倒木を切って片付ける あと${R(tg.c.hp!=null?tg.c.hp:5)}回［${tn}］`,act:()=>f4Swing(tg)}); } }
 // ---- 毎フレーム ----
@@ -3162,7 +3164,7 @@ function pickMove(kind){ const fam=famOf(P.weapon); const a=P.atk;
   if(kind==='light') return prev&&prev.kind==='light'&&prev.next?prev.next:FIRST[fam];
   return prev&&prev.kind==='light'&&prev.heavy?prev.heavy:HEAVY0[fam]; }
 function animCombo(mv){ return mv.anim==='sweepL'||mv.anim==='thrust2'?2:mv.anim==='spinUp'||mv.anim==='overhead'||mv.anim==='lowSweep'?3:1; }
-function wantsChop(){ if(P.chopReq) return true; if(enemies.some(e=>e.state!=='dead'&&!e.removed&&dist(e.x,e.z,P.x,P.z)<6)) return false; const tg=f4FindTarget(1.3); if(!tg) return false; return tg.type==='rock'?!!f5QuarryTool():f5ChopPower()>0; } // 岩は採集道具、それ以外は刃物
+function wantsChop(){ if(P.chopReq) return true; if(enemies.some(e=>e.state!=='dead'&&!e.removed&&dist(e.x,e.z,P.x,P.z)<6)) return false; const tg=f4ShownTarget()||f4FindTarget(1.3); if(!tg) return false; return tg.type==='rock'?!!f5QuarryTool():f5ChopPower()>0; } // 岩は採集道具、それ以外は刃物。v0.88 伐採の修正：上志比は案内の木
 function makeAtk(id,sp){ const mv=MOVES[id]; return {id,mv,kind:mv.kind,unw:mv.unw,t:0,sp,hit:new Set(),landed:false,combo:animCombo(mv),dur:mv.dur/sp,a0:mv.a0/sp,a1:mv.a1/sp,
   chainT:(mv.chain!=null?mv.chain:mv.a1)/sp,cancelT:mv.cancel/sp,arc:mv.arc,mul:mv.mul,lungeV:mv.lunge/Math.max(0.05,mv.a1/sp)}; }
 // ---- 予約と回避の取り扱い（毎フレーム） ----
@@ -7789,7 +7791,7 @@ function startAttack(kind,aimSnapshot=null){
   const chop=!!P.weapon&&wantsChop(); // v0.45：素手は採集動作をしない
   let id; const fam=famOf(P.weapon);
   if(!P.weapon){ id=kind==='heavy'?'UK1':(P.lastMv==='UP1'&&S.time-(P.lastMvEnd||-9)<0.5?'UP2':'UP1'); } // v0.45：素手（軽=パンチ2段・強=キック）
-  else if(chop){ const ctg=P.chopReq||f4FindTarget(1.3); id=ctg&&(ctg.type==='log'||ctg.type==='rock')?'SPLIT':kind==='heavy'?'CHOPH':'CHOP'; }
+  else if(chop){ const ctg=P.chopReq||f4ShownTarget()||f4FindTarget(1.3); /* v0.88 伐採の修正 */ id=ctg&&(ctg.type==='log'||ctg.type==='rock')?'SPLIT':kind==='heavy'?'CHOPH':'CHOP'; }
   else if(P.ctrT>0) id=FAMC[fam]; // 見切りの後の反撃（押したのが通常でも強でも）
   else if(swapOpen()) id=FAMS[fam]; // 持ち替え直後の切り替え技
   else id=pickMove(kind);
@@ -12884,7 +12886,7 @@ function kamiDispose(ctx){ for(const tr of [...F4.trunks]) if(tr.kami) removeTru
   ctx.kw=null; ctx.kf=null; ctx.inter=null; }
 // ---- 切る木 ----
 function kamiTreeRec(kt){ if(kt.rec) return kt.rec; const g=kt.gs||1, sy=kt.s*g*(kt.ty==='kona'?1:(0.95+hash2(kt.z,kt.x)*0.25)); // v0.88：形の倍率 gs（杉は P3-A の高い杉）
-  return kt.rec={kind:'k',t:kt,key:kt.key,x:kt.x,z:kt.z,y:kt.y,yaw:hash2(kt.x,kt.z)*TAU,s:kt.s*g,sy,size:kt.s>=1.3?'thick':'mid',len:(kt.kona?6.2:kt.ty==='sugi'?12.5:8.6)*sy}; } // v0.85：広葉樹は背が低い
+  return kt.rec={kind:'k',t:kt,key:kt.key,x:kt.x,z:kt.z,y:kt.y,yaw:hash2(kt.x,kt.z)*TAU,s:kt.s*g,sy,size:kt.s>=1.3?'thick':'mid',len:(kt.kona?6.2:kt.ty==='sugi'?12.5:8.6)*sy,name:kt.kona?(kt.s>=1.3?'太い広葉樹':'広葉樹'):undefined}; } // v0.85：広葉樹は背が低い。v0.88 伐採の修正：広葉樹の名前（案内に「杉」と出ていた）
 function kamiHideTree(kt){ if(kt.felled) return; kt.felled=true; kt.col.active=false; kt.hi.setMatrixAt(kt.j,_zm); kt.lo.setMatrixAt(kt.jl??kt.j,_zm); /* v0.88：遠くの形の番号 jl */ kt.hi.instanceMatrix.needsUpdate=true; kt.lo.instanceMatrix.needsUpdate=true; }
 function kamiFelled(key){ const kt=e2Kt(key); if(kt&&kt.kona){ const fb=prog.kami.fb; if(!fb.includes(key)) fb.push(key); inv.naegi=(inv.naegi||0)+E2.naegi; E2.dirty=true; floatText(kt.x,2.0,kt.z,`苗木+${E2.naegi}`,'#b8e08a'); toast(`広葉樹を切った。根元の若木を苗木にした（苗木 ${inv.naegi}）。切り株に植えると、また育つ`); return; } // v0.88：広葉樹は生えてこない（植えると育つ）
   const f=prog.kami.f; if(!f.includes(key)) f.push(key); if(f.length>KW.felledMax) f.splice(0,f.length-KW.felledMax); }
