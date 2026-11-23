@@ -2564,7 +2564,7 @@ const SIZE_OF={t:'thin',m:'mid',k:'thick'};
 const LOG_SPLIT={t:{work:8,wood:1},m:{work:12,wood:2},k:{work:16,wood:3}};
 const F4={thin:[],thinIM:null,thinInk:null,chop:new Map(),hidden:new Map(),trunks:[],logIM:null,logInk:null,yard:null,cartMesh:null,carryMesh:null,ind:null,roadT:0,road:null,noiseT:0,hintT:0,lured:[]};
 const F4_MAXLOG=140, LOG_LEN=2.4;
-function f4Fresh(){ return {felled:[],trunks:[],logs:[],carry:0,cart:null,hasCart:false,closures:[0,0,0],delivered:0,yard:0,hint:0}; }
+function f4Fresh(){ return {felled:[],trunks:[],logs:[],carry:0,carryA:0,cart:null,hasCart:false,closures:[0,0,0],delivered:0,yard:0,hint:0}; }
 // ---- 形 ----
 let _logGeo=null; function logGeo(){ if(_logGeo) return _logGeo; const g=new THREE.Group();
   const b=mesh(G.cyl8,mat(0x6e4630),0,0,0,1,1,1); b.rotation.x=Math.PI/2; g.add(J(b,0.12));
@@ -2691,7 +2691,7 @@ function f4Hit(tg,kind){ if(tg.type==='rock'){ f5Quarry(tg.r); return; } if(tg.t
     chips(l[0],groundH(l[0],l[1])+0.4,l[1],7);
     if(l[4]<LS.work-1e-6){ floatText(l[0],1.2,l[1],`割る あと${Math.ceil((LS.work-l[4])/cp-1e-6)}回`,'#f0dca0'); return; }
     prog.f4.logs.splice(i,1); inv.wood+=LS.wood; prog.f4.split=(prog.f4.split||0)+1; f4LogsDirty(); sfx('craft'); chips(l[0],groundH(l[0],l[1])+0.5,l[1],12);
-    floatText(l[0],1.6,l[1],`木材+${LS.wood}`,'#f0dca0'); toast(`丸太をその場で割った：木材 +${LS.wood}（${inv.wood}）`); saveGame(); return; }
+    logSplitReward(l,LS.wood); saveGame(); return; }
   if(tg.type==='closure'){ const c=tg.c; c.hp=(c.hp==null?5:c.hp)-pw; chips(c.x,groundH(c.x,c.z)+0.9,c.z,8);
     floatText(c.x,1.6,c.z,c.hp>0?`倒木を切る あと${Math.ceil(c.hp/cp-1e-6)}回`:'道が通れるようになった','#f0dca0');
     if(c.hp<=0){ f4ClearClosure(tg.i,true); } } }
@@ -2701,6 +2701,25 @@ function f4Noise(x,z,R){ if(f10Has('E')){ f10Noise(x,z,R,'tree'); return; } let 
     if(!e.home0) e.home0={x:e.home.x,z:e.home.z}; const k=(d-7)/d; e.home={x:x+(e.x-x)*(1-k),z:z+(e.z-z)*(1-k)}; e.lureT=40; setState(e,'return'); n++; }
   if(n&&S.time-F4.noiseT>20){ F4.noiseT=S.time; toast('斧の音が山に響いた……何かが近づいてくる',true); } }
 function f4Fell(rec,a){ F4.chop.delete(rec.key); hideTree(rec); const tr=makeTrunk(rec,a,0,true); if(rec.kind==='k') kamiFelled(rec.key); else prog.f4.felled.push(rec.key); sfx('break'); floatText(rec.x,2.4,rec.z,'倒れるぞ！','#ffb060',true); }
+function logAttr(l){ return (l[5]?1:0)|(l[6]?2:0); }
+function logAttrSet(l,a){ if(a&1) l[5]=1; if(a&2) l[6]=1; return l; }
+function logAttrNorm(v){ return Number.isInteger(v)&&v>=0&&v<=3?v:0; }
+function logPairs(logs,attrs){
+  if(!Array.isArray(logs)) return [];
+  const aligned=Array.isArray(attrs)&&logs.length===attrs.length;
+  return Array.from(logs,(log,i)=>[log,aligned?logAttrNorm(attrs[i]):0]);
+}
+function logSizeValid(code){ return code==='t'||code==='m'||code==='k'; }
+function logSplitReward(l,wood){
+  if(l[5]){
+    inv.hardwood=(inv.hardwood||0)+1;
+    floatText(l[0],1.6,l[1],`山地の硬木+1・木材+${wood}`,'#f0dca0');
+    toast(`広葉樹の丸太を割った：山地の硬木 +1（${inv.hardwood}）・木材 +${wood}`);
+  }else{
+    floatText(l[0],1.6,l[1],`木材+${wood}`,'#f0dca0');
+    toast(`丸太をその場で割った：木材 +${wood}（${inv.wood}）`);
+  }
+}
 function f4Buck(tr){ const S2=TSIZE[tr.size]; const n=S2.logs; const LL=tr.kami&&REG.live&&REG.live.kw?REG.live.kw.logs:prog.f4.logs; /* v0.67：上志比の丸太は上志比の物（運べない・保存しない） */ for(let i=0;i<n;i++){ const k=n===1?0.5:0.12+0.74*i/(n-1); LL.push([tr.x+Math.sin(tr.a)*tr.len*k,tr.z+Math.cos(tr.a)*tr.len*k,tr.a+(hash2(i,tr.x)-0.5)*0.3,S2.code]); if(i<2&&tr.rec&&tr.rec.t&&tr.rec.t.kona) LL[LL.length-1][5]=1; if(tr.kami&&tr.rec&&tr.rec.t&&tr.rec.t.kona) LL[LL.length-1][6]=1; } /* v0.85：広葉樹の丸太（はじめの2本）は割ると硬木。v0.88 伐採の修正：上志比の広葉樹の丸太に印（名前に使う。保存しない） */
   removeTrunk(tr); if(tr.kami) kamiLogsDirty(); else f4LogsDirty(); sfx('craft'); saveGame(); }
 function removeTrunk(tr){ if(tr.piv.parent) tr.piv.parent.remove(tr.piv); if(tr.ob){ tr.ob.active=false; if(tr.kami) gridRemove(tr.ob); } const i=F4.trunks.indexOf(tr); if(i>=0) F4.trunks.splice(i,1); }
@@ -2712,10 +2731,17 @@ function f4LogsDirty(){ const L=prog.f4.logs; let n=0; const put=(x,y,z,a,r,tilt
   F4.logIM.count=n; F4.logInk.count=n; F4.logIM.instanceMatrix.needsUpdate=true; }
 // ---- 運ぶ ----
 function nearLog(r=1.8){ let b=-1,bd=r; prog.f4.logs.forEach((l,i)=>{ const d=dist(P.x,P.z,l[0],l[1]); if(d<bd){ bd=d; b=i; } }); return b; }
-function f4PickLog(i){ const l=prog.f4.logs[i]; if(!l) return; prog.f4.logs.splice(i,1); prog.f4.carry=l[3]; f4LogsDirty(); sfx('pickup'); if(!F4.carryHint){ F4.carryHint=1; toast('丸太を担いだ：歩きが遅くなり、攻撃できない。回避や攻撃を受けると落とす'); } }
-function f4DropLog(why){ const c=prog.f4.carry; if(!c) return; const a=P.facing+Math.PI/2; prog.f4.logs.push([P.x+Math.sin(P.facing)*0.9,P.z+Math.cos(P.facing)*0.9,a,c]); prog.f4.carry=0; f4LogsDirty(); if(why) toast(why,true); }
-function f4Deliver(){ const f=prog.f4; let n=0, wood=0; if(f.carry){ n=1; wood=TSIZE[SIZE_OF[f.carry]].wpl; f.carry=0; }
-  if(f.cart&&f.cart.push&&f.cart.logs.length){ for(const c of f.cart.logs){ n++; wood+=TSIZE[SIZE_OF[c]].wpl; } f.cart.logs=[]; }
+function f4CarrySet(f,code,a){ f.carry=code; f.carryA=code?logAttrNorm(a):0; }
+function cartLogPush(c,code,a){ c.logs.push(code); c.logA.push(logAttrNorm(a)); }
+function cartLogTake(c,i){
+  if(i<0||i>=c.logs.length) return null;
+  return {code:c.logs.splice(i,1)[0],a:c.logA.splice(i,1)[0]};
+}
+function cartLogClear(c){ c.logs.length=0; c.logA.length=0; }
+function f4PickLog(i){ const l=prog.f4.logs[i]; if(!l) return; prog.f4.logs.splice(i,1); f4CarrySet(prog.f4,l[3],logAttr(l)); f4LogsDirty(); sfx('pickup'); if(!F4.carryHint){ F4.carryHint=1; toast('丸太を担いだ：歩きが遅くなり、攻撃できない。回避や攻撃を受けると落とす'); } }
+function f4DropLog(why){ const c=prog.f4.carry; if(!c) return; const a=P.facing+Math.PI/2; prog.f4.logs.push(logAttrSet([P.x+Math.sin(P.facing)*0.9,P.z+Math.cos(P.facing)*0.9,a,c],prog.f4.carryA)); f4CarrySet(prog.f4,0); f4LogsDirty(); if(why) toast(why,true); }
+function f4Deliver(){ const f=prog.f4; let n=0, wood=0; if(f.carry){ n=1; wood=TSIZE[SIZE_OF[f.carry]].wpl; f4CarrySet(f,0); }
+  if(f.cart&&f.cart.push&&f.cart.logs.length){ for(const c of f.cart.logs){ n++; wood+=TSIZE[SIZE_OF[c]].wpl; } cartLogClear(f.cart); }
   if(!n) return; inv.wood+=wood; f.delivered+=n; f.yard+=n; f4LogsDirty(); sfx('craft'); toast(`丸太${n}本を納めた：木材 +${wood}`); floatText(F4.yard.x,1.8,F4.yard.z,`木材+${wood}`,'#f0dca0'); g4CheckQuests(); saveGame(); }
 function f4DropAll(why){ if(prog.f4.carry) f4DropLog(why==='hurt'?'丸太を落とした':''); const c=prog.f4.cart; if(c&&c.push){ c.push=false; c.x=P.x+Math.sin(P.facing)*1.3; c.z=P.z+Math.cos(P.facing)*1.3; c.a=P.facing; if(why==='hurt') toast('一輪車から手を離した',true); } }
 function f4OnRoad(){ if(S.time-F4.roadT<0.25) return F4.road; F4.roadT=S.time; const r=nearestRoad(P.x,P.z); F4.road=r&&dist(P.x,P.z,r.x,r.z)<r.w/2+0.8?(r.k==='track'?'track':'paved'):null; return F4.road; }
@@ -2723,13 +2749,23 @@ function f4SpeedMul(){ const f=prog.f4; if(f.carry) return f4OnRoad()==='paved'?
 function f4Interactables(L){ const f=prog.f4; const yd=F4.yard?dist(P.x,P.z,F4.yard.x,F4.yard.z):1e9;
   if(f.carry){ if(yd<3.4) L.push({d:0,label:`丸太を納める（木材+${TSIZE[SIZE_OF[f.carry]].wpl}）`,act:f4Deliver}); else L.push({d:2.9,label:'丸太を下ろす',act:()=>f4DropLog('')}); return; }
   if(f.cart&&f.cart.push){ const c=f.cart; if(yd<3.6&&c.logs.length){ L.push({d:0,label:`一輪車の丸太を納める（${c.logs.length}本）`,act:f4Deliver}); return; }
-    const li=nearLog(2.4); if(li>=0&&c.logs.length<3) L.push({d:0.5,label:`丸太を一輪車に積む（${c.logs.length}/3）`,act:()=>{ const l=f.logs.splice(li,1)[0]; c.logs.push(l[3]); f4LogsDirty(); sfx('pickup'); }});
-    L.push({d:2.9,label:'一輪車を置く',act:()=>{ c.push=false; c.x=P.x+Math.sin(P.facing)*1.3; c.z=P.z+Math.cos(P.facing)*1.3; c.a=P.facing; }}); return; }
+    const li=nearLog(2.4); if(li>=0&&c.logs.length<3) L.push({d:0.5,label:`丸太を一輪車に積む（${c.logs.length}/3）`,act:()=>{ const l=f.logs.splice(li,1)[0]; cartLogPush(c,l[3],logAttr(l)); f4LogsDirty(); sfx('pickup'); }});
+    const park=()=>{ c.push=false; c.x=P.x+Math.sin(P.facing)*1.3; c.z=P.z+Math.cos(P.facing)*1.3; c.a=P.facing; };
+    if(c.logs.length) L.push({d:2.9,label:'一輪車を置く・丸太を下ろす',act:()=>chooseDefense('一輪車',[
+      {label:'一輪車を置く',act:park},
+      {label:'一輪車の丸太を1本下ろす',act:()=>{
+        const log=cartLogTake(c,c.logs.length-1); if(!log) return;
+        const x=P.x+Math.cos(P.facing)*1.5, z=P.z-Math.sin(P.facing)*1.5;
+        f.logs.push(logAttrSet([x,z,P.facing,log.code],log.a)); f4LogsDirty(); sfx('wood');
+      }}
+    ],true)});
+    else L.push({d:2.9,label:'一輪車を置く',act:park}); return; }
   if(f.cart&&dist(P.x,P.z,f.cart.x,f.cart.z)<2.2) L.push({d:dist(P.x,P.z,f.cart.x,f.cart.z)-0.3,label:`一輪車を押す${f.cart.logs.length?`（丸太${f.cart.logs.length}本）`:''}`,act:()=>{ f.cart.push=true; if(!F4.cartHint){ F4.cartHint=1; toast('一輪車：丸太を3本まで積める。舗装した道では速く、田畑や山道では遅い。攻撃はできない'); } }});
   if(prog.chapter2&&prog.chapter2.unlocked&&yd<3.2&&REG.cur==='komyoji') L.push({d:yd+0.3,label:`資材置き場（預けている素材 ${stashN(prog.stash.komyoji)}こ）`,act:()=>stashMenu('komyoji')}); // v0.81
   const li=nearLog(1.8); if(li>=0){ const l=f.logs[li], S2=TSIZE[SIZE_OF[l[3]]], LS=LOG_SPLIT[l[3]], cp0=f5ChopPower(), tl0=f5BestTool();
-    const split=cp0?`攻撃：割る 木材+${LS.wood}（${Math.ceil((LS.work-(l[4]||0))/cp0-1e-6)}回）`:'割るには刃物が要る';
-    L.push({d:dist(P.x,P.z,l[0],l[1])-0.2,label:`${S2.name}の丸太　担ぐ→拠点で木材+${S2.wpl}／${split}`,act:()=>f4PickLog(li)}); }
+    const name=l[6]?(l[3]==='k'?'太い広葉樹':'広葉樹'):S2.name;
+    const split=cp0?`攻撃：割る 木材+${LS.wood}${l[5]?'・山地の硬木+1':''}（${Math.ceil((LS.work-(l[4]||0))/cp0-1e-6)}回）`:'割るには刃物が要る';
+    L.push({d:dist(P.x,P.z,l[0],l[1])-0.2,label:`${name}の丸太　担ぐ→拠点で木材+${S2.wpl}／${split}`,act:()=>f4PickLog(li)}); }
   const tg=f4FindTarget(1.6); if(tg){
     const cp=f5ChopPower()||1, tl=f5BestTool(), tn=tl?WEAPONS[tl].name:'素手', R=v=>Math.max(0,Math.ceil(v/cp-1e-6));
     if(tg.type==='tree'){ const S2=TSIZE[tg.rec.size], st=F4.chop.get(tg.rec.key), nm=tg.rec.name||S2.name; // v0.88 伐採の修正：上志比の広葉樹は「広葉樹」
@@ -2761,15 +2797,20 @@ function f4Update(dt){ f5Update(dt); const f=prog.f4;
   for(const e of enemies){ if(e.lureT>0){ e.lureT-=dt; if(e.lureT<=0&&e.home0){ e.home=e.home0; e.home0=null; } } }
 }
 // ---- 保存・復元 ----
-function f4Save(){ const f=prog.f4; return {felled:f.felled.slice(-400),trunks:F4.trunks.filter(tr=>!tr.kami).map(tr=>[tr.key,+tr.x.toFixed(2),+tr.z.toFixed(2),+tr.a.toFixed(3),tr.limbs]),logs:f.logs.slice(-F4_MAXLOG).map(l=>[+l[0].toFixed(2),+l[1].toFixed(2),+l[2].toFixed(2),l[3]]),
-  carry:f.carry,cart:f.cart?{x:+f.cart.x.toFixed(2),z:+f.cart.z.toFixed(2),a:+(f.cart.a||0).toFixed(2),logs:f.cart.logs}:null,hasCart:f.hasCart,closures:f.closures,delivered:f.delivered,yard:f.yard,hint:f.hint,split:f.split||0}; }
-function f4Load(q){ const f=f4Fresh(); if(!q||typeof q!=='object') return f; const okS=s=>s==='t'||s==='m'||s==='k'; const N=v=>typeof v==='number'&&isFinite(v);
+function f4Save(){ const f=prog.f4, logs=f.logs.slice(-F4_MAXLOG); return {felled:f.felled.slice(-400),trunks:F4.trunks.filter(tr=>!tr.kami).map(tr=>[tr.key,+tr.x.toFixed(2),+tr.z.toFixed(2),+tr.a.toFixed(3),tr.limbs]),logs:logs.map(l=>[+l[0].toFixed(2),+l[1].toFixed(2),+l[2].toFixed(2),l[3]]),
+  logA:logs.map(logAttr),carry:f.carry,carryA:f.carryA,cart:f.cart?{x:+f.cart.x.toFixed(2),z:+f.cart.z.toFixed(2),a:+(f.cart.a||0).toFixed(2),logs:f.cart.logs,logA:f.cart.logA}:null,hasCart:f.hasCart,closures:f.closures,delivered:f.delivered,yard:f.yard,hint:f.hint,split:f.split||0}; }
+function f4Load(q){ const f=f4Fresh(); if(!q||typeof q!=='object') return f; const N=v=>typeof v==='number'&&isFinite(v);
   if(Array.isArray(q.felled)) f.felled=q.felled.filter(k=>typeof k==='string'&&/^(t\d+|f\d+_\d+_\d+)$/.test(k)).slice(-400);
   if(Array.isArray(q.trunks)) f.trunks=q.trunks.filter(t=>Array.isArray(t)&&typeof t[0]==='string'&&N(t[1])&&N(t[2])&&N(t[3])).map(t=>[t[0],t[1],t[2],t[3],num(t[4],1,0,9)]);
-  if(Array.isArray(q.logs)) f.logs=q.logs.filter(l=>Array.isArray(l)&&N(l[0])&&N(l[1])&&N(l[2])&&okS(l[3])).slice(-F4_MAXLOG);
-  f.carry=okS(q.carry)?q.carry:0; f.hasCart=!!q.hasCart;
-  if(q.cart&&N(q.cart.x)&&N(q.cart.z)) f.cart={x:q.cart.x,z:q.cart.z,a:N(q.cart.a)?q.cart.a:0,push:false,logs:Array.isArray(q.cart.logs)?q.cart.logs.filter(okS).slice(0,3):[]};
-  if(f.hasCart&&!f.cart&&F4.yard) f.cart={x:F4.yard.x-2.5,z:F4.yard.z+1.5,a:0,push:false,logs:[]};
+  f.logs=logPairs(q.logs,q.logA)
+    .filter(([l])=>Array.isArray(l)&&N(l[0])&&N(l[1])&&N(l[2])&&logSizeValid(l[3]))
+    .slice(-F4_MAXLOG).map(([l,a])=>logAttrSet(l.slice(0,4),a));
+  f4CarrySet(f,logSizeValid(q.carry)?q.carry:0,q.carryA); f.hasCart=!!q.hasCart;
+  if(q.cart&&N(q.cart.x)&&N(q.cart.z)){
+    f.cart={x:q.cart.x,z:q.cart.z,a:N(q.cart.a)?q.cart.a:0,push:false,logs:[],logA:[]};
+    for(const [code,a] of logPairs(q.cart.logs,q.cart.logA).filter(([code])=>logSizeValid(code)).slice(0,3)) cartLogPush(f.cart,code,a);
+  }
+  if(f.hasCart&&!f.cart&&F4.yard) f.cart={x:F4.yard.x-2.5,z:F4.yard.z+1.5,a:0,push:false,logs:[],logA:[]};
   if(Array.isArray(q.closures)) f.closures=[0,1,2].map(i=>q.closures[i]?1:0);
   f.split=num(q.split,0,0,99999); f.delivered=num(q.delivered,0,0,99999); f.yard=num(q.yard,0,0,99999); f.hint=q.hint?1:0; return f; }
 // 状態を世界へ反映（新規開始・つづきから）
@@ -2781,7 +2822,7 @@ function f4Apply(){ const f=prog.f4;
   for(const t of f.trunks){ const rec=recByKey(t[0]); if(!rec) continue; hideTree(rec); const tr=makeTrunk(rec,t[3],Math.PI/2,false); tr.x=t[1]; tr.z=t[2]; tr.piv.position.set(tr.x,groundH(tr.x,tr.z)-0.1,tr.z); trunkSettle(tr,false); tr.limbs=Math.max(1,t[4]); tr.mesh.scale.x=tr.mesh.scale.z=rec.s*(0.45+0.55*tr.limbs/TSIZE[tr.size].limb); }
   f.trunks=[]; // 実体は F4.trunks に移した（保存時に作り直す）
   CLOSURES.forEach((c,i)=>{ if(f.closures[i]) f4ClearClosure(i,false); else { c.hp=null; if(c.mesh) c.mesh.visible=true; if(c.ob) c.ob.active=true; } });
-  if(f.hasCart&&!f.cart&&F4.yard) f.cart={x:F4.yard.x-2.5,z:F4.yard.z+1.5,a:0,push:false,logs:[]};
+  if(f.hasCart&&!f.cart&&F4.yard) f.cart={x:F4.yard.x-2.5,z:F4.yard.z+1.5,a:0,push:false,logs:[],logA:[]};
   if(f.cart) f.cart.push=false;
   f4LogsDirty(); }
 // ================= F5：加工と最初の武器（素材集め・石の手斧・木の棍棒・竹槍・鉄の斧） =================
@@ -8907,7 +8948,7 @@ const RECIPES=[
  {id:'boomerFix',name:'飛去来器の手入れ',cost:{procScale:1},desc:'鱗の飛去来器の耐久を全回復する（加工した鱗1）',show:()=>prog.arms.boomer!=null&&armDur('boomer')<WEAPONS.boomer.maxDur,give:()=>{ setArmDur('boomer',WEAPONS.boomer.maxDur); }}, // v0.64（暫定）
  {id:'convBuild',name:'変換炉を組み立てる',cost:FAC.conv.build,desc:'特殊な素材を、人が使える形に変える炉。拠点の南東の隅に組み立てる。燃料の木炭を入れて動かし、1つずつ時間をかけて変える（変異した鱗→加工した鱗）',show:()=>!prog.conv?.built&&(inv.mutScale>0||inv.procScale>0),give:()=>{ prog.conv.built=1; facApply(); toast('拠点の南東の隅に変換炉を組み立てた'); }}, // v0.63（暫定）
  {id:'kamaBuild',name:'かまどを築く',cost:FAC.kama.build,desc:'石と土で築くかまど。拠点の南東に築く。肉・野菜・米・食料を2〜3つ鍋に入れて火にかけると、組み合わせに応じた料理ができる（何ができるかは、できるまで分からない）。木材を焼いて木炭も作れる',show:()=>!prog.kama?.built,give:()=>{ prog.kama.built=1; facApply(); toast('拠点の南東にかまどを築いた。調べると料理ができる'); }}, // v0.64・v0.66：最初から築ける（暫定）
- {id:'cart',name:'一輪車',cost:{wood:5},desc:'丸太を3本積んで運べる。舗装した道では担ぐより速いが、田畑や山道では遅い。丸太置き場のそばに置く',show:()=>!prog.f4.hasCart,give:()=>{ prog.f4.hasCart=true; prog.f4.cart={x:F4.yard.x-2.5,z:F4.yard.z+1.5,a:0,push:false,logs:[]}; }},
+ {id:'cart',name:'一輪車',cost:{wood:5},desc:'丸太を3本積んで運べる。舗装した道では担ぐより速いが、田畑や山道では遅い。丸太置き場のそばに置く',show:()=>!prog.f4.hasCart,give:()=>{ prog.f4.hasCart=true; prog.f4.cart={x:F4.yard.x-2.5,z:F4.yard.z+1.5,a:0,push:false,logs:[],logA:[]}; }},
  {id:'hammerStone',name:'石の槌（簡素な採石道具）',cost:{stone:3,wood:2,rope:1},desc:'硬い川石を柄に縛った槌。採石できる岩を割って石を取る（1回で石1、岩1つを8回）。耐久40。武器ではない（持ち替えに入らない）',show:()=>prog.f5.tools.hammerStone==null,give:()=>{toolGain('hammerStone');}},
  {id:'pickIron',name:'鉄のつるはし（良質な採石道具）',cost:{iron:4,wood:2,rope:1},desc:'屑鉄を打ち直したつるはし。1回で石2、岩1つを4回で割り切る。耐久100。武器ではない',show:()=>prog.f5.tools.pickIron==null,give:()=>{toolGain('pickIron');}},
  ...Object.entries(G47).filter(([id,a])=>a.cost).map(([id,a])=>({id:'gear_'+id,name:a.name,cost:a.cost,desc:a.desc+(a.set==='basic'?' 基礎防具。4部位の合計軽減は最大15%。':' '+G47SETS[a.set]+'系統。4部位一式で特殊効果が1.5倍。')+(a.setNote?' '+a.setNote:'')+' 持ち物で着脱。',show:()=>!prog.gear.owned.includes(id)&&(!a.vis||a.vis()),give:()=>{prog.gear.owned.push(id);}})),
@@ -9242,12 +9283,18 @@ function saveGame(){
   try{
     syncChapter2();
     if(P.weapon) prog.arms[P.weapon]=P.dur; // v0.45：素手のときは武器耐久を書き戻さない
-    const data={v:1,chapter2:prog.chapter2,inv,weapon:P.weapon,dur:P.dur,full:P.full,arms:prog.arms,f5:f5Save(),
+    const data={v:1,chapter2:prog.chapter2,logAttr:bedLogSave(),inv,weapon:P.weapon,dur:P.dur,full:P.full,arms:prog.arms,f5:f5Save(),
       prog:Object.assign({stage:checkpointStage(),unlockTrap:prog.unlockTrap,unlockBoss:prog.unlockBoss,clues:prog.clues,bossDefeated:prog.bossDefeated,scoutTower:!!prog.scoutTower,scoutWarned:!!prog.scoutWarned,scoutRaidWarned:!!prog.scoutRaidWarned,townRequests:prog.townRequests},f31SaveProg()),
       fences:GAPS.map(g=>g.fence.type?{type:g.fence.type,hp:g.fence.broken?0:g.fence.hp}:null),
       traps:traps.map(saveTrap),stats,nodes:NODES.map(n=>n.avail?1:0),g4:prog.g4,f4:f4Save(),f7:f7Save(),f8:f8Save(),paddy:paddySave(),f9:f9Save(),f10:f10Save(),conv:facSave('conv'),kama:kamaSave(),kami:kamiSave(),suzuki:szSave(),p3:p3Save(),stash:stashSave(),p3c:p3cSave(),p3d:prog.p3d}; // v0.81：拠点本部（p3）・資材置き場（stash）。新しいキー // v0.73：スズキ（新しいキー suzuki）
     localStorage.setItem(SAVE_KEY,JSON.stringify(data));
   }catch(e){ storageOK=false; }
+}
+function bedLogSave(){
+  const t=prog.chapter2.progress.truck;
+  const logs=t?.bed?.logs;
+  const bed=Array.isArray(logs)?{a:bedLogAttrs(t),s:logs.join('')}:{a:[],s:''};
+  return {v:1,bed};
 }
 function saveTrap(t){
   if(t.type==='bait')return {type:'bait',state:t.state,remaining:t.baitTime};
@@ -9290,7 +9337,10 @@ function applySave(d){
     prog.f9=f9Load(d.f9); // 古いセーブは「頼んでいない」で始める
     prog.f8=f8Load(d.f8); // 古いセーブは未開始のまま始める
     prog.paddy=paddyLoad(d.paddy); // v0.79：拠点の田んぼ（古いセーブは育っている途中から）
-    prog.conv=facLoad('conv',d.conv); prog.kama=kamaLoad(d.kama); prog.kami=kamiLoad(d.kami); prog.p3=p3Load(d.p3); prog.stash=stashLoad(d.stash); prog.p3c=p3cLoad(d.p3c); p3cVehApply(); prog.p3d=p3dLoad(d.p3d); P3D.fish=null; szApplyLoad(d.suzuki); // v0.73：スズキ（古いセーブは「まだ仲間でない」） // v0.67：上志比の採集・伐採・獣（古いセーブは何も取っていない状態） // v0.63：変換炉・v0.64：かまど（古いセーブは未建設）
+    prog.conv=facLoad('conv',d.conv); prog.kama=kamaLoad(d.kama); prog.kami=kamiLoad(d.kami); prog.p3=p3Load(d.p3); prog.stash=stashLoad(d.stash); prog.p3c=p3cLoad(d.p3c); p3cVehApply();
+    const truck=prog.chapter2.progress.truck;
+    if(truck&&typeof truck==='object'&&!Array.isArray(truck)) trkSys(truck,d.logAttr?.v===1?d.logAttr.bed:null);
+    prog.p3d=p3dLoad(d.p3d); P3D.fish=null; szApplyLoad(d.suzuki); // v0.73：スズキ（古いセーブは「まだ仲間でない」） // v0.67：上志比の採集・伐採・獣（古いセーブは何も取っていない状態） // v0.63：変換炉・v0.64：かまど（古いセーブは未建設）
     { const f=f7Load(d.f7); prog.f7=f||f7FromInv(); prog.f7Migrated=!f; f7Sync(); } // 古いセーブは今の個数を新品の束にする（1回だけ）
     const q=d.g4; if(q&&typeof q==='object'){ const g=prog.g4; g.board=!!q.board; g.hint=q.board?1:0; g.track=num(q.track,-1,-1,QUESTS.length-1); g.closure=q.closure?1:0;
       if(Array.isArray(q.fences)) g.fences=[0,1,2].map(i=>q.fences[i]?1:0);
@@ -12769,8 +12819,7 @@ function kamiSplitLog(l,cp){ const kw=REG.live&&REG.live.kw; if(!kw) return; con
   chips(l[0],groundH(l[0],l[1])+0.4,l[1],7);
   if(l[4]<LS.work-1e-6){ floatText(l[0],1.2,l[1],`割る あと${Math.ceil((LS.work-l[4])/cp-1e-6)}回`,'#f0dca0'); return; }
   kw.logs.splice(i,1); inv.wood+=LS.wood; prog.f4.split=(prog.f4.split||0)+1; kamiLogsDirty(); sfx('craft'); chips(l[0],groundH(l[0],l[1])+0.5,l[1],12);
-  if(l[5]){ inv.hardwood=(inv.hardwood||0)+1; floatText(l[0],1.6,l[1],`山地の硬木+1・木材+${LS.wood}`,'#f0dca0'); toast(`広葉樹の丸太を割った：山地の硬木 +1（${inv.hardwood}）・木材 +${LS.wood}`); saveGame(); return; } // v0.85 C-4
-  floatText(l[0],1.6,l[1],`木材+${LS.wood}`,'#f0dca0'); toast(`丸太をその場で割った：木材 +${LS.wood}（${inv.wood}）`); saveGame(); }
+  logSplitReward(l,LS.wood); saveGame(); }
 function kamiFindTarget(maxD,bs){ const kw=REG.live.kw; let best=null;
   for(const l of kw.logs){ const sa=Math.sin(l[2])*LOG_LEN/2, ca=Math.cos(l[2])*LOG_LEN/2; const d=segDist(P.x,P.z,l[0]-sa,l[1]-ca,l[0]+sa,l[1]+ca)-0.25; if(d>maxD) continue; if(d+0.1<bs){ bs=d+0.1; best={type:'klog',l,x:l[0],z:l[1],d}; } }
   for(const n of kw.nodes){ if(n.k!=='rock'||kamiRockLeft(n)<=0) continue; const d=dist(P.x,P.z,n.x,n.z)-1.0; if(d>maxD) continue; if(d+0.05<bs){ bs=d+0.05; best={type:'krock',r:n,x:n.x,z:n.z,d}; } }
@@ -13958,10 +14007,18 @@ const TRUCK_SYS={
 RECIPES.splice(Math.max(0,RECIPES.findIndex(r=>r.id==='cart')),0,{id:'depotBuild',name:'車両基地を建てる',cost:TRUCK_SYS.depot.build,desc:'KEI truck の屋根つきの整備場。拠点の南東（南門から入って右）に建てる。車を屋根の下に止めると、車体を直す・改修（最高速度・耐久・加速が上がり、荷台に施設を作れるようになる）・荷台の施設を作るができる',
   show:()=>truckShown()&&trk().repaired&&!depotS().built,give:()=>{ depotS().built=1; depotApply(); toast('拠点の南東に車両基地を建てた。南門から入って右へ。KEI truck を屋根の下に止めて使う'); }});
 const TRK_N=new WeakSet();
-function trkSys(t){ if(TRK_N.has(t)) return t; const L=TRUCK_SYS; t.lv=clamp(t.lv|0,0,L.lv.length-1); const hm=L.hp.max[t.lv];
+function trkSys(t,savedLogs){ if(TRK_N.has(t)) return t; const L=TRUCK_SYS; t.lv=clamp(t.lv|0,0,L.lv.length-1); const hm=L.hp.max[t.lv];
   if(typeof t.gas!=='number'||!isFinite(t.gas)) t.gas=t.fueled?100:0; t.gas=clamp(t.gas,0,100);
   if(typeof t.hp!=='number'||!isFinite(t.hp)) t.hp=hm; t.hp=clamp(t.hp,0,hm);
-  if(!t.bed||typeof t.bed!=='object'||Array.isArray(t.bed)) t.bed={logs:[],mats:{}}; if(!Array.isArray(t.bed.logs)) t.bed.logs=[]; t.bed.logs=t.bed.logs.filter(c=>SIZE_OF[c]).slice(0,L.bed.maxLogs);
+  if(!t.bed||typeof t.bed!=='object'||Array.isArray(t.bed)) t.bed={logs:[],mats:{}}; const logs=Array.isArray(t.bed.logs)?t.bed.logs:[];
+  let attrs=null;
+  if(typeof savedLogs?.s==='string'){
+    try{ if(savedLogs.s===logs.join('')) attrs=savedLogs.a; }
+    catch(_) { /* 太さの並びを照合できないセーブは印なしで読む */ }
+  }
+  const pairs=logPairs(logs,attrs).filter(([code])=>logSizeValid(code)).slice(0,L.bed.maxLogs);
+  bedLogClear(t);
+  for(const [code,a] of pairs) bedLogPush(t,code,a);
   if(!t.bed.mats||typeof t.bed.mats!=='object'||Array.isArray(t.bed.mats)) t.bed.mats={}; for(const k of Object.keys(t.bed.mats)){ const n=Math.floor(+t.bed.mats[k]||0); if(!L.bed.mats.includes(k)||n<=0) delete t.bed.mats[k]; else t.bed.mats[k]=n; }
   if(!t.fac||typeof t.fac!=='object'||Array.isArray(t.fac)) t.fac={}; for(const k of Object.keys(t.fac)) if(!L.fac[k]) delete t.fac[k]; for(const k in L.fac) t.fac[k]=t.fac[k]?1:0; // 作ってある施設は、解放の段階が変わっても残す（v0.79）
   if(!t.bed.foods||typeof t.bed.foods!=='object'||Array.isArray(t.bed.foods)) t.bed.foods={}; for(const k of Object.keys(t.bed.foods)){ const a=t.bed.foods[k]; if(!FOODS[k]||!Array.isArray(a)){ delete t.bed.foods[k]; continue; } t.bed.foods[k]=a.filter(b=>Array.isArray(b)&&b[0]>0).map(b=>[Math.floor(b[0]),Math.max(0,+b[1]||0)]); if(!t.bed.foods[k].length) delete t.bed.foods[k]; } // v0.79：保冷箱の食べ物（[数,経過秒] の束）
@@ -14013,15 +14070,39 @@ function bedLoadMats(){ const t=trk(), L=TRUCK_SYS.bed; let room=L.cap-bedUnits(
 function bedUnloadMats(){ const t=trk(); let k=0; for(const m in t.bed.mats){ inv[m]=(inv[m]||0)+t.bed.mats[m]; k+=t.bed.mats[m]; } t.bed.mats={};
   if(!k) return; truckDoorOpen('tg',1.6); sfx('pickup'); toast(`荷台の素材${k}こを持ち物へ移した`); saveGame(); }
 function bedRoomLog(t){ const L=TRUCK_SYS.bed; return t.bed.logs.length<L.maxLogs&&bedUnits(t)+L.log<=L.cap; }
-function bedAddLog(code){ const t=trk(); t.bed.logs.push(code); truckDoorOpen('tg',1.6); sfx('wood'); toast(`丸太を荷台に積んだ（${t.bed.logs.length}/${TRUCK_SYS.bed.maxLogs}）`); saveGame(); }
+// 配列ごとに印を保持し、chapter2 の JSON と別のセーブに前の印を持ち込まない。
+const BED_LOG_ATTR=new WeakMap();
+function bedLogAttrs(t){
+  const logs=t.bed.logs;
+  let attrs=BED_LOG_ATTR.get(logs);
+  if(!attrs||attrs.length!==logs.length){
+    attrs=Array(logs.length).fill(0);
+    BED_LOG_ATTR.set(logs,attrs);
+  }
+  return attrs;
+}
+function bedLogPush(t,code,a){
+  const attrs=bedLogAttrs(t);
+  t.bed.logs.push(code);
+  attrs.push(logAttrNorm(a));
+}
+function bedLogPop(t){
+  if(!t.bed.logs.length) return null;
+  const attrs=bedLogAttrs(t);
+  return {code:t.bed.logs.pop(),a:attrs.pop()};
+}
+function bedLogClear(t){ t.bed.logs=[]; BED_LOG_ATTR.set(t.bed.logs,[]); }
+function bedAddLog(code,a){ const t=trk(); bedLogPush(t,code,a); truckDoorOpen('tg',1.6); sfx('wood'); toast(`丸太を荷台に積んだ（${t.bed.logs.length}/${TRUCK_SYS.bed.maxLogs}）`); saveGame(); }
 function regionLogs(){ return REG.cur==='kamishihi'?(REG.live&&REG.live.kw?REG.live.kw.logs:null):prog.f4.logs; } // 上志比の丸太も積める（光明寺の丸太置き場に納めると、その場で割るより木材が多い）
 function regionLogsDirty(){ if(REG.cur==='kamishihi') kamiLogsDirty(); else f4LogsDirty(); }
 function bedNearLog(){ const LL=regionLogs(); if(!LL) return -1; let b=-1, bd=5.5; LL.forEach((l,i)=>{ const d=dist(TRUCK.x,TRUCK.z,l[0],l[1]); if(d<bd&&dist(P.x,P.z,l[0],l[1])<7){ bd=d; b=i; } }); return b; }
-function bedTakeGroundLog(){ const t=trk(), LL=regionLogs(), i=bedNearLog(); if(i<0||!bedRoomLog(t)) return; const l=LL.splice(i,1)[0]; regionLogsDirty(); bedAddLog(l[3]); }
-function bedDropLog(){ const t=trk(); const c=t.bed.logs.pop(); if(!c) return; const LL=regionLogs(); const sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a), x=TRUCK.x-sa*3.6, z=TRUCK.z-ca*3.6;
-  if(LL){ LL.push([x,z,TRUCK.a+Math.PI/2,c]); regionLogsDirty(); } truckDoorOpen('tg',1.6); sfx('wood'); toast('丸太を1本下ろした（車の後ろ）'); saveGame(); }
+function bedTakeGroundLog(){ const t=trk(), LL=regionLogs(), i=bedNearLog(); if(i<0||!bedRoomLog(t)) return; const l=LL.splice(i,1)[0]; regionLogsDirty(); bedAddLog(l[3],logAttr(l)); }
+function bedDropLog(){ const LL=regionLogs(); if(!LL) return;
+  const log=bedLogPop(trk()); if(!log) return;
+  const sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a), x=TRUCK.x-sa*3.6, z=TRUCK.z-ca*3.6;
+  LL.push(logAttrSet([x,z,TRUCK.a+Math.PI/2,log.code],log.a)); regionLogsDirty(); truckDoorOpen('tg',1.6); sfx('wood'); toast('丸太を1本下ろした（車の後ろ）'); saveGame(); }
 function bedYardNear(){ return REG.cur==='komyoji'&&F4.yard&&dist(TRUCK.x,TRUCK.z,F4.yard.x,F4.yard.z)<14; }
-function bedDeliverLogs(){ const t=trk(), f=prog.f4; if(!t.bed.logs.length) return; let n=0, wood=0; for(const c of t.bed.logs){ n++; wood+=TSIZE[SIZE_OF[c]].wpl; } t.bed.logs=[];
+function bedDeliverLogs(){ const t=trk(), f=prog.f4; if(!t.bed.logs.length) return; let n=0, wood=0; for(const c of t.bed.logs){ n++; wood+=TSIZE[SIZE_OF[c]].wpl; } bedLogClear(t);
   inv.wood+=wood; f.delivered=(f.delivered|0)+n; f.yard=(f.yard|0)+n; f4LogsDirty(); truckDoorOpen('tg',1.6); sfx('craft'); toast(`荷台の丸太${n}本を納めた：木材 +${wood}`); if(F4.yard) floatText(F4.yard.x,1.8,F4.yard.z,`木材+${wood}`,'#f0dca0'); g4CheckQuests(); saveGame(); }
 function bedMenu(){ const t=trk(), L=TRUCK_SYS.bed, G=TRUCK_SYS.gas, ch=[];
   if(prog.f4.carry&&REG.cur==='komyoji'&&bedRoomLog(t)) ch.push({label:`担いでいる丸太を積む（${t.bed.logs.length}/${L.maxLogs}）`,act:bedLoadCarry});
@@ -14040,7 +14121,7 @@ function bedMenu(){ const t=trk(), L=TRUCK_SYS.bed, G=TRUCK_SYS.gas, ch=[];
   truckDoorOpen('tg',1.2);
   if(!ch.length){ toast(`KEI truck の荷台：丸太 ${t.bed.logs.length}/${L.maxLogs}・素材 ${bedMatN(t)}（${bedUnits(t)}/${L.cap}）・燃料 ${Math.round(t.gas)}%。いまできることはない`); return; }
   chooseDefense(`KEI truck の荷台　丸太 ${t.bed.logs.length}/${L.maxLogs}・素材 ${bedMatN(t)}（${bedUnits(t)}/${L.cap}）・燃料 ${Math.round(t.gas)}%・車体 ${Math.round(t.hp)}/${trkHpMax(t)}`,ch,true); }
-function bedLoadCarry(){ const t=trk(), c=prog.f4.carry; if(!c||!bedRoomLog(t)) return; prog.f4.carry=0; f4LogsDirty(); bedAddLog(c); }
+function bedLoadCarry(){ const t=trk(), c=prog.f4.carry; if(!c||!bedRoomLog(t)) return; const a=prog.f4.carryA; f4CarrySet(prog.f4,0); f4LogsDirty(); bedAddLog(c,a); }
 // ---- v0.79 荷台の保冷箱：食べ物の束をそのまま移す（経過はふつうの1/5で進む） ----
 function bedFoodN(t){ let n=0; const F=t.bed.foods; if(F) for(const k in F) for(const b of F[k]) n+=b[0]; return n; }
 function bedFoodLoad(){ const t=trk(); f7Flush(); let room=TRUCK_SYS.bed.cap-bedUnits(t), k=0;
@@ -14179,7 +14260,7 @@ function haulStop(quiet){ const n=npcGen; const was=HAUL.on; HAUL.on=false; HAUL
 function haulUpdate(dt){ if(!HAUL.on) return; const n=npcGen, t=trk(), H=TRUCK_SYS.haul; HAUL.walk=false;
   if(!n||REG.cur!=='komyoji'||ev.kind||TRUCK.drive||t.region!=='komyoji'||t.tip||!F4.yard){ haulStop(); return; }
   if(HAUL.t>0){ HAUL.t-=dt; if(HAUL.t>0) return; // 積み下ろし
-    if(HAUL.st==='toTruck'){ if(t.bed.logs.length) HAUL.load={log:t.bed.logs.pop()};
+    if(HAUL.st==='toTruck'){ if(t.bed.logs.length){ const {code,a}=bedLogPop(t); HAUL.load={log:code,a}; }
       else if(bedMatN(t)){ const m={}; let k=H.mats; for(const key of Object.keys(t.bed.mats)){ const a=Math.min(k,t.bed.mats[key]); m[key]=a; t.bed.mats[key]-=a; if(t.bed.mats[key]<=0) delete t.bed.mats[key]; k-=a; if(k<=0) break; } HAUL.load={mats:m}; }
       else { haulStop(); toast('源さん：荷台は空になったで'); return; }
       truckDoorOpen('tg',2); HAUL.st='toYard'; HAUL.path=haulRoute(true); HAUL.wi=0; saveGame(); }
