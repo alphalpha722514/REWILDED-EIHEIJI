@@ -659,7 +659,7 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.87 防衛戦テスト版（本編とは別に保存）　第二章・上志比の町並み</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.87.1 防衛戦テスト版（本編とは別に保存）　第二章・上志比の町並み</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -7760,7 +7760,8 @@ function hurtPlayer(dmg,fx,fz,knock=6,src=null){ if(P3D.fish&&dmg>0) p3dStop('�
   if(P.dead) return false; dmg=f11InvDmg(dmg,src); // v0.30：侵攻の獣だけ
   if(TRUCK.drive){ truckDamage(dmg*TRUCK_SYS.hp.beast); return false; } // v0.78：運転中の攻撃は KEI truck の車体が受ける（主人公は傷まない）
   if(P.iframe){ if(perfectOK(src)) perfectDodge(src); return false; } // 見切りは回避の最初の0.18秒だけ
-  dmg=f31Armor(dmg); P.hp=Math.max(0,P.hp-dmg); P.lastHurt=S.time; // v0.31 防具は最後（基礎値→侵攻×1.1→回避で無効→防具） f4DropAll('hurt');
+  dmg=f31Armor(dmg); P.hp=Math.max(0,P.hp-dmg); P.lastHurt=S.time; // v0.31 防具は最後（基礎値→侵攻×1.1→回避で無効→防具）
+  if(dmg>0) f4DropAll('hurt');
   const a=Math.atan2(P.x-fx,P.z-fz); P.kx=Math.sin(a)*knock*(1-f47Stats().knock); P.kz=Math.cos(a)*knock*(1-f47Stats().knock);
   P.stagger=0.32*(1-f47Stats().steady); P.atk=null; heavyRing.visible=false; P.buffer=null;
   floatText(P.x,2.3,P.z,`-${Math.round(dmg)}`,'#ff8a70',true);
