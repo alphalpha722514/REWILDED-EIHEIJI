@@ -21,12 +21,16 @@
 - 作業ブランチ `p3e2-forest`。マージもしていない。
 
 ## 2. 元にした v0.88
-- **2026-11-23 から（作業ブランチ `p3e2-integrated-preview`）**：作業ブランチ `p3e2-felling-fix` のコミット `f0abc54`（v0.88 に上志比の伐採の修正を入れたもの）の `index.html`。
+- **2026-11-24 から（作業ブランチ `p3e2-integrated-preview-v2`）**：作業ブランチ `p3e2-truck-log-attrs` のコミット `ddd2d39`（Codex 実装。伐採の修正に、KEI truck・担ぐ・一輪車で丸太の種類（広葉樹・硬木）を保つ修正を足したもの。2026-11-24 Claude Code のレビューで判定 A・ユーザー承認）の `index.html`。
+  - git の blob は `a05aedc15339…`。スクリプトが取り出すときに、この値と同じか確かめる。
+  - 丸太の修正の中身は `p3e2-truck-log-attrs` の `docs/p3e2-truck-log-attrs.md`（印の持ち方・一番上の `logAttr`・光明寺で割ると硬木・一輪車から1本下ろす操作・古い版との行き来）。
+  - `p3e2-truck-log-attrs` のコミットそのものは、このブランチにも main にも入れていない（ビルドスクリプトが git から `index.html` だけを取り出す）。
+- 2026-11-23（作業ブランチ `p3e2-integrated-preview`）：作業ブランチ `p3e2-felling-fix` のコミット `f0abc54`（v0.88 に上志比の伐採の修正を入れたもの）の `index.html`。
   - git の blob は `fd42dd137e09…`。スクリプトが取り出すときに、この値と同じか確かめる。
   - 伐採の修正の中身は `p3e2-felling-fix` の `docs/p3e2-felling-fix.md`（広葉樹の名前・攻撃で案内の木を切る）。
   - `p3e2-felling-fix` のコミットそのものは、このブランチにも main にも入れていない（ビルドスクリプトが git から `index.html` だけを取り出す）。
 - それより前：作業ブランチ `p3e2-forest` のコミット `e378a7b`（E-2 の最後のコミット）の `index.html`（blob `1d59ead7199b…`。今の `p3e2-forest` の先頭 `cbdb745` も同じ）。
-- 作り直すとき：`git fetch origin p3e2-felling-fix` をしてから `python3 tools/build-p3e2-forest-preview.py`。
+- 作り直すとき：`git fetch origin p3e2-truck-log-attrs` をしてから `python3 tools/build-p3e2-forest-preview.py`。
   - 別のコミットから作るとき：`--ref コミット`。ファイルから作るとき：`--src パス`。
 - E-2 を直したら、スクリプトの `REF`・`BLOB` を新しいコミットに変えて作り直す。
 
@@ -122,6 +126,29 @@ iPhone の再現（390×664・タッチ）：
   - 原因：案内を小さくする決まり（`puiShort`）は全角の丸括弧（）の中だけを省く。木の案内の説明は全角の角括弧［］とその後ろの文なので省かれず、全文が1行で出る（「詳しく」も付かない）。iPhone 縦では横幅いっぱい近くになる。
   - 同じ形の案内：木の受け口・追い口（「…：受け口を切る あと◯回［鉄の斧］」）、上志比の丸太（「…の丸太（ここからは運べない）　割る：…［鉄の斧・あと◯回］」）など。
   - 直し方の案は、次の段階でユーザーに出して決めてもらう。
+
+### 6.4 丸太の修正を入れた試遊版 v2（2026-11-24。作業ブランチ `p3e2-integrated-preview-v2`）
+- `p3e2-integrated-preview`（`ba5d106`）から作り、ビルドスクリプトの元を `ddd2d39`（blob `a05aedc15339…`）に変えて作り直した。取り出した `index.html` の blob が `a05aedc15339f5315cfbe06e1b7de0bc68a633e5` と同じことを、スクリプトと `git hash-object` の両方で確かめた。
+- 作り直した試遊版の、前の試遊版（`ba5d106`）との違いは145行で、`f0abc54` → `ddd2d39` の `index.html` の違い（145行）と1行残らず同じ。案内を小さくする部分・伐採の修正・試遊版の部分は変わっていない。
+- テスト：
+  - `tests/p3e2-truck-logs.cjs` を `ddd2d39` から取り込んだ（変えていない。`TRUCK_PAGE`・`OLD_PAGE` で試遊版を確かめる）。
+  - `tests/p3e2-felling.cjs` は、Codex の改善版（`p3e2-felling-test-fix` の `8cc8e5d`。押す前に画面の案内が狙いの物を指すことを確かめる・植林の前後の確かめ・項目9を別のブラウザで）に、試遊版の確かめ（`FELL_PAGE`・P1 新しい形の案内・P2 案内を押しても切らない／切り株の詳しい説明を開いても植えない・P3 本編のキー7つは変わらない）を移した。改善版の check 13個と試遊版の check 4個をすべて残した（保存キーの check は、試遊版では試遊版のキー、本編では今までどおり `eiheiji_vs_beasts_v010` を見る）。
+  - 結果は §6.5。
+
+### 6.5 v2 のテストの結果（2026-11-24。画面のない Chromium・SwiftShader。作り直した試遊版そのものが相手）
+
+| テスト | 結果 |
+|---|---|
+| `node tests/p3e2-forest-preview.cjs` | PASS（37） |
+| `node tests/p3e2-prompt-ui.cjs`（PC・iPhone 縦・横） | PASS（48） |
+| `FELL_PAGE=previews/p3e2-forest/index.html node tests/p3e2-felling.cjs` | PASS（確認の行23：伐採の1〜4・7〜10、試遊版の P1〜P3、エラーなし） |
+| `TRUCK_PAGE=previews/p3e2-forest/index.html OLD_PAGE=（main の今の試遊版） node tests/p3e2-truck-logs.cjs` | PASS（1〜8・9a〜9d・本編のキー7つ） |
+| `FELL_HTML=（ddd2d39 の index.html） node tests/p3e2-felling.cjs`（まとめた伐採テストの本編の側） | PASS（14） |
+| node のテスト6本（本編 v0.87 が相手） | PASS |
+
+- 古い版としての「今公開中の試遊版」（main の `previews/p3e2-forest/`）で同じ太さの丸太を入れ替えて保存しても、v2 で読むと荷台の印は全部 0（違う丸太に付かない）。
+- 本編の保存キーと設定のキー7つは、どのテストでも変わらなかった。試遊版が使ったのは `eiheiji_vs_beasts_p3e2forest` と `eiheiji_p3e2f_*` だけ。
+- 実機（PC・iPhone）は未確認。一輪車を置くときに選択肢が1段増える操作のしやすさは、iPhone の実機で確かめる（2026-11-24 ユーザー）。
 
 ## 7. 公開のしかた（まだしていない）
 - GitHub Pages は main だけを配信している。試遊版の URL を使えるようにするには、このブランチの変更（新しいファイル4つと CLAUDE.md の文書の表の1行）を main に入れる必要がある。**main へ入れるのはユーザーの承認のあと。**

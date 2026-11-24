@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """v0.88（P3-E の E-2：上志比の森林）の検収用の試遊版を作る（previews/p3e2-forest/index.html）。docs/p3e2-forest-preview.md
 
-- 元にするのは v0.88（E-2）の index.html（既定はコミット f0abc54＝作業ブランチ p3e2-felling-fix。E-2 に伐採の修正を入れたもの）。本編の index.html（main）は使わない・変えない
+- 元にするのは v0.88（E-2）の index.html（既定はコミット ddd2d39＝作業ブランチ p3e2-truck-log-attrs。E-2 に伐採の修正と丸太の種類を保つ修正を入れたもの）。本編の index.html（main）は使わない・変えない
 - 保存キーと設定のキーを、すべて試遊版だけのものに変える（本編のセーブ・設定を読まない・書かない）
   さらにページのいちばん初めで、本編のキーを読む・書く・消すのを止める（変え忘れがあっても本編に触れない）
 - タイトル画面の右上に「テスト：上志比の森で始める」ボタン
@@ -19,14 +19,14 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REF = 'f0abc54dd9acfa69f1dc79d2c4982eb9c24e58f7'  # v0.88（E-2）に伐採の修正を入れたコミット（作業ブランチ p3e2-felling-fix。2026-11-23）
-BLOB = 'fd42dd137e09e8deef5aca06c047bec7f9fedd33'  # そのときの index.html（git の blob）
-# それより前は REF = e378a7b（p3e2-forest の E-2 の最後のコミット）・BLOB = 1d59ead7…（伐採を直す前）
+REF = 'ddd2d3929b611fbaad02ecd46a991c2ba11a87aa'  # v0.88（E-2）＋伐採の修正＋丸太の種類を運んでも保つ修正（作業ブランチ p3e2-truck-log-attrs。Codex 実装・2026-11-24 判定 A）
+BLOB = 'a05aedc15339f5315cfbe06e1b7de0bc68a633e5'  # そのときの index.html（git の blob）
+# それより前：REF = f0abc54（p3e2-felling-fix。伐採の修正）・BLOB = fd42dd13…、さらに前は REF = e378a7b（p3e2-forest）・BLOB = 1d59ead7…
 OUT = os.path.join(ROOT, 'previews', 'p3e2-forest', 'index.html')
 PRE = 'eiheiji_p3e2f_'  # 試遊版の設定のキーの頭
 
 ap = argparse.ArgumentParser()
-ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：伐採を直した f0abc54）')
+ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：丸太の修正の ddd2d39）')
 ap.add_argument('--src', help='git から取り出さず、このファイルを元にする')
 a = ap.parse_args()
 
@@ -37,7 +37,7 @@ else:
     try:
         raw = subprocess.run(['git', '-C', ROOT, 'show', f'{a.ref}:index.html'], check=True, capture_output=True).stdout
     except subprocess.CalledProcessError as e:
-        sys.exit(f'{a.ref} の index.html を取り出せない（git fetch origin p3e2-felling-fix をしてから）：{e.stderr.decode(errors="replace").strip()}')
+        sys.exit(f'{a.ref} の index.html を取り出せない（git fetch origin p3e2-truck-log-attrs をしてから）：{e.stderr.decode(errors="replace").strip()}')
     where = a.ref
 blob = hashlib.sha1(b'blob %d\0' % len(raw) + raw).hexdigest()
 if not a.src and a.ref == REF and blob != BLOB:
