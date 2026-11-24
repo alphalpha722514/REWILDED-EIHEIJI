@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """v0.88（P3-E の E-2：上志比の森林）の検収用の試遊版を作る（previews/p3e2-forest/index.html）。docs/p3e2-forest-preview.md
 
-- 元にするのは v0.88（E-2）の index.html（既定はコミット ddd2d39＝作業ブランチ p3e2-truck-log-attrs。E-2 に伐採の修正と丸太の種類を保つ修正を入れたもの）。本編の index.html（main）は使わない・変えない
+- 元にするのは v0.88（E-2）の index.html（既定はコミット d381dfb＝作業ブランチ p3e2-hurt-drop-src。ddd2d39 に被ダメージで運搬を手放す修正を足したもの）。本編の index.html（main）は使わない・変えない
 - 保存キーと設定のキーを、すべて試遊版だけのものに変える（本編のセーブ・設定を読まない・書かない）
   さらにページのいちばん初めで、本編のキーを読む・書く・消すのを止める（変え忘れがあっても本編に触れない）
 - タイトル画面の右上に「テスト：上志比の森で始める」ボタン
@@ -9,7 +9,7 @@
 - 遊んでいる間は、画面の上の「試遊メニュー」から：森の中の場所へ移る・KEI truck をそばに呼ぶ・光明寺のかまどへ行く・
   苗木と山の薬草と素材を足す・時間を進める・昼にする・描く細かさを切り替える
 
-使い方：python3 tools/build-p3e2-forest-preview.py [--ref コミット] [--src index.html のパス]
+使い方：python3 tools/build-p3e2-forest-preview.py [--ref コミット] [--src index.html のパス] [--out 出力パス]
 """
 import argparse
 import hashlib
@@ -19,16 +19,23 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REF = 'ddd2d3929b611fbaad02ecd46a991c2ba11a87aa'  # v0.88（E-2）＋伐採の修正＋丸太の種類を運んでも保つ修正（作業ブランチ p3e2-truck-log-attrs。Codex 実装・2026-11-24 判定 A）
-BLOB = 'a05aedc15339f5315cfbe06e1b7de0bc68a633e5'  # そのときの index.html（git の blob）
-# それより前：REF = f0abc54（p3e2-felling-fix。伐採の修正）・BLOB = fd42dd13…、さらに前は REF = e378a7b（p3e2-forest）・BLOB = 1d59ead7…
+REF = 'd381dfb2f8b1bd3b2fb7d04264b6da000944b997'  # v0.88（E-2）。ddd2d39 に被ダメージで運搬を手放す修正と回帰テスト項目10・11を追加（p3e2-hurt-drop-src）
+BLOB = '8f41da70b479ed31dc4e3c19b5b75fd02f91fa7f'  # そのときの index.html（git の blob）
+# それより前：REF = ddd2d3929b611fbaad02ecd46a991c2ba11a87aa（p3e2-truck-log-attrs。丸太の種類を保つ修正）・BLOB = a05aedc15339f5315cfbe06e1b7de0bc68a633e5
+# さらに前：REF = f0abc54（p3e2-felling-fix。伐採の修正）・BLOB = fd42dd13…、さらに前は REF = e378a7b（p3e2-forest）・BLOB = 1d59ead7…
 OUT = os.path.join(ROOT, 'previews', 'p3e2-forest', 'index.html')
 PRE = 'eiheiji_p3e2f_'  # 試遊版の設定のキーの頭
 
 ap = argparse.ArgumentParser()
-ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：丸太の修正の ddd2d39）')
+ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：被ダメージで運搬を手放す修正の d381dfb）')
 ap.add_argument('--src', help='git から取り出さず、このファイルを元にする')
+ap.add_argument('--out', help='出力先（既定：previews/p3e2-forest/index.html）')
 a = ap.parse_args()
+out = OUT if a.out is None else os.path.abspath(a.out)
+if a.out is None:
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+elif not os.path.isdir(os.path.dirname(out)):
+    sys.exit(f'出力先のフォルダがない：{os.path.dirname(out)}')
 
 if a.src:
     raw = open(a.src, 'rb').read()
@@ -37,7 +44,7 @@ else:
     try:
         raw = subprocess.run(['git', '-C', ROOT, 'show', f'{a.ref}:index.html'], check=True, capture_output=True).stdout
     except subprocess.CalledProcessError as e:
-        sys.exit(f'{a.ref} の index.html を取り出せない（git fetch origin p3e2-truck-log-attrs をしてから）：{e.stderr.decode(errors="replace").strip()}')
+        sys.exit(f'{a.ref} の index.html を取り出せない（git fetch origin p3e2-hurt-drop-src をしてから）：{e.stderr.decode(errors="replace").strip()}')
     where = a.ref
 blob = hashlib.sha1(b'blob %d\0' % len(raw) + raw).hexdigest()
 if not a.src and a.ref == REF and blob != BLOB:
@@ -246,6 +253,6 @@ PROMPT_CSS = ("<style>/* 試遊版だけ（previews/p3e2-forest）：「調べ�
   "</style>")
 s = rep(s, '</head>', PROMPT_CSS + '</head>')
 
-os.makedirs(os.path.dirname(OUT), exist_ok=True)
-open(OUT, 'w', encoding='utf8').write(s)
-print('wrote', os.path.relpath(OUT, ROOT), len(s), 'bytes ／ 元：', where, blob[:12])
+with open(out, 'w', encoding='utf8') as output:
+    output.write(s)
+print('wrote', out, len(s.encode('utf8')), 'bytes ／ 元：', where, blob[:12])

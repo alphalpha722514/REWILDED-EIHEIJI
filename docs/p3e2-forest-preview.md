@@ -21,6 +21,8 @@
 - 作業ブランチ `p3e2-forest`。マージもしていない。
 
 ## 2. 元にした v0.88
+- **2026-11-24 の第2段階から（作業ブランチ `p3e2-preview-build-repro`）**：`p3e2-hurt-drop-src` のコミット `d381dfb`（`ddd2d39` に被ダメージで運搬を手放す修正 `if(dmg>0) f4DropAll('hurt')` と回帰テスト項目10・11を足したもの）の `index.html`。git の blob は `8f41da70b479ed31dc4e3c19b5b75fd02f91fa7f`。
+  - この E-2（v0.88）は本編 `main`（v0.87）とは別の開発段階で、`main` には入っていない。
 - **2026-11-24 から（作業ブランチ `p3e2-integrated-preview-v2`）**：作業ブランチ `p3e2-truck-log-attrs` のコミット `ddd2d39`（Codex 実装。伐採の修正に、KEI truck・担ぐ・一輪車で丸太の種類（広葉樹・硬木）を保つ修正を足したもの。2026-11-24 Claude Code のレビューで判定 A・ユーザー承認）の `index.html`。
   - git の blob は `a05aedc15339…`。スクリプトが取り出すときに、この値と同じか確かめる。
   - 丸太の修正の中身は `p3e2-truck-log-attrs` の `docs/p3e2-truck-log-attrs.md`（印の持ち方・一番上の `logAttr`・光明寺で割ると硬木・一輪車から1本下ろす操作・古い版との行き来）。
@@ -30,9 +32,13 @@
   - 伐採の修正の中身は `p3e2-felling-fix` の `docs/p3e2-felling-fix.md`（広葉樹の名前・攻撃で案内の木を切る）。
   - `p3e2-felling-fix` のコミットそのものは、このブランチにも main にも入れていない（ビルドスクリプトが git から `index.html` だけを取り出す）。
 - それより前：作業ブランチ `p3e2-forest` のコミット `e378a7b`（E-2 の最後のコミット）の `index.html`（blob `1d59ead7199b…`。今の `p3e2-forest` の先頭 `cbdb745` も同じ）。
-- 作り直すとき：`git fetch origin p3e2-truck-log-attrs` をしてから `python3 tools/build-p3e2-forest-preview.py`。
-  - 別のコミットから作るとき：`--ref コミット`。ファイルから作るとき：`--src パス`。
-- E-2 を直したら、スクリプトの `REF`・`BLOB` を新しいコミットに変えて作り直す。
+- 作り直すときは `git fetch origin p3e2-hurt-drop-src` をしてから `python3 tools/build-p3e2-forest-preview.py` を実行する。既定の出力先は `previews/p3e2-forest/index.html`。
+  - 別のコミットから作るときは `--ref コミット`。git の外では `--src /path/to/index.html` でビルド元のファイルを渡す。
+  - `--out /path/to/index.html` を指定すると、そのパスだけに書き出す。出力先のフォルダは先に用意する。
+- 修正は試遊版を直接書き換えず、E-2 のビルド元の `index.html` に入れる。そのコミットと blob に合わせてスクリプトの `REF`・`BLOB` を更新し、試遊版を作り直す。
+- 作り直した試遊版は `node tests/p3e2-preview-build.cjs` で確かめる。テストは一時フォルダに出力し、保存済みの試遊版とバイト単位で比較する。
+  - git の外では `PREVIEW_BUILD_SRC=/path/to/index.html node tests/p3e2-preview-build.cjs` を実行する。テストはビルド元の blob を検証してから `--src` でビルドする。
+  - 比較相手を替えるときは `PREVIEW_BUILD_EXPECTED=/path/to/expected.html` を指定する。
 
 ## 3. 本編のセーブを読まない・書かない
 

@@ -354,7 +354,7 @@ async function main() {
     assert.deepEqual(await splitLast(), [0, 2]);
     console.log('ok 10 担いだ丸太を下ろす・回避で落とすと印を引き継ぐ');
 
-    if (PREVIEW) {
+    {
       await clearGround();
       await truckAt('PSPAWN.x+19', 'PSPAWN.z+19');
       const hurt = 'hurtPlayer(9,P.x+3,P.z,2.5,null)';
