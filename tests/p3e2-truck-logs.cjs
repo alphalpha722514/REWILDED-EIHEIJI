@@ -338,6 +338,84 @@ async function main() {
     assert.deepEqual(await E('[prog.f4.logs.map(logAttr),prog.f4.carryA,prog.f4.cart.logA]'), [[0], 0, [0]]);
     console.log('ok 9d 旧版で丸太に触れず再保存しても印だけ消える');
 
+    await clearGround();
+    await truckAt('PSPAWN.x+19', 'PSPAWN.z+19');
+    await E("Object.assign(P,{x:PSPAWN.x+7,z:PSPAWN.z+7,facing:0}); f4CarrySet(prog.f4,'k',3)");
+    await E("(()=>{ const L=[]; f4Interactables(L); const prompt=L.find(v=>v.label==='丸太を下ろす'); " +
+      "if(!prompt) throw new Error('案内「丸太を下ろす」が見つからない'); prompt.act(); })()");
+    const lastGroundLog = () => E('(()=>{ const l=regionLogs().at(-1); return [l[3],logAttr(l)]; })()');
+    assert.deepEqual(await lastGroundLog(), ['k', 3]);
+    assert.deepEqual(await E('[prog.f4.carry,prog.f4.carryA]'), [0, 0]);
+    assert.deepEqual(await splitLast(), [1, 3]);
+
+    await E("f4CarrySet(prog.f4,'m',2); f4DropAll('dodge')");
+    assert.deepEqual(await lastGroundLog(), ['m', 2]);
+    assert.deepEqual(await E('[prog.f4.carry,prog.f4.carryA]'), [0, 0]);
+    assert.deepEqual(await splitLast(), [0, 2]);
+    console.log('ok 10 担いだ丸太を下ろす・回避で落とすと印を引き継ぐ');
+
+    {
+      await clearGround();
+      await truckAt('PSPAWN.x+19', 'PSPAWN.z+19');
+      const hurt = 'hurtPlayer(9,P.x+3,P.z,2.5,null)';
+      const carry = '[prog.f4.carry,prog.f4.carryA]';
+      const ready = await E(`(()=>{
+        Object.assign(P,{x:PSPAWN.x+7,z:PSPAWN.z+7,facing:0,hp:P.maxHp,iframe:false,dodge:null});
+        return [P.hp===P.maxHp,P.iframe,P.dodge,TRUCK.drive,TGV.on];
+      })()`);
+      assert.deepEqual(ready, [true, false, null, false, false]);
+
+      const carriedHit = await E(`(()=>{
+        f4CarrySet(prog.f4,'k',3);
+        const d=f31Armor(9);
+        const hp=P.hp;
+        const hit=${hurt};
+        return {d,hit,lost:hp-P.hp,carry:${carry}};
+      })()`);
+      assert(carriedHit.d > 0);
+      assert.equal(carriedHit.hit, true);
+      assert.equal(carriedHit.lost, carriedHit.d);
+      assert.deepEqual(carriedHit.carry, [0, 0], '被弾で担いだ丸太を手放す');
+      assert.deepEqual(await lastGroundLog(), ['k', 3]);
+
+      const invulnerable = await E(`(()=>{
+        f4CarrySet(prog.f4,'m',2);
+        P.iframe=true;
+        P.dodge=null;
+        const hp=P.hp, count=regionLogs().length;
+        const hit=${hurt};
+        const result=[hit,P.hp-hp,${carry},regionLogs().length-count];
+        P.iframe=false;
+        f4CarrySet(prog.f4,0);
+        return result;
+      })()`);
+      assert.deepEqual(invulnerable, [false, 0, ['m', 2], 0]);
+
+      const cartHit = await E(`(()=>{
+        if(!prog.f4.cart) RECIPES.find(r=>r.id==='cart').give();
+        const cart=prog.f4.cart;
+        cartLogClear(cart);
+        cartLogPush(cart,'k',3);
+        cart.push=true;
+        const count=regionLogs().length;
+        const hit=${hurt};
+        return {hit,push:cart.push,cargo:[cart.logs,cart.logA],carry:${carry},added:regionLogs().length-count};
+      })()`);
+      assert.deepEqual(cartHit, { hit: true, push: false, cargo: [['k'], [3]], carry: [0, 0], added: 0 });
+
+      const idleHit = await E(`(()=>{
+        const cart=prog.f4.cart;
+        const state=()=>[regionLogs().length,cart.x,cart.z,cart.a,cart.logs.slice(),cart.logA.slice(),cart.push,${carry}];
+        const before=state();
+        const hit=${hurt};
+        return {hit,before,after:state()};
+      })()`);
+      assert.equal(idleHit.hit, true);
+      assert.deepEqual(idleHit.after, idleHit.before);
+      await E('Object.assign(P,{hp:P.maxHp,stagger:0,kx:0,kz:0,iframe:false})');
+      console.log('ok 11 ダメージを受けると担いだ丸太を落とし一輪車から手を離す（無敵時間・何も運んでいないときは変わらない）');
+    }
+
     if (PREVIEW) {
       await page.goto(ORIGIN + '/__truck_seed.html');
       assert.deepEqual(await page.evaluate(keys => keys.map(key => localStorage.getItem(key)), MAIN_KEYS),
