@@ -7,7 +7,7 @@
 | キー | 中身 | 書く場所 |
 |---|---|---|
 | `eiheiji_vs_beasts_v010`（`SAVE_KEY`） | ゲームの進行（下の表） | `saveGame()` |
-| `REWILDED_EIHEIJI_SETTINGS`（`SND_KEY`） | 音量などの設定 | 設定の切り替え時 |
+| `REWILDED_EIHEIJI_SETTINGS`（`SND_KEY`） | 音量などの設定。v0.88.1 で `car`（車の音のオン・オフ。無い旧設定はオン）を足した。`v:1` のまま | 設定の切り替え時 |
 | `eiheiji_aimMode` | 攻撃方向（カーソル／向き） | 攻撃方向の切り替え |
 | `eiheiji_perf` | 性能の設定 | 設定の切り替え時 |
 | `eiheiji_shadow` | 影の設定 | 設定の切り替え時 |
