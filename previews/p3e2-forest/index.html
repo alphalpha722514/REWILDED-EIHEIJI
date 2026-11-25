@@ -14223,10 +14223,11 @@ function truckSoundReset(travel=false){
   truckSoundCancelBursts();
   const now=AC.currentTime;
   AU.car.gain.cancelScheduledValues(now);
+  AU.car.gain.value=0;
   AU.car.gain.setValueAtTime(0,now);
   if(r.nodes) for(const k of ['engine','crank','roll','skid']){
     const g=r.nodes[k].gain;
-    g.cancelScheduledValues(now); g.setValueAtTime(0,now);
+    g.cancelScheduledValues(now); g.value=0; g.setValueAtTime(0,now);
   }
 }
 function truckSoundUpdate(now,paused){
