@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """v0.88（P3-E の E-2：上志比の森林）の検収用の試遊版を作る（previews/p3e2-forest/index.html）。docs/p3e2-forest-preview.md
 
-- 元にするのは v0.88（E-2）の index.html（既定はコミット d381dfb＝作業ブランチ p3e2-hurt-drop-src。ddd2d39 に被ダメージで運搬を手放す修正を足したもの）。本編の index.html（main）は使わない・変えない
+- 元にするのは v0.88（E-2）の index.html（既定はコミット 151a04c＝v0.88 の統合（v0.87.1 に E-2 を入れ、2026-11-25 の決定を足したもの。作業ブランチ v0.88-integration））。本編の index.html（main）は使わない・変えない
 - 保存キーと設定のキーを、すべて試遊版だけのものに変える（本編のセーブ・設定を読まない・書かない）
   さらにページのいちばん初めで、本編のキーを読む・書く・消すのを止める（変え忘れがあっても本編に触れない）
 - タイトル画面の右上に「テスト：上志比の森で始める」ボタン
@@ -19,15 +19,16 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REF = 'd381dfb2f8b1bd3b2fb7d04264b6da000944b997'  # v0.88（E-2）。ddd2d39 に被ダメージで運搬を手放す修正と回帰テスト項目10・11を追加（p3e2-hurt-drop-src）
-BLOB = '8f41da70b479ed31dc4e3c19b5b75fd02f91fa7f'  # そのときの index.html（git の blob）
+REF = '151a04c7475554743745be717e796c735d403667'  # v0.88 の統合（v0.87.1＋E-2＋2026-11-25 の決定。v0.88-integration）
+BLOB = '36b848506691e5d00fd072b202b841f57491b8a2'  # そのときの index.html（git の blob）
+# それより前：REF = d381dfb2f8b1bd3b2fb7d04264b6da000944b997（p3e2-hurt-drop-src。ddd2d39 に被ダメージで運搬を手放す修正）・BLOB = 8f41da70b479ed31dc4e3c19b5b75fd02f91fa7f
 # それより前：REF = ddd2d3929b611fbaad02ecd46a991c2ba11a87aa（p3e2-truck-log-attrs。丸太の種類を保つ修正）・BLOB = a05aedc15339f5315cfbe06e1b7de0bc68a633e5
 # さらに前：REF = f0abc54（p3e2-felling-fix。伐採の修正）・BLOB = fd42dd13…、さらに前は REF = e378a7b（p3e2-forest）・BLOB = 1d59ead7…
 OUT = os.path.join(ROOT, 'previews', 'p3e2-forest', 'index.html')
 PRE = 'eiheiji_p3e2f_'  # 試遊版の設定のキーの頭
 
 ap = argparse.ArgumentParser()
-ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：被ダメージで運搬を手放す修正の d381dfb）')
+ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：v0.88 の統合の 151a04c）')
 ap.add_argument('--src', help='git から取り出さず、このファイルを元にする')
 ap.add_argument('--out', help='出力先（既定：previews/p3e2-forest/index.html）')
 a = ap.parse_args()
@@ -44,7 +45,7 @@ else:
     try:
         raw = subprocess.run(['git', '-C', ROOT, 'show', f'{a.ref}:index.html'], check=True, capture_output=True).stdout
     except subprocess.CalledProcessError as e:
-        sys.exit(f'{a.ref} の index.html を取り出せない（git fetch origin p3e2-hurt-drop-src をしてから）：{e.stderr.decode(errors="replace").strip()}')
+        sys.exit(f'{a.ref} の index.html を取り出せない（REF のコミットが無ければ git fetch origin main か v0.88-integration をしてから）：{e.stderr.decode(errors="replace").strip()}')
     where = a.ref
 blob = hashlib.sha1(b'blob %d\0' % len(raw) + raw).hexdigest()
 if not a.src and a.ref == REF and blob != BLOB:

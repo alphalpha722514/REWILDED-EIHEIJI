@@ -1,4 +1,4 @@
-// git 内: node tests/p3e2-preview-build.cjs（p3e2-hurt-drop-src のコミットが必要）
+// git 内: node tests/p3e2-preview-build.cjs（ビルドスクリプトの REF のコミットが必要）
 // git 外: PREVIEW_BUILD_SRC=/path/to/index.html node tests/p3e2-preview-build.cjs
 // PREVIEW_BUILD_EXPECTED=/path/to/expected.html で比較相手を指定できる。
 const { execFileSync } = require('node:child_process');
@@ -41,7 +41,7 @@ function verifyBuild() {
         stdio: 'ignore',
       });
     } catch {
-      throw new Error(`${ref} を確認できない。git fetch origin p3e2-hurt-drop-src をしてから実行する`);
+      throw new Error(`${ref} を確認できない。git fetch origin main か v0.88-integration をしてから実行する`);
     }
   }
 

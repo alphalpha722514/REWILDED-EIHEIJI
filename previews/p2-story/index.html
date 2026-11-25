@@ -659,7 +659,7 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.87.1 作業F 物語イベント テスト版（本編とは別に保存）　第二章・上志比の町並み</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.88 作業F 物語イベント テスト版（本編とは別に保存）　第二章・上志比の森林</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -2565,7 +2565,7 @@ const SIZE_OF={t:'thin',m:'mid',k:'thick'};
 const LOG_SPLIT={t:{work:8,wood:1},m:{work:12,wood:2},k:{work:16,wood:3}};
 const F4={thin:[],thinIM:null,thinInk:null,chop:new Map(),hidden:new Map(),trunks:[],logIM:null,logInk:null,yard:null,cartMesh:null,carryMesh:null,ind:null,roadT:0,road:null,noiseT:0,hintT:0,lured:[]};
 const F4_MAXLOG=140, LOG_LEN=2.4;
-function f4Fresh(){ return {felled:[],trunks:[],logs:[],carry:0,cart:null,hasCart:false,closures:[0,0,0],delivered:0,yard:0,hint:0}; }
+function f4Fresh(){ return {felled:[],trunks:[],logs:[],carry:0,carryA:0,cart:null,hasCart:false,closures:[0,0,0],delivered:0,yard:0,hint:0}; }
 // ---- 形 ----
 let _logGeo=null; function logGeo(){ if(_logGeo) return _logGeo; const g=new THREE.Group();
   const b=mesh(G.cyl8,mat(0x6e4630),0,0,0,1,1,1); b.rotation.x=Math.PI/2; g.add(J(b,0.12));
@@ -2638,7 +2638,7 @@ function showTree(rec){ if(rec.kind==='k') return; if(!F4.hidden.has(rec.key)) r
   if(rec.ch.trees){ const m4=new THREE.Matrix4(); m4.compose(new THREE.Vector3(t[0],t[1],t[2]),new THREE.Quaternion().setFromEuler(new THREE.Euler(0,rec.yaw,0)),new THREE.Vector3(t[3],rec.sy,t[3])); rec.ch.trees.setMatrixAt(rec.idx,m4); rec.ch.treeFar.setMatrixAt(rec.idx,m4); rec.ch.trees.instanceMatrix.needsUpdate=true; rec.ch.treeFar.instanceMatrix.needsUpdate=true; } }
 // ---- 倒れた木（幹） ----
 function makeTrunk(rec,a,theta,anim){ const piv=new THREE.Group(); piv.position.set(rec.x,groundH(rec.x,rec.z)-0.1,rec.z); piv.rotation.y=a;
-  const tilt=new THREE.Group(); tilt.rotation.x=theta; piv.add(tilt); const m=rec.t&&rec.t.kona&&P3A.konaGeo?new THREE.Mesh(P3A.konaGeo,vcMat):treeMesh(); m.rotation.y=rec.yaw-a; /* v0.85：広葉樹の倒木は広葉樹の形 */ m.scale.set(rec.s,rec.sy,rec.s); tilt.add(m); (rec.kind==='k'&&REG.live?REG.live.group:world).add(piv); // v0.67：上志比の倒木は地域の物（出るときに消える）
+  const tilt=new THREE.Group(); tilt.rotation.x=theta; piv.add(tilt); const m=rec.t&&rec.t.kona&&(E2.konaGeo||P3A.konaGeo)?new THREE.Mesh(E2.konaGeo||P3A.konaGeo,vcMat):rec.t&&rec.t.ty==='sugi'&&E2.sugiGeo?new THREE.Mesh(E2.sugiGeo,vcMat):treeMesh(); m.rotation.y=rec.yaw-a; /* v0.85：広葉樹の倒木は広葉樹の形 */ m.scale.set(rec.s,rec.sy,rec.s); tilt.add(m); (rec.kind==='k'&&REG.live?REG.live.group:world).add(piv); // v0.67：上志比の倒木は地域の物（出るときに消える）
   const tr={kami:rec.kind==='k',rec,key:rec.key,size:rec.size,a,len:rec.len,x:rec.x,z:rec.z,piv,tilt,mesh:m,limbs:TSIZE[rec.size].limb,fall:anim?0:-1,roll:0,hitSet:new Set(),ob:null};
   F4.trunks.push(tr); if(!anim) trunkSettle(tr,false); return tr; }
 function trunkTip(tr){ return [tr.x+Math.sin(tr.a)*tr.len,tr.z+Math.cos(tr.a)*tr.len]; }
@@ -2656,7 +2656,7 @@ function f4FindTarget(maxD=1.6){ let best=null,bs=1e9; const fa=P.facing;
   const score=(d,x,z)=>d+Math.abs(angDiff(fa,Math.atan2(x-P.x,z-P.z)))*0.5;
   for(const o of gridQuery(P.x-3.5,P.x+3.5,P.z-3.5,P.z+3.5)){ if(o.k!=='c'||!o.active) continue; let rec=null;
     if(o.ftree&&!o.ftree.felled&&o.ftree[0]>BOUNDS.minX) rec=forestRec(o.ftree); else if(o.chopThin&&!o.chopThin.felled) rec=thinRec(o.chopThin); else if(o.ktree&&!o.ktree.felled) rec=kamiTreeRec(o.ktree); if(!rec) continue;
-    const d=dist(P.x,P.z,o.x,o.z)-o.r; if(d>maxD) continue; const sc=score(d,o.x,o.z); if(sc<bs){ bs=sc; best={type:'tree',rec,x:o.x,z:o.z,d}; } }
+    const d=dist(P.x,P.z,o.x,o.z)-o.r; if(d>maxD) continue; const sc=score(d,o.x,o.z); if(sc<bs){ bs=sc; best={type:'tree',rec,x:o.x,z:o.z,d,r:o.r}; } } // v0.88 伐採の修正：r（案内の木がまだ届くか確かめる）
   for(const tr of F4.trunks){ if(tr.fall>=0) continue; const [ax,az,bx,bz]=trunkSeg(tr); const d=segDist(P.x,P.z,ax,az,bx+(ax-bx)*0.05,bz+(az-bz)*0.05)-0.4; if(d>maxD) continue; const sc=d+0.2; if(sc<bs){ bs=sc; best={type:'trunk',tr,x:(ax+bx)/2,z:(az+bz)/2,d}; } }
   for(const l of prog.f4.logs){ const sa=Math.sin(l[2])*LOG_LEN/2, ca=Math.cos(l[2])*LOG_LEN/2; const d=segDist(P.x,P.z,l[0]-sa,l[1]-ca,l[0]+sa,l[1]+ca)-0.25; if(d>maxD) continue; const sc=d+0.1; if(sc<bs){ bs=sc; best={type:'log',l,x:l[0],z:l[1],d}; } }
   for(const n of F5.rock){ if(rockLeft(n)<=0) continue; const d=dist(P.x,P.z,n.x,n.z)-1.0; if(d>maxD) continue; if(d+0.05<bs){ bs=d+0.05; best={type:'rock',r:n,x:n.x,z:n.z,d}; } }
@@ -2664,10 +2664,12 @@ function f4FindTarget(maxD=1.6){ let best=null,bs=1e9; const fa=P.facing;
   CLOSURES.forEach((c,i)=>{ if(prog.f4.closures[i]) return; const d=dist(P.x,P.z,c.x,c.z)-3; if(d>maxD+0.6) return; if(d+0.3<bs){ bs=d+0.3; best={type:'closure',c,i,x:c.x,z:c.z,d}; } });
   return best; }
 function f4AttachChop(a){ let tg=P.chopReq; P.chopReq=null;
-  if(!tg){ if(enemies.some(e=>e.state!=='dead'&&!e.removed&&dist(e.x,e.z,P.x,P.z)<6)) return; tg=f4FindTarget(1.3); }
+  if(!tg){ if(enemies.some(e=>e.state!=='dead'&&!e.removed&&dist(e.x,e.z,P.x,P.z)<6)) return; tg=f4ShownTarget()||f4FindTarget(1.3); } // v0.88 伐採の修正
   if(!tg) return; a.chop=tg; P.facing=Math.atan2(tg.x-P.x,tg.z-P.z); const tool=tg.type==='rock'||tg.type==='krock'?f5QuarryTool():f5BestTool(); if(tool&&tool!==P.weapon) showWeapon(tool); a.toolId=tool||null;
   if(tg.type==='trunk'){ const [ax,az,bx,bz]=trunkSeg(tg.tr); const dx=bx-ax, dz=bz-az, L2=dx*dx+dz*dz||1; const t=clamp(((P.x-ax)*dx+(P.z-az)*dz)/L2,0,1); P.facing=Math.atan2(ax+dx*t-P.x,az+dz*t-P.z); } }
 function f4Swing(tg){ P.chopReq=tg; tryAttack('light'); }
+// v0.88 伐採の修正：上志比では、攻撃（J・クリック・攻撃ボタン）で木を切るときも、案内に出ている木（curInter.chop）を切る。光明寺は今までどおり
+function f4ShownTarget(){ if(REG.cur!=='kamishihi') return null; const tg=curInter&&curInter.chop; if(!tg||tg.type!=='tree'||!tg.rec||!tg.rec.t||tg.rec.t.felled) return null; if(dist(P.x,P.z,tg.x,tg.z)-(tg.r||0)>1.9) return null; return tg; }
 function chips(x,y,z,n=6,col=0xd8b888){ for(let i=0;i<n;i++) puff(x,y,z,rr(-2,2),rr(1,3),rr(-2,2),0.1,col,0.5); }
 function f4Hit(tg,kind){ if(tg.type==='rock'){ f5Quarry(tg.r); return; } if(tg.type==='krock'){ kamiQuarry(tg.r); return; } const tool=f5BestTool(); const cp=f5ChopPower(); if(!cp){ toast('木を切る道具がない',true); return; } const pw=(kind==='heavy'?2:1)*cp; f5Wear(tool); sfx('wood'); S.hitstop=Math.max(S.hitstop,0.05); S.shake=Math.max(S.shake,0.12);
   if(tg.type==='tree'){ const rec=tg.rec; if(rec.t.felled) return; const S2=TSIZE[rec.size]; let st=F4.chop.get(rec.key);
@@ -2690,7 +2692,7 @@ function f4Hit(tg,kind){ if(tg.type==='rock'){ f5Quarry(tg.r); return; } if(tg.t
     chips(l[0],groundH(l[0],l[1])+0.4,l[1],7);
     if(l[4]<LS.work-1e-6){ floatText(l[0],1.2,l[1],`割る あと${Math.ceil((LS.work-l[4])/cp-1e-6)}回`,'#f0dca0'); return; }
     prog.f4.logs.splice(i,1); inv.wood+=LS.wood; prog.f4.split=(prog.f4.split||0)+1; f4LogsDirty(); sfx('craft'); chips(l[0],groundH(l[0],l[1])+0.5,l[1],12);
-    floatText(l[0],1.6,l[1],`木材+${LS.wood}`,'#f0dca0'); toast(`丸太をその場で割った：木材 +${LS.wood}（${inv.wood}）`); saveGame(); return; }
+    logSplitReward(l,LS.wood); saveGame(); return; }
   if(tg.type==='closure'){ const c=tg.c; c.hp=(c.hp==null?5:c.hp)-pw; chips(c.x,groundH(c.x,c.z)+0.9,c.z,8);
     floatText(c.x,1.6,c.z,c.hp>0?`倒木を切る あと${Math.ceil(c.hp/cp-1e-6)}回`:'道が通れるようになった','#f0dca0');
     if(c.hp<=0){ f4ClearClosure(tg.i,true); } } }
@@ -2700,7 +2702,26 @@ function f4Noise(x,z,R){ if(f10Has('E')){ f10Noise(x,z,R,'tree'); return; } let 
     if(!e.home0) e.home0={x:e.home.x,z:e.home.z}; const k=(d-7)/d; e.home={x:x+(e.x-x)*(1-k),z:z+(e.z-z)*(1-k)}; e.lureT=40; setState(e,'return'); n++; }
   if(n&&S.time-F4.noiseT>20){ F4.noiseT=S.time; toast('斧の音が山に響いた……何かが近づいてくる',true); } }
 function f4Fell(rec,a){ F4.chop.delete(rec.key); hideTree(rec); const tr=makeTrunk(rec,a,0,true); if(rec.kind==='k') kamiFelled(rec.key); else prog.f4.felled.push(rec.key); sfx('break'); floatText(rec.x,2.4,rec.z,'倒れるぞ！','#ffb060',true); }
-function f4Buck(tr){ const S2=TSIZE[tr.size]; const n=S2.logs; const LL=tr.kami&&REG.live&&REG.live.kw?REG.live.kw.logs:prog.f4.logs; /* v0.67：上志比の丸太は上志比の物（運べない・保存しない） */ for(let i=0;i<n;i++){ const k=n===1?0.5:0.12+0.74*i/(n-1); LL.push([tr.x+Math.sin(tr.a)*tr.len*k,tr.z+Math.cos(tr.a)*tr.len*k,tr.a+(hash2(i,tr.x)-0.5)*0.3,S2.code]); if(i<2&&tr.rec&&tr.rec.t&&tr.rec.t.kona) LL[LL.length-1][5]=1; } /* v0.85：広葉樹の丸太（はじめの2本）は割ると硬木 */
+function logAttr(l){ return (l[5]?1:0)|(l[6]?2:0); }
+function logAttrSet(l,a){ if(a&1) l[5]=1; if(a&2) l[6]=1; return l; }
+function logAttrNorm(v){ return Number.isInteger(v)&&v>=0&&v<=3?v:0; }
+function logPairs(logs,attrs){
+  if(!Array.isArray(logs)) return [];
+  const aligned=Array.isArray(attrs)&&logs.length===attrs.length;
+  return Array.from(logs,(log,i)=>[log,aligned?logAttrNorm(attrs[i]):0]);
+}
+function logSizeValid(code){ return code==='t'||code==='m'||code==='k'; }
+function logSplitReward(l,wood){
+  if(l[5]){
+    inv.hardwood=(inv.hardwood||0)+1;
+    floatText(l[0],1.6,l[1],`山地の硬木+1・木材+${wood}`,'#f0dca0');
+    toast(`広葉樹の丸太を割った：山地の硬木 +1（${inv.hardwood}）・木材 +${wood}`);
+  }else{
+    floatText(l[0],1.6,l[1],`木材+${wood}`,'#f0dca0');
+    toast(`丸太をその場で割った：木材 +${wood}（${inv.wood}）`);
+  }
+}
+function f4Buck(tr){ const S2=TSIZE[tr.size]; const n=S2.logs; const LL=tr.kami&&REG.live&&REG.live.kw?REG.live.kw.logs:prog.f4.logs; /* v0.67：上志比の丸太は上志比の物（運べない・保存しない） */ for(let i=0;i<n;i++){ const k=n===1?0.5:0.12+0.74*i/(n-1); LL.push([tr.x+Math.sin(tr.a)*tr.len*k,tr.z+Math.cos(tr.a)*tr.len*k,tr.a+(hash2(i,tr.x)-0.5)*0.3,S2.code]); if(i<2&&tr.rec&&tr.rec.t&&tr.rec.t.kona) LL[LL.length-1][5]=1; if(tr.kami&&tr.rec&&tr.rec.t&&tr.rec.t.kona) LL[LL.length-1][6]=1; } /* v0.85：広葉樹の丸太（はじめの2本）は割ると硬木。v0.88 伐採の修正：上志比の広葉樹の丸太に印（名前に使う。保存しない） */
   removeTrunk(tr); if(tr.kami) kamiLogsDirty(); else f4LogsDirty(); sfx('craft'); saveGame(); }
 function removeTrunk(tr){ if(tr.piv.parent) tr.piv.parent.remove(tr.piv); if(tr.ob){ tr.ob.active=false; if(tr.kami) gridRemove(tr.ob); } const i=F4.trunks.indexOf(tr); if(i>=0) F4.trunks.splice(i,1); }
 // ---- 丸太の描画 ----
@@ -2711,10 +2732,17 @@ function f4LogsDirty(){ const L=prog.f4.logs; let n=0; const put=(x,y,z,a,r,tilt
   F4.logIM.count=n; F4.logInk.count=n; F4.logIM.instanceMatrix.needsUpdate=true; }
 // ---- 運ぶ ----
 function nearLog(r=1.8){ let b=-1,bd=r; prog.f4.logs.forEach((l,i)=>{ const d=dist(P.x,P.z,l[0],l[1]); if(d<bd){ bd=d; b=i; } }); return b; }
-function f4PickLog(i){ const l=prog.f4.logs[i]; if(!l) return; prog.f4.logs.splice(i,1); prog.f4.carry=l[3]; f4LogsDirty(); sfx('pickup'); if(!F4.carryHint){ F4.carryHint=1; toast('丸太を担いだ：歩きが遅くなり、攻撃できない。回避や攻撃を受けると落とす'); } }
-function f4DropLog(why){ const c=prog.f4.carry; if(!c) return; const a=P.facing+Math.PI/2; prog.f4.logs.push([P.x+Math.sin(P.facing)*0.9,P.z+Math.cos(P.facing)*0.9,a,c]); prog.f4.carry=0; f4LogsDirty(); if(why) toast(why,true); }
-function f4Deliver(){ const f=prog.f4; let n=0, wood=0; if(f.carry){ n=1; wood=TSIZE[SIZE_OF[f.carry]].wpl; f.carry=0; }
-  if(f.cart&&f.cart.push&&f.cart.logs.length){ for(const c of f.cart.logs){ n++; wood+=TSIZE[SIZE_OF[c]].wpl; } f.cart.logs=[]; }
+function f4CarrySet(f,code,a){ f.carry=code; f.carryA=code?logAttrNorm(a):0; }
+function cartLogPush(c,code,a){ c.logs.push(code); c.logA.push(logAttrNorm(a)); }
+function cartLogTake(c,i){
+  if(i<0||i>=c.logs.length) return null;
+  return {code:c.logs.splice(i,1)[0],a:c.logA.splice(i,1)[0]};
+}
+function cartLogClear(c){ c.logs.length=0; c.logA.length=0; }
+function f4PickLog(i){ const l=prog.f4.logs[i]; if(!l) return; prog.f4.logs.splice(i,1); f4CarrySet(prog.f4,l[3],logAttr(l)); f4LogsDirty(); sfx('pickup'); if(!F4.carryHint){ F4.carryHint=1; toast('丸太を担いだ：歩きが遅くなり、攻撃できない。回避や攻撃を受けると落とす'); } }
+function f4DropLog(why){ const c=prog.f4.carry; if(!c) return; const a=P.facing+Math.PI/2; prog.f4.logs.push(logAttrSet([P.x+Math.sin(P.facing)*0.9,P.z+Math.cos(P.facing)*0.9,a,c],prog.f4.carryA)); f4CarrySet(prog.f4,0); f4LogsDirty(); if(why) toast(why,true); }
+function f4Deliver(){ const f=prog.f4; let n=0, wood=0; if(f.carry){ n=1; wood=TSIZE[SIZE_OF[f.carry]].wpl; f4CarrySet(f,0); }
+  if(f.cart&&f.cart.push&&f.cart.logs.length){ for(const c of f.cart.logs){ n++; wood+=TSIZE[SIZE_OF[c]].wpl; } cartLogClear(f.cart); }
   if(!n) return; inv.wood+=wood; f.delivered+=n; f.yard+=n; f4LogsDirty(); sfx('craft'); toast(`丸太${n}本を納めた：木材 +${wood}`); floatText(F4.yard.x,1.8,F4.yard.z,`木材+${wood}`,'#f0dca0'); g4CheckQuests(); saveGame(); }
 function f4DropAll(why){ if(prog.f4.carry) f4DropLog(why==='hurt'?'丸太を落とした':''); const c=prog.f4.cart; if(c&&c.push){ c.push=false; c.x=P.x+Math.sin(P.facing)*1.3; c.z=P.z+Math.cos(P.facing)*1.3; c.a=P.facing; if(why==='hurt') toast('一輪車から手を離した',true); } }
 function f4OnRoad(){ if(S.time-F4.roadT<0.25) return F4.road; F4.roadT=S.time; const r=nearestRoad(P.x,P.z); F4.road=r&&dist(P.x,P.z,r.x,r.z)<r.w/2+0.8?(r.k==='track'?'track':'paved'):null; return F4.road; }
@@ -2722,20 +2750,30 @@ function f4SpeedMul(){ const f=prog.f4; if(f.carry) return f4OnRoad()==='paved'?
 function f4Interactables(L){ const f=prog.f4; const yd=F4.yard?dist(P.x,P.z,F4.yard.x,F4.yard.z):1e9;
   if(f.carry){ if(yd<3.4) L.push({d:0,label:`丸太を納める（木材+${TSIZE[SIZE_OF[f.carry]].wpl}）`,act:f4Deliver}); else L.push({d:2.9,label:'丸太を下ろす',act:()=>f4DropLog('')}); return; }
   if(f.cart&&f.cart.push){ const c=f.cart; if(yd<3.6&&c.logs.length){ L.push({d:0,label:`一輪車の丸太を納める（${c.logs.length}本）`,act:f4Deliver}); return; }
-    const li=nearLog(2.4); if(li>=0&&c.logs.length<3) L.push({d:0.5,label:`丸太を一輪車に積む（${c.logs.length}/3）`,act:()=>{ const l=f.logs.splice(li,1)[0]; c.logs.push(l[3]); f4LogsDirty(); sfx('pickup'); }});
-    L.push({d:2.9,label:'一輪車を置く',act:()=>{ c.push=false; c.x=P.x+Math.sin(P.facing)*1.3; c.z=P.z+Math.cos(P.facing)*1.3; c.a=P.facing; }}); return; }
+    const li=nearLog(2.4); if(li>=0&&c.logs.length<3) L.push({d:0.5,label:`丸太を一輪車に積む（${c.logs.length}/3）`,act:()=>{ const l=f.logs.splice(li,1)[0]; cartLogPush(c,l[3],logAttr(l)); f4LogsDirty(); sfx('pickup'); }});
+    const park=()=>{ c.push=false; c.x=P.x+Math.sin(P.facing)*1.3; c.z=P.z+Math.cos(P.facing)*1.3; c.a=P.facing; };
+    if(c.logs.length) L.push({d:2.9,label:'一輪車を置く・丸太を下ろす',act:()=>chooseDefense('一輪車',[
+      {label:'一輪車を置く',act:park},
+      {label:'一輪車の丸太を1本下ろす',act:()=>{
+        const log=cartLogTake(c,c.logs.length-1); if(!log) return;
+        const x=P.x+Math.cos(P.facing)*1.5, z=P.z-Math.sin(P.facing)*1.5;
+        f.logs.push(logAttrSet([x,z,P.facing,log.code],log.a)); f4LogsDirty(); sfx('wood');
+      }}
+    ],true)});
+    else L.push({d:2.9,label:'一輪車を置く',act:park}); return; }
   if(f.cart&&dist(P.x,P.z,f.cart.x,f.cart.z)<2.2) L.push({d:dist(P.x,P.z,f.cart.x,f.cart.z)-0.3,label:`一輪車を押す${f.cart.logs.length?`（丸太${f.cart.logs.length}本）`:''}`,act:()=>{ f.cart.push=true; if(!F4.cartHint){ F4.cartHint=1; toast('一輪車：丸太を3本まで積める。舗装した道では速く、田畑や山道では遅い。攻撃はできない'); } }});
   if(prog.chapter2&&prog.chapter2.unlocked&&yd<3.2&&REG.cur==='komyoji') L.push({d:yd+0.3,label:`資材置き場（預けている素材 ${stashN(prog.stash.komyoji)}こ）`,act:()=>stashMenu('komyoji')}); // v0.81
   const li=nearLog(1.8); if(li>=0){ const l=f.logs[li], S2=TSIZE[SIZE_OF[l[3]]], LS=LOG_SPLIT[l[3]], cp0=f5ChopPower(), tl0=f5BestTool();
-    const split=cp0?`攻撃：割る 木材+${LS.wood}（${Math.ceil((LS.work-(l[4]||0))/cp0-1e-6)}回）`:'割るには刃物が要る';
-    L.push({d:dist(P.x,P.z,l[0],l[1])-0.2,label:`${S2.name}の丸太　担ぐ→拠点で木材+${S2.wpl}／${split}`,act:()=>f4PickLog(li)}); }
+    const name=l[6]?(l[3]==='k'?'太い広葉樹':'広葉樹'):S2.name;
+    const split=cp0?`攻撃：割る 木材+${LS.wood}${l[5]?'・山地の硬木+1':''}（${Math.ceil((LS.work-(l[4]||0))/cp0-1e-6)}回）`:'割るには刃物が要る';
+    L.push({d:dist(P.x,P.z,l[0],l[1])-0.2,label:`${name}の丸太　担ぐ→拠点で木材+${S2.wpl}／${split}`,act:()=>f4PickLog(li)}); }
   const tg=f4FindTarget(1.6); if(tg){
     const cp=f5ChopPower()||1, tl=f5BestTool(), tn=tl?WEAPONS[tl].name:'素手', R=v=>Math.max(0,Math.ceil(v/cp-1e-6));
-    if(tg.type==='tree'){ const S2=TSIZE[tg.rec.size], st=F4.chop.get(tg.rec.key);
-      const lab=!st?`${S2.name}を切る［${tn}・約${R(S2.hp)}回］最初に刃を入れた側へ倒れる`:st.notch<S2.notch?`${S2.name}：受け口を切る あと${R(S2.notch-st.notch)}回［${tn}］`:`${S2.name}：追い口を切る あと${R(S2.hp-st.hits)}回（倒れる向きに立つな）`;
-      L.push({d:tg.d+0.6,label:lab,act:()=>f4Swing(tg)}); }
+    if(tg.type==='tree'){ const S2=TSIZE[tg.rec.size], st=F4.chop.get(tg.rec.key), nm=tg.rec.name||S2.name; // v0.88 伐採の修正：上志比の広葉樹は「広葉樹」
+      const lab=!st?`${nm}を切る［${tn}・約${R(S2.hp)}回］最初に刃を入れた側へ倒れる`:st.notch<S2.notch?`${nm}：受け口を切る あと${R(S2.notch-st.notch)}回［${tn}］`:`${nm}：追い口を切る あと${R(S2.hp-st.hits)}回（倒れる向きに立つな）`;
+      L.push({d:tg.d+0.6,label:lab,act:()=>f4Swing(tg),chop:tg}); } // v0.88 伐採の修正：chop＝案内に出ている木（上志比では攻撃でもこの木を切る）
     else if(tg.type==='log'||tg.type==='rock'||tg.type==='krock'){ }
-    else if(tg.type==='klog'){ const l=tg.l, S2=TSIZE[SIZE_OF[l[3]]], LS=LOG_SPLIT[l[3]]; L.push({d:tg.d,label:f5ChopPower()?`${S2.name}の丸太（ここからは運べない）　割る：木材+${LS.wood}［${tn}・あと${R(LS.work-(l[4]||0))}回］`:`${S2.name}の丸太：割るには刃物が要る`,act:()=>f4Swing(tg)}); }
+    else if(tg.type==='klog'){ const l=tg.l, S2=TSIZE[SIZE_OF[l[3]]], LS=LOG_SPLIT[l[3]], nm=l[6]?(l[3]==='k'?'太い広葉樹':'広葉樹'):S2.name; L.push({d:tg.d,label:f5ChopPower()?`${nm}の丸太（ここからは運べない）　割る：木材+${LS.wood}${l[5]?'・山地の硬木+1':''}［${tn}・あと${R(LS.work-(l[4]||0))}回］`:`${nm}の丸太：割るには刃物が要る`,act:()=>f4Swing(tg)}); /* v0.88 伐採の修正：広葉樹の丸太の名前・硬木 */ }
     else if(tg.type==='trunk') L.push({d:tg.d+0.2,label:`枝を払う あと${R(tg.tr.limbs)}回（丸太${TSIZE[tg.tr.size].logs}本になる）`,act:()=>f4Swing(tg)});
     else L.push({d:tg.d+0.4,label:`倒木を切って片付ける あと${R(tg.c.hp!=null?tg.c.hp:5)}回［${tn}］`,act:()=>f4Swing(tg)}); } }
 // ---- 毎フレーム ----
@@ -2760,15 +2798,20 @@ function f4Update(dt){ f5Update(dt); const f=prog.f4;
   for(const e of enemies){ if(e.lureT>0){ e.lureT-=dt; if(e.lureT<=0&&e.home0){ e.home=e.home0; e.home0=null; } } }
 }
 // ---- 保存・復元 ----
-function f4Save(){ const f=prog.f4; return {felled:f.felled.slice(-400),trunks:F4.trunks.filter(tr=>!tr.kami).map(tr=>[tr.key,+tr.x.toFixed(2),+tr.z.toFixed(2),+tr.a.toFixed(3),tr.limbs]),logs:f.logs.slice(-F4_MAXLOG).map(l=>[+l[0].toFixed(2),+l[1].toFixed(2),+l[2].toFixed(2),l[3]]),
-  carry:f.carry,cart:f.cart?{x:+f.cart.x.toFixed(2),z:+f.cart.z.toFixed(2),a:+(f.cart.a||0).toFixed(2),logs:f.cart.logs}:null,hasCart:f.hasCart,closures:f.closures,delivered:f.delivered,yard:f.yard,hint:f.hint,split:f.split||0}; }
-function f4Load(q){ const f=f4Fresh(); if(!q||typeof q!=='object') return f; const okS=s=>s==='t'||s==='m'||s==='k'; const N=v=>typeof v==='number'&&isFinite(v);
+function f4Save(){ const f=prog.f4, logs=f.logs.slice(-F4_MAXLOG); return {felled:f.felled.slice(-400),trunks:F4.trunks.filter(tr=>!tr.kami).map(tr=>[tr.key,+tr.x.toFixed(2),+tr.z.toFixed(2),+tr.a.toFixed(3),tr.limbs]),logs:logs.map(l=>[+l[0].toFixed(2),+l[1].toFixed(2),+l[2].toFixed(2),l[3]]),
+  logA:logs.map(logAttr),carry:f.carry,carryA:f.carryA,cart:f.cart?{x:+f.cart.x.toFixed(2),z:+f.cart.z.toFixed(2),a:+(f.cart.a||0).toFixed(2),logs:f.cart.logs,logA:f.cart.logA}:null,hasCart:f.hasCart,closures:f.closures,delivered:f.delivered,yard:f.yard,hint:f.hint,split:f.split||0}; }
+function f4Load(q){ const f=f4Fresh(); if(!q||typeof q!=='object') return f; const N=v=>typeof v==='number'&&isFinite(v);
   if(Array.isArray(q.felled)) f.felled=q.felled.filter(k=>typeof k==='string'&&/^(t\d+|f\d+_\d+_\d+)$/.test(k)).slice(-400);
   if(Array.isArray(q.trunks)) f.trunks=q.trunks.filter(t=>Array.isArray(t)&&typeof t[0]==='string'&&N(t[1])&&N(t[2])&&N(t[3])).map(t=>[t[0],t[1],t[2],t[3],num(t[4],1,0,9)]);
-  if(Array.isArray(q.logs)) f.logs=q.logs.filter(l=>Array.isArray(l)&&N(l[0])&&N(l[1])&&N(l[2])&&okS(l[3])).slice(-F4_MAXLOG);
-  f.carry=okS(q.carry)?q.carry:0; f.hasCart=!!q.hasCart;
-  if(q.cart&&N(q.cart.x)&&N(q.cart.z)) f.cart={x:q.cart.x,z:q.cart.z,a:N(q.cart.a)?q.cart.a:0,push:false,logs:Array.isArray(q.cart.logs)?q.cart.logs.filter(okS).slice(0,3):[]};
-  if(f.hasCart&&!f.cart&&F4.yard) f.cart={x:F4.yard.x-2.5,z:F4.yard.z+1.5,a:0,push:false,logs:[]};
+  f.logs=logPairs(q.logs,q.logA)
+    .filter(([l])=>Array.isArray(l)&&N(l[0])&&N(l[1])&&N(l[2])&&logSizeValid(l[3]))
+    .slice(-F4_MAXLOG).map(([l,a])=>logAttrSet(l.slice(0,4),a));
+  f4CarrySet(f,logSizeValid(q.carry)?q.carry:0,q.carryA); f.hasCart=!!q.hasCart;
+  if(q.cart&&N(q.cart.x)&&N(q.cart.z)){
+    f.cart={x:q.cart.x,z:q.cart.z,a:N(q.cart.a)?q.cart.a:0,push:false,logs:[],logA:[]};
+    for(const [code,a] of logPairs(q.cart.logs,q.cart.logA).filter(([code])=>logSizeValid(code)).slice(0,3)) cartLogPush(f.cart,code,a);
+  }
+  if(f.hasCart&&!f.cart&&F4.yard) f.cart={x:F4.yard.x-2.5,z:F4.yard.z+1.5,a:0,push:false,logs:[],logA:[]};
   if(Array.isArray(q.closures)) f.closures=[0,1,2].map(i=>q.closures[i]?1:0);
   f.split=num(q.split,0,0,99999); f.delivered=num(q.delivered,0,0,99999); f.yard=num(q.yard,0,0,99999); f.hint=q.hint?1:0; return f; }
 // 状態を世界へ反映（新規開始・つづきから）
@@ -2780,7 +2823,7 @@ function f4Apply(){ const f=prog.f4;
   for(const t of f.trunks){ const rec=recByKey(t[0]); if(!rec) continue; hideTree(rec); const tr=makeTrunk(rec,t[3],Math.PI/2,false); tr.x=t[1]; tr.z=t[2]; tr.piv.position.set(tr.x,groundH(tr.x,tr.z)-0.1,tr.z); trunkSettle(tr,false); tr.limbs=Math.max(1,t[4]); tr.mesh.scale.x=tr.mesh.scale.z=rec.s*(0.45+0.55*tr.limbs/TSIZE[tr.size].limb); }
   f.trunks=[]; // 実体は F4.trunks に移した（保存時に作り直す）
   CLOSURES.forEach((c,i)=>{ if(f.closures[i]) f4ClearClosure(i,false); else { c.hp=null; if(c.mesh) c.mesh.visible=true; if(c.ob) c.ob.active=true; } });
-  if(f.hasCart&&!f.cart&&F4.yard) f.cart={x:F4.yard.x-2.5,z:F4.yard.z+1.5,a:0,push:false,logs:[]};
+  if(f.hasCart&&!f.cart&&F4.yard) f.cart={x:F4.yard.x-2.5,z:F4.yard.z+1.5,a:0,push:false,logs:[],logA:[]};
   if(f.cart) f.cart.push=false;
   f4LogsDirty(); }
 // ================= F5：加工と最初の武器（素材集め・石の手斧・木の棍棒・竹槍・鉄の斧） =================
@@ -3153,7 +3196,7 @@ function pickMove(kind){ const fam=famOf(P.weapon); const a=P.atk;
   if(kind==='light') return prev&&prev.kind==='light'&&prev.next?prev.next:FIRST[fam];
   return prev&&prev.kind==='light'&&prev.heavy?prev.heavy:HEAVY0[fam]; }
 function animCombo(mv){ return mv.anim==='sweepL'||mv.anim==='thrust2'?2:mv.anim==='spinUp'||mv.anim==='overhead'||mv.anim==='lowSweep'?3:1; }
-function wantsChop(){ if(P.chopReq) return true; if(enemies.some(e=>e.state!=='dead'&&!e.removed&&dist(e.x,e.z,P.x,P.z)<6)) return false; const tg=f4FindTarget(1.3); if(!tg) return false; return tg.type==='rock'?!!f5QuarryTool():f5ChopPower()>0; } // 岩は採集道具、それ以外は刃物
+function wantsChop(){ if(P.chopReq) return true; if(enemies.some(e=>e.state!=='dead'&&!e.removed&&dist(e.x,e.z,P.x,P.z)<6)) return false; const tg=f4ShownTarget()||f4FindTarget(1.3); if(!tg) return false; return tg.type==='rock'?!!f5QuarryTool():f5ChopPower()>0; } // 岩は採集道具、それ以外は刃物。v0.88 伐採の修正：上志比は案内の木
 function makeAtk(id,sp){ const mv=MOVES[id]; return {id,mv,kind:mv.kind,unw:mv.unw,t:0,sp,hit:new Set(),landed:false,combo:animCombo(mv),dur:mv.dur/sp,a0:mv.a0/sp,a1:mv.a1/sp,
   chainT:(mv.chain!=null?mv.chain:mv.a1)/sp,cancelT:mv.cancel/sp,arc:mv.arc,mul:mv.mul,lungeV:mv.lunge/Math.max(0.05,mv.a1/sp)}; }
 // ---- 予約と回避の取り扱い（毎フレーム） ----
@@ -3702,6 +3745,7 @@ function kamaInteract(L,d){ const c=prog.kama, F=FAC.kama, ch=[], full=c.q.lengt
   if(kamaOutN()>0) ch.push({label:`取り出す（${kamaOutText()}）`,ics:Object.keys(c.out).filter(k=>c.out[k]>0&&FOOD_ART_OK[k]).slice(0,4).map(k=>FOOD_ART_OK[k]),act:kamaTake}); // v0.86.1：できた料理の絵
   if(!full) ch.push({label:`料理する（食材を${F.cook.min}〜${F.cook.max}つ・薪に木材${F.cook.fuel.wood}・${F.cook.time}秒）`,act:()=>kamaCookUI({meat:0,veg:0,rice:0,food:0})});
   if(!full&&p3dHasFish()) ch.push({label:`魚を料理する（魚料理10品から選ぶ・薪に木材${F.cook.fuel.wood}・${F.cook.time}秒）`,act:p3dDishUI}); // v0.84
+  if(!full&&(inv.mherb||0)>0) ch.push({label:`山の薬草で薬草粥を炊く（米1・山の薬草1・薪に木材${F.cook.fuel.wood}・${F.cook.time}秒）　山の薬草${inv.mherb}`,ic:FOOD_ART_OK.herbPorridge,act:e2HerbPorridge}); // v0.88
   if(!full) ch.push({label:`木炭を焼く（木材${F.coal.wood}・${F.coal.time}秒）　所持 木材${inv.wood}`,act:()=>kamaCoal(1)});
   if(c.q.length<F.maxQ-1) ch.push({label:`木炭を焼けるだけ焼く（最大${F.maxQ-c.q.length}つ）`,act:()=>kamaCoal(F.maxQ)});
   L.push({d,label:`かまど：${kamaState()}${kamaOutN()?`　できた物 ${kamaOutText()}`:''}`,act:()=>ch.length?chooseDefense('かまど',ch):(sfx('deny'),toast('いっぱい。できあがるまで待つ',true))}); }
@@ -7050,7 +7094,7 @@ function chapter2Panel(n,st,bx){
   if(!ev.kind)f9Btn(bx,'npc_chapter2',done?'第二章の防衛戦に再挑戦':'第二章の防衛戦を始める',startChapter2Defense,{pri:1});
 }
 function freshState(){
-  inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,baitKit:0,onigiri:1,bento:0,grilledVeg:0,herbPorridge:0,meat:0,veg:0,rice:0,katsudon:0,botan:0,gomadofu:0,koroni:0,kushi:0,fang:0,mutScale:0,procScale:0,charcoal:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0,oldParts:0,shelfKit:0,toolSet:0,gatePart:0,liftJack:0,winchPart:0,bell:0,fAyu:0,fUgui:0,fOikawa:0,fAbura:0,fMutsu:0,fKoi:0,fFuna:0,fYamame:0,fIwana:0,fNigoi:0,fKamatsuka:0,zugani:0,kawamushi:0,ayuShio:0,keiShio:0,ayuMeshi:0,koikoku:0,funaKanro:0,kawaKushi:0,zakoTen:0,kawaZosui:0,zuganiJiru:0,nigoiTsumire:0,ore:0,hardwood:0,steel:0,spindle:0} /* v0.85：川底の鉱石・山地の硬木・鋼材・加工機の主軸 */; // v0.84：魚11種・モクズガニ・川虫・魚料理 // v0.81：古い機械部品・専用部品（棚の金具・作業場の工具一式）。v0.83：水門の部品・整備工場の特殊部品・巻き上げ機の部品・半鐘
+  inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,baitKit:0,onigiri:1,bento:0,grilledVeg:0,herbPorridge:0,meat:0,veg:0,rice:0,katsudon:0,botan:0,gomadofu:0,koroni:0,kushi:0,fang:0,mutScale:0,procScale:0,charcoal:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0,oldParts:0,shelfKit:0,toolSet:0,gatePart:0,liftJack:0,winchPart:0,bell:0,fAyu:0,fUgui:0,fOikawa:0,fAbura:0,fMutsu:0,fKoi:0,fFuna:0,fYamame:0,fIwana:0,fNigoi:0,fKamatsuka:0,zugani:0,kawamushi:0,ayuShio:0,keiShio:0,ayuMeshi:0,koikoku:0,funaKanro:0,kawaKushi:0,zakoTen:0,kawaZosui:0,zuganiJiru:0,nigoiTsumire:0,ore:0,hardwood:0,steel:0,spindle:0,naegi:0,mherb:0} /* v0.85：川底の鉱石・山地の硬木・鋼材・加工機の主軸。v0.88：広葉樹の苗木・山の薬草 */; // v0.84：魚11種・モクズガニ・川虫・魚料理 // v0.81：古い機械部品・専用部品（棚の金具・作業場の工具一式）。v0.83：水門の部品・整備工場の特殊部品・巻き上げ機の部品・半鐘
   prog={gear:f47Fresh(),stage:'talk',unlockTrap:false,unlockBoss:false,clues:[false,false,false],bossDefeated:false,scoutTower:false,scoutWarned:false,scoutRaidWarned:false,prepT:150,gatherT:0,introSeen:false,lastSaveT:0,townRequests:loadTownRequests(),g4:g4Fresh(),f4:f4Fresh(),level:1,exp:0,mastery:{nata:0,axe:0,club:0,spear:0},xph:0}; prog.f7=f7FromInv(); f7Sync(); prog.f8=f8Fresh(); prog.paddy=paddyFresh(); prog.conv=facFresh(); prog.kama=kamaFresh(); prog.f9=f9Fresh(); prog.f10=f10Fresh(); prog.kami=kamiFresh(); prog.p3=p3Fresh(); prog.stash=stashFresh(); prog.p3c=p3cFresh(); p3cVehApply(); prog.p3d=p3dFresh(); prog.chapter2=chapter2State(null,false);
   stats={kills:0,deaths:0,crafts:0,time:0,perfect:0,hunt:loadHuntRecords()};
   P.lvx48=0;P.lvz48=0;
@@ -7705,7 +7749,7 @@ function startAttack(kind,aimSnapshot=null){
   const chop=!!P.weapon&&wantsChop(); // v0.45：素手は採集動作をしない
   let id; const fam=famOf(P.weapon);
   if(!P.weapon){ id=kind==='heavy'?'UK1':(P.lastMv==='UP1'&&S.time-(P.lastMvEnd||-9)<0.5?'UP2':'UP1'); } // v0.45：素手（軽=パンチ2段・強=キック）
-  else if(chop){ const ctg=P.chopReq||f4FindTarget(1.3); id=ctg&&(ctg.type==='log'||ctg.type==='rock')?'SPLIT':kind==='heavy'?'CHOPH':'CHOP'; }
+  else if(chop){ const ctg=P.chopReq||f4ShownTarget()||f4FindTarget(1.3); /* v0.88 伐採の修正 */ id=ctg&&(ctg.type==='log'||ctg.type==='rock')?'SPLIT':kind==='heavy'?'CHOPH':'CHOP'; }
   else if(P.ctrT>0) id=FAMC[fam]; // 見切りの後の反撃（押したのが通常でも強でも）
   else if(swapOpen()) id=FAMS[fam]; // 持ち替え直後の切り替え技
   else id=pickMove(kind);
@@ -8920,7 +8964,7 @@ function buildScoutTower(){
 }
 
 // ================= クラフト =================
-const RNAME={meat:'肉',veg:'野菜',rice:'米',wood:'木材',food:'食料',hide:'獣素材',fang:'ヌシの牙',mutScale:'変異した鱗',procScale:'加工した鱗',charcoal:'木炭',straw:'藁',rope:'縄',stone:'石',bamboo:'竹',iron:'屑鉄',oldParts:'古い機械部品',shelfKit:'棚の金具',toolSet:'作業場の工具一式',seed:'大根の種',gatePart:'水門の部品',liftJack:'整備工場の特殊部品',winchPart:'巻き上げ機の部品',bell:'半鐘',fAyu:'アユ',fUgui:'ウグイ',fOikawa:'オイカワ',fAbura:'アブラハヤ',fMutsu:'カワムツ',fKoi:'コイ',fFuna:'フナ',fYamame:'ヤマメ',fIwana:'イワナ',fNigoi:'ニゴイ',fKamatsuka:'カマツカ',zugani:'モクズガニ',kawamushi:'川虫',ore:'川底の鉱石',hardwood:'山地の硬木',steel:'鋼材',spindle:'加工機の主軸'};
+const RNAME={naegi:'広葉樹の苗木',mherb:'山の薬草',meat:'肉',veg:'野菜',rice:'米',wood:'木材',food:'食料',hide:'獣素材',fang:'ヌシの牙',mutScale:'変異した鱗',procScale:'加工した鱗',charcoal:'木炭',straw:'藁',rope:'縄',stone:'石',bamboo:'竹',iron:'屑鉄',oldParts:'古い機械部品',shelfKit:'棚の金具',toolSet:'作業場の工具一式',seed:'大根の種',gatePart:'水門の部品',liftJack:'整備工場の特殊部品',winchPart:'巻き上げ機の部品',bell:'半鐘',fAyu:'アユ',fUgui:'ウグイ',fOikawa:'オイカワ',fAbura:'アブラハヤ',fMutsu:'カワムツ',fKoi:'コイ',fFuna:'フナ',fYamame:'ヤマメ',fIwana:'イワナ',fNigoi:'ニゴイ',fKamatsuka:'カマツカ',zugani:'モクズガニ',kawamushi:'川虫',ore:'川底の鉱石',hardwood:'山地の硬木',steel:'鋼材',spindle:'加工機の主軸'};
 const RECIPES=[
  // v0.66：料理4つは作業台に出さない（料理はかまどだけ。2026-11-13 ユーザー決定）。この表は、慧心に頼む料理が使う
  {id:'onigiri',name:'おにぎり',cost:{food:2},show:()=>false,desc:'塩をきかせて竹の皮で包んだ握り飯。体力+35・満腹+25。手持ちで約30分もつ（生の食料は約20分）。Q または 1 で食べる',give:()=>{foodAdd('onigiri',1);}},
@@ -8949,7 +8993,7 @@ const RECIPES=[
  {id:'boomerFix',name:'飛去来器の手入れ',cost:{procScale:1},desc:'鱗の飛去来器の耐久を全回復する（加工した鱗1）',show:()=>prog.arms.boomer!=null&&armDur('boomer')<WEAPONS.boomer.maxDur,give:()=>{ setArmDur('boomer',WEAPONS.boomer.maxDur); }}, // v0.64（暫定）
  {id:'convBuild',name:'変換炉を組み立てる',cost:FAC.conv.build,desc:'特殊な素材を、人が使える形に変える炉。拠点の南東の隅に組み立てる。燃料の木炭を入れて動かし、1つずつ時間をかけて変える（変異した鱗→加工した鱗）',show:()=>!prog.conv?.built&&(inv.mutScale>0||inv.procScale>0),give:()=>{ prog.conv.built=1; facApply(); toast('拠点の南東の隅に変換炉を組み立てた'); }}, // v0.63（暫定）
  {id:'kamaBuild',name:'かまどを築く',cost:FAC.kama.build,desc:'石と土で築くかまど。拠点の南東に築く。肉・野菜・米・食料を2〜3つ鍋に入れて火にかけると、組み合わせに応じた料理ができる（何ができるかは、できるまで分からない）。木材を焼いて木炭も作れる',show:()=>!prog.kama?.built,give:()=>{ prog.kama.built=1; facApply(); toast('拠点の南東にかまどを築いた。調べると料理ができる'); }}, // v0.64・v0.66：最初から築ける（暫定）
- {id:'cart',name:'一輪車',cost:{wood:5},desc:'丸太を3本積んで運べる。舗装した道では担ぐより速いが、田畑や山道では遅い。丸太置き場のそばに置く',show:()=>!prog.f4.hasCart,give:()=>{ prog.f4.hasCart=true; prog.f4.cart={x:F4.yard.x-2.5,z:F4.yard.z+1.5,a:0,push:false,logs:[]}; }},
+ {id:'cart',name:'一輪車',cost:{wood:5},desc:'丸太を3本積んで運べる。舗装した道では担ぐより速いが、田畑や山道では遅い。丸太置き場のそばに置く',show:()=>!prog.f4.hasCart,give:()=>{ prog.f4.hasCart=true; prog.f4.cart={x:F4.yard.x-2.5,z:F4.yard.z+1.5,a:0,push:false,logs:[],logA:[]}; }},
  {id:'hammerStone',name:'石の槌（簡素な採石道具）',cost:{stone:3,wood:2,rope:1},desc:'硬い川石を柄に縛った槌。採石できる岩を割って石を取る（1回で石1、岩1つを8回）。耐久40。武器ではない（持ち替えに入らない）',show:()=>prog.f5.tools.hammerStone==null,give:()=>{toolGain('hammerStone');}},
  {id:'pickIron',name:'鉄のつるはし（良質な採石道具）',cost:{iron:4,wood:2,rope:1},desc:'屑鉄を打ち直したつるはし。1回で石2、岩1つを4回で割り切る。耐久100。武器ではない',show:()=>prog.f5.tools.pickIron==null,give:()=>{toolGain('pickIron');}},
  ...Object.entries(G47).filter(([id,a])=>a.cost).map(([id,a])=>({id:'gear_'+id,name:a.name,cost:a.cost,desc:a.desc+(a.set==='basic'?' 基礎防具。4部位の合計軽減は最大15%。':' '+G47SETS[a.set]+'系統。4部位一式で特殊効果が1.5倍。')+(a.setNote?' '+a.setNote:'')+' 持ち物で着脱。',show:()=>!prog.gear.owned.includes(id)&&(!a.vis||a.vis()),give:()=>{prog.gear.owned.push(id);}})),
@@ -9081,7 +9125,7 @@ function openInv(){ f31Inv(); f34Body(); renderHuntRecords(); { const st=p3dStat
   stopBeastVoices51(); S.mode='menu'; keys.clear();
   const g=$('invGrid'); g.innerHTML='';
   if(prog.chapter2&&prog.chapter2.unlocked){ const n=carryN(), r=document.createElement('div'); r.style.gridColumn='1 / -1'; r.innerHTML=`<span>素材の重さ <small class="f7s">${P3B.carry.cap}を超えると、拠点の外では歩くのが遅くなる（資材置き場・荷台に預けられる）</small></span><b style="color:${n>P3B.carry.cap?'#ff9a7a':'inherit'}">${n}/${P3B.carry.cap}</b>`; g.appendChild(r); } // v0.81
-  const items=[['木材',inv.wood],['食料',inv.food],['肉',inv.meat],['野菜',inv.veg],['米',inv.rice],['獣素材',inv.hide],['藁',inv.straw],['縄',inv.rope],['石',inv.stone],['竹',inv.bamboo],['屑鉄',inv.iron],['大根の種',inv.seed],['ヌシの牙',inv.fang],['変異した鱗',inv.mutScale],['加工した鱗',inv.procScale],['木炭',inv.charcoal],['おにぎり',inv.onigiri],['精進弁当',inv.bento],['木柵キット',inv.fenceKit],['トゲ柵キット',inv.spikeKit],['杭柵キット',inv.stakeKit],['くくり罠キット',inv.trapKit],['落とし穴キット',inv.pitKit],['おとり餌場キット',inv.baitKit],['古い機械部品',inv.oldParts],['棚の金具',inv.shelfKit],['作業場の工具一式',inv.toolSet],['水門の部品',inv.gatePart],['整備工場の特殊部品',inv.liftJack],['巻き上げ機の部品',inv.winchPart],['半鐘',inv.bell],['川底の鉱石',inv.ore||0],['山地の硬木',inv.hardwood||0],['鋼材',inv.steel||0],['加工機の主軸',inv.spindle||0]]; // v0.85
+  const items=[['木材',inv.wood],['食料',inv.food],['肉',inv.meat],['野菜',inv.veg],['米',inv.rice],['獣素材',inv.hide],['藁',inv.straw],['縄',inv.rope],['石',inv.stone],['竹',inv.bamboo],['屑鉄',inv.iron],['大根の種',inv.seed],['ヌシの牙',inv.fang],['変異した鱗',inv.mutScale],['加工した鱗',inv.procScale],['木炭',inv.charcoal],['おにぎり',inv.onigiri],['精進弁当',inv.bento],['木柵キット',inv.fenceKit],['トゲ柵キット',inv.spikeKit],['杭柵キット',inv.stakeKit],['くくり罠キット',inv.trapKit],['落とし穴キット',inv.pitKit],['おとり餌場キット',inv.baitKit],['古い機械部品',inv.oldParts],['棚の金具',inv.shelfKit],['作業場の工具一式',inv.toolSet],['水門の部品',inv.gatePart],['整備工場の特殊部品',inv.liftJack],['巻き上げ機の部品',inv.winchPart],['半鐘',inv.bell],['川底の鉱石',inv.ore||0],['山地の硬木',inv.hardwood||0],['鋼材',inv.steel||0],['加工機の主軸',inv.spindle||0],['広葉樹の苗木',inv.naegi||0],['山の薬草',inv.mherb||0]]; // v0.85。v0.88：苗木・山の薬草
   for(const f of FISH) items.push([f.name,inv[f.id]||0]); items.push(['モクズガニ',inv.zugani||0],['川虫',inv.kawamushi||0]); // v0.84：魚・モクズガニ・川虫（釣りの餌）
   f7Flush(); const fk={'食料':'food','おにぎり':'onigiri','精進弁当':'bento','肉':'meat','野菜':'veg','米':'rice'}; for(const f of FISH) fk[f.name]=f.id; fk['モクズガニ']='zugani';
   for(const [n,v] of items){ if(v===0&&(n==='ヌシの牙'||n==='杭柵キット'||n==='大根の種'||n==='肉'||n==='野菜'||n==='米'||n==='古い機械部品'||n==='棚の金具'||n==='作業場の工具一式'||n==='水門の部品'||n==='整備工場の特殊部品'||n==='巻き上げ機の部品'||n==='半鐘'||n==='モクズガニ'||n==='川虫'||FISH.some(f=>f.name===n))) continue; const d=document.createElement('div'); const k=fk[n]; let sub='';
@@ -9284,12 +9328,18 @@ function saveGame(){
   try{
     syncChapter2();
     if(P.weapon) prog.arms[P.weapon]=P.dur; // v0.45：素手のときは武器耐久を書き戻さない
-    const data={v:1,chapter2:prog.chapter2,inv,weapon:P.weapon,dur:P.dur,full:P.full,arms:prog.arms,f5:f5Save(),
+    const data={v:1,chapter2:prog.chapter2,logAttr:bedLogSave(),inv,weapon:P.weapon,dur:P.dur,full:P.full,arms:prog.arms,f5:f5Save(),
       prog:Object.assign({stage:checkpointStage(),unlockTrap:prog.unlockTrap,unlockBoss:prog.unlockBoss,clues:prog.clues,bossDefeated:prog.bossDefeated,scoutTower:!!prog.scoutTower,scoutWarned:!!prog.scoutWarned,scoutRaidWarned:!!prog.scoutRaidWarned,townRequests:prog.townRequests},f31SaveProg()),
       fences:GAPS.map(g=>g.fence.type?{type:g.fence.type,hp:g.fence.broken?0:g.fence.hp}:null),
       traps:traps.map(saveTrap),stats,nodes:NODES.map(n=>n.avail?1:0),g4:prog.g4,f4:f4Save(),f7:f7Save(),f8:f8Save(),paddy:paddySave(),f9:f9Save(),f10:f10Save(),conv:facSave('conv'),kama:kamaSave(),kami:kamiSave(),suzuki:szSave(),p3:p3Save(),stash:stashSave(),p3c:p3cSave(),p3d:prog.p3d}; // v0.81：拠点本部（p3）・資材置き場（stash）。新しいキー // v0.73：スズキ（新しいキー suzuki）
     localStorage.setItem(SAVE_KEY,JSON.stringify(data));
   }catch(e){ storageOK=false; }
+}
+function bedLogSave(){
+  const t=prog.chapter2.progress.truck;
+  const logs=t?.bed?.logs;
+  const bed=Array.isArray(logs)?{a:bedLogAttrs(t),s:logs.join('')}:{a:[],s:''};
+  return {v:1,bed};
 }
 function saveTrap(t){
   if(t.type==='bait')return {type:'bait',state:t.state,remaining:t.baitTime};
@@ -9332,7 +9382,10 @@ function applySave(d){
     prog.f9=f9Load(d.f9); // 古いセーブは「頼んでいない」で始める
     prog.f8=f8Load(d.f8); // 古いセーブは未開始のまま始める
     prog.paddy=paddyLoad(d.paddy); // v0.79：拠点の田んぼ（古いセーブは育っている途中から）
-    prog.conv=facLoad('conv',d.conv); prog.kama=kamaLoad(d.kama); prog.kami=kamiLoad(d.kami); prog.p3=p3Load(d.p3); prog.stash=stashLoad(d.stash); prog.p3c=p3cLoad(d.p3c); p3cVehApply(); prog.p3d=p3dLoad(d.p3d); P3D.fish=null; szApplyLoad(d.suzuki); // v0.73：スズキ（古いセーブは「まだ仲間でない」） // v0.67：上志比の採集・伐採・獣（古いセーブは何も取っていない状態） // v0.63：変換炉・v0.64：かまど（古いセーブは未建設）
+    prog.conv=facLoad('conv',d.conv); prog.kama=kamaLoad(d.kama); prog.kami=kamiLoad(d.kami); prog.p3=p3Load(d.p3); prog.stash=stashLoad(d.stash); prog.p3c=p3cLoad(d.p3c); p3cVehApply();
+    const truck=prog.chapter2.progress.truck;
+    if(truck&&typeof truck==='object'&&!Array.isArray(truck)) trkSys(truck,d.logAttr?.v===1?d.logAttr.bed:null);
+    prog.p3d=p3dLoad(d.p3d); P3D.fish=null; szApplyLoad(d.suzuki); // v0.73：スズキ（古いセーブは「まだ仲間でない」） // v0.67：上志比の採集・伐採・獣（古いセーブは何も取っていない状態） // v0.63：変換炉・v0.64：かまど（古いセーブは未建設）
     { const f=f7Load(d.f7); prog.f7=f||f7FromInv(); prog.f7Migrated=!f; f7Sync(); } // 古いセーブは今の個数を新品の束にする（1回だけ）
     const q=d.g4; if(q&&typeof q==='object'){ const g=prog.g4; g.board=!!q.board; g.hint=q.board?1:0; g.track=num(q.track,-1,-1,QUESTS.length-1); g.closure=q.closure?1:0;
       if(Array.isArray(q.fences)) g.fences=[0,1,2].map(i=>q.fences[i]?1:0);
@@ -11656,7 +11709,7 @@ function p3cWorksReqBuild(ctx){ const mk=(x,z,rot,fn)=>{ const g=new GB(); g.jit
   { const p=Sp(2); const lathe=mk(p.x,p.z,0.5,g=>{ g.box(0,0.3,0.9,2.8,0.6,0.8,cc(0x5f6a70)); g.box(-1.1,0.7,0.9,0.6,0.5,0.6,cc(0x4f5a60)); }); const sp=mk(p.x,p.z,0.5,g=>{ g.box(0.2,0.72,0.9,1.6,0.14,0.14,cc(0xa8b0b6)); g.box(-0.4,0.72,0.9,0.26,0.3,0.3,cc(0x7a8086)); }); reg(2,{pre:[sp],post:[]}); }
   p3cReqVis(); }
 // 山地の硬木：林道の試作の広葉樹（コナラ）を切る（今の伐採と同じ。丸太を割ると、1本の木で硬木2）。切った木は戻らない（P3-A の案）
-function p3cKonaTrees(ctx,A,im,ink){ const KT=ctx.ktrees; if(!KT) return; A.forEach((p,j)=>{ const kt={key:'kp'+j,j,x:p[0],y:p[1],z:p[2],s:p[3],hi:im,lo:ink,felled:false,kona:1}; kt.col=ctx.circle(p[0],p[2],0.42*p[3],'tree',{h:p[1]+8,ktree:kt}); KT.set(kt.key,kt); }); }
+function p3cKonaTrees(ctx,A,im,ink){ const KT=ctx.ktrees; if(!KT) return; A.forEach((p,j)=>{ const kt={key:'kp'+j,j,x:p[0],y:p[1],z:p[2],s:p[3],hi:im,lo:ink,felled:false,kona:1,m:new THREE.Matrix4()}; im.getMatrixAt(j,kt.m); /* v0.88：植林で戻すとき */ kt.col=ctx.circle(p[0],p[2],0.42*p[3],'tree',{h:p[1]+8,ktree:kt}); KT.set(kt.key,kt); }); }
 // 釣り竿の絵（作業台のカード）：basic 竹の竿・pro 濃い色の竿とリール・guard 紺の竿と金の帯
 function p3dRodIcon(k){ const g=new THREE.Group(), M=c=>new THREE.MeshLambertMaterial({color:c}), C={basic:[0xc8b070,0x7a6040],pro:[0x4a3a2a,0x2a2018],guard:[0x2a3a5a,0x1a2030]}[k]||[0xc8b070,0x7a6040];
   const rod=new THREE.Group(); const sh=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.05,2.2,8),M(C[0])); sh.position.y=1.1; rod.add(sh); const gr=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.45,8),M(C[1])); gr.position.y=0.22; rod.add(gr);
@@ -12053,7 +12106,7 @@ function p3aUpdate(dt){ if(!P3A.on) return; P3A.t+=dt; RIV.uT.value=P3A.t; const
   if(P3A.inside){ P3A.tc=(P3A.tc||0)+dt; if(P3A.tc>0.5){ P3A.tc=0; p3bTalkCheck(false); } } else p3bOutsideTick(); // v0.81 P3-B
   p3cUpdate(dt); // v0.82 P3-C：住民・救助
   if(P3D.look>0) P3D.look-=dt; if(P3D.srch>0) P3D.srch-=dt; p3dTick(dt); // v0.84 P3-D：釣り・宗一
-  rivSoundTick(dt); rivObsTick(dt); rivCamTick(dt); } // v0.85 P3-D（D-3）：川の音（本流・支流・浅瀬・河原の風）・観察地点
+  rivSoundTick(dt); rivObsTick(dt); rivCamTick(dt); e2SoundTick(dt); } // v0.85 P3-D（D-3）：川の音（本流・支流・浅瀬・河原の風）・観察地点
 function p3inDispose(){ if(!P3A.interior) return; const I=P3A.interior; for(const c of I.cols) gridRemove(c); scene.remove(I.g); I.g.traverse(o=>{ if(o.geometry&&o.geometry!==G.box) o.geometry.dispose(); if(o.material&&o.material!==vcMat&&o.material!==inkMat&&o.material!==P3B_DM) o.material.dispose(); }); P3A.interior=null; }
 function p3aDispose(){ p3inDispose(); p3cResHideAll();
   if(P3A.inside){ P3A.inside=false; REG.inB=null; if(P3A.ret) REG.hfn=P3A.ret.hfn; } P3A.near=[]; P3A.doors=[]; P3A.fishSpots=[]; P3A.yardTruck=null; P3A.waterU=null; P3A.sunSpots=null; if(RIVSND){ RIVSND.main.gain.value=0; RIVSND.brook.gain.value=0; RIVSND.wind=0; } }
@@ -12302,7 +12355,7 @@ function e1Yard(A,B,G,cols,b,F,style,dmg,rnd,info,RS){ const [x,z]=b, L=F.L, W=F
   if(dmg>=2&&rnd()<0.6){ const face=rnd()<0.5?1:2, lx=face===1?(rnd()-0.5)*L*0.6:L/2, lz=face===1?W/2:(rnd()-0.5)*W*0.6; B.frame(x,info.y0,z,F.rot); p3aVine(B,lx,info.fh,lz,1.6+rnd()*1.4,2.2+rnd()*1.2,face,rnd); } }
 // ---- 区画の準備（上志比を作るときに1回）----
 function e1Key(x,z){ return Math.floor(x/E1.DC)*100003+Math.floor(z/E1.DC); }
-function e1Cell(k){ let c=E1.cells.get(k); if(!c){ const ci=Math.round(k/100003), ck=k-ci*100003; c={k,ci,ck,cx:(ci+0.5)*E1.DC,cz:(ck+0.5)*E1.DC,bld:[],poles:[],yab:[],jn:[],o:null}; E1.cells.set(k,c); } return c; }
+function e1Cell(k){ let c=E1.cells.get(k); if(!c){ const ci=Math.round(k/100003), ck=k-ci*100003; c={k,ci,ck,cx:(ci+0.5)*E1.DC,cz:(ck+0.5)*E1.DC,bld:[],poles:[],yab:[],jn:[],tr:[],o:null}; E1.cells.set(k,c); } return c; }
 function e1InZone(x,z,pad){ for(const s of KF.sites){ const Z=s.zone; if(Z.r!=null){ if(dist(x,z,Z.x,Z.z)<Z.r+pad) return true; } else if(x>Z.x0-pad&&x<Z.x1+pad&&z>Z.z0-pad&&z<Z.z1+pad) return true; } return false; }
 function e1Free(x,z,r,self){ const g=E1.bg, i0=Math.floor((x-r)/8), i1=Math.floor((x+r)/8), k0=Math.floor((z-r)/8), k1=Math.floor((z+r)/8);
   for(let i=i0;i<=i1;i++) for(let k=k0;k<=k1;k++){ const a=g.get(i*100003+k); if(!a) continue; for(const b of a){ if(b===self) continue; const cb=Math.cos(b[4]), sb=Math.sin(b[4]), ex=x-b[0], ez=z-b[1], ax=ex*cb+ez*sb, az=-ex*sb+ez*cb; if(Math.abs(ax)<Math.max(2.4,b[2])/2+0.6+r&&Math.abs(az)<Math.max(2.0,b[3])/2+0.6+r) return false; } }
@@ -12322,17 +12375,18 @@ function e1Init(ctx,rng){ const D=KAMI.D; E1.cells=new Map(); E1.rng=rng; E1.bg=
       acc+=Ls; } });
   // 交差点（道の端が別の道の端と重なる所）：カーブミラー・止まれ・消火栓の標識・ゴミ集積所
   const ends=new Map(); D.roads.forEach((r,ri)=>{ if(r.b||r.tn||r.k==='track'||r.k==='path'||r.k==='footway') return; for(const p of [r.p[0],r.p[r.p.length-1]]){ const kk=Math.round(p[0]/2)*100003+Math.round(p[1]/2); let a=ends.get(kk); if(!a){ a={x:p[0],z:p[1],L:[]}; ends.set(kk,a); } a.L.push(ri); } });
-  for(const j of ends.values()){ if(j.L.length<2||!e1NearB(j.x,j.z,30)||e1InZone(j.x,j.z,6)) continue; e1Cell(e1Key(j.x,j.z)).jn.push(j); } }
+  for(const j of ends.values()){ if(j.L.length<2||!e1NearB(j.x,j.z,30)||e1InZone(j.x,j.z,6)) continue; e1Cell(e1Key(j.x,j.z)).jn.push(j); }
+  if(E2.all) for(const o of E2.all){ if(o.tr[4]) continue; e1Cell(e1Key(o.tr[0],o.tr[2])).tr.push(o); } } // v0.88 P3-E（E-2）：林床も同じ区画で作る
 E1.NO=new Set([11]); // 中の物と合わせてある建物（bld[11]：鉄工所の跡。C-4 の依頼の鉄骨）は今の形のまま
 // ---- 1区画を作る（1フレームに少しずつ）----
 const E1NUL={p:[],i:[],v:0,seed:0,jit:0,frame(){},box(){},quad(){},tri(){},wx:()=>0,wz:()=>0}; // 軽量：家と庭の細い物（板の目・瓦の筋・自転車など）を描かない（乱数の使い方は同じ）
-function e1Start(c){ const R=gfxRad(), kw=E1.ctx&&E1.ctx.kw; E1.na=kw?kw.nodes.filter(n=>Math.abs(n.x-c.cx)<70&&Math.abs(n.z-c.cz)<70):[]; /* 採集・がれきの場所には小物を置かない */ E1.busy={c,i:0,A:new GB(),B:new GB(),G:[],cols:[],hide:[],rnd:p3aRng(c.k*13+7),stage:0,prop:R.prop,lite:GFX.detail==='lite'}; E1.busy.A.jit=0.05; E1.busy.B.jit=0.04; }
+function e1Start(c){ const R=gfxRad(), kw=E1.ctx&&E1.ctx.kw; E1.na=kw?kw.nodes.filter(n=>Math.abs(n.x-c.cx)<70&&Math.abs(n.z-c.cz)<70):[]; /* 採集・がれきの場所には小物を置かない */ E1.busy={c,i:0,A:new GB(),B:new GB(),G:[],F:[],S:new GB(),cols:[],hide:[],rnd:p3aRng(c.k*13+7),stage:0,prop:R.prop,lite:GFX.detail==='lite'}; E1.busy.A.jit=0.05; E1.busy.B.jit=0.04; }
 function e1Step(budget){ const J=E1.busy, c=J.c, D=KAMI.D, t0=performance.now();
   while(J.stage===0&&J.i<c.bld.length&&performance.now()-t0<budget){ const bi=c.bld[J.i++], b=D.bld[bi], F=e1Front(b), st=e1Style(b), dmg=dmgLevel(b[0],b[1]), rnd=p3aRng(bi*7919+31), RS=p3aRoadSegs({x:b[0],z:b[1]},Math.max(F.L,F.W)+16);
     E1.leaf=J.B; const FB=J.lite?E1NUL:J.B, info=e1House(J.A,FB,b,F,st,dmg,rnd); if(!info) continue; e1Damage(J.A,b,info.y0,info.fh,dmg); if(J.prop>=1||rnd()<J.prop) e1Yard(J.A,FB,J.G,J.cols,b,F,st,dmg,rnd,info,RS); J.hide.push(b);
     { const cs=Math.cos(F.rot), sn=Math.sin(F.rot); for(const [lx,lz] of info.pil) J.cols.push(addCircle(b[0]+lx*cs-lz*sn,b[1]+lx*sn+lz*cs,0.14,'post',{h:info.y0+info.fh+2.5})); } } // 家の前に出た柱（玄関・下屋・入口の庇）
   if(J.stage===0){ if(J.i>=c.bld.length) J.stage=1; return false; } // 家が済んだら、次のフレームで道の小物
-  if(J.stage===1){ J.stage=2; const A=J.A, B=J.B, rnd=J.rnd;
+  if(J.stage===1){ J.stage=2; const A=J.A, B=J.B, rnd=J.rnd; e2Floor(J,c); // v0.88：林床
     for(const P of c.poles){ const h=kamiH(P.x,P.z); e1Pole(A,P.x,h,P.z,P.a); J.cols.push(addCircle(P.x,P.z,0.28,'pole',{h:h+8.8})); if(P.next) e1Wire(B,[P.x,P.z],[P.next.x,P.next.z],h+8.2,kamiH(P.next.x,P.next.z)+8.2); }
     for(const Y of c.yab){ if(J.prop<1&&rnd()>J.prop) continue; e1Yabane(B,Y.x,kamiH(Y.x,Y.z),Y.z,Y.a); }
     for(const j of c.jn){ const r=hash2(j.x*0.3,j.z*0.7), r2=hash2(j.z*0.9,j.x*0.4), RS=p3aRoadSegs({x:j.x,z:j.z},14); let best=null; // 交差点の角（道の上でない所）
@@ -12356,6 +12410,9 @@ function e1Step(budget){ const J=E1.busy, c=J.c, D=KAMI.D, t0=performance.now();
     if(J.gB) o.fine=add(J.gB,vcMat,false);
     if(J.G.length){ const geo=E1.grass||(E1.grass=p3aGrassGeo('grass')), im=new THREE.InstancedMesh(geo,p3aMats().sway,J.G.length), m4=new THREE.Matrix4(), q=new THREE.Quaternion(), e=new THREE.Euler(), sc=new THREE.Vector3(), v=new THREE.Vector3();
       J.G.forEach((p,j)=>{ const s=0.7+hash2(p[0],p[1])*0.8; e.set(0,hash2(p[1],p[0])*TAU,0); q.setFromEuler(e); sc.set(s,s,s); v.set(p[0],kamiH(p[0],p[1])-0.03,p[1]); m4.compose(v,q,sc); im.setMatrixAt(j,m4); }); im.receiveShadow=true; ctx.group.add(im); o.meshes.push(im); o.grass=im; }
+    if(J.F.length){ const geo=E1.fern||(E1.fern=p3aGrassGeo('fern')), im=new THREE.InstancedMesh(geo,p3aMats().sway,J.F.length), m4=new THREE.Matrix4(), q=new THREE.Quaternion(), e=new THREE.Euler(), sc=new THREE.Vector3(), v=new THREE.Vector3(); // 下草（シダ）
+      J.F.forEach((p,j)=>{ const s=0.8+hash2(p[0]*1.3,p[1])*0.7; e.set(0,hash2(p[1],p[0]*0.7)*TAU,0); q.setFromEuler(e); sc.set(s,s,s); v.set(p[0],kamiH(p[0],p[1])-0.03,p[1]); m4.compose(v,q,sc); im.setMatrixAt(j,m4); }); im.receiveShadow=true; ctx.group.add(im); o.meshes.push(im); o.fern=im; }
+    if(J.S.i.length){ const g=J.S.geo(), m=new THREE.Mesh(g,e2SunMat()); m.renderOrder=2; m.raycast=()=>{}; ctx.group.add(m); o.meshes.push(m); o.own.push(g); o.sun=m; } // 木漏れ日
     for(const b of J.hide) e1Hide(b,o.hide); c.o=o; E1.busy=null; E1.made++; return true; } }
 // 輪郭線の形（inkGeo と同じ作り方。同じ位置の頂点の法線を平均して外へずらす。鍵を数にして速くした）
 function e1InkGeo(geo,d){ const P=geo.attributes.position.array, N=geo.attributes.normal.array, cnt=P.length/3; let mx=1e9,my=1e9,mz=1e9; for(let i=0;i<cnt;i++){ if(P[i*3]<mx) mx=P[i*3]; if(P[i*3+1]<my) my=P[i*3+1]; if(P[i*3+2]<mz) mz=P[i*3+2]; }
@@ -12371,14 +12428,171 @@ function e1Drop(c){ const o=c.o; if(!o) return; const ctx=E1.ctx; for(const m of
 function e1Cancel(){ const J=E1.busy; if(!J) return; for(const k of J.cols) gridRemove(k); if(J.gA) J.gA.dispose(); if(J.gB) J.gB.dispose(); E1.busy=null; }
 function e1RectD(c,px,pz){ const h=E1.DC/2; return Math.hypot(Math.max(0,Math.abs(px-c.cx)-h),Math.max(0,Math.abs(pz-c.cz)-h)); }
 function e1Update(px,pz){ if(!E1.cells||REG.cur!=='kamishihi'||REG.busy) return; if(E1.off){ e1DropAll(); return; } const R=gfxRad(); // E1.off：比べるとき・試験のときに細かい家を出さない
-  for(const c of E1.cells.values()){ if(!c.o) continue; const d=e1RectD(c,px,pz); if(d>R.out){ e1Drop(c); continue; } const o=c.o; if(o.ink) o.ink.visible=d<R.ink; if(o.fine) o.fine.visible=d<R.fine; if(o.grass) o.grass.visible=d<R.grass; } // 遠い区画は輪郭線・細い物・草を描かない
+  for(const c of E1.cells.values()){ if(!c.o) continue; const d=e1RectD(c,px,pz); if(d>R.out){ e1Drop(c); continue; } const o=c.o; if(o.ink) o.ink.visible=d<R.ink; if(o.fine) o.fine.visible=d<R.fine; if(o.grass) o.grass.visible=d<R.grass; if(o.fern) o.fern.visible=d<R.grass+15; if(o.sun) o.sun.visible=d<R.fine; } // 遠い区画は輪郭線・細い物・草を描かない
   if(E1.busy){ if(e1RectD(E1.busy.c,px,pz)>R.out){ e1Cancel(); } else { e1Step(E1.budget||5); return; } }
   let best=null, bd=1e9; for(const c of E1.cells.values()){ if(c.o) continue; const d=e1RectD(c,px,pz); if(d<R.in&&d<bd){ bd=d; best=c; } }
-  if(best){ e1Start(best); e1Step(E1.budget||5); } }
+  if(best){ e1Start(best); e1Step(E1.budget||5); }
+  if(E2.sunMat) E2.sunMat.opacity=lightMode==='day'?0.5:lightMode==='dusk'?0.22:0; }
 function e1DropAll(){ e1Cancel(); if(E1.cells) for(const c of E1.cells.values()) e1Drop(c); }
-function e1Dispose(){ e1DropAll(); if(E1.grass){ E1.grass.dispose(); E1.grass=null; } E1.cells=null; E1.rng=null; E1.ctx=null; }
+function e1Dispose(){ e1DropAll(); if(E1.grass){ E1.grass.dispose(); E1.grass=null; } if(E1.fern){ E1.fern.dispose(); E1.fern=null; } E1.cells=null; E1.rng=null; E1.ctx=null; }
 // ---- 設定：描く細かさ（標準・軽量）----
-function applyDetail(v){ GFX.detail=v==='lite'?'lite':'std'; try{ localStorage.setItem('eiheiji_detail',GFX.detail); }catch(e){} const el=$('btnDetail'); if(el) el.textContent='描く細かさ：'+(GFX.detail==='lite'?'軽量':'標準'); e1DropAll(); }
+function applyDetail(v){ GFX.detail=v==='lite'?'lite':'std'; try{ localStorage.setItem('eiheiji_detail',GFX.detail); }catch(e){} const el=$('btnDetail'); if(el) el.textContent='描く細かさ：'+(GFX.detail==='lite'?'軽量':'標準'); e1DropAll(); if(E2.lo) e2LiteApply(); }
+// ================= v0.88 P3-E の E-2：上志比の森林（2026-11-20。docs/p3e-e2.md） =================
+// 2026-11-20 14:55 ユーザー回答（p3e-plan.md §5）：杉 約6割（山の斜面）・広葉樹 約3割（尾根・南向きの斜面・林道ぞい）・竹 約1割（集落のまわり・川ぞい）。
+// 切った広葉樹は生えてこない。植林したら生える。希少素材「山の薬草」を足す。数はすべて暫定。
+// 木の位置・数・番号（k区画_区画_番号）は今までのまま（切った木の記録が合う）。種類だけを地形から決め直す。
+const E2={share:{kona:0.30,take:0.10}, grow:2400, naegi:1, herbN:12, herbBack:1200, herbAid:{t:600,k:2}, far:{std:400,lite:300}, nearQ:{std:75,lite:45}, inkQ:{std:45,lite:25}, HT:0, thin:0.4, // 山の薬草12か所は2026-11-25 ユーザー決定。nearQ：細かい形にする4分の1の区画までの距離・inkQ：輪郭線（m。暫定）
+  all:null, take:null, tg:null, geo:null, lo:[], stumpIM:null, sapIM:null, dirty:true, t:0, herbs:[]};
+// 0〜1 のなめらかな雑音（格子の角に決まった乱数を置いて、間をなめらかにつなぐ）。林のまとまりを作る
+function e2Noise(x,z,s,seed){ const fx=x/s, fz=z/s, i=Math.floor(fx), k=Math.floor(fz), a=fx-i, b=fz-k, u=a*a*(3-2*a), v=b*b*(3-2*b), h=(p,q)=>hash2(p*1.7+seed,q*2.3-seed*0.7);
+  return lerp(lerp(h(i,k),h(i+1,k),u),lerp(h(i,k+1),h(i+1,k+1),u),v); }
+// 種類を決める：竹は集落か川の近く（なだらかな所）、広葉樹は尾根・南向きの斜面・林道ぞい、残りは杉。割合は決まった数に合わせる
+function e2Classify(all){ const D=KAMI.D, H=kamiH, cell=new Set(), road=new Set(), G=40, R=20;
+  for(const b of D.bld) cell.add(Math.floor(b[0]/G)*7919+Math.floor(b[1]/G));
+  for(const r of D.roads){ if(r.b) continue; for(let i=0;i<r.p.length-1;i++){ const [ax,az]=r.p[i],[bx,bz]=r.p[i+1], L=dist(ax,az,bx,bz); for(let t=0;t<=L;t+=8){ const x=lerp(ax,bx,t/(L||1)), z=lerp(az,bz,t/(L||1)); road.add(Math.floor(x/R)*7919+Math.floor(z/R)); } } }
+  const nearSet=(S,g,x,z,r)=>{ const i0=Math.floor(x/g), k0=Math.floor(z/g); for(let i=i0-r;i<=i0+r;i++) for(let k=k0-r;k<=k0+r;k++) if(S.has(i*7919+k)) return true; return false; };
+  const cand=[];
+  for(const o of all){ const [x,y,z]=o.tr; if(o.tr[4]){ o.ty='sugi'; continue; } // 林道の試作の範囲は今まで（別に描く）
+    const hx=(H(x+4,z)-H(x-4,z))/8, hz=(H(x,z+4)-H(x,z-4))/8, slope=Math.hypot(hx,hz), h0=H(x,z);
+    let ring=0; for(let a=0;a<8;a++) ring+=H(x+Math.cos(a*0.785)*26,z+Math.sin(a*0.785)*26); const ridge=h0-ring/8; // 尾根（まわりより高い）
+    const south=-hz; // 南（z が大きい方）へ下る斜面＝南向き
+    const nS=nearSet(cell,G,x,z,1), nRd=nearSet(road,R,x,z,1); let nRv=false; for(let a=0;a<8&&!nRv;a++) for(const rr of [18,36]) if(kamiCls(x+Math.cos(a*0.785)*rr,z+Math.sin(a*0.785)*rr)===2){ nRv=true; break; }
+    o.bScore=(nS||nRv)&&slope<0.45?0.6*e2Noise(x,z,55,3)+(nS?0.5:0)+(nRv?0.35:0)-slope*0.6:-9;
+    o.kScore=clamp(ridge*0.06,-0.6,0.9)+clamp(south*1.6,-0.5,0.8)+(nRd?0.45:0)+0.9*e2Noise(x,z,110,7)+0.25*e2Noise(x,z,35,11);
+    cand.push(o); }
+  const n=cand.length, nb=Math.round(n*E2.share.take), nk=Math.round(n*E2.share.kona);
+  const byB=cand.filter(o=>o.bScore>-9).sort((a,b)=>b.bScore-a.bScore); for(let i=0;i<byB.length&&i<nb;i++) byB[i].ty='take';
+  const rest=cand.filter(o=>!o.ty).sort((a,b)=>b.kScore-a.kScore); rest.forEach((o,i)=>{ o.ty=i<nk?'kona':'sugi'; });
+  const c={sugi:0,kona:0,take:0}; for(const o of all) c[o.ty]++; return c; }
+// 遠くの形（軽い）：杉は細い円錐、広葉樹は丸い樹冠、竹は細長い葉の塊
+function e2LoGeo(kind){ const g=new THREE.Group(); // 上志比を出るときに捨てる（ctx.own）
+  if(kind==='sugi'){ g.add(mesh(new THREE.ConeGeometry(1.6,11.5,6,1,true),mat(0x2a4a2e),0,8.1,0)); } // 遠くは幹を描かない（三角形を減らす）
+  else if(kind==='kona'){ g.add(mesh(new THREE.CylinderGeometry(0.16,0.3,4.4,3,1,true),mat(0x6e5d4c),0,2.2,0)); const c=mesh(new THREE.IcosahedronGeometry(1,0),mat(0x5f8a3a),0,6.0,0,2.7,2.0,2.7); g.add(c); }
+  else { g.add(mesh(new THREE.ConeGeometry(1.5,12,5,1,true),mat(0x86a852),0,6.0,0)); }
+  return bakeGeo(g,0.1); }
+// 竹林の近くの形：P3-A の竹（1100三角形）を軽くした（稈9本・稈ごとに葉1つ＋上の葉3つ。約300三角形）。見た目は同じ作り
+function e2TakeGeo(){ const g=new THREE.Group(), rnd=p3aRng(44), ico=cached('p3ico',()=>new THREE.IcosahedronGeometry(1,0)); let cx=0, cz=0;
+  for(let k=0;k<9;k++){ const a=rnd()*TAU, rr=rnd()*1.5, h=9+rnd()*3.5, x=Math.sin(a)*rr, z=Math.cos(a)*rr, lean=(rnd()-0.5)*0.12; const cu=mesh(new THREE.CylinderGeometry(0.055,0.075,h,4,1,true),mat(k%3?0x7aa24a:0x8bb056),x,h/2,z); cu.rotation.set(lean,0,lean*0.7); g.add(cu);
+    const lf=mesh(ico,mat(k%2?0x8fb35a:0x7ea54e),x+lean*h*0.5+(rnd()-0.5)*0.6,h-1.2,z+lean*h*0.35+(rnd()-0.5)*0.6,1.1,0.6,1.1); g.add(lf); cx+=x; cz+=z; }
+  for(let j=0;j<3;j++) g.add(mesh(ico,mat(j?0x8fb35a:0x86ac54),cx/9+(rnd()-0.5)*1.6,10.2+j*0.9,cz/9+(rnd()-0.5)*1.6,1.5,0.7,1.5));
+  return bakeGeo(g,0.1); }
+// 近くの細かい形は P3-A の林道の試作と同じ（2026-11-18 承認）。大きさは今までの杉に合わせる
+const E2GS={sugi:0.72,kona:0.82,take:0.8}; // 形の大きさの倍率（暫定）
+function e2Mat4(o,m4,ty){ const [x,y,z,s]=o.tr, g=E2GS[ty], q=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,hash2(x,z)*TAU,0)); const sy=ty==='sugi'?(0.95+hash2(z,x)*0.25):1;
+  return m4.compose(new THREE.Vector3(x,y,z),q,new THREE.Vector3(s*g,s*g*sy,s*g)); }
+function e2BuildTrees(ctx,perTile){ const own=g=>ctx.own(g), all=[]; for(const [t,L] of perTile) L.forEach((tr,j)=>all.push({t,j,tr}));
+  const cnt=e2Classify(all), M=p3aMats(); E2.all=all; E2.count=cnt; E2.take=[]; E2.tg=new Map(); E2.lo=[];
+  const GEO=E2.geo={sugi:{hi:own(p3aTreeGeo('sugi')),lo:own(e2LoGeo('sugi'))},kona:{hi:own(p3aTreeGeo('kona')),lo:own(e2LoGeo('kona'))},take:{hi:own(e2TakeGeo()),lo:own(e2LoGeo('take'))}}; E2.stumpGeo=own(e2StumpGeo());
+  GEO.sugi.ink=own(inkGeo(GEO.sugi.hi,0.06)); GEO.kona.ink=own(inkGeo(GEO.kona.hi,0.06)); E2.sugiGeo=GEO.sugi.hi; E2.konaGeo=GEO.kona.hi; // 倒れる木の形にも使う
+  const KT=ctx.ktrees=new Map(), m4=new THREE.Matrix4(), B=ctx.bounds, byT=new Map(); let nTree=0;
+  for(const o of all){ let a=byT.get(o.t); if(!a){ a={sugi:[],kona:[],take:[]}; byT.set(o.t,a); } a[o.ty].push(o); }
+  E2.grid=new Map(); for(const o of all){ if(o.tr[4]) continue; const gk=Math.floor(o.tr[0]/20)*7919+Math.floor(o.tr[2]/20); let g=E2.grid.get(gk); if(!g){ g=[]; E2.grid.set(gk,g); } g.push([o.tr[0],o.tr[2],o.ty]); } // 森の音：まわりの木の数
+  for(const [t,A] of byT){ t.e2=[]; const qOf=o=>(o.tr[0]>t.cx?1:0)+(o.tr[2]>t.cz?2:0); // 区画を4つに分けて、近い4分の1だけ細かい形にする
+    for(const ty of ['sugi','kona','take']){ const L=A[ty]; if(!L.length) continue; L.sort((p,q)=>qOf(p)-qOf(q));
+      const lo=new THREE.InstancedMesh(GEO[ty].lo,vcMat,L.length), e={ty,lo,n:L.length,thin:new Uint8Array(L.length),kts:new Array(L.length).fill(null),q:[],keep:0};
+      const qs=[0,0,0,0]; L.forEach(o=>qs[qOf(o)]++); let st=0;
+      for(let q=0;q<4;q++){ const n=qs[q]; if(!n){ e.q.push(null); continue; } const hi=new THREE.InstancedMesh(GEO[ty].hi,ty==='sugi'?vcMat:M.sway,n); hi.frustumCulled=false; hi.visible=false; hi.castShadow=true; ctx.add(hi);
+        let ink=null; if(GEO[ty].ink){ ink=new THREE.InstancedMesh(GEO[ty].ink,inkMat,n); ink.instanceMatrix=hi.instanceMatrix; ink.frustumCulled=false; ink.visible=false; ink.raycast=()=>{}; ctx.add(ink); }
+        e.q.push({i0:st,n,hi,ink,cx:t.cx+(q&1?0.5:-0.5)*E2.HT,cz:t.cz+(q&2?0.5:-0.5)*E2.HT,near:false}); st+=n; ctx.instanced=(ctx.instanced||[]).concat(ink?[hi,ink]:[hi]); }
+      L.forEach((o,ii)=>{ const tr=o.tr, Q=e.q[qOf(o)], jh=ii-Q.i0; e2Mat4(o,m4,ty); if(tr[4]) m4.makeScale(0,0,0); Q.hi.setMatrixAt(jh,m4); lo.setMatrixAt(ii,m4); e.thin[ii]=hash2(tr[0]*0.7,tr[2]*0.3)<E2.thin?1:0;
+        const inB=!tr[4]&&tr[0]>B.minX&&tr[0]<B.maxX&&tr[2]>B.minZ&&tr[2]<B.maxZ; if(!inB) return;
+        if(ty==='take'){ const i=E2.take.length, c={i,x:tr[0],y:tr[1],z:tr[2],s:tr[3]}; E2.take.push(c); ctx.circle(tr[0],tr[2],0.9*tr[3]*E2GS.take,'tree',{h:tr[1]+8}); const gk=Math.floor(tr[0]/20)*7919+Math.floor(tr[2]/20); let g=E2.tg.get(gk); if(!g){ g=[]; E2.tg.set(gk,g); } g.push(c); return; }
+        const kt={key:`k${t.ci}_${t.ck}_${o.j}`,j:jh,jl:ii,x:tr[0],y:tr[1],z:tr[2],s:tr[3],hi:Q.hi,lo,felled:false,ty,gs:E2GS[ty],m:m4.clone(),e,q:qOf(o),thin:e.thin[ii]}; if(ty==='kona') kt.kona=1; e.kts[ii]=kt;
+        kt.col=ctx.circle(tr[0],tr[2],0.45*tr[3],'tree',{h:tr[1]+7,ktree:kt}); KT.set(kt.key,kt); });
+      e.keep=e.n-e.thin.reduce((a,v)=>a+v,0); e.orig=lo.instanceMatrix.array.slice(); lo.frustumCulled=false; lo.visible=false; ctx.add(lo); ctx.instanced.push(lo);
+      E2.lo.push(e); t.e2.push(e); nTree+=L.length; } }
+  e2LiteApply(); ctx.treeCount=nTree; return cnt; }
+// 遠くの形の1本ぶんを、元に戻すか消すか（切った木・近い4分の1・軽量で減らす木は消す）
+function e2LoSet(e,i){ const kt=e.kts[i], a=e.lo.instanceMatrix.array, Q=e.q.find(q=>q&&i>=q.i0&&i<q.i0+q.n), hide=(kt&&kt.felled)||(Q&&Q.near)||(GFX.detail==='lite'&&e.thin[i]);
+  if(hide) for(let k=0;k<16;k++) a[i*16+k]=0; else for(let k=0;k<16;k++) a[i*16+k]=e.orig[i*16+k]; }
+function e2LiteApply(){ for(const e of E2.lo){ for(let i=0;i<e.n;i++) e2LoSet(e,i); e.lo.instanceMatrix.needsUpdate=true; } }
+// 区画ごとの表示（kamishihiBuild の毎フレームから）。近い4分の1だけ細かい形、そこの遠い形は消す
+function e2TileVis(t,d){ if(!t.e2) return; const lite=GFX.detail==='lite', far=d<(lite?E2.far.lite:E2.far.std), NQ=lite?E2.nearQ.lite:E2.nearQ.std, IQ=lite?E2.inkQ.lite:E2.inkQ.std, cx=camera.position.x, cz=camera.position.z, h=E2.HT/2;
+  for(const e of t.e2){ e.lo.visible=far; let ch=false;
+    for(const Q of e.q){ if(!Q) continue; const dq=d>NQ?d:Math.hypot(Math.max(0,Math.abs(cx-Q.cx)-h),Math.max(0,Math.abs(cz-Q.cz)-h)), nr=far&&dq<NQ; Q.hi.visible=nr; if(Q.ink) Q.ink.visible=nr&&dq<IQ;
+      if(nr!==Q.near){ Q.near=nr; for(let i=Q.i0;i<Q.i0+Q.n;i++) e2LoSet(e,i); ch=true; } }
+    if(ch) e.lo.instanceMatrix.needsUpdate=true; } }
+// ---- 切った広葉樹（生えてこない）・植林（苗木を植えると育つ） ----
+function e2Kt(key){ const L=REG.live; return L&&L.ktrees?L.ktrees.get(key):null; }
+function e2ShowTree(kt){ kt.felled=false; if(kt.col) kt.col.active=true; const m=kt.m; if(!m) return; kt.hi.setMatrixAt(kt.j,m); kt.hi.instanceMatrix.needsUpdate=true; if(kt.e) e2LoSet(kt.e,kt.jl); else kt.lo.setMatrixAt(kt.j,m); kt.lo.instanceMatrix.needsUpdate=true; }
+function e2Plant(kt){ const k=prog.kami; if(!(inv.naegi>0)){ sfx('deny'); toast('苗木が無い（広葉樹を切ると、根元の若木を苗木として1本取れる）',true); return; }
+  inv.naegi--; k.pl[kt.key]=stats.time; E2.dirty=true; sfx('pickup'); chips(kt.x,kamiH(kt.x,kt.z)+0.3,kt.z,6,0x6a8a3a);
+  toast(`切り株のそばに苗木を植えた。遊んだ時間で約${Math.round(E2.grow/60)}分で広葉樹に育つ（苗木 あと${inv.naegi}）`); saveGame(); }
+function e2Grow(T){ const k=prog.kami; let n=0; for(const key in k.pl){ if(T<k.pl[key]+E2.grow) continue; const kt=e2Kt(key); delete k.pl[key]; const i=k.fb.indexOf(key); if(i>=0) k.fb.splice(i,1); if(kt) e2ShowTree(kt); n++; }
+  if(n){ E2.dirty=true; toast(n>1?`植えた広葉樹が${n}本育った（また切れる）`:'植えた広葉樹が育った（また切れる）'); saveGame(); } }
+// 切り株と苗木の形（全体で1つずつ。数は切った広葉樹の数）
+function e2StumpGeo(){ { const gb=new GB(); gb.box(0,0.22,0,0.62,0.44,0.62,cc(0x6a5440)); gb.box(0,0.45,0,0.52,0.03,0.52,cc(0xd0b080)); gb.box(0,0.462,0,0.22,0.02,0.22,cc(0xb89060)); for(const [x,z] of [[0.36,0],[-0.36,0.1],[0,0.36]]) gb.box(x,0.06,z,0.34,0.12,0.18,cc(0x5a4636)); return gb.geo(); } }
+function e2StumpsUpdate(ctx){ if(!ctx||!ctx.ktrees) return; E2.dirty=false; const k=prog.kami, T=stats.time, A=[], S=[];
+  for(const key of k.fb){ const kt=ctx.ktrees.get(key); if(!kt||!kt.felled) continue; A.push(kt); if(k.pl[key]!=null) S.push([kt,clamp((T-k.pl[key])/E2.grow,0,1)]); }
+  const mk=(geo,mt,n)=>{ const m=new THREE.InstancedMesh(geo,mt,Math.max(1,n)); m.frustumCulled=false; m.castShadow=true; m.receiveShadow=true; ctx.add(m); return m; }, m4=new THREE.Matrix4(), q=new THREE.Quaternion(), v=new THREE.Vector3(), sc=new THREE.Vector3();
+  if(!E2.stumpIM||E2.stumpIM.userData.cap<A.length){ if(E2.stumpIM){ ctx.group.remove(E2.stumpIM); E2.stumpIM.dispose(); } E2.stumpIM=mk(E2.stumpGeo,vcMat,A.length+32); E2.stumpIM.userData.cap=A.length+32; }
+  if(!E2.sapIM||E2.sapIM.userData.cap<S.length){ if(E2.sapIM){ ctx.group.remove(E2.sapIM); E2.sapIM.dispose(); } E2.sapIM=mk(E2.konaGeo||P3A.konaGeo,p3aMats().sway,S.length+16); E2.sapIM.userData.cap=S.length+16; }
+  A.forEach((kt,i)=>{ const s=0.7+kt.s*0.35; q.setFromEuler(new THREE.Euler(0,hash2(kt.x,kt.z)*TAU,0)); m4.compose(v.set(kt.x,kamiH(kt.x,kt.z)-0.05,kt.z),q,sc.set(s,s,s)); E2.stumpIM.setMatrixAt(i,m4); }); E2.stumpIM.count=A.length; E2.stumpIM.instanceMatrix.needsUpdate=true;
+  S.forEach(([kt,g],i)=>{ const s=kt.s*(kt.gs||0.82)*(0.18+0.82*g); q.setFromEuler(new THREE.Euler(0,hash2(kt.z,kt.x)*TAU,0)); m4.compose(v.set(kt.x+0.9,kamiH(kt.x+0.9,kt.z)-0.05,kt.z),q,sc.set(s,s,s)); E2.sapIM.setMatrixAt(i,m4); }); E2.sapIM.count=S.length; E2.sapIM.instanceMatrix.needsUpdate=true; }
+// ---- 山の薬草（森の奥の木陰。2026-11-20 ユーザー「追加する」。数・戻る時間は暫定） ----
+function e2HerbLook(){ const g=new THREE.Group(); for(let k=0;k<7;k++){ const a=k/7*TAU, r=0.12+hash2(k,3)*0.18; const lf=mesh(cached('p3ico',()=>new THREE.IcosahedronGeometry(1,0)),mat(k%2?0x4f7a36:0x5c8a3e),Math.cos(a)*r,0.12,Math.sin(a)*r,0.16,0.05,0.09); lf.rotation.y=-a; g.add(lf); }
+  for(let k=0;k<3;k++){ const a=k*2.1+0.4; g.add(mesh(new THREE.CylinderGeometry(0.008,0.01,0.34,4),mat(0x4a6a30),Math.cos(a)*0.08,0.17,Math.sin(a)*0.08)); for(let j=0;j<4;j++) g.add(mesh(G.box,mat(0xf4f2ea),Math.cos(a)*0.08+(hash2(k,j)-0.5)*0.06,0.34+hash2(j,k)*0.05,Math.sin(a)*0.08+(hash2(j+3,k)-0.5)*0.06,0.035,0.02,0.035)); } return g; }
+function e2HerbPlan(){ if(!E2.all) return []; const D=KAMI.D, road=new Set(), bc=new Set(), grid=new Map();
+  for(const r of D.roads){ if(r.b) continue; for(let i=0;i<r.p.length-1;i++){ const [ax,az]=r.p[i],[bx,bz]=r.p[i+1], L=dist(ax,az,bx,bz); for(let t=0;t<=L;t+=8) road.add(Math.floor(lerp(ax,bx,t/(L||1))/20)*7919+Math.floor(lerp(az,bz,t/(L||1))/20)); } }
+  for(const b of D.bld) bc.add(Math.floor(b[0]/40)*7919+Math.floor(b[1]/40));
+  for(const o of E2.all){ if(o.tr[4]) continue; const gk=Math.floor(o.tr[0]/12)*7919+Math.floor(o.tr[2]/12); grid.set(gk,(grid.get(gk)||0)+1); }
+  const near=(S,g,x,z,r)=>{ const i0=Math.floor(x/g), k0=Math.floor(z/g); for(let i=i0-r;i<=i0+r;i++) for(let k=k0-r;k<=k0+r;k++) if(S.has(i*7919+k)) return true; return false; };
+  const C=[]; for(const o of E2.all){ const [x,,z]=o.tr; if(o.tr[4]||o.ty==='take'||!kamiReach(x,z)) continue; if(near(road,20,x,z,2)||near(bc,40,x,z,2)) continue; // 道から 40m 以上・家から 80m 以上（暫定）
+    let den=0; for(let i=-1;i<=1;i++) for(let k=-1;k<=1;k++) den+=grid.get((Math.floor(x/12)+i)*7919+Math.floor(z/12)+k)||0; if(den<6) continue; C.push({x:x+1.4,z:z+0.6,sc:den+hash2(x*0.3,z*0.9)*6}); }
+  C.sort((a,b)=>b.sc-a.sc); const out=[]; for(const c of C){ if(out.length>=E2.herbN) break; if(out.some(p=>dist(p.x,p.z,c.x,c.z)<70)) continue; if(!kamiReach(c.x,c.z)||kamiCls(c.x,c.z)===2||!f4Free(c.x,c.z,0.4)) continue; out.push(c); } return out; } // 置く所そのものが歩ける所か確かめる
+function e2BuildHerbs(ctx,put){ const kw=ctx.kw; E2.herbs=e2HerbPlan(); E2.herbs.forEach((p,i)=>kw.nodes.push({k:'herb',key:'h'+i,x:p.x,z:p.z,m:put(e2HerbLook(),p.x,p.z,hash2(p.x,p.z)*TAU,-0.02)})); }
+// かまど：山の薬草で薬草粥（米1・山の薬草1・薪）
+function e2HerbPorridge(){ const c=prog.kama, F=FAC.kama; f7Flush(); if(c.q.length>=F.maxQ){ sfx('deny'); toast('いっぱい。できあがるまで待つ',true); return; }
+  if(!((inv.rice||0)>=1)||!((inv.mherb||0)>=1)){ sfx('deny'); toast('薬草粥：米1と山の薬草1が要る',true); return; } if(!canAfford(F.cook.fuel)){ sfx('deny'); toast(`薪が足りない（木材${F.cook.fuel.wood}）`,true); return; }
+  foodTake('rice',1); inv.mherb--; for(const k in F.cook.fuel) inv[k]-=F.cook.fuel[k]; c.q.push('herbPorridge'); sfx('craft'); toast(`山の薬草を刻んで、薬草粥を火にかけた（米1・山の薬草1）。${F.cook.time}秒`); facVis('kama'); saveGame(); }
+// ---- 近くの調べる物：竹林の竹を切る・切り株に苗木を植える ----
+function e2Interactables(ctx,L){ if(!E2.tg) return; const k=prog.kami, T=stats.time;
+  { let best=null, bd=9; const i0=Math.floor(P.x/20), k0=Math.floor(P.z/20); for(let i=i0-1;i<=i0+1;i++) for(let kk=k0-1;kk<=k0+1;kk++){ const g=E2.tg.get(i*7919+kk); if(g) for(const c of g){ const d=dist(P.x,P.z,c.x,c.z)-1.2*c.s*E2GS.take; if(d<bd){ bd=d; best=c; } } }
+    if(best&&bd<1.8){ const n={k:'bamboo',key:'t'+best.i,x:best.x,z:best.z}, t=k.n[n.key];
+      if(t!=null) L.push({d:bd+0.8,label:`竹林：切った竹が伸びるのを待つ あと${fmtTime(Math.max(0,t-T))}`,act:()=>{}}); else L.push({d:bd,label:'竹林の竹を切る（竹+2）',act:()=>kamiGather(n)}); } }
+  for(const key of k.fb){ const kt=ctx.ktrees&&ctx.ktrees.get(key); if(!kt||!kt.felled) continue; const d=dist(P.x,P.z,kt.x,kt.z)-0.5; if(d>1.7) continue;
+    if(k.pl[key]!=null) L.push({d:d+0.6,label:`植えた広葉樹の苗木：育つまで あと${fmtTime(Math.max(0,k.pl[key]+E2.grow-T))}`,act:()=>{}});
+    else L.push((inv.naegi||0)>0?{d,label:`広葉樹の切り株に苗木を植える（苗木 ${inv.naegi}）`,act:()=>e2Plant(kt)}:{d:d+0.6,label:'広葉樹の切り株：苗木を植えると、また育つ（苗木は広葉樹を切ると取れる）',act:()=>{}}); } }
+function e2Tick(ctx){ E2.t-=0.25; if(E2.t<=0){ E2.t=5; e2Grow(stats.time); if(Object.keys(prog.kami.pl).length) E2.dirty=true; } if(E2.dirty) e2StumpsUpdate(ctx); }
+function e2Dispose(){ E2.all=null; E2.take=null; E2.tg=null; E2.geo=null; E2.lo=[]; E2.stumpIM=null; E2.sapIM=null; E2.stumpGeo=null; E2.dirty=true; E2.herbs=[]; E2.grid=null; }
+// ---- 森の音（木々のざわめき・杉の梢の風・竹のきしみと打ち合う音・森の鳥。2026-11-20 案 6 のとおり） ----
+let E2SND=null;
+function e2Density(){ const G=E2.grid; if(!G) return {kona:0,sugi:0,take:0}; const c={kona:0,sugi:0,take:0}, i0=Math.floor(P.x/20), k0=Math.floor(P.z/20);
+  for(let i=i0-1;i<=i0+1;i++) for(let k=k0-1;k<=k0+1;k++){ const a=G.get(i*7919+k); if(a) for(const o of a){ if(dist(P.x,P.z,o[0],o[1])<28) c[o[2]]++; } } return c; }
+function e2SoundTick(dt){ if(typeof AU==='undefined'||!AU.ok||!AC||!noiseBuf) return; const on=REG.cur==='kamishihi'&&!P3A.inside&&S.mode!=='title'&&!!KAMI&&!!E2.grid&&SND.amb;
+  if(!E2SND){ const mk=(type,f,q)=>{ const s=AC.createBufferSource(); s.buffer=noiseBuf; s.loop=true; const fl=AC.createBiquadFilter(); fl.type=type; fl.frequency.value=f; fl.Q.value=q; const g=AC.createGain(); g.gain.value=0; s.connect(fl); fl.connect(g); g.connect(AU.amb); s.start(AC.currentTime,Math.random()*0.9); return g; };
+    E2SND={leaf:mk('bandpass',3200,0.8),needle:mk('bandpass',900,0.6),t:0,d:{kona:0,sugi:0,take:0},gust:0.6,gT:0,knT:2,brT:5}; }
+  const R=E2SND; R.t-=dt; if(R.t<=0){ R.t=0.5; R.d=on?e2Density():{kona:0,sugi:0,take:0}; }
+  R.gT-=dt; if(R.gT<=0){ R.gT=1.5+Math.random()*3; R.gTo=0.35+Math.random()*0.75; } R.gust+=((R.gTo||0.6)-R.gust)*Math.min(1,dt*0.6); // 風の強弱
+  const wl=on?clamp((R.d.kona+R.d.take*0.6)/40,0,1)*0.045*R.gust:0, wn=on?clamp(R.d.sugi/45,0,1)*0.04*R.gust:0;
+  R.leaf.gain.value+=(wl-R.leaf.gain.value)*Math.min(1,dt*1.5); R.needle.gain.value+=(wn-R.needle.gain.value)*Math.min(1,dt*1.5);
+  if(!on) return; const now=AC.currentTime;
+  if(R.d.take>=3){ R.knT-=dt; if(R.knT<=0){ R.knT=1.2+Math.random()*3.5; const n=1+Math.floor(Math.random()*3); for(let j=0;j<n;j++) e2Knock(now+0.02+j*(0.09+Math.random()*0.12),clamp(R.d.take/12,0.3,1)); if(Math.random()<0.3) e2Creak(now+0.05); } } // 竹が打ち合う音・きしむ音
+  if(lightMode==='day'&&R.d.kona+R.d.sugi>=12){ R.brT-=dt; if(R.brT<=0){ R.brT=4+Math.random()*7; if(Math.random()<0.18) e2Drum(now+0.05); else e2Bird(now+0.05); } } }
+function e2Knock(t,k){ const s=AC.createBufferSource(); s.buffer=noiseBuf; const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=520+Math.random()*420; f.Q.value=9; const g=AC.createGain();
+  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.05*k,t+0.006); g.gain.exponentialRampToValueAtTime(0.0001,t+0.11); s.connect(f); f.connect(g); g.connect(AU.amb); s.start(t,Math.random()*0.8,0.14); s.onended=()=>{ s.disconnect(); f.disconnect(); g.disconnect(); }; }
+function e2Creak(t){ const o=AC.createOscillator(), f=AC.createBiquadFilter(), g=AC.createGain(); o.type='sawtooth'; const f0=170+Math.random()*90; o.frequency.setValueAtTime(f0,t); o.frequency.linearRampToValueAtTime(f0*(0.8+Math.random()*0.5),t+0.35); f.type='bandpass'; f.frequency.value=700; f.Q.value=3;
+  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.008,t+0.06); g.gain.exponentialRampToValueAtTime(0.0001,t+0.4); o.connect(f); f.connect(g); g.connect(AU.amb); o.start(t); o.stop(t+0.42); o.onended=()=>{ o.disconnect(); f.disconnect(); g.disconnect(); }; }
+function e2Bird(t){ const kind=Math.floor(Math.random()*3), base=1500+Math.random()*1300; // 森の鳥（昼）：川辺の鳥より低めの2〜4音（特定の鳥のまねはしない）
+  const n=kind===0?2:kind===1?3:4; for(let j=0;j<n;j++){ const t0=t+j*(kind===2?0.13:0.24), o=AC.createOscillator(), g=AC.createGain(); o.type='sine'; const f0=base*(kind===0&&j===1?0.78:1)*(1+(Math.random()-0.5)*0.05);
+    o.frequency.setValueAtTime(f0,t0); o.frequency.exponentialRampToValueAtTime(f0*(kind===1?1.18:0.88),t0+0.12);
+    g.gain.setValueAtTime(0.0001,t0); g.gain.linearRampToValueAtTime(0.011,t0+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t0+0.16); o.connect(g); g.connect(AU.amb); o.start(t0); o.stop(t0+0.18); o.onended=()=>{ o.disconnect(); g.disconnect(); }; } }
+function e2Drum(t){ const n=12+Math.floor(Math.random()*8); for(let j=0;j<n;j++){ const t0=t+j*0.055*(1+j*0.015), s=AC.createBufferSource(); s.buffer=noiseBuf; const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1100; f.Q.value=6; const g=AC.createGain(); // 木をたたく音（遠く）
+    g.gain.setValueAtTime(0.0001,t0); g.gain.linearRampToValueAtTime(0.02*(1-j/n*0.5),t0+0.004); g.gain.exponentialRampToValueAtTime(0.0001,t0+0.04); s.connect(f); f.connect(g); g.connect(AU.amb); s.start(t0,Math.random()*0.8,0.05); s.onended=()=>{ s.disconnect(); f.disconnect(); g.disconnect(); }; } }
+// ---- 林床（近くの区画だけ。E-1 の区画と一緒に作る・捨てる）：落ち葉・下草（シダ）・苔の岩・倒木・切り株・木漏れ日 ----
+const E2F={litter:{sugi:[0x4a3a2c,0x52402f,0x47392b],kona:[0x5f5636,0x585030,0x645a38],take:[0x6e6a46,0x666240]},fern:{sugi:2,kona:3,take:1},rock:0.04,log:0.015,stump:0.03,sun:0.1}; // 1本あたり（暫定）
+function e2Floor(J,c){ if(!c.tr||!c.tr.length) return; const A=J.A, B=J.lite?null:J.B, rnd=p3aRng(c.k*31+5), pr=J.prop;
+  for(const o of c.tr){ const [x,y,z,s]=o.tr, ty=o.ty, r=rnd();
+    if(B&&rnd()<0.7){ const rr=(0.9+rnd()*0.8)*s, n=7, cols=E2F.litter[ty], col=cc(cols[Math.floor(rnd()*cols.length)]), P0=[x,kamiH(x,z)+0.05,z], pts=[]; B.frame(0,0,0,0); // 落ち葉（木のまわりの地面に薄く）
+      for(let q=0;q<n;q++){ const a=q/n*TAU+rnd()*0.5, d=rr*(0.6+rnd()*0.4), px=x+Math.cos(a)*d, pz=z+Math.sin(a)*d; pts.push([px,kamiH(px,pz)+0.04,pz]); }
+      for(let q=0;q<n;q++) B.tri(P0,pts[(q+1)%n],pts[q],col); }
+    const nf=Math.round(E2F.fern[ty]*(pr<1?0.5:1)); for(let q=0;q<nf;q++){ const a=rnd()*TAU, d=(1.0+rnd()*2.2)*s, px=x+Math.cos(a)*d, pz=z+Math.sin(a)*d; if(kamiCls(px,pz)!==2) J.F.push([px,pz]); } // 下草
+    if(pr<1&&rnd()>pr) continue;
+    if(r<E2F.rock){ const a=rnd()*TAU, px=x+Math.cos(a)*2.4, pz=z+Math.sin(a)*2.4, bs=0.6+rnd()*0.9; if(!e1Free(px,pz,bs,null)) continue; const h=kamiH(px,pz); A.frame(px,h,pz,rnd()*TAU); A.box(0,bs*0.3,0,bs*1.5,bs*0.8,bs*1.2,cc(0x77746b)); A.box(bs*0.2,bs*0.62,-bs*0.1,bs,bs*0.45,bs*0.8,cc(0x6b685f)); A.box(0,bs*0.86,0,bs*0.8,bs*0.08,bs*0.6,cc(0x5a7a3a)); J.cols.push(addCircle(px,pz,bs*0.7,'rock',{h:h+bs})); } // 苔の岩
+    else if(r<E2F.rock+E2F.log){ const a=rnd()*TAU, px=x+Math.cos(a)*3.5, pz=z+Math.sin(a)*3.5, Lg=4+rnd()*3.5, ang=rnd()*TAU; if(!e1Free(px,pz,Lg/2,null)) continue; const h=kamiH(px,pz); A.frame(px,h+0.28,pz,ang); A.box(0,0,0,Lg,0.46,0.46,cc(0x5e4a3a)); A.box(-Lg/2-0.25,0.15,0,0.7,1.1,1.2,cc(0x6a5440)); A.box(Lg*0.15,0.25,0,0.9,0.16,0.42,cc(0x4f6e36)); J.cols.push(addOBox(px,pz,Lg,0.55,ang,'log',{h:h+0.7})); } // 倒木（苔つき）
+    else if(r<E2F.rock+E2F.log+E2F.stump&&ty==='sugi'){ const a=rnd()*TAU, px=x+Math.cos(a)*2.6, pz=z+Math.sin(a)*2.6; if(!e1Free(px,pz,0.4,null)) continue; const h=kamiH(px,pz); A.frame(px,h,pz,rnd()); A.box(0,0.22,0,0.5,0.44,0.5,cc(0x6a5440)); A.box(0,0.45,0,0.42,0.02,0.42,cc(0xc8a878)); } // 間伐の切り株
+    if(ty!=='take'&&rnd()<E2F.sun){ const a=rnd()*TAU, d=rnd()*3, px=x+Math.cos(a)*d, pz=z+Math.sin(a)*d, rr=0.4+rnd()*0.8, n=8; for(let q=0;q<n;q++){ const a0=q/n*TAU, a1=(q+1)/n*TAU; J.S.tri([px,kamiH(px,pz)+0.09,pz],[px+Math.sin(a1)*rr,kamiH(px+Math.sin(a1)*rr,pz+Math.cos(a1)*rr)+0.09,pz+Math.cos(a1)*rr],[px+Math.sin(a0)*rr,kamiH(px+Math.sin(a0)*rr,pz+Math.cos(a0)*rr)+0.09,pz+Math.cos(a0)*rr],cc(0x6a6030)); } } } } // 木漏れ日
+function e2SunMat(){ return E2.sunMat||(E2.sunMat=new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:0.5,blending:THREE.AdditiveBlending,depthWrite:false})); }
 function kamishihiBuild(ctx){
   const K=kamiGrid(), D=K.D, TL=56, own=ctx.own, dmg0=DAMAGED.length; // v0.67：上志比の壊れた家は DAMAGED の dmg0 から後ろ（がれきの場所に使い、出るときに消す）
   // 橋：橋の上では橋の高さを地面にする（九頭竜川や小川を歩いて渡れる。光明寺の橋の作り ribbon と同じ高さ）
@@ -12435,7 +12649,7 @@ function kamishihiBuild(ctx){
     t.far.receiveShadow=true; t.far.visible=false; ctx.add(t.far); tiles.push(t); }
   const nearMake=t=>{ const m=new THREE.Mesh(tileGeo(t.ci,t.ck,1,false),gm); m.receiveShadow=true; ctx.add(m); t.near=m; };
   const nearDrop=t=>{ ctx.group.remove(t.near); t.near.geometry.dispose(); t.near=null; };
-  const HT=TL*K.GS/2, rectD=(t,x,z)=>Math.hypot(Math.max(0,Math.abs(x-t.cx)-HT),Math.max(0,Math.abs(z-t.cz)-HT)); // 区画の端までの距離
+  const HT=TL*K.GS/2; E2.HT=HT; const rectD=(t,x,z)=>Math.hypot(Math.max(0,Math.abs(x-t.cx)-HT),Math.max(0,Math.abs(z-t.cz)-HT)); // 区画の端までの距離
   for(const t of tiles) if(rectD(t,D.arrival.x,D.arrival.z)<NEAR_D) nearMake(t); // 着いた所のまわりは先に作る
   // ---- 3) 九頭竜川の水面（v0.85 P3-D の D-3：本流の全部を P3-A の水面に。区画ごと・川底は浅い所だけ）と、近くの河原（区画ごとに作る・捨てる）----
   rivBuildWater(ctx,K,RVF); rivTilesInit(ctx,K,RVF,TL);
@@ -12474,22 +12688,14 @@ function kamishihiBuild(ctx){
     const perTile=new Map(), m4=new THREE.Matrix4(), q=new THREE.Quaternion(), e=new THREE.Euler(), sc=new THREE.Vector3(), v=new THREE.Vector3();
     for(let k=0;k<K.ny;k++) for(let i=0;i<K.nx;i++){ const n=k*K.nx+i; if(K.C[n]!==1||busy[n]) continue; if(hash2(i*1.37,k*0.91)>0.3) continue;
       const x=K.X0+(i+hash2(k,i)*0.8-0.4)*K.GS, z=K.Z0+(k+hash2(i+7,k)*0.8-0.4)*K.GS; const t=tileOf(x,z); let L=perTile.get(t); if(!L){ L=[]; perTile.set(t,L); } L.push([x,kamiH(x,z)-0.15,z,0.95+hash2(i,k*3)*0.6,p3aInForest(x,z)]); } // P3-A：林道の試作の範囲の木は描かない（番号はずらさない＝切った木の記録が合う）
-    const hiG=forestTreeGeo(), loG=treeGeos(), inkG=own(inkGeo(hiG,0.07)); let nTree=0; const KT=ctx.ktrees=new Map(); // v0.67：切れる木（鍵 k区画_区画_番号 → 木の情報）
-    for(const [t,L] of perTile){ const hi=new THREE.InstancedMesh(hiG,vcMat,L.length), lo=new THREE.InstancedMesh(loG,vcMat,L.length);
-      L.forEach((tr,j)=>{ e.set(0,hash2(tr[0],tr[2])*TAU,0); q.setFromEuler(e); sc.set(tr[3],tr[3]*(0.95+hash2(tr[2],tr[0])*0.25),tr[3]); if(tr[4]) sc.set(0,0,0); v.set(tr[0],tr[1],tr[2]); m4.compose(v,q,sc); hi.setMatrixAt(j,m4); lo.setMatrixAt(j,m4);
-        if(!tr[4]&&tr[0]>ctx.bounds.minX&&tr[0]<ctx.bounds.maxX&&tr[2]>ctx.bounds.minZ&&tr[2]<ctx.bounds.maxZ){ const kt={key:`k${t.ci}_${t.ck}_${j}`,j,x:tr[0],y:tr[1],z:tr[2],s:tr[3],hi,lo,felled:false};
-          kt.col=ctx.circle(tr[0],tr[2],0.45*tr[3],'tree',{h:tr[1]+7,ktree:kt}); KT.set(kt.key,kt); } });
-      for(const m of [hi,lo]){ m.frustumCulled=false; m.visible=false; m.castShadow=m===hi; ctx.add(m); }
-      const ink=new THREE.InstancedMesh(inkG,inkMat,L.length); ink.instanceMatrix=hi.instanceMatrix; ink.frustumCulled=false; ink.visible=false; ink.raycast=()=>{}; ctx.add(ink);
-      t.trees=hi; t.treeFar=lo; t.treeInk=ink; nTree+=L.length; ctx.instanced=(ctx.instanced||[]).concat([hi,lo,ink]); }
-    ctx.treeCount=nTree; }
+    e2BuildTrees(ctx,perTile); } // v0.88 P3-E（E-2）：杉・広葉樹・竹に分ける（位置・番号は今までのまま）
   // ---- 7) 光明寺へ戻る道しるべ（国道416号の西の端） ----
   { const ex=D.exitWest, g=new THREE.Group(); g.add(mesh(G.box,mat(0x6b5a44),0,1.1,0,0.14,2.2,0.14)); g.add(mesh(G.box,mat(0xf0ead8),0,2.0,0,1.6,0.42,0.06));
     g.position.set(ex.x+6,kamiH(ex.x+6,ex.z+6)+0,ex.z+6); g.rotation.y=Math.PI/2; ctx.add(g); }
   try{ e1Init(ctx,e1rng); }catch(e){ console.error('E-1',e); E1.cells=null; } // v0.87 P3-E（E-1）：町並みの区画の準備
   if(P3A.on){ try{ p3aBuildHQ(ctx); p3aBuildHouses(ctx); p3aBuildForest(ctx); p3cBuildSites(ctx); p3cBuildDefense(ctx); p3cBuildFac2(ctx); p3cBuildWorks(ctx); p3cReqBuild(ctx); p3dReqBuild(ctx); p3cWorksReqBuild(ctx); }catch(e){ console.error('P3-A',e); } } // P3-A：4地点の試作
   ctx.h=(x,z)=>{ const h=kamiH(x,z), b=bridgeAt(x,z); return b!==null&&b>h?b:h; }; ctx.bridgeAt=bridgeAt; // 作り終えたら、橋の上を歩けるようにする
-  ctx.onDispose=()=>{ for(const m of ctx.instanced||[]) if(m.dispose) m.dispose(); rivDispose(ctx); e1Dispose(); p3aDispose(); KAMI=null; };
+  ctx.onDispose=()=>{ for(const m of ctx.instanced||[]) if(m.dispose) m.dispose(); rivDispose(ctx); e1Dispose(); e2Dispose(); p3aDispose(); KAMI=null; };
   // ---- 毎フレーム：区画の細かさ・木・建物の表示と、光明寺へ戻る出口 ----
   ctx.leaving=false;
   let dryX=D.arrival.x, dryZ=D.arrival.z, wetT=-99;
@@ -12500,7 +12706,7 @@ function kamishihiBuild(ctx){
     for(let n=0;n<tiles.length;n++){ const t=tiles[n], d=rectD(t,px,pz);
       if(d<NEAR_D&&!t.near&&made<2){ nearMake(t); made++; } else if(d>NEAR_D+160&&t.near) nearDrop(t); // 1フレームに2区画まで
       const lod=(d<NEAR_D&&t.near)?0:1; if(lod!==t.lod||(t.near&&t.near.visible!==(lod===0))){ t.lod=lod; if(t.near) t.near.visible=lod===0; t.far.visible=lod===1; }
-      const near=d<TREE_NEAR+25, mid=d<400; if(t.trees){ t.trees.visible=near; t.treeInk.visible=near&&d<INK_NEAR*0.6; t.treeFar.visible=!near&&mid; }
+      e2TileVis(t,d); // v0.88：木の種類ごと
       if(t.road) t.road.visible=d<420; if(t.bld){ t.bld.visible=d<220; t.bldInk.visible=d<INK_NEAR; t.bldLo.visible=d>=220&&d<800; } }
     const ex=D.exitWest, de=dist(P.x,P.z,ex.x,ex.z); if(de>ex.r+8) ctx.armed=true; // 一度離れてから出口に入ったときだけ戻る
     if(ctx.armed&&!ctx.leaving&&S.mode==='playing'&&!REG.busy&&de<ex.r){
@@ -12546,22 +12752,25 @@ const KW_CALM=['idle','return','notice'];
 function kamiMutantOK(){ return KW_TEST.mutant||!!(prog.chapter2&&prog.chapter2.progress&&prog.chapter2.progress.mutantMet); }
 // ---- 保存（セーブのキー kami、v:1。時刻はすべて遊んだ時間 stats.time） ----
 // n：取った場所が戻る時刻／r：岩の残り／sc：探ったがれき／f：切った木／sp：獣が戻る時刻／g：群れ（d 倒れた仲間・w 全滅から戻る時刻）
-function kamiFresh(){ return {v:1,n:{},r:{},sc:[],f:[],sp:{},g:{},st:{},fm:{}}; } // st：物資置き場（v0.68。n 持ち出した回数・t 最後に持ち出した時刻）
+function kamiFresh(){ return {v:1,n:{},r:{},sc:[],f:[],sp:{},g:{},st:{},fm:{},fb:[],pl:{}}; } // v0.88：fb 切った広葉樹（生えてこない）・pl 苗木を植えた時刻 // st：物資置き場（v0.68。n 持ち出した回数・t 最後に持ち出した時刻）
 function kamiSave(){ const k=prog.kami, T=stats.time, n={}, sp={}, g={};
   for(const a in k.n) n[a]=Math.ceil(k.n[a]); // 戻る時刻を過ぎても、近くにいて戻っていない物があるので、そのまま残す
   for(const a in k.sp) if(k.sp[a]>T) sp[a]=Math.ceil(k.sp[a]);
   for(const a in k.g){ const q=k.g[a]; if(q.w>T||q.d.some(Boolean)) g[a]={d:q.d.map(v=>v?1:0),w:Math.ceil(q.w||0)}; }
   const st={}; for(const a in (k.st||{})){ const q=k.st[a]; if(q&&q.n>0) st[a]={n:q.n,t:Math.ceil(q.t||0)}; }
   const fm={}; for(const a in (k.fm||{})) if(k.fm[a]>T) fm[a]=Math.ceil(k.fm[a]); // v0.69：倒された守りのサルが戻る時刻
-  return {v:1,n,r:Object.assign({},k.r),sc:k.sc.slice(-200),f:k.f.slice(-KW.felledMax),sp,g,st,fm}; }
+  const pl={}; for(const a in (k.pl||{})) pl[a]=Math.floor(k.pl[a]);
+  return {v:1,n,r:Object.assign({},k.r),sc:k.sc.slice(-200),f:k.f.slice(-KW.felledMax),sp,g,st,fm,fb:(k.fb||[]).slice(-8000),pl}; }
 function kamiLoad(q){ const k=kamiFresh(); if(!q||typeof q!=='object'||q.v!==1) return k; const N=v=>typeof v==='number'&&isFinite(v);
-  if(q.n&&typeof q.n==='object') for(const a in q.n) if(/^[sbrwpoq]\d+$/.test(a)&&N(q.n[a])) k.n[a]=clamp(q.n[a],0,1e7); /* v0.85：q は川底の鉱石 */
+  if(q.n&&typeof q.n==='object') for(const a in q.n) if(/^[sbrwpoqth]\d+$/.test(a)&&N(q.n[a])) k.n[a]=clamp(q.n[a],0,1e7); /* v0.85：q は川底の鉱石。v0.88：t 竹林・h 山の薬草 */
   if(q.r&&typeof q.r==='object') for(const a in q.r) if(/^[rq]\d+$/.test(a)&&N(q.r[a])) k.r[a]=clamp(Math.floor(q.r[a]),0,a[0]==='q'?3:ROCK_MAX);
   if(Array.isArray(q.sc)) k.sc=q.sc.filter(v=>Number.isInteger(v)&&v>=0&&v<999).slice(-200);
   if(Array.isArray(q.f)) k.f=q.f.filter(v=>typeof v==='string'&&/^(k\d+_\d+_\d+|kp\d+)$/.test(v)).slice(-KW.felledMax); /* v0.85：kp は林道の広葉樹 */
   if(q.sp&&typeof q.sp==='object') for(const a in q.sp) if(/^a\d+$/.test(a)&&N(q.sp[a])) k.sp[a]=clamp(q.sp[a],0,1e7);
   if(q.g&&typeof q.g==='object') for(const a in q.g){ const v=q.g[a]; if(/^g\d+$/.test(a)&&v&&Array.isArray(v.d)) k.g[a]={d:[0,1,2].map(i=>v.d[i]?1:0),w:N(v.w)?clamp(v.w,0,1e7):0}; }
   if(q.fm&&typeof q.fm==='object') for(const a in q.fm) if(/^[fab]\d$/.test(a)&&N(q.fm[a])) k.fm[a]=clamp(q.fm[a],0,1e7);
+  if(Array.isArray(q.fb)) k.fb=q.fb.filter(v=>typeof v==='string'&&/^(k\d+_\d+_\d+|kp\d+)$/.test(v)).slice(-8000); // v0.88
+  if(q.pl&&typeof q.pl==='object') for(const a in q.pl) if(/^(k\d+_\d+_\d+|kp\d+)$/.test(a)&&N(q.pl[a])&&k.fb.includes(a)) k.pl[a]=clamp(q.pl[a],0,1e7);
   if(q.st&&typeof q.st==='object') for(const a in q.st){ const v=q.st[a]; if(/^(fort|outB)$/.test(a)&&v&&N(v.n)&&v.n>0) k.st[a]={n:clamp(Math.floor(v.n),0,9999),t:N(v.t)?clamp(v.t,0,1e7):0}; }
   return k; }
 // ---- 場所を決める ----
@@ -12617,6 +12826,7 @@ function kamiBuildNodes(ctx,plan){ const kw=ctx.kw;
   plan.bamboo.forEach((p,i)=>{ const m=put(f5Grove(),p.x,p.z,null,-0.1); ctx.circle(p.x,p.z,1.6,'tree',{h:groundH(p.x,p.z)+6}); kw.nodes.push({k:'bamboo',key:'b'+i,x:p.x,z:p.z,m}); });
   plan.rock.forEach((p,i)=>{ const m=put(f5Rock(false),p.x,p.z,hash2(p.z,p.x)*TAU,-0.05), mr=put(f5Rubble(),p.x,p.z); kw.nodes.push({k:'rock',key:'r'+i,x:p.x,z:p.z,m,mr,col:ctx.circle(p.x,p.z,0.95,'rock'),acc:0}); });
   rivBuildOre(ctx,put); // v0.85 P3-D（D-3）：川底の鉱石
+  e2BuildHerbs(ctx,put); // v0.88 P3-E（E-2）：山の薬草
   plan.straw.forEach((p,i)=>kw.nodes.push({k:'straw',key:'w'+i,x:p.x,z:p.z,m:put(f5Pile('straw'),p.x,p.z,hash2(p.x,p.z)*3),mh:put(f5Pile('stubble'),p.x,p.z)}));
   plan.wood.forEach((p,i)=>kw.nodes.push({k:'wood',key:'p'+i,x:p.x,z:p.z,m:put(nodeLook('wood'),p.x,p.z,hash2(p.x,p.z)*TAU)}));
   plan.food.forEach((p,i)=>kw.nodes.push({k:'food',key:'o'+i,x:p.x,z:p.z,chest:p.chest,m:put(nodeLook('food',p.chest),p.x,p.z)}));
@@ -12629,10 +12839,12 @@ function kamiPopulate(ctx,dmg0){ ctx.dmg0=dmg0; const kw=ctx.kw={t:0,vt:0,prune:
   // 上志比の丸太（地面に置いた物だけ。運べない・保存しない）
   const lm=new THREE.InstancedMesh(logGeo(),vcMat,KW.maxLogs); lm.count=0; lm.castShadow=true; lm.frustumCulled=false; ctx.add(lm);
   const li=inkInst(lm,logGeo(),0.03); ctx.own(li.geometry); li.count=0; li.frustumCulled=false; ctx.add(li); kw.logIM=lm; kw.logInk=li; ctx.instanced=(ctx.instanced||[]).concat([lm,li]);
-  for(const key of prog.kami.f){ const kt=ctx.ktrees.get(key); if(kt) kamiHideTree(kt); } // 前に切った木
+  { const k=prog.kami; for(const key of k.f.slice()){ const kt=ctx.ktrees.get(key); if(kt&&kt.kona){ k.f.splice(k.f.indexOf(key),1); if(!k.fb.includes(key)) k.fb.push(key); } } } // v0.88：前に切った広葉樹は、生えてこない方の記録へ
+  for(const key of prog.kami.f.concat(prog.kami.fb)){ const kt=ctx.ktrees.get(key); if(kt) kamiHideTree(kt); } // 前に切った木
+  for(const key in prog.kami.pl) if(!prog.kami.fb.includes(key)) delete prog.kami.pl[key]; E2.dirty=true;
   kamiNodesUpdate(ctx,stats.time);
-  ctx.inter=L=>{ kamiInteractables(ctx,L); kfInteractables(ctx,L); };
-  const u0=ctx.update; ctx.update=dt=>{ u0(dt); kamiTick(ctx,dt); };
+  ctx.inter=L=>{ kamiInteractables(ctx,L); kfInteractables(ctx,L); e2Interactables(ctx,L); };
+  const u0=ctx.update; ctx.update=dt=>{ u0(dt); kamiTick(ctx,dt); if(S.mode==='playing'&&!REG.busy) e2Tick(ctx); };
   const d0=ctx.onDispose; ctx.onDispose=()=>{ try{ kamiDispose(ctx); } finally { d0(); } };
   ctx.kwPlan={sp:plan.sp.length,groups:plan.groups.length,nodes:kw.nodes.length}; }
 function kamiDispose(ctx){ for(const tr of [...F4.trunks]) if(tr.kami) removeTrunk(tr); for(const key of [...F4.chop.keys()]) if(key[0]==='k') F4.chop.delete(key);
@@ -12640,10 +12852,11 @@ function kamiDispose(ctx){ for(const tr of [...F4.trunks]) if(tr.kami) removeTru
   if(ctx.dmg0!=null&&DAMAGED.length>ctx.dmg0) DAMAGED.length=ctx.dmg0; // 上志比の壊れた家の記録を消す（光明寺の分は残す）
   ctx.kw=null; ctx.kf=null; ctx.inter=null; }
 // ---- 切る木 ----
-function kamiTreeRec(kt){ if(kt.rec) return kt.rec; const sy=kt.s*(0.95+hash2(kt.z,kt.x)*0.25);
-  return kt.rec={kind:'k',t:kt,key:kt.key,x:kt.x,z:kt.z,y:kt.y,yaw:hash2(kt.x,kt.z)*TAU,s:kt.s,sy,size:kt.s>=1.3?'thick':'mid',len:(kt.kona?6.2:8.6)*sy}; } // v0.85：広葉樹は背が低い
-function kamiHideTree(kt){ if(kt.felled) return; kt.felled=true; kt.col.active=false; kt.hi.setMatrixAt(kt.j,_zm); kt.lo.setMatrixAt(kt.j,_zm); kt.hi.instanceMatrix.needsUpdate=true; kt.lo.instanceMatrix.needsUpdate=true; }
-function kamiFelled(key){ const f=prog.kami.f; if(!f.includes(key)) f.push(key); if(f.length>KW.felledMax) f.splice(0,f.length-KW.felledMax); }
+function kamiTreeRec(kt){ if(kt.rec) return kt.rec; const g=kt.gs||1, sy=kt.s*g*(kt.ty==='kona'?1:(0.95+hash2(kt.z,kt.x)*0.25)); // v0.88：形の倍率 gs（杉は P3-A の高い杉）
+  return kt.rec={kind:'k',t:kt,key:kt.key,x:kt.x,z:kt.z,y:kt.y,yaw:hash2(kt.x,kt.z)*TAU,s:kt.s*g,sy,size:kt.s>=1.3?'thick':'mid',len:(kt.kona?6.2:kt.ty==='sugi'?12.5:8.6)*sy,name:kt.kona?(kt.s>=1.3?'太い広葉樹':'広葉樹'):undefined}; } // v0.85：広葉樹は背が低い。v0.88 伐採の修正：広葉樹の名前（案内に「杉」と出ていた）
+function kamiHideTree(kt){ if(kt.felled) return; kt.felled=true; kt.col.active=false; kt.hi.setMatrixAt(kt.j,_zm); kt.lo.setMatrixAt(kt.jl??kt.j,_zm); /* v0.88：遠くの形の番号 jl */ kt.hi.instanceMatrix.needsUpdate=true; kt.lo.instanceMatrix.needsUpdate=true; }
+function kamiFelled(key){ const kt=e2Kt(key); if(kt&&kt.kona){ const fb=prog.kami.fb; if(!fb.includes(key)) fb.push(key); inv.naegi=(inv.naegi||0)+E2.naegi; E2.dirty=true; floatText(kt.x,2.0,kt.z,`苗木+${E2.naegi}`,'#b8e08a'); toast(`広葉樹を切った。根元の若木を苗木にした（苗木 ${inv.naegi}）。切り株に植えると、また育つ`); return; } // v0.88：広葉樹は生えてこない（植えると育つ）
+  const f=prog.kami.f; if(!f.includes(key)) f.push(key); if(f.length>KW.felledMax) f.splice(0,f.length-KW.felledMax); }
 function kamiLogsDirty(){ const kw=REG.live&&REG.live.kw; if(!kw||!kw.logIM) return; while(kw.logs.length>KW.maxLogs) kw.logs.shift(); let n=0;
   for(const l of kw.logs){ const r=TSIZE[SIZE_OF[l[3]]].r; _f4e.set(0,l[2],0); _f4q.setFromEuler(_f4e); _f4v.set(l[0],groundH(l[0],l[1])+r,l[1]); _f4s.set(r,r,LOG_LEN); _f4m4.compose(_f4v,_f4q,_f4s); kw.logIM.setMatrixAt(n++,_f4m4); }
   kw.logIM.count=n; kw.logInk.count=n; kw.logIM.instanceMatrix.needsUpdate=true; }
@@ -12651,8 +12864,7 @@ function kamiSplitLog(l,cp){ const kw=REG.live&&REG.live.kw; if(!kw) return; con
   chips(l[0],groundH(l[0],l[1])+0.4,l[1],7);
   if(l[4]<LS.work-1e-6){ floatText(l[0],1.2,l[1],`割る あと${Math.ceil((LS.work-l[4])/cp-1e-6)}回`,'#f0dca0'); return; }
   kw.logs.splice(i,1); inv.wood+=LS.wood; prog.f4.split=(prog.f4.split||0)+1; kamiLogsDirty(); sfx('craft'); chips(l[0],groundH(l[0],l[1])+0.5,l[1],12);
-  if(l[5]){ inv.hardwood=(inv.hardwood||0)+1; floatText(l[0],1.6,l[1],`山地の硬木+1・木材+${LS.wood}`,'#f0dca0'); toast(`広葉樹の丸太を割った：山地の硬木 +1（${inv.hardwood}）・木材 +${LS.wood}`); saveGame(); return; } // v0.85 C-4
-  floatText(l[0],1.6,l[1],`木材+${LS.wood}`,'#f0dca0'); toast(`丸太をその場で割った：木材 +${LS.wood}（${inv.wood}）`); saveGame(); }
+  logSplitReward(l,LS.wood); saveGame(); }
 function kamiFindTarget(maxD,bs){ const kw=REG.live.kw; let best=null;
   for(const l of kw.logs){ const sa=Math.sin(l[2])*LOG_LEN/2, ca=Math.cos(l[2])*LOG_LEN/2; const d=segDist(P.x,P.z,l[0]-sa,l[1]-ca,l[0]+sa,l[1]+ca)-0.25; if(d>maxD) continue; if(d+0.1<bs){ bs=d+0.1; best={type:'klog',l,x:l[0],z:l[1],d}; } }
   for(const n of kw.nodes){ if(n.k!=='rock'||kamiRockLeft(n)<=0) continue; const d=dist(P.x,P.z,n.x,n.z)-1.0; if(d>maxD) continue; if(d+0.05<bs){ bs=d+0.05; best={type:'krock',r:n,x:n.x,z:n.z,d}; } }
@@ -12673,10 +12885,12 @@ function kamiGather(n){ const k=prog.kami, T=stats.time; if(k.n[n.key]!=null) re
   else if(n.k==='straw'){ got=STRAW_GOT; inv.straw=(inv.straw||0)+got; nm='藁'; k.n[n.key]=T+F5.regrow.straw; }
   else if(n.k==='bamboo'){ const t=f5BestTool(); if(!t){ toast('竹を切るには刃物が要る',true); return; } got=2; inv.bamboo=(inv.bamboo||0)+got; nm='竹'; f5Wear(t); chips(n.x,1.2,n.z,6,0x9ab86a); sfx('wood'); k.n[n.key]=T+F5.regrow.bamboo; }
   else if(n.k==='wood'){ got=2; inv.wood+=got; nm='木材'; k.n[n.key]=T+NODE_RESPAWN; }
+  else if(n.k==='herb'){ got=1+(Math.random()<0.4?1:0); inv.mherb=(inv.mherb||0)+got; nm='山の薬草'; k.n[n.key]=T+E2.herbBack; chips(n.x,kamiH(n.x,n.z)+0.3,n.z,5,0x7aa04a); } // v0.88
   else if(n.k==='food'){ got=n.chest?2:1+(Math.random()<0.5?1:0); foodAdd('food',got); nm='食料'; k.n[n.key]=T+NODE_RESPAWN; }
   else return;
-  if(P.gatherT>0){ if(n.k==='food') foodAdd('food',1); else inv[n.k]=(inv[n.k]||0)+1; got++; } // v0.84：雑魚の天ぷらで +1
-  if(n.k!=='bamboo') sfx('pickup'); toast(n.k==='food'?`食料 +${got}`:`${nm} +${got}（${n.k==='wood'?inv.wood:inv[n.k]}）`); floatText(n.x,1.4,n.z,`${nm}+${got}`,'#f0dca0');
+  const ik=n.k==='herb'?'mherb':n.k;
+  if(P.gatherT>0){ if(n.k==='food') foodAdd('food',1); else inv[ik]=(inv[ik]||0)+1; got++; } // v0.84：雑魚の天ぷらで +1
+  if(n.k!=='bamboo') sfx('pickup'); toast(n.k==='food'?`食料 +${got}`:`${nm} +${got}（${inv[ik]}）`); floatText(n.x,1.4,n.z,`${nm}+${got}`,'#f0dca0');
   kamiNodesUpdate(REG.live,T); g4CheckQuests(); }
 function kamiSearch(n){ const k=prog.kami; if(k.sc.includes(n.key)) return; k.sc.push(n.key); sfx('pickup'); sfx('hit');
   const got=hash2(n.x*1.7,n.z*0.3)<0.5?1:2; inv.iron=(inv.iron||0)+got; // 光明寺と同じ（必ず1〜2。場所ごとに決まっている）
@@ -12699,8 +12913,8 @@ function kamiInteractables(ctx,L){ const kw=ctx.kw; if(!kw) return; const k=prog
     if(n.k==='scrap'){ if(d0>2.2) continue; L.push(k.sc.includes(n.key)?{d:d0+1.2,label:'がれき：もう探った',act:()=>{}}:{d:d0+0.3,label:'壊れた家のがれきを探る（屑鉄 1〜2）',act:()=>kamiSearch(n)}); continue; }
     const d=d0-(n.k==='bamboo'?2.0:0); if(d>(n.k==='wood'||n.k==='food'?2.2:2.0)) continue; const t=k.n[n.key];
     if(t!=null){ if(n.k==='wood'||n.k==='food') continue; const left=Math.max(0,t-T); // 薪・畑は光明寺と同じく、取ったら消える（表示なし）
-      L.push({d:d+0.8,label:n.k==='bamboo'?`竹やぶ：切った竹が伸びるのを待つ あと${fmtTime(left)}`:n.k==='stone'?'河原：使えそうな石はもう拾った':`藁はもう束ねた（あと${fmtTime(left)}でまた束ねられる）`,act:()=>{}}); continue; }
-    const nm=n.k==='stone'?'河原の石を拾う（割れやすい石）':n.k==='straw'?`荒らされた田の稲を束ねる（藁+${STRAW_GOT}＝縄1本ぶん）`:n.k==='bamboo'?'竹を切る':n.k==='wood'?'薪を拾う':n.chest?'栗を拾う':'大根を収穫する';
+      L.push({d:d+0.8,label:n.k==='herb'?`山の薬草：もう摘んだ（あと${fmtTime(left)}でまた生える）`:n.k==='bamboo'?`竹やぶ：切った竹が伸びるのを待つ あと${fmtTime(left)}`:n.k==='stone'?'河原：使えそうな石はもう拾った':`藁はもう束ねた（あと${fmtTime(left)}でまた束ねられる）`,act:()=>{}}); continue; }
+    const nm=n.k==='herb'?'森の奥の木陰に、白い花の薬草がある：山の薬草を摘む':n.k==='stone'?'河原の石を拾う（割れやすい石）':n.k==='straw'?`荒らされた田の稲を束ねる（藁+${STRAW_GOT}＝縄1本ぶん）`:n.k==='bamboo'?'竹を切る':n.k==='wood'?'薪を拾う':n.chest?'栗を拾う':'大根を収穫する';
     L.push({d,label:nm,act:()=>kamiGather(n)}); } }
 // ---- 獣 ----
 function kamiSpawnBeast(ctx,type,x,z){ if(type==='mutant') return spawnMutant(x,z,{aggro:false,kfw:true}); // 形のデータを読んでから出る（Promise）。地域の獣として登録される。kfw：v0.69 見失ったら探して戻る
@@ -13797,6 +14011,7 @@ function truckInteractables(L){ if(!truckShown()) return; const st=stfStage(), t
     if(!t.fueled&&t.fuel<TRUCK_CFG.fuel){ const d=dist(P.x,P.z,sp.fuel.x,sp.fuel.z); if(d<2.2) L.push({d,label:`${TRUCK_CFG.fuelName}を受け取る`,act:()=>{ t.fuel=TRUCK_CFG.fuel; sfx('pickup'); toast(`${TRUCK_CFG.fuelName}を受け取った`); saveGame(); }}); } }
   depotInteractables(L); // v0.78：車両基地
   if(t.region!==REG.cur) return; const d=dist(P.x,P.z,TRUCK.x,TRUCK.z)-1.55; if(d>2.2) return; // 車の中心から 3.75m 以内
+  if(t.fac&&t.fac.aid&&(inv.mherb||0)>0&&!TRUCK.drive) L.push({d:d+0.3,label:stats.time<(TRUCK.herbT||0)?`荷台の救急箱に山の薬草を足す（あと${fmtTime(TRUCK.herbT-stats.time)}・足すと延びる）`:`荷台の救急箱に山の薬草を入れる（${Math.round(E2.herbAid.t/60)}分間 体力の戻りが${E2.herbAid.k}倍）`,act:()=>{ inv.mherb--; TRUCK.herbT=Math.max(stats.time,TRUCK.herbT||0)+E2.herbAid.t; sfx('pickup'); toast(`荷台の救急箱に山の薬草を入れた：あと${fmtTime(TRUCK.herbT-stats.time)}、車のそばで体力の戻りが${E2.herbAid.k}倍`); saveGame(); }}); // v0.88
   if(!stfP().departureDecision&&!stfP().legacyKamishihiAccess){ L.push({d,label:'動かなくなった軽トラックが止まっている',act:()=>{}}); return; }
   if(!t.found) L.push({d,label:'軽トラックを調べる',act:truckFind});
   else if(!t.repaired) L.push({d,label:`KEI truck を直す（${truckNeedText(true)}）`,act:truckRepair});
@@ -13838,10 +14053,18 @@ const TRUCK_SYS={
 RECIPES.splice(Math.max(0,RECIPES.findIndex(r=>r.id==='cart')),0,{id:'depotBuild',name:'車両基地を建てる',cost:TRUCK_SYS.depot.build,desc:'KEI truck の屋根つきの整備場。拠点の南東（南門から入って右）に建てる。車を屋根の下に止めると、車体を直す・改修（最高速度・耐久・加速が上がり、荷台に施設を作れるようになる）・荷台の施設を作るができる',
   show:()=>truckShown()&&trk().repaired&&!depotS().built,give:()=>{ depotS().built=1; depotApply(); toast('拠点の南東に車両基地を建てた。南門から入って右へ。KEI truck を屋根の下に止めて使う'); }});
 const TRK_N=new WeakSet();
-function trkSys(t){ if(TRK_N.has(t)) return t; const L=TRUCK_SYS; t.lv=clamp(t.lv|0,0,L.lv.length-1); const hm=L.hp.max[t.lv];
+function trkSys(t,savedLogs){ if(TRK_N.has(t)) return t; const L=TRUCK_SYS; t.lv=clamp(t.lv|0,0,L.lv.length-1); const hm=L.hp.max[t.lv];
   if(typeof t.gas!=='number'||!isFinite(t.gas)) t.gas=t.fueled?100:0; t.gas=clamp(t.gas,0,100);
   if(typeof t.hp!=='number'||!isFinite(t.hp)) t.hp=hm; t.hp=clamp(t.hp,0,hm);
-  if(!t.bed||typeof t.bed!=='object'||Array.isArray(t.bed)) t.bed={logs:[],mats:{}}; if(!Array.isArray(t.bed.logs)) t.bed.logs=[]; t.bed.logs=t.bed.logs.filter(c=>SIZE_OF[c]).slice(0,L.bed.maxLogs);
+  if(!t.bed||typeof t.bed!=='object'||Array.isArray(t.bed)) t.bed={logs:[],mats:{}}; const logs=Array.isArray(t.bed.logs)?t.bed.logs:[];
+  let attrs=null;
+  if(typeof savedLogs?.s==='string'){
+    try{ if(savedLogs.s===logs.join('')) attrs=savedLogs.a; }
+    catch(_) { /* 太さの並びを照合できないセーブは印なしで読む */ }
+  }
+  const pairs=logPairs(logs,attrs).filter(([code])=>logSizeValid(code)).slice(0,L.bed.maxLogs);
+  bedLogClear(t);
+  for(const [code,a] of pairs) bedLogPush(t,code,a);
   if(!t.bed.mats||typeof t.bed.mats!=='object'||Array.isArray(t.bed.mats)) t.bed.mats={}; for(const k of Object.keys(t.bed.mats)){ const n=Math.floor(+t.bed.mats[k]||0); if(!L.bed.mats.includes(k)||n<=0) delete t.bed.mats[k]; else t.bed.mats[k]=n; }
   if(!t.fac||typeof t.fac!=='object'||Array.isArray(t.fac)) t.fac={}; for(const k of Object.keys(t.fac)) if(!L.fac[k]) delete t.fac[k]; for(const k in L.fac) t.fac[k]=t.fac[k]?1:0; // 作ってある施設は、解放の段階が変わっても残す（v0.79）
   if(!t.bed.foods||typeof t.bed.foods!=='object'||Array.isArray(t.bed.foods)) t.bed.foods={}; for(const k of Object.keys(t.bed.foods)){ const a=t.bed.foods[k]; if(!FOODS[k]||!Array.isArray(a)){ delete t.bed.foods[k]; continue; } t.bed.foods[k]=a.filter(b=>Array.isArray(b)&&b[0]>0).map(b=>[Math.floor(b[0]),Math.max(0,+b[1]||0)]); if(!t.bed.foods[k].length) delete t.bed.foods[k]; } // v0.79：保冷箱の食べ物（[数,経過秒] の束）
@@ -13893,15 +14116,39 @@ function bedLoadMats(){ const t=trk(), L=TRUCK_SYS.bed; let room=L.cap-bedUnits(
 function bedUnloadMats(){ const t=trk(); let k=0; for(const m in t.bed.mats){ inv[m]=(inv[m]||0)+t.bed.mats[m]; k+=t.bed.mats[m]; } t.bed.mats={};
   if(!k) return; truckDoorOpen('tg',1.6); sfx('pickup'); toast(`荷台の素材${k}こを持ち物へ移した`); saveGame(); }
 function bedRoomLog(t){ const L=TRUCK_SYS.bed; return t.bed.logs.length<L.maxLogs&&bedUnits(t)+L.log<=L.cap; }
-function bedAddLog(code){ const t=trk(); t.bed.logs.push(code); truckDoorOpen('tg',1.6); sfx('wood'); toast(`丸太を荷台に積んだ（${t.bed.logs.length}/${TRUCK_SYS.bed.maxLogs}）`); saveGame(); }
+// 配列ごとに印を保持し、chapter2 の JSON と別のセーブに前の印を持ち込まない。
+const BED_LOG_ATTR=new WeakMap();
+function bedLogAttrs(t){
+  const logs=t.bed.logs;
+  let attrs=BED_LOG_ATTR.get(logs);
+  if(!attrs||attrs.length!==logs.length){
+    attrs=Array(logs.length).fill(0);
+    BED_LOG_ATTR.set(logs,attrs);
+  }
+  return attrs;
+}
+function bedLogPush(t,code,a){
+  const attrs=bedLogAttrs(t);
+  t.bed.logs.push(code);
+  attrs.push(logAttrNorm(a));
+}
+function bedLogPop(t){
+  if(!t.bed.logs.length) return null;
+  const attrs=bedLogAttrs(t);
+  return {code:t.bed.logs.pop(),a:attrs.pop()};
+}
+function bedLogClear(t){ t.bed.logs=[]; BED_LOG_ATTR.set(t.bed.logs,[]); }
+function bedAddLog(code,a){ const t=trk(); bedLogPush(t,code,a); truckDoorOpen('tg',1.6); sfx('wood'); toast(`丸太を荷台に積んだ（${t.bed.logs.length}/${TRUCK_SYS.bed.maxLogs}）`); saveGame(); }
 function regionLogs(){ return REG.cur==='kamishihi'?(REG.live&&REG.live.kw?REG.live.kw.logs:null):prog.f4.logs; } // 上志比の丸太も積める（光明寺の丸太置き場に納めると、その場で割るより木材が多い）
 function regionLogsDirty(){ if(REG.cur==='kamishihi') kamiLogsDirty(); else f4LogsDirty(); }
 function bedNearLog(){ const LL=regionLogs(); if(!LL) return -1; let b=-1, bd=5.5; LL.forEach((l,i)=>{ const d=dist(TRUCK.x,TRUCK.z,l[0],l[1]); if(d<bd&&dist(P.x,P.z,l[0],l[1])<7){ bd=d; b=i; } }); return b; }
-function bedTakeGroundLog(){ const t=trk(), LL=regionLogs(), i=bedNearLog(); if(i<0||!bedRoomLog(t)) return; const l=LL.splice(i,1)[0]; regionLogsDirty(); bedAddLog(l[3]); }
-function bedDropLog(){ const t=trk(); const c=t.bed.logs.pop(); if(!c) return; const LL=regionLogs(); const sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a), x=TRUCK.x-sa*3.6, z=TRUCK.z-ca*3.6;
-  if(LL){ LL.push([x,z,TRUCK.a+Math.PI/2,c]); regionLogsDirty(); } truckDoorOpen('tg',1.6); sfx('wood'); toast('丸太を1本下ろした（車の後ろ）'); saveGame(); }
+function bedTakeGroundLog(){ const t=trk(), LL=regionLogs(), i=bedNearLog(); if(i<0||!bedRoomLog(t)) return; const l=LL.splice(i,1)[0]; regionLogsDirty(); bedAddLog(l[3],logAttr(l)); }
+function bedDropLog(){ const LL=regionLogs(); if(!LL) return;
+  const log=bedLogPop(trk()); if(!log) return;
+  const sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a), x=TRUCK.x-sa*3.6, z=TRUCK.z-ca*3.6;
+  LL.push(logAttrSet([x,z,TRUCK.a+Math.PI/2,log.code],log.a)); regionLogsDirty(); truckDoorOpen('tg',1.6); sfx('wood'); toast('丸太を1本下ろした（車の後ろ）'); saveGame(); }
 function bedYardNear(){ return REG.cur==='komyoji'&&F4.yard&&dist(TRUCK.x,TRUCK.z,F4.yard.x,F4.yard.z)<14; }
-function bedDeliverLogs(){ const t=trk(), f=prog.f4; if(!t.bed.logs.length) return; let n=0, wood=0; for(const c of t.bed.logs){ n++; wood+=TSIZE[SIZE_OF[c]].wpl; } t.bed.logs=[];
+function bedDeliverLogs(){ const t=trk(), f=prog.f4; if(!t.bed.logs.length) return; let n=0, wood=0; for(const c of t.bed.logs){ n++; wood+=TSIZE[SIZE_OF[c]].wpl; } bedLogClear(t);
   inv.wood+=wood; f.delivered=(f.delivered|0)+n; f.yard=(f.yard|0)+n; f4LogsDirty(); truckDoorOpen('tg',1.6); sfx('craft'); toast(`荷台の丸太${n}本を納めた：木材 +${wood}`); if(F4.yard) floatText(F4.yard.x,1.8,F4.yard.z,`木材+${wood}`,'#f0dca0'); g4CheckQuests(); saveGame(); }
 function bedMenu(){ const t=trk(), L=TRUCK_SYS.bed, G=TRUCK_SYS.gas, ch=[];
   if(prog.f4.carry&&REG.cur==='komyoji'&&bedRoomLog(t)) ch.push({label:`担いでいる丸太を積む（${t.bed.logs.length}/${L.maxLogs}）`,act:bedLoadCarry});
@@ -13920,7 +14167,7 @@ function bedMenu(){ const t=trk(), L=TRUCK_SYS.bed, G=TRUCK_SYS.gas, ch=[];
   truckDoorOpen('tg',1.2);
   if(!ch.length){ toast(`KEI truck の荷台：丸太 ${t.bed.logs.length}/${L.maxLogs}・素材 ${bedMatN(t)}（${bedUnits(t)}/${L.cap}）・燃料 ${Math.round(t.gas)}%。いまできることはない`); return; }
   chooseDefense(`KEI truck の荷台　丸太 ${t.bed.logs.length}/${L.maxLogs}・素材 ${bedMatN(t)}（${bedUnits(t)}/${L.cap}）・燃料 ${Math.round(t.gas)}%・車体 ${Math.round(t.hp)}/${trkHpMax(t)}`,ch,true); }
-function bedLoadCarry(){ const t=trk(), c=prog.f4.carry; if(!c||!bedRoomLog(t)) return; prog.f4.carry=0; f4LogsDirty(); bedAddLog(c); }
+function bedLoadCarry(){ const t=trk(), c=prog.f4.carry; if(!c||!bedRoomLog(t)) return; const a=prog.f4.carryA; f4CarrySet(prog.f4,0); f4LogsDirty(); bedAddLog(c,a); }
 // ---- v0.79 荷台の保冷箱：食べ物の束をそのまま移す（経過はふつうの1/5で進む） ----
 function bedFoodN(t){ let n=0; const F=t.bed.foods; if(F) for(const k in F) for(const b of F[k]) n+=b[0]; return n; }
 function bedFoodLoad(){ const t=trk(); f7Flush(); let room=TRUCK_SYS.bed.cap-bedUnits(t), k=0;
@@ -13932,7 +14179,7 @@ function bedFoodAge(sec){ if(!prog.chapter2) return; const t=trk(); if(!t.bed.fo
     for(let i=arr.length-1;i>=0;i--){ const b=arr[i]; b[1]+=sec*r; if(F7.spoil&&life&&b[1]>=life){ prog.f7.spoiled[1]=(prog.f7.spoiled[1]||0)+b[0]; arr.splice(i,1); } } if(!arr.length) delete t.bed.foods[key]; } } // 傷んだ物は「食料庫の傷んだ食べ物」に数える
 // ---- v0.79 荷台の救急箱：車のそばで体力が戻る ----
 function truckAidUpdate(dt){ const t=trk(), A=TRUCK_SYS.fac.aid; if(!t.fac.aid||t.region!==REG.cur||REG.busy||P.dead||P.hp>=P.maxHp) { TRUCK.aidOn=false; return; }
-  const near=TRUCK.drive||dist(P.x,P.z,TRUCK.x,TRUCK.z)<A.r, calm=S.time-(P.lastHurt??-99)>A.calm; TRUCK.aidOn=near&&calm; if(TRUCK.aidOn) P.hp=Math.min(P.maxHp,P.hp+A.heal*dt); }
+  const near=TRUCK.drive||dist(P.x,P.z,TRUCK.x,TRUCK.z)<A.r, calm=S.time-(P.lastHurt??-99)>A.calm; TRUCK.aidOn=near&&calm; if(TRUCK.aidOn) P.hp=Math.min(P.maxHp,P.hp+A.heal*(stats.time<(TRUCK.herbT||0)?E2.herbAid.k:1)*dt); } // v0.88：山の薬草を入れると戻りが2倍
 // ---- v0.79 荷台の投光器：夕方と夜、車の前を照らす（本物の光は足さない＝重くしない。光の筋と地面の明るみを重ねる） ----
 function nightNow(){ const s=lightK.day+lightK.dusk+lightK.night||1; return (lightK.night+lightK.dusk*0.55)/s; }
 function truckLightVis(){ const t=trk(), root=TRUCK.m; if(!root) return; const want=!!t.fac.light&&t.repaired&&!t.tip&&t.region===REG.cur&&nightNow()>0.35&&(TRUCK.drive||truckNear(18));
@@ -14059,7 +14306,7 @@ function haulStop(quiet){ const n=npcGen; const was=HAUL.on; HAUL.on=false; HAUL
 function haulUpdate(dt){ if(!HAUL.on) return; const n=npcGen, t=trk(), H=TRUCK_SYS.haul; HAUL.walk=false;
   if(!n||REG.cur!=='komyoji'||ev.kind||TRUCK.drive||t.region!=='komyoji'||t.tip||!F4.yard){ haulStop(); return; }
   if(HAUL.t>0){ HAUL.t-=dt; if(HAUL.t>0) return; // 積み下ろし
-    if(HAUL.st==='toTruck'){ if(t.bed.logs.length) HAUL.load={log:t.bed.logs.pop()};
+    if(HAUL.st==='toTruck'){ if(t.bed.logs.length){ const {code,a}=bedLogPop(t); HAUL.load={log:code,a}; }
       else if(bedMatN(t)){ const m={}; let k=H.mats; for(const key of Object.keys(t.bed.mats)){ const a=Math.min(k,t.bed.mats[key]); m[key]=a; t.bed.mats[key]-=a; if(t.bed.mats[key]<=0) delete t.bed.mats[key]; k-=a; if(k<=0) break; } HAUL.load={mats:m}; }
       else { haulStop(); toast('源さん：荷台は空になったで'); return; }
       truckDoorOpen('tg',2); HAUL.st='toYard'; HAUL.path=haulRoute(true); HAUL.wi=0; saveGame(); }
@@ -14202,6 +14449,8 @@ function iconDesign(id,g,M,B,C,S){ const P=(o,x,y,z)=>{ o.position.set(x,y,z); g
   case 'mat_hide': { const a=B(0x8a5a34,0.95,0.07,0.7,0,-0.1,0); a.rotation.y=0.3; const b=B(0xa06a40,0.8,0.07,0.55,0.06,0.0,0.02); b.rotation.y=-0.2; b.rotation.z=0.08; P(dod(0x7a4a2a,0.12),0.42,0.04,0.25); return true; }
   case 'mat_ore': { const a=P(dod(0x46443e,0.36),0,-0.05,0); a.scale.y=0.7; for(const [x,y,z,c] of [[0.18,0.12,0.2,0xa8743a],[-0.15,0.14,0.18,0xd8c070],[0.05,0.2,-0.1,0x9a6a34]]){ const b=B(c,0.22,0.05,0.1,x,y,z); b.rotation.y=x*5; } P(dod(0x55524a,0.18),0.3,-0.2,-0.15); return true; } // v0.85：川底の鉱石
   case 'mat_hardwood': { for(const [x,y,r] of [[-0.18,-0.15,0.17],[0.18,-0.15,0.17],[0,0.15,0.17]]){ const a=P(cyl(0x5a3a22,r,r,0.95),x,y,0); a.rotation.z=Math.PI/2; const e=P(cyl(0xb08a5a,r*0.9,r*0.9,0.02),x+0.48,y,0); e.rotation.z=Math.PI/2; P(cyl(0x7a5a38,r*0.4,r*0.4,0.025),x+0.49,y,0).rotation.z=Math.PI/2; } return true; } // 山地の硬木（濃い色の丸太）
+  case 'mat_naegi': { B(0x6a4a2e,0.7,0.22,0.5,0,-0.4,0); B(0x4a3424,0.6,0.04,0.44,0,-0.28,0); P(cyl(0x6e5d4c,0.04,0.05,0.7),0,0.02,0); for(const [x,y,z,r] of [[0,0.42,0,0.2],[-0.16,0.26,0.06,0.15],[0.17,0.3,-0.05,0.15]]) P(dod(0x5f8a3a,r),x,y,z); return true; } // v0.88 広葉樹の苗木（根を包んだ若木）
+  case 'mat_mherb': { for(let i=0;i<5;i++){ const a=i/5*TAU, l=B(i%2?0x4f7a36:0x5c8a3e,0.42,0.05,0.18,Math.cos(a)*0.2,-0.2,Math.sin(a)*0.2); l.rotation.y=-a; } for(const [x,z] of [[-0.06,0.04],[0.1,-0.06],[0,0.12]]){ P(cyl(0x4a6a30,0.015,0.02,0.6),x,0.08,z); for(let j=0;j<3;j++) B(0xf4f2ea,0.08,0.05,0.08,x+(j-1)*0.05,0.4+j*0.03,z); } return true; } // v0.88 山の薬草（白い花）
   case 'mat_steel': { for(let i=0;i<3;i++){ const b=B(i===1?0xa8b0b6:0x8e969c,0.95,0.14,0.32,0,-0.2+i*0.16,(i-1)*0.04); b.rotation.y=(i-1)*0.12; } B(0x6a7076,0.95,0.02,0.04,0,0.03,0.17); return true; } // 鋼材（延べ板）
   case 'mat_spindle': { const a=P(cyl(0x9aa0a6,0.09,0.09,1.2),0,0,0); a.rotation.z=1.0; for(const t of [-0.35,0,0.35]){ const c=P(cyl(0x7a8086,0.18,0.18,0.08),Math.cos(1.0)*t*-1,Math.sin(1.0)*t,0); c.rotation.z=1.0; } P(cyl(0xb88a3a,0.13,0.13,0.06),-0.45,-0.3,0).rotation.z=1.0; return true; } // 加工機の主軸
   case 'mat_charcoal': P(dod(0x26262a,0.24),-0.2,-0.15,0); P(dod(0x333338,0.2),0.18,-0.18,0.1); P(dod(0x1e1e22,0.22),0.02,0.14,-0.05); P(dod(0x3a2a22,0.1),0.28,0.08,0.15); return true;
