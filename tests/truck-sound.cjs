@@ -81,10 +81,12 @@ async function run() {
       truckInput = () => window.__truckInput;
     })()`);
     await E(`(() => {
-      const probe = window.__truckAudioProbe = { oscillator: 0, wave: 0, frames: [] };
+      const probe = window.__truckAudioProbe = { oscillator: 0, wave: 0, shaper: 0, frames: [] };
       let updating = false;
       // BGM や森の音の発音を除き、車音の更新中に作ったノードだけを数える。
-      for (const [name, key] of [['createOscillator', 'oscillator'], ['createPeriodicWave', 'wave']]) {
+      for (const [name, key] of [
+        ['createOscillator', 'oscillator'], ['createPeriodicWave', 'wave'], ['createWaveShaper', 'shaper']
+      ]) {
         const create = AC[name].bind(AC);
         AC[name] = (...args) => {
           if (updating) probe[key]++;
@@ -129,10 +131,18 @@ async function run() {
     await gwait(0.9);
     const idle = await read();
     check(idle.phase === 'running' && idle.engine > 0.05 && idle.roll === 0 &&
-      idle.rpm >= 800 && idle.rpm <= 1100 && idle.gear === 1, '停車中は1速でアイドリングが鳴る');
+      idle.rpm >= 750 && idle.rpm <= 1000 && idle.gear === 1, '停車中は1速でアイドリングが鳴る');
 
-    const nodes = await E('(({ oscillator, wave }) => ({ oscillator, wave }))(__truckAudioProbe)');
-    check(nodes.wave === 1 && nodes.oscillator > 0, '初回乗車で波形と発振器を作る');
+    const nodes = await E('(({ oscillator, wave, shaper }) => ({ oscillator, wave, shaper }))(__truckAudioProbe)');
+    check(nodes.wave === 1 && nodes.oscillator > 0 && nodes.shaper === 2,
+      '初回乗車で波形、発振器、歪みと整流の WaveShaper を作る');
+    check(await E(`(() => {
+      const { jitter, timingDepth, strengthDepth, rectifier } = TRSND.nodes;
+      return jitter?.type === 'lowpass' && jitter.frequency.value >= 10 && jitter.frequency.value <= 20 &&
+        timingDepth?.gain.value > 0 && strengthDepth?.gain.value > 0 &&
+        rectifier instanceof WaveShaperNode && rectifier.curve[0] > 0 &&
+        rectifier.curve.at(-1) > 0 && rectifier.curve[(rectifier.curve.length - 1) / 2] === 0;
+    })()`), '燃焼の間隔と強さを揺らすローパスと、燃焼の脈を整流する WaveShaper がある');
     await E('__truckAudioProbe.record = true; __truckInput.iz = 1');
     await gwait(10);
     const moving = await read();
@@ -152,16 +162,17 @@ async function run() {
     const rising = full.find(frame => frame.rpm >= 5000 && frame.gear === 1 && !frame.shift);
     check(rising && before && before.rpm > rising.rpm && before.level > rising.level &&
       moving.engine > idle.engine && moving.roll > 0, '加速で回転と排気音量が上がり、タイヤが転がる');
-    check(await E(`__truckAudioProbe.oscillator === ${nodes.oscillator} && __truckAudioProbe.wave === ${nodes.wave}`),
-      '10ゲーム秒走っても車音の波形と発振器を作り足さない');
+    check(await E(`__truckAudioProbe.oscillator === ${nodes.oscillator} &&
+      __truckAudioProbe.wave === ${nodes.wave} && __truckAudioProbe.shaper === ${nodes.shaper}`),
+      '10ゲーム秒走っても車音の波形、発振器、WaveShaper を作り足さない');
 
     await until('TRSND.gear === 5 && !TRSND.shift && Math.hypot(TRUCK.vx, TRUCK.vz) >= truckPerf().speed - 0.01');
     const atTop = await read();
     await gwait(3);
     const held = await read();
     check(held.gear === 5 && held.limiter === atTop.limiter &&
-      atTop.rpm >= 6000 && atTop.rpm <= 7000 && held.rpm >= 6000 && held.rpm <= 7000,
-    '5速の最高速で全開を3ゲーム秒続けても燃料カットが入らず、回転数は6000〜7000rpm');
+      atTop.rpm >= 5500 && atTop.rpm <= 6500 && held.rpm >= 5500 && held.rpm <= 6500,
+    '5速の最高速で全開を3ゲーム秒続けても燃料カットが入らず、回転数は5500〜6500rpm');
 
     // 判定が起こる離し方を、乱数を固定した1コマで確かめる。
     const pops = await E(`(() => {
@@ -180,7 +191,7 @@ async function run() {
     await gwait(13);
     const coast = await read();
     check(coast.shiftDown > moving.shiftDown, 'アクセルを戻して減速するとシフトダウンする');
-    check(coast.rpm >= 800 && coast.rpm <= 1100 && coast.gear === 1 && coast.roll === 0,
+    check(coast.rpm >= 750 && coast.rpm <= 1000 && coast.gear === 1 && coast.roll === 0,
       '停車すると1速のアイドリングへ戻る');
 
     await E('__truckAudioProbe.frames = []; __truckAudioProbe.record = true; __truckInput.iz = 0.4');
