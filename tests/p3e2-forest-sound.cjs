@@ -16,6 +16,7 @@ const BASE = `(()=>{ prog.bossDefeated=true; prog.stage='cleared'; prog.unlockTr
 
 const SPOTS = `(() => {
   const best = {};
+  const original = { x: P.x, z: P.z };
   for (const trees of E2.grid.values()) {
     const x = trees[0][0] + 1.5, z = trees[0][1] + 1.5;
     if (!kamiReach(x, z) || kamiCls(x, z) === 2) continue;
@@ -26,7 +27,15 @@ const SPOTS = `(() => {
     for (const [type, n] of Object.entries(count)) {
       if (n > (best[type]?.count || 0)) best[type] = { count: n, x, z };
     }
+    if (!best.deep) {
+      P.x = x;
+      P.z = z;
+      const { kona, sugi, take } = e2Density();
+      if (kona + sugi + take >= 40) best.deep = { x, z };
+    }
   }
+  P.x = original.x;
+  P.z = original.z;
   return best;
 })()`;
 const ZERO_COUNTS = '{ bird: 0, drum: 0, knock: 0, creak: 0 }';
@@ -42,6 +51,12 @@ const COUNT_SOUNDS = `(() => {
   e2Creak = wrap(e2Creak, 'creak');
 })()`;
 const FOREST = '({ leaf: E2SND.leaf.gain.value, needle: E2SND.needle.gain.value })';
+const WIND = `(() => {
+  const ordinary = (0.035 + 0.02 * Math.sin(S.time * 0.13) + 0.01 * Math.sin(S.time * 0.37))
+    * (1 + 0.6 * (RIVSND?.wind || 0));
+  const { kona, sugi, take } = E2SND.d;
+  return { ratio: f31WindLevel() / ordinary, trees: kona + sugi + take };
+})()`;
 const quiet = ({ leaf, needle }) => leaf < 0.0001 && needle < 0.0001;
 const noCalls = counts => Object.values(counts).every(n => n === 0);
 const show = value => inspect(value, { breakLength: Infinity, compact: true });
@@ -123,7 +138,7 @@ async function run() {
     await travel('kamishihi');
     await until('!!E2SND', 120000);
     const spots = await E(SPOTS);
-    if (!spots.kona || !spots.sugi || !spots.take || !spots.mixed) {
+    if (!spots.kona || !spots.sugi || !spots.take || !spots.mixed || !spots.deep) {
       throw new Error(`歩ける範囲に確認用の林が見つからない ${show(spots)}`);
     }
 
@@ -131,8 +146,20 @@ async function run() {
     await gwait(4);
     let forest = await E(FOREST);
     check(forest.leaf > 0.005, `昼の広葉樹林で葉がざわめく ${show(forest)}`);
+    check(forest.leaf <= 0.0225 * 1.2, `広葉樹林の葉のざわめきが音量の上限以下 ${show(forest)}`);
+
+    await move(spots.deep);
+    await until('E2SND.t > 0');
+    let wind = await E(WIND);
+    check(wind.trees >= 40 && wind.ratio >= 0.5 && wind.ratio <= 0.55,
+      `深い森ではいつもの風が約半分になる ${show(wind)}`);
+
+    await move(spots.kona);
+    await gwait(4);
 
     await travel('komyoji');
+    wind = await E(WIND);
+    check(wind.ratio === 1, `光明寺ではいつもの風の倍率が1になる ${show(wind)}`);
     forest = await E(FOREST);
     check(quiet(forest), `広葉樹林から光明寺に着いた直後に葉と梢が静まる ${show(forest)}`);
     await E(`(window.__cnt = ${ZERO_COUNTS}, true)`);
@@ -146,6 +173,7 @@ async function run() {
     await gwait(4);
     forest = await E(FOREST);
     check(forest.needle > 0.005, `上志比に戻ると杉林で梢の風が鳴る ${show(forest)}`);
+    check(forest.needle <= 0.02 * 1.2, `杉林の梢の風が音量の上限以下 ${show(forest)}`);
     await travel('komyoji');
     forest = await E(FOREST);
     check(quiet(forest), `杉林から光明寺に着いた直後に葉と梢が静まる ${show(forest)}`);
