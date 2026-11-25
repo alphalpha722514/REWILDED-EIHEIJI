@@ -52,6 +52,7 @@ async function run() {
     }
     const read = () => E(`({
       phase: TRSND.phase, rpm: TRSND.rpm, gear: TRSND.gear, level: TRSND.level, bass: TRSND.bass,
+      grit: TRSND.nodes.gritDepth.gain.value + TRSND.nodes.idleGritDepth.gain.value,
       roll: TRSND.roll, skid: TRSND.skid, car: AU.car.gain.value, engine: TRSND.nodes.engine.gain.value,
       ...TRSND.counts
     })`);
@@ -121,6 +122,7 @@ async function run() {
       probe.finish = () => { truckDrive = drive; F11D.rawMax = rawMax; };
     })()`);
     check(await E(`(() => {
+      __truckAudioProbe.record = true;
       truckBoard();
       f31AudioUpdate();
       return TRUCK.drive && TRSND.phase === 'crank' && TRSND.counts.starter === 1;
@@ -128,7 +130,16 @@ async function run() {
     await until('TRSND.nodes.crank.gain.value > 0.01 || TRSND.counts.start > 0');
     await until('TRSND.counts.start === 1');
     check((await read()).start === 1, 'セルのあとに始動する');
-    await gwait(0.9);
+    const ignition = await read();
+    check(ignition.click === 1 && ignition.compress >= 4 && ignition.catch >= 2,
+      '乗るとカチッが1回、圧縮が4回以上、着火が2回以上鳴る');
+    await gwait(2.3);
+    const starting = await E(`__truckAudioProbe.record = false;
+      __truckAudioProbe.frames.splice(0)`);
+    const flare = starting.find(frame => frame.rpm >= 2300);
+    check(flare && starting.some(frame => frame.time - flare.time >= 1.5 &&
+      frame.time - flare.time <= 2.5 && frame.rpm <= 1000),
+    '始動後に2300rpm以上に吹け上がり、1.5〜2.5ゲーム秒後には1000rpm以下に戻る');
     const idle = await read();
     check(idle.phase === 'running' && idle.engine > 0.05 && idle.roll === 0 &&
       idle.rpm >= 750 && idle.rpm <= 1000 && idle.gear === 1, '停車中は1速でアイドリングが鳴る');
@@ -173,6 +184,9 @@ async function run() {
     check(held.gear === 5 && held.limiter === atTop.limiter &&
       atTop.rpm >= 5500 && atTop.rpm <= 6500 && held.rpm >= 5500 && held.rpm <= 6500,
     '5速の最高速で全開を3ゲーム秒続けても燃料カットが入らず、回転数は5500〜6500rpm');
+    check(await E(`TRSND.nodes.high.type === 'highpass' &&
+      Math.abs(TRSND.nodes.high.frequency.value - 45) < 0.01`),
+    '最高速で全開のときはハイパスが45Hzのまま');
 
     // 判定が起こる離し方を、乱数を固定した1コマで確かめる。
     const pops = await E(`(() => {
@@ -196,6 +210,8 @@ async function run() {
 
     await E('__truckAudioProbe.frames = []; __truckAudioProbe.record = true; __truckInput.iz = 0.4');
     await gwait(3);
+    const lightGrit = (await read()).grit;
+    check(idle.grit >= lightGrit * 0.95, 'アイドリングの整流した雑音のゲインは軽い加速時と同程度以上');
     const light = await E(`__truckAudioProbe.record = false; __truckInput.iz = 0;
       __truckAudioProbe.finish(); __truckAudioProbe.frames.find(frame => frame.shift === 'cut')`);
     check(light && cut && light.rpm < cut.rpm - 1200, '軽く踏むと全開より低い回転数でシフトアップする');
@@ -226,12 +242,23 @@ async function run() {
     await E('truckExit()');
     await until("TRSND.phase === 'off' && TRSND.nodes.engine.gain.value < 0.001");
     check((await read()).stop > idle.stop, '降りると回転が落ちて止まる');
+    check(await E(`(() => {
+      truckBoard();
+      f31AudioUpdate();
+      if(TRSND.phase !== 'crank' || !TRSND.bursts.size) return false;
+      truckExit();
+      return TRSND.phase === 'off' && TRSND.nodes.crank.gain.value < 0.001 &&
+        TRSND.bursts.size === 0 && AU.car.gain.value === 0;
+    })()`), '始動の途中で降りるとセルと予約した破裂音がすぐ止まる');
     const beforeEmpty = await read();
     await E('trk().gas = 0; truckBoard()');
     await until("TRSND.phase === 'empty'");
     await gwait(0.8);
     const empty = await read();
-    check(empty.starter === beforeEmpty.starter + 1 && empty.start === beforeEmpty.start && empty.engine < 0.001, '燃料0ではセルだけ鳴って始動しない');
+    check(empty.starter === beforeEmpty.starter + 1 && empty.start === beforeEmpty.start &&
+      empty.click === beforeEmpty.click + 1 && empty.compress > beforeEmpty.compress &&
+      empty.catch === beforeEmpty.catch && empty.engine < 0.001 &&
+      await E('TRSND.nodes.crank.gain.value < 0.001'), '燃料0ではセルだけ鳴って始動しない');
 
     await E('trk().gas = 100; trk().hp = 10');
     await until("TRSND.phase === 'running'");
@@ -248,8 +275,11 @@ async function run() {
 
     await E('trk().gas = 100; trk().lv = 5; trk().hp = trkHpMax(trk())');
     await until("TRSND.phase === 'running'");
-    await gwait(0.9);
+    await gwait(2.3);
     const upgraded = await read();
+    check(await E(`__truckAudioProbe.oscillator === ${nodes.oscillator} &&
+      __truckAudioProbe.wave === ${nodes.wave}`),
+      '燃料0の試行や再始動を含む10ゲーム秒以上で発振器と波形を作り足さない');
     check(Math.abs(upgraded.rpm - idle.rpm) < 100 && upgraded.bass > idle.bass && upgraded.level > idle.level, '改修すると低い音が太く、少し大きくなる');
 
     await E('openPause()');
