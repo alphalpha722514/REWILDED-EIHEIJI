@@ -12092,7 +12092,7 @@ function p3aUpdate(dt){ if(!P3A.on) return; P3A.t+=dt; RIV.uT.value=P3A.t; const
   rivSoundTick(dt); rivObsTick(dt); rivCamTick(dt); e2SoundTick(dt); } // v0.85 P3-D（D-3）：川の音（本流・支流・浅瀬・河原の風）・観察地点
 function p3inDispose(){ if(!P3A.interior) return; const I=P3A.interior; for(const c of I.cols) gridRemove(c); scene.remove(I.g); I.g.traverse(o=>{ if(o.geometry&&o.geometry!==G.box) o.geometry.dispose(); if(o.material&&o.material!==vcMat&&o.material!==inkMat&&o.material!==P3B_DM) o.material.dispose(); }); P3A.interior=null; }
 function p3aDispose(){ p3inDispose(); p3cResHideAll();
-  if(P3A.inside){ P3A.inside=false; REG.inB=null; if(P3A.ret) REG.hfn=P3A.ret.hfn; } P3A.near=[]; P3A.doors=[]; P3A.fishSpots=[]; P3A.yardTruck=null; P3A.waterU=null; P3A.sunSpots=null; if(RIVSND){ RIVSND.main.gain.value=0; RIVSND.brook.gain.value=0; RIVSND.wind=0; } }
+  if(P3A.inside){ P3A.inside=false; REG.inB=null; if(P3A.ret) REG.hfn=P3A.ret.hfn; } P3A.near=[]; P3A.doors=[]; P3A.fishSpots=[]; P3A.yardTruck=null; P3A.waterU=null; P3A.sunSpots=null; if(RIVSND){ RIVSND.main.gain.value=0; RIVSND.brook.gain.value=0; RIVSND.wind=0; } e2SoundStop(); }
 
 const NEAR_D=120; // 上志比：細かい地面を描く距離（区画の端から）
 // ================= v0.87 P3-E の E-1：町並み（2026-11-20。docs/p3e-e1.md） =================
@@ -12539,7 +12539,7 @@ function e2Interactables(ctx,L){ if(!E2.tg) return; const k=prog.kami, T=stats.t
 function e2Tick(ctx){ E2.t-=0.25; if(E2.t<=0){ E2.t=5; e2Grow(stats.time); if(Object.keys(prog.kami.pl).length) E2.dirty=true; } if(E2.dirty) e2StumpsUpdate(ctx); }
 function e2Dispose(){ E2.all=null; E2.take=null; E2.tg=null; E2.geo=null; E2.lo=[]; E2.stumpIM=null; E2.sapIM=null; E2.stumpGeo=null; E2.dirty=true; E2.herbs=[]; E2.grid=null; }
 // ---- 森の音（木々のざわめき・杉の梢の風・竹のきしみと打ち合う音・森の鳥。2026-11-20 案 6 のとおり） ----
-let E2SND=null;
+var E2SND=null; // var：川の音と同じく、起動の途中で p3aDispose から参照されても止まらないように
 function e2Density(){ const G=E2.grid; if(!G) return {kona:0,sugi:0,take:0}; const c={kona:0,sugi:0,take:0}, i0=Math.floor(P.x/20), k0=Math.floor(P.z/20);
   for(let i=i0-1;i<=i0+1;i++) for(let k=k0-1;k<=k0+1;k++){ const a=G.get(i*7919+k); if(a) for(const o of a){ if(dist(P.x,P.z,o[0],o[1])<28) c[o[2]]++; } } return c; }
 function e2SoundTick(dt){ if(typeof AU==='undefined'||!AU.ok||!AC||!noiseBuf) return; const on=REG.cur==='kamishihi'&&!P3A.inside&&S.mode!=='title'&&!!KAMI&&!!E2.grid&&SND.amb;
@@ -12552,6 +12552,13 @@ function e2SoundTick(dt){ if(typeof AU==='undefined'||!AU.ok||!AC||!noiseBuf) re
   if(!on) return; const now=AC.currentTime;
   if(R.d.take>=3){ R.knT-=dt; if(R.knT<=0){ R.knT=1.2+Math.random()*3.5; const n=1+Math.floor(Math.random()*3); for(let j=0;j<n;j++) e2Knock(now+0.02+j*(0.09+Math.random()*0.12),clamp(R.d.take/12,0.3,1)); if(Math.random()<0.3) e2Creak(now+0.05); } } // 竹が打ち合う音・きしむ音
   if(lightMode==='day'&&R.d.kona+R.d.sugi>=12){ R.brT-=dt; if(R.brT<=0){ R.brT=4+Math.random()*7; if(Math.random()<0.18) e2Drum(now+0.05); else e2Bird(now+0.05); } } }
+function e2SoundStop(){
+  if(!E2SND) return;
+  E2SND.leaf.gain.value=0;
+  E2SND.needle.gain.value=0;
+  E2SND.t=0;
+  E2SND.d={kona:0,sugi:0,take:0};
+}
 function e2Knock(t,k){ const s=AC.createBufferSource(); s.buffer=noiseBuf; const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=520+Math.random()*420; f.Q.value=9; const g=AC.createGain();
   g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.05*k,t+0.006); g.gain.exponentialRampToValueAtTime(0.0001,t+0.11); s.connect(f); f.connect(g); g.connect(AU.amb); s.start(t,Math.random()*0.8,0.14); s.onended=()=>{ s.disconnect(); f.disconnect(); g.disconnect(); }; }
 function e2Creak(t){ const o=AC.createOscillator(), f=AC.createBiquadFilter(), g=AC.createGain(); o.type='sawtooth'; const f0=170+Math.random()*90; o.frequency.setValueAtTime(f0,t); o.frequency.linearRampToValueAtTime(f0*(0.8+Math.random()*0.5),t+0.35); f.type='bandpass'; f.frequency.value=700; f.Q.value=3;
