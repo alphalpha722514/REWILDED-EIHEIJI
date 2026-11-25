@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """v0.88（P3-E の E-2：上志比の森林）の検収用の試遊版を作る（previews/p3e2-forest/index.html）。docs/p3e2-forest-preview.md
 
-- 元にするのは作業ブランチ p3e2-forest の index.html（既定はコミット e378a7b。E-2 の最後のコミット）。本編の index.html（main）は使わない・変えない
+- 元にするのは v0.88（E-2）の index.html（既定はコミット d381dfb＝作業ブランチ p3e2-hurt-drop-src。ddd2d39 に被ダメージで運搬を手放す修正を足したもの）。本編の index.html（main）は使わない・変えない
 - 保存キーと設定のキーを、すべて試遊版だけのものに変える（本編のセーブ・設定を読まない・書かない）
   さらにページのいちばん初めで、本編のキーを読む・書く・消すのを止める（変え忘れがあっても本編に触れない）
 - タイトル画面の右上に「テスト：上志比の森で始める」ボタン
@@ -9,7 +9,7 @@
 - 遊んでいる間は、画面の上の「試遊メニュー」から：森の中の場所へ移る・KEI truck をそばに呼ぶ・光明寺のかまどへ行く・
   苗木と山の薬草と素材を足す・時間を進める・昼にする・描く細かさを切り替える
 
-使い方：python3 tools/build-p3e2-forest-preview.py [--ref コミット] [--src index.html のパス]
+使い方：python3 tools/build-p3e2-forest-preview.py [--ref コミット] [--src index.html のパス] [--out 出力パス]
 """
 import argparse
 import hashlib
@@ -19,15 +19,23 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REF = 'e378a7b4a1d1ef100a07da4abdeb734a344857e0'  # p3e2-forest の E-2 の最後のコミット（v0.88）
-BLOB = '1d59ead7199bab58c488f814603db8ef54533e7a'  # そのときの index.html（git の blob）
+REF = 'd381dfb2f8b1bd3b2fb7d04264b6da000944b997'  # v0.88（E-2）。ddd2d39 に被ダメージで運搬を手放す修正と回帰テスト項目10・11を追加（p3e2-hurt-drop-src）
+BLOB = '8f41da70b479ed31dc4e3c19b5b75fd02f91fa7f'  # そのときの index.html（git の blob）
+# それより前：REF = ddd2d3929b611fbaad02ecd46a991c2ba11a87aa（p3e2-truck-log-attrs。丸太の種類を保つ修正）・BLOB = a05aedc15339f5315cfbe06e1b7de0bc68a633e5
+# さらに前：REF = f0abc54（p3e2-felling-fix。伐採の修正）・BLOB = fd42dd13…、さらに前は REF = e378a7b（p3e2-forest）・BLOB = 1d59ead7…
 OUT = os.path.join(ROOT, 'previews', 'p3e2-forest', 'index.html')
 PRE = 'eiheiji_p3e2f_'  # 試遊版の設定のキーの頭
 
 ap = argparse.ArgumentParser()
-ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：E-2 の e378a7b）')
+ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：被ダメージで運搬を手放す修正の d381dfb）')
 ap.add_argument('--src', help='git から取り出さず、このファイルを元にする')
+ap.add_argument('--out', help='出力先（既定：previews/p3e2-forest/index.html）')
 a = ap.parse_args()
+out = OUT if a.out is None else os.path.abspath(a.out)
+if a.out is None:
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+elif not os.path.isdir(os.path.dirname(out)):
+    sys.exit(f'出力先のフォルダがない：{os.path.dirname(out)}')
 
 if a.src:
     raw = open(a.src, 'rb').read()
@@ -36,7 +44,7 @@ else:
     try:
         raw = subprocess.run(['git', '-C', ROOT, 'show', f'{a.ref}:index.html'], check=True, capture_output=True).stdout
     except subprocess.CalledProcessError as e:
-        sys.exit(f'{a.ref} の index.html を取り出せない（git fetch origin p3e2-forest をしてから）：{e.stderr.decode(errors="replace").strip()}')
+        sys.exit(f'{a.ref} の index.html を取り出せない（git fetch origin p3e2-hurt-drop-src をしてから）：{e.stderr.decode(errors="replace").strip()}')
     where = a.ref
 blob = hashlib.sha1(b'blob %d\0' % len(raw) + raw).hexdigest()
 if not a.src and a.ref == REF and blob != BLOB:
@@ -138,7 +146,7 @@ function ftTime(sec){ stats.time+=sec; if(typeof p3bAdvance==='function') p3bAdv
 function ftNoon(){ prog.f10.tod=150; f10LightNow(); toast('試遊：朝9時にした（昼の間は鳥の声がする）'); }
 function ftStat(){ const k=prog.kami||{pl:{}}, T=stats.time, pl=Object.values(k.pl||{}), nx=pl.length?Math.max(0,Math.min(...pl)+E2.grow-T):0, h=p3bClock();
  return `${REG.cur==='kamishihi'?'上志比':'光明寺'}　${h[0]}:${String(h[1]).padStart(2,'0')}　苗木 ${inv.naegi||0}・山の薬草 ${inv.mherb||0}・米 ${inv.rice||0}・木材 ${inv.wood||0}`+
-   `<br>植えた苗木 ${pl.length}${pl.length?`（次に育つまで ${fmtTime(nx)}）`:''}・救急箱の薬草 ${stats.time<(TRUCK.herbT||0)?'あと'+fmtTime(TRUCK.herbT-stats.time):'なし'}・描く細かさ ${GFX.detail==='lite'?'軽量':'標準'}`; }
+   `<br>植えた苗木 ${pl.length}${pl.length?`（次に育つまで ${fmtTime(nx)}）`:''}・救急箱の薬草 ${stats.time<(TRUCK.herbT||0)?'あと'+fmtTime(TRUCK.herbT-stats.time):'なし'}・描く細かさ ${GFX.detail==='lite'?'軽量':'標準'}・案内 ${PUI.on?'新しい形':'今までの形'}`; }
 async function ftStart(){ if(FT.busy) return; ftBase(); if(!(await ftTravel('kamishihi'))) return; for(let i=0;i<4;i++){ await ftGo('kona'); if(ftTruck()) break; } prog.f10.tod=150; f10LightNow(); saveGame();
  banner('試遊：上志比の森（v0.88）','広葉樹の林の中から始めます。画面の左上の「試遊メニュー」で、場所を移る・素材を足す・時間を進めることができます（本編とは別に保存）',8); }
 { const b=document.getElementById('btnFTStart'); if(b) b.addEventListener('click',()=>ftStart());
@@ -153,7 +161,7 @@ async function ftStart(){ if(FT.busy) return; ftBase(); if(!(await ftTravel('kam
    G('かまど（光明寺）',[['kamado','光明寺のかまどの前へ'],['back','上志比の森へ戻る']])+
    G('持ち物',[['items','苗木・山の薬草・米・木材を足す'],['heal','体力を戻す・食料を足す']])+
    G('時間',[['t5','5分進める'],['t20','20分進める（薬草が戻る）'],['t40','40分進める（苗木が育つ）'],['noon','朝9時にする']])+
-   G('画面',[['detail','描く細かさを切り替える'],['close','メニューを閉じる']])+
+   G('画面',[['detail','描く細かさを切り替える'],['pui','案内の表示：新しい形 ⇄ 今までの形'],['close','メニューを閉じる']])+
    `<div style="margin-top:6px;opacity:.75">時間を進めると、食べ物の傷み・工事なども同じだけ進みます。数はすべて暫定です。</div>`;
   document.body.appendChild(tg); document.body.appendChild(pn); tg.hidden=true; pn.hidden=true;
   const stat=()=>{ const el=document.getElementById('ftStat'); if(el&&!pn.hidden) el.innerHTML=ftStat(); };
@@ -168,15 +176,83 @@ async function ftStart(){ if(FT.busy) return; ftBase(); if(!(await ftTravel('kam
     else if(k==='items') ftItems(); else if(k==='heal') ftHeal();
     else if(k==='t5') ftTime(300); else if(k==='t20') ftTime(1200); else if(k==='t40') ftTime(2400); else if(k==='noon') ftNoon();
     else if(k==='detail') applyDetail(GFX.detail==='lite'?'std':'lite'); else if(k==='close') close();
+    else if(k==='pui'){ puiSet(!PUI.on); toast(PUI.on?'試遊：案内の表示を「新しい形」にした（名前だけ小さく。押すと詳しく）':'試遊：案内の表示を「今までの形」にした（比べる用）'); }
     stat(); });
   // 置き場所：画面の左の上にある表示（体力・目標の帯など）のすぐ下。PC とスマホで表示の大きさが違うので、毎回測る（いつも出ている体力の欄 #stats と目標の帯 #objective だけを測る。通知や案内の文では動かさない。スマホのスティックの範囲は画面の下側なので、その上に収まる）
-  const place=()=>{ let y=4; for(const id of ['stats','objective']){ const el=document.getElementById(id); if(!el) continue; const b=el.getBoundingClientRect(), cs=getComputedStyle(el); if(b.width<4||b.height<4||cs.visibility==='hidden'||cs.opacity==='0') continue;
-      if(b.top<innerHeight*0.35&&b.left<innerWidth*0.45) y=Math.max(y,b.bottom); }
+  const place=()=>{ let y=4; const tb=tg.getBoundingClientRect(), tw=Math.max(tb.width,100); const els=['stats','objective'].map(id=>document.getElementById(id)).concat(touchMode?[...document.querySelectorAll('#touch button')]:[]);
+    for(const el of els){ if(!el) continue; const b=el.getBoundingClientRect(), cs=getComputedStyle(el); if(b.width<4||b.height<4||cs.visibility==='hidden'||cs.display==='none'||cs.opacity==='0'||el.closest('[hidden]')) continue;
+      if(b.top<innerHeight*0.35&&b.left<8+tw) y=Math.max(y,b.bottom); } // 左上の、ボタンが入る幅にある物（体力の欄・目標の帯・スマホの地図ボタンなど）の下
     tg.style.top=Math.round(y+6)+'px'; pn.style.top=Math.round(y+42)+'px'; pn.style.maxHeight=Math.max(180,Math.round(innerHeight-y-42-120))+'px'; };
   setInterval(()=>{ const on=S.mode==='playing'; tg.hidden=!on; if(!on) pn.hidden=true; if(on) place(); stat(); },500); }
 """
 s = rep(s, '// ================= NPC =================', test_code + '// ================= NPC =================')
 
-os.makedirs(os.path.dirname(OUT), exist_ok=True)
-open(OUT, 'w', encoding='utf8').write(s)
-print('wrote', os.path.relpath(OUT, ROOT), len(s), 'bytes ／ 元：', where, blob[:12])
+# ---- 「調べる」の案内（#prompt）を小さくする（2026-11-23 ユーザー依頼。まず試遊版だけ。docs/prompt-ui.md） ----
+# 近くの調べられる物（木・採集物・施設・住民・探索地点・KEI truck など）は、すべて interactables() → #prompt の1か所で出る。
+# ここだけを変える：ふだんは名前だけの小さな1行（括弧の中の説明は省く。「長押し」の操作の説明は残す）。押すと全文（詳しく）。
+# 会話・選択肢・警告（toast）・大きな案内（banner）・チュートリアルは別の部品なので変えない。調べる操作（E・行動ボタン）と判定も変えない。
+PROMPT_OLD = ("  const pr=$('prompt');\n"
+              "  if(curInter){ pr.hidden=false; const t=(touchMode?'T':'E')+curInter.label; if(txtCache.get('prompt')!==t){ txtCache.set('prompt',t); pr.innerHTML=''; const k=document.createElement('span'); k.className='k'; k.textContent=touchMode?'調べる':'E'; pr.appendChild(k); pr.appendChild(document.createTextNode(curInter.label)); } }\n"
+              "  else pr.hidden=true;\n"
+              "  $('tbAct').classList.toggle('ready',!!curInter);\n"
+              "  $('tbAct').classList.toggle('quiet',!!curInter&&touchMode); // v0.33：帯が出ている間はボタンの光を弱める\n")
+PROMPT_NEW = ("  const pr=$('prompt');\n"
+              "  if(PUI.on) puiUpdate(pr,curInter); else { // 試遊版：今までの形（比べる用。下の2行は v0.88 のまま）\n"
+              "  if(curInter){ pr.hidden=false; const t=(touchMode?'T':'E')+curInter.label; if(txtCache.get('prompt')!==t){ txtCache.set('prompt',t); pr.innerHTML=''; const k=document.createElement('span'); k.className='k'; k.textContent=touchMode?'調べる':'E'; pr.appendChild(k); pr.appendChild(document.createTextNode(curInter.label)); } }\n"
+              "  else pr.hidden=true; }\n"
+              "  $('tbAct').classList.toggle('ready',!!curInter);\n"
+              "  $('tbAct').classList.toggle('quiet',!!curInter&&touchMode&&!PUI.on); // v0.33：帯が出ている間はボタンの光を弱める（新しい形では帯が小さいので弱めない）\n")
+s = rep(s, PROMPT_OLD, PROMPT_NEW)
+prompt_code = r"""
+// ---- 「調べる」の案内を小さく（試遊版 previews/p3e2-forest だけ。docs/prompt-ui.md） ----
+const PUI={on:true,key:'',open:false,t:0};
+// 名前だけ：全角の括弧（素材の数・秒数などの説明）を省く。操作の説明（長押し）は残す
+function puiShort(l){ const s=String(l).replace(/（[^（）]*）/g,m=>/長押し/.test(m)?m:'').replace(/[ 　]+$/,'').replace(/[ 　]{2,}/g,'　'); return s||String(l); }
+// 置き場所：まわりの表示（体力の欄・目標の帯・持ち物の数・地図・防衛戦とボス戦の帯・操作の説明・手持ちバー・スマホのボタン・試遊メニュー）を測って、
+// 重ならない所へ。まず画面の上の真ん中（目標の帯のすぐ下。主人公の頭より上）、だめなら右寄せ、左寄せ。PC もスマホも同じ。測るのは中身が変わったときと0.5秒に1回
+function puiRects(skip){ const out=[], add=el=>{ if(!el||el===skip) return; const b=el.getBoundingClientRect(), cs=getComputedStyle(el); if(b.width<4||b.height<4||cs.visibility==='hidden'||cs.display==='none'||cs.opacity==='0'||el.closest('[hidden]')) return; out.push([b.left,b.top,b.right,b.bottom]); };
+  for(const id of ['stats','notice','objective','res','coreBar','bossBar','mini','help','items']) add(document.getElementById(id));
+  if(touchMode) for(const el of document.querySelectorAll('#touch button')) add(el);
+  add(document.getElementById('ftToggle')); return out; }
+// x0〜x1 の幅で、画面の上半分にある物の下へ落とした y
+function puiDrop(R,x0,x1,y0){ let y=y0; for(const r of R) if(r[0]<x1&&x0<r[2]&&r[1]<innerHeight*0.45) y=Math.max(y,r[3]+6); return y; }
+function puiPlace(pr){ PUI.t=0.5; const R=puiRects(pr), b=pr.getBoundingClientRect(), w=b.width, h=b.height, W=innerWidth, H=innerHeight, top0=8;
+  const hit=(x,y)=>R.some(r=>x<r[2]&&r[0]<x+w&&y<r[3]&&r[1]<y+h);
+  let best=null; for(const x of [(W-w)/2, W-w-10, 10]){ const y=puiDrop(R,x,x+w,top0); if(y+h<=H*0.62&&!hit(x,y)){ best=[x,y]; break; } }
+  if(!best){ const x=(W-w)/2; best=[x,puiDrop(R,x,x+w,top0)]; }
+  pr.style.setProperty('--pui-x',Math.round(Math.max(4,best[0]))+'px'); pr.style.setProperty('--pui-y',Math.round(best[1])+'px'); }
+function puiUpdate(pr,ci){
+  if(!ci){ if(!pr.hidden){ pr.hidden=true; } PUI.key=''; PUI.open=false; return; }
+  const full=String(ci.label), sh=puiShort(full), more=sh!==full;
+  if(sh!==PUI.key){ PUI.key=sh; PUI.open=false; } // 別の物に近づいたら、詳しい説明は閉じる
+  const open=PUI.open&&more; pr.hidden=false; pr.classList.add('cmp'); pr.classList.toggle('open',open); pr.classList.toggle('more',more);
+  const t='P'+(touchMode?'T':'E')+(open?'1':'0')+(more?'+':'-')+(open?full:sh);
+  if(txtCache.get('prompt')!==t){ txtCache.set('prompt',t); pr.innerHTML='';
+    if(!touchMode){ const k=document.createElement('span'); k.className='k'; k.textContent='E'; pr.appendChild(k); } // スマホは「調べる」ボタンが光るので、字の札は付けない
+    const tx=document.createElement('span'); tx.className='tx'; tx.textContent=open?full:sh; pr.appendChild(tx);
+    if(more){ const m=document.createElement('span'); m.className='mo'; m.textContent=open?'閉じる':'詳しく'; pr.appendChild(m); }
+    pr.title=more?(open?'押すと閉じる':'押すと詳しい説明'):''; puiPlace(pr); }
+  PUI.t-=1/30; if(PUI.t<=0) puiPlace(pr); }
+function puiSet(on){ PUI.on=!!on; PUI.key=''; PUI.open=false; const pr=$('prompt'); pr.classList.remove('cmp','open','more'); pr.style.removeProperty('--pui-x'); pr.style.removeProperty('--pui-y'); pr.title=''; txtCache.delete('prompt'); }
+{ const pr=document.getElementById('prompt'); if(pr){ pr.addEventListener('click',e=>{ e.stopPropagation(); if(!PUI.on||!pr.classList.contains('more')) return; PUI.open=!PUI.open; txtCache.delete('prompt'); try{ cv.focus(); }catch(_){} });
+  pr.addEventListener('pointerdown',e=>{ if(PUI.on) e.stopPropagation(); }); } }
+"""
+s = rep(s, '// ================= NPC =================', prompt_code + '// ================= NPC =================')
+PROMPT_CSS = ("<style>/* 試遊版だけ（previews/p3e2-forest）：「調べる」の案内を小さく。docs/prompt-ui.md */\n"
+  "#prompt.cmp{display:flex;align-items:center;gap:6px;left:var(--pui-x,50%)!important;right:auto!important;top:var(--pui-y,44px)!important;transform:none!important;"
+  "bottom:auto!important;width:max-content!important;max-width:min(420px,calc(100vw - 24px))!important;margin:0!important;box-sizing:border-box;"
+  "font-size:12px!important;line-height:1.45!important;padding:3px 10px!important;border-radius:13px!important;white-space:nowrap!important;text-align:left!important;"
+  "background:rgba(22,24,20,.58)!important;box-shadow:none!important;border-color:rgba(255,255,255,.18)!important;pointer-events:auto;cursor:default;opacity:.94;}\n"
+  "#prompt.cmp[hidden]{display:none!important}\n"
+  "#prompt.cmp .k{flex:none;font-size:11px;line-height:16px;padding:0 5px;margin:0;border-radius:3px;}\n"
+  "#prompt.cmp .tx{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}\n"
+  "#prompt.cmp .mo{flex:none;font-size:10.5px;color:var(--gold);opacity:.9;border-left:1px solid rgba(255,255,255,.2);padding-left:6px;}\n"
+  "#prompt.cmp.more{cursor:pointer;}\n"
+  "#prompt.cmp.open{white-space:normal!important;width:auto!important;max-width:min(520px,calc(100vw - 24px))!important;align-items:flex-start;}\n"
+  "#prompt.cmp.open .tx{white-space:normal;overflow:visible;}\n"
+  "</style>")
+s = rep(s, '</head>', PROMPT_CSS + '</head>')
+
+with open(out, 'w', encoding='utf8') as output:
+    output.write(s)
+print('wrote', out, len(s.encode('utf8')), 'bytes ／ 元：', where, blob[:12])

@@ -21,12 +21,24 @@
 - 作業ブランチ `p3e2-forest`。マージもしていない。
 
 ## 2. 元にした v0.88
-- 作業ブランチ `p3e2-forest` のコミット `e378a7b`（E-2 の最後のコミット）の `index.html`。
-  - git の blob は `1d59ead7199b…`。スクリプトが取り出すときに、この値と同じか確かめる。
-  - 今の `p3e2-forest` の先頭 `cbdb745` の `index.html` も同じ blob。
-- 作り直すとき：`git fetch origin p3e2-forest` をしてから `python3 tools/build-p3e2-forest-preview.py`。
-  - 別のコミットから作るとき：`--ref コミット`。ファイルから作るとき：`--src パス`。
-- E-2 を直したら、`--ref` に新しいコミットを渡して作り直す。
+- **2026-11-24 の第2段階から（作業ブランチ `p3e2-preview-build-repro`）**：`p3e2-hurt-drop-src` のコミット `d381dfb`（`ddd2d39` に被ダメージで運搬を手放す修正 `if(dmg>0) f4DropAll('hurt')` と回帰テスト項目10・11を足したもの）の `index.html`。git の blob は `8f41da70b479ed31dc4e3c19b5b75fd02f91fa7f`。
+  - この E-2（v0.88）は本編 `main`（v0.87）とは別の開発段階で、`main` には入っていない。
+- **2026-11-24 から（作業ブランチ `p3e2-integrated-preview-v2`）**：作業ブランチ `p3e2-truck-log-attrs` のコミット `ddd2d39`（Codex 実装。伐採の修正に、KEI truck・担ぐ・一輪車で丸太の種類（広葉樹・硬木）を保つ修正を足したもの。2026-11-24 Claude Code のレビューで判定 A・ユーザー承認）の `index.html`。
+  - git の blob は `a05aedc15339…`。スクリプトが取り出すときに、この値と同じか確かめる。
+  - 丸太の修正の中身は `p3e2-truck-log-attrs` の `docs/p3e2-truck-log-attrs.md`（印の持ち方・一番上の `logAttr`・光明寺で割ると硬木・一輪車から1本下ろす操作・古い版との行き来）。
+  - `p3e2-truck-log-attrs` のコミットそのものは、このブランチにも main にも入れていない（ビルドスクリプトが git から `index.html` だけを取り出す）。
+- 2026-11-23（作業ブランチ `p3e2-integrated-preview`）：作業ブランチ `p3e2-felling-fix` のコミット `f0abc54`（v0.88 に上志比の伐採の修正を入れたもの）の `index.html`。
+  - git の blob は `fd42dd137e09…`。スクリプトが取り出すときに、この値と同じか確かめる。
+  - 伐採の修正の中身は `p3e2-felling-fix` の `docs/p3e2-felling-fix.md`（広葉樹の名前・攻撃で案内の木を切る）。
+  - `p3e2-felling-fix` のコミットそのものは、このブランチにも main にも入れていない（ビルドスクリプトが git から `index.html` だけを取り出す）。
+- それより前：作業ブランチ `p3e2-forest` のコミット `e378a7b`（E-2 の最後のコミット）の `index.html`（blob `1d59ead7199b…`。今の `p3e2-forest` の先頭 `cbdb745` も同じ）。
+- 作り直すときは `git fetch origin p3e2-hurt-drop-src` をしてから `python3 tools/build-p3e2-forest-preview.py` を実行する。既定の出力先は `previews/p3e2-forest/index.html`。
+  - 別のコミットから作るときは `--ref コミット`。git の外では `--src /path/to/index.html` でビルド元のファイルを渡す。
+  - `--out /path/to/index.html` を指定すると、そのパスだけに書き出す。出力先のフォルダは先に用意する。
+- 修正は試遊版を直接書き換えず、E-2 のビルド元の `index.html` に入れる。そのコミットと blob に合わせてスクリプトの `REF`・`BLOB` を更新し、試遊版を作り直す。
+- 作り直した試遊版は `node tests/p3e2-preview-build.cjs` で確かめる。テストは一時フォルダに出力し、保存済みの試遊版とバイト単位で比較する。
+  - git の外では `PREVIEW_BUILD_SRC=/path/to/index.html node tests/p3e2-preview-build.cjs` を実行する。テストはビルド元の blob を検証してから `--src` でビルドする。
+  - 比較相手を替えるときは `PREVIEW_BUILD_EXPECTED=/path/to/expected.html` を指定する。
 
 ## 3. 本編のセーブを読まない・書かない
 
@@ -62,6 +74,7 @@
 | 時間 | 5分／20分／40分進める | 遊んだ時間とゲームの中の時刻を一緒に進める（20分で山の薬草が戻る・40分で植えた苗木が育つ） |
 | | 朝9時にする | 昼にする（鳥の声は昼だけ） |
 | 画面 | 描く細かさを切り替える | 標準 ⇄ 軽量 |
+| | 案内の表示：新しい形 ⇄ 今までの形 | 「調べる」の案内を小さくした形と、v0.88 のままの形を切り替える（2026-11-23 追加。`docs/prompt-ui.md`） |
 
 - メニューの上に、今の状態（場所・時刻・苗木・山の薬草・米・木材・植えた苗木・次に育つまで・救急箱の残り・描く細かさ）を出す。
 - 時間を進めると、食べ物の傷みや工事なども同じだけ進む。
@@ -106,6 +119,42 @@ iPhone の再現（390×664・タッチ）：
 1. 「広葉樹の林へ」で、当たり判定の無い（切れない）遠くの木のそばに移ることがあった（いちばん近い切れる木まで 167m）。→ 切れる木（`REG.live.ktrees`）だけから林を探すようにした（2m に）。
 2. 始めたとき KEI truck を置ける所が見つからず、光明寺に残っていた（木が多く、探す条件が厳しすぎた）。→ 探す広さと距離を変え、見つからなければ次の林で探す（4m に）。
 3. 「試遊メニュー」のボタンが、PC では目標の帯、iPhone では体力の欄と重なっていた。→ 左上の、体力の欄と目標の帯の下に出す（毎回測る。通知では動かさない）。
+
+### 6.3 伐採の修正を入れた試遊版（2026-11-23。作業ブランチ `p3e2-integrated-preview`）
+- `p3e2-prompt-ui`（案内を小さくした `93982a2`）から作り、ビルドスクリプトの元を `f0abc54`（blob `fd42dd137e09…`）に変えて作り直した。取り出した `index.html` の blob が `fd42dd137e09e8deef5aca06c047bec7f9fedd33` と同じことを、スクリプトと `git hash-object` の両方で確かめた。
+- 作り直した試遊版の、前の試遊版（`p3e2-prompt-ui`）との違いは22行で、`p3e2-forest` → `p3e2-felling-fix` の `index.html` の違い（22行）と1行残らず同じ。案内を小さくする部分・試遊版の部分は変わっていない。
+- 作り直した試遊版そのものに流したテスト（画面のない Chromium・SwiftShader）：
+  - `node tests/p3e2-forest-preview.cjs`：PASS（PC と iPhone の再現）。
+  - `node tests/p3e2-prompt-ui.cjs`：PASS（48項目。PC・iPhone 縦・横）。
+  - `FELL_PAGE=previews/p3e2-forest/index.html node tests/p3e2-felling.cjs`：PASS（21項目＝伐採の13項目＋試遊版だけの8項目：新しい形の案内に「広葉樹を切る」・案内を押しても切らない・切り株の詳しい説明を開いても植えない・本編のキー7つは変わらない）。`tests/p3e2-felling.cjs` は `p3e2-felling-fix` から取り込み、試遊版を開けるように `FELL_PAGE` を足した。
+  - node のテスト6本：PASS（本編の v0.87 が相手。変わっていない確認）。
+- **次の UI 改善の課題（2026-11-23 ユーザー指示で記録。今回は直していない）**：木の案内（「太い広葉樹を切る［鉄の斧・約4回］最初に刃を入れた側へ倒れる」）は、新しい形でも長いまま残る。
+  - 原因：案内を小さくする決まり（`puiShort`）は全角の丸括弧（）の中だけを省く。木の案内の説明は全角の角括弧［］とその後ろの文なので省かれず、全文が1行で出る（「詳しく」も付かない）。iPhone 縦では横幅いっぱい近くになる。
+  - 同じ形の案内：木の受け口・追い口（「…：受け口を切る あと◯回［鉄の斧］」）、上志比の丸太（「…の丸太（ここからは運べない）　割る：…［鉄の斧・あと◯回］」）など。
+  - 直し方の案は、次の段階でユーザーに出して決めてもらう。
+
+### 6.4 丸太の修正を入れた試遊版 v2（2026-11-24。作業ブランチ `p3e2-integrated-preview-v2`）
+- `p3e2-integrated-preview`（`ba5d106`）から作り、ビルドスクリプトの元を `ddd2d39`（blob `a05aedc15339…`）に変えて作り直した。取り出した `index.html` の blob が `a05aedc15339f5315cfbe06e1b7de0bc68a633e5` と同じことを、スクリプトと `git hash-object` の両方で確かめた。
+- 作り直した試遊版の、前の試遊版（`ba5d106`）との違いは145行で、`f0abc54` → `ddd2d39` の `index.html` の違い（145行）と1行残らず同じ。案内を小さくする部分・伐採の修正・試遊版の部分は変わっていない。
+- テスト：
+  - `tests/p3e2-truck-logs.cjs` を `ddd2d39` から取り込んだ（変えていない。`TRUCK_PAGE`・`OLD_PAGE` で試遊版を確かめる）。
+  - `tests/p3e2-felling.cjs` は、Codex の改善版（`p3e2-felling-test-fix` の `8cc8e5d`。押す前に画面の案内が狙いの物を指すことを確かめる・植林の前後の確かめ・項目9を別のブラウザで）に、試遊版の確かめ（`FELL_PAGE`・P1 新しい形の案内・P2 案内を押しても切らない／切り株の詳しい説明を開いても植えない・P3 本編のキー7つは変わらない）を移した。改善版の check 13個と試遊版の check 4個をすべて残した（保存キーの check は、試遊版では試遊版のキー、本編では今までどおり `eiheiji_vs_beasts_v010` を見る）。
+  - 結果は §6.5。
+
+### 6.5 v2 のテストの結果（2026-11-24。画面のない Chromium・SwiftShader。作り直した試遊版そのものが相手）
+
+| テスト | 結果 |
+|---|---|
+| `node tests/p3e2-forest-preview.cjs` | PASS（37） |
+| `node tests/p3e2-prompt-ui.cjs`（PC・iPhone 縦・横） | PASS（48） |
+| `FELL_PAGE=previews/p3e2-forest/index.html node tests/p3e2-felling.cjs` | PASS（確認の行23：伐採の1〜4・7〜10、試遊版の P1〜P3、エラーなし） |
+| `TRUCK_PAGE=previews/p3e2-forest/index.html OLD_PAGE=（main の今の試遊版） node tests/p3e2-truck-logs.cjs` | PASS（1〜8・9a〜9d・本編のキー7つ） |
+| `FELL_HTML=（ddd2d39 の index.html） node tests/p3e2-felling.cjs`（まとめた伐採テストの本編の側） | PASS（14） |
+| node のテスト6本（本編 v0.87 が相手） | PASS |
+
+- 古い版としての「今公開中の試遊版」（main の `previews/p3e2-forest/`）で同じ太さの丸太を入れ替えて保存しても、v2 で読むと荷台の印は全部 0（違う丸太に付かない）。
+- 本編の保存キーと設定のキー7つは、どのテストでも変わらなかった。試遊版が使ったのは `eiheiji_vs_beasts_p3e2forest` と `eiheiji_p3e2f_*` だけ。
+- 実機（PC・iPhone）は未確認。一輪車を置くときに選択肢が1段増える操作のしやすさは、iPhone の実機で確かめる（2026-11-24 ユーザー）。
 
 ## 7. 公開のしかた（まだしていない）
 - GitHub Pages は main だけを配信している。試遊版の URL を使えるようにするには、このブランチの変更（新しいファイル4つと CLAUDE.md の文書の表の1行）を main に入れる必要がある。**main へ入れるのはユーザーの承認のあと。**
