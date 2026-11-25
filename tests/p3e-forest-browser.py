@@ -85,7 +85,8 @@ async def main():
             await pg.wait_for_timeout(200)
         await E(BASE)
         await E("(()=>{ try{ localStorage.removeItem('eiheiji_detail'); }catch(e){} GFX.detail='std'; E1.off=true; return 1; })()")
-        home = await E("[circles.length, oboxes.length, boxes.length]")
+        # KEI truck は救急箱の確認で上志比へ移すので、往復の当たり判定の比較から除く（2026-11-25）
+        home = await E("[circles.length, oboxes.filter(o=>o.tag!=='truck').length, boxes.length]")
         await travel('kamishihi')
         await E(CALM)
 
@@ -121,7 +122,7 @@ async def main():
         r = await E("""(()=>{ const H=REG.live.kw.nodes.filter(n=>n.k==='herb'), D=KAMI.D; let mb=1e9, mr=1e9; for(const n of H){ for(const b of D.bld) mb=Math.min(mb,dist(n.x,n.z,b[0],b[1])); for(const r of D.roads){ if(r.b) continue; for(let i=0;i<r.p.length-1;i++) mr=Math.min(mr,segDist(n.x,n.z,r.p[i][0],r.p[i][1],r.p[i+1][0],r.p[i+1][1])); } }
           const n=H[0]; P.x=n.x+0.8; P.z=n.z; const L=[]; REG.live.inter(L); const a=L.find(o=>o.label.includes('山の薬草を摘む')); inv.mherb=0; if(a) a.act(); const L2=[]; REG.live.inter(L2);
           return [H.length, Math.round(mb), Math.round(mr), !!a, inv.mherb>=1, prog.kami.n[n.key]!=null, L2.some(o=>o.label.startsWith('山の薬草：もう摘んだ')), H.every(n=>kamiReach(n.x,n.z)&&kamiCls(n.x,n.z)!==2)]; })()""")
-        check(r[0] >= 18 and r[1] >= 70 and r[2] >= 25 and r[3:] == [True, True, True, True, True], f"山の薬草：{r[0]}か所（家から {r[1]}m・道から {r[2]}m 以上・すべて歩ける所）・摘む・待ち時間 {r[3:]}")
+        check(r[0] == 12 and r[1] >= 70 and r[2] >= 25 and r[3:] == [True, True, True, True, True], f"山の薬草：{r[0]}か所（家から {r[1]}m・道から {r[2]}m 以上・すべて歩ける所）・摘む・待ち時間 {r[3:]}")
         r = await E("""(()=>{ const sv=JSON.parse(JSON.stringify(kamiSave())), k2=kamiLoad(sv); return [JSON.stringify(k2.fb)===JSON.stringify(prog.kami.fb), Object.keys(k2.pl).length===Object.keys(prog.kami.pl).length,
           Object.keys(k2.n).filter(a=>/^[th]/.test(a)).length===Object.keys(prog.kami.n).filter(a=>/^[th]/.test(a)).length, k2.f.length===prog.kami.f.length]; })()""")
         check(r == [True, True, True, True], f"セーブの読み書き（fb・pl・竹林と薬草の待ち時間・f）{r}")
@@ -169,7 +170,7 @@ async def main():
         await E("(cam.override=null, 1)")
         old = await E("""(()=>{ const kt=[...REG.live.ktrees.values()].find(t=>t.ty==='kona'&&!t.felled&&t.key[1]!=='p'); const sv=kamiSave(); delete sv.fb; delete sv.pl; sv.f=sv.f.concat([kt.key]); window.__old=kt.key; prog.kami=kamiLoad(sv); return kt.key; })()""")
         await travel('komyoji')
-        back = await E("[E1.cells===null, E2.all===null, circles.length, oboxes.length, boxes.length]")
+        back = await E("[E1.cells===null, E2.all===null, circles.length, oboxes.filter(o=>o.tag!=='truck').length, boxes.length]")
         check(back[0] and back[1] and back[2:] == home, f"光明寺へ戻ると捨てる・当たり判定が残らない {back} / {home}")
         await travel('kamishihi')
         r = await E(f"""(()=>{{ const k=prog.kami, kt=REG.live.ktrees.get('{old}'); return [k.f.includes('{old}'), k.fb.includes('{old}'), !!(kt&&kt.felled)]; }})()""")

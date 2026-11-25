@@ -12397,7 +12397,7 @@ function applyDetail(v){ GFX.detail=v==='lite'?'lite':'std'; try{ localStorage.s
 // 2026-11-20 14:55 ユーザー回答（p3e-plan.md §5）：杉 約6割（山の斜面）・広葉樹 約3割（尾根・南向きの斜面・林道ぞい）・竹 約1割（集落のまわり・川ぞい）。
 // 切った広葉樹は生えてこない。植林したら生える。希少素材「山の薬草」を足す。数はすべて暫定。
 // 木の位置・数・番号（k区画_区画_番号）は今までのまま（切った木の記録が合う）。種類だけを地形から決め直す。
-const E2={share:{kona:0.30,take:0.10}, grow:2400, naegi:1, herbN:24, herbBack:1200, herbAid:{t:600,k:2}, far:{std:400,lite:300}, nearQ:{std:75,lite:45}, inkQ:{std:45,lite:25}, HT:0, thin:0.4, // nearQ：細かい形にする4分の1の区画までの距離・inkQ：輪郭線（m。暫定）
+const E2={share:{kona:0.30,take:0.10}, grow:2400, naegi:1, herbN:12, herbBack:1200, herbAid:{t:600,k:2}, far:{std:400,lite:300}, nearQ:{std:75,lite:45}, inkQ:{std:45,lite:25}, HT:0, thin:0.4, // 山の薬草12か所は2026-11-25 ユーザー決定。nearQ：細かい形にする4分の1の区画までの距離・inkQ：輪郭線（m。暫定）
   all:null, take:null, tg:null, geo:null, lo:[], stumpIM:null, sapIM:null, dirty:true, t:0, herbs:[]};
 // 0〜1 のなめらかな雑音（格子の角に決まった乱数を置いて、間をなめらかにつなぐ）。林のまとまりを作る
 function e2Noise(x,z,s,seed){ const fx=x/s, fz=z/s, i=Math.floor(fx), k=Math.floor(fz), a=fx-i, b=fz-k, u=a*a*(3-2*a), v=b*b*(3-2*b), h=(p,q)=>hash2(p*1.7+seed,q*2.3-seed*0.7);
@@ -12473,7 +12473,7 @@ function e2Kt(key){ const L=REG.live; return L&&L.ktrees?L.ktrees.get(key):null;
 function e2ShowTree(kt){ kt.felled=false; if(kt.col) kt.col.active=true; const m=kt.m; if(!m) return; kt.hi.setMatrixAt(kt.j,m); kt.hi.instanceMatrix.needsUpdate=true; if(kt.e) e2LoSet(kt.e,kt.jl); else kt.lo.setMatrixAt(kt.j,m); kt.lo.instanceMatrix.needsUpdate=true; }
 function e2Plant(kt){ const k=prog.kami; if(!(inv.naegi>0)){ sfx('deny'); toast('苗木が無い（広葉樹を切ると、根元の若木を苗木として1本取れる）',true); return; }
   inv.naegi--; k.pl[kt.key]=stats.time; E2.dirty=true; sfx('pickup'); chips(kt.x,kamiH(kt.x,kt.z)+0.3,kt.z,6,0x6a8a3a);
-  toast(`切り株のそばに苗木を植えた。約${Math.round(E2.grow/P3B.hour)}時間（ゲームの中の時間）で広葉樹に育つ（苗木 あと${inv.naegi}）`); saveGame(); }
+  toast(`切り株のそばに苗木を植えた。遊んだ時間で約${Math.round(E2.grow/60)}分で広葉樹に育つ（苗木 あと${inv.naegi}）`); saveGame(); }
 function e2Grow(T){ const k=prog.kami; let n=0; for(const key in k.pl){ if(T<k.pl[key]+E2.grow) continue; const kt=e2Kt(key); delete k.pl[key]; const i=k.fb.indexOf(key); if(i>=0) k.fb.splice(i,1); if(kt) e2ShowTree(kt); n++; }
   if(n){ E2.dirty=true; toast(n>1?`植えた広葉樹が${n}本育った（また切れる）`:'植えた広葉樹が育った（また切れる）'); saveGame(); } }
 // 切り株と苗木の形（全体で1つずつ。数は切った広葉樹の数）
@@ -12844,8 +12844,9 @@ function kamiGather(n){ const k=prog.kami, T=stats.time; if(k.n[n.key]!=null) re
   else if(n.k==='herb'){ got=1+(Math.random()<0.4?1:0); inv.mherb=(inv.mherb||0)+got; nm='山の薬草'; k.n[n.key]=T+E2.herbBack; chips(n.x,kamiH(n.x,n.z)+0.3,n.z,5,0x7aa04a); } // v0.88
   else if(n.k==='food'){ got=n.chest?2:1+(Math.random()<0.5?1:0); foodAdd('food',got); nm='食料'; k.n[n.key]=T+NODE_RESPAWN; }
   else return;
-  if(P.gatherT>0){ if(n.k==='food') foodAdd('food',1); else inv[n.k]=(inv[n.k]||0)+1; got++; } // v0.84：雑魚の天ぷらで +1
-  if(n.k!=='bamboo') sfx('pickup'); toast(n.k==='food'?`食料 +${got}`:`${nm} +${got}（${n.k==='wood'?inv.wood:inv[n.k]}）`); floatText(n.x,1.4,n.z,`${nm}+${got}`,'#f0dca0');
+  const ik=n.k==='herb'?'mherb':n.k;
+  if(P.gatherT>0){ if(n.k==='food') foodAdd('food',1); else inv[ik]=(inv[ik]||0)+1; got++; } // v0.84：雑魚の天ぷらで +1
+  if(n.k!=='bamboo') sfx('pickup'); toast(n.k==='food'?`食料 +${got}`:`${nm} +${got}（${inv[ik]}）`); floatText(n.x,1.4,n.z,`${nm}+${got}`,'#f0dca0');
   kamiNodesUpdate(REG.live,T); g4CheckQuests(); }
 function kamiSearch(n){ const k=prog.kami; if(k.sc.includes(n.key)) return; k.sc.push(n.key); sfx('pickup'); sfx('hit');
   const got=hash2(n.x*1.7,n.z*0.3)<0.5?1:2; inv.iron=(inv.iron||0)+got; // 光明寺と同じ（必ず1〜2。場所ごとに決まっている）
