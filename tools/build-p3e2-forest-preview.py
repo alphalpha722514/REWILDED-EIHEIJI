@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """v0.88（P3-E の E-2：上志比の森林）の検収用の試遊版を作る（previews/p3e2-forest/index.html）。docs/p3e2-forest-preview.md
 
-- 元にするのは v0.88（E-2）の index.html（既定はコミット b821333＝v0.88 の統合に、上志比を出ても森の音が鳴り続ける不具合の修正を足したもの（2026-11-25））。本編の index.html（main）は使わない・変えない
+- 元にするのは v0.88 系（E-2）の index.html（既定はコミット 38f8836＝v0.88.1（作業中）。森の音を静かにする調整と KEI truck の音（2026-11-25、作業ブランチ v0.88.1-sound））。本編の index.html（main）は使わない・変えない
 - 保存キーと設定のキーを、すべて試遊版だけのものに変える（本編のセーブ・設定を読まない・書かない）
   さらにページのいちばん初めで、本編のキーを読む・書く・消すのを止める（変え忘れがあっても本編に触れない）
 - タイトル画面の右上に「テスト：上志比の森で始める」ボタン
@@ -19,8 +19,9 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REF = 'b821333719011fe6bc89324d561abfef03171c81'  # v0.88 の統合＋森の音の修正（2026-11-25）
-BLOB = 'af8f36656f017ef5554655a8dbb908d1bfc73b82'  # そのときの index.html（git の blob）
+REF = '38f883654f64401c29296f874269ff16ede4ccfb'  # v0.88.1（作業中）：森の音を静かに・KEI truck の音（v0.88.1-sound、2026-11-25）
+BLOB = 'ab50466f2f746ef6ec3a8996c96424ab3a2d7d2a'  # そのときの index.html（git の blob）
+# それより前：REF = b821333719011fe6bc89324d561abfef03171c81（v0.88 の統合＋森の音の修正、2026-11-25）・BLOB = af8f36656f017ef5554655a8dbb908d1bfc73b82
 # それより前：REF = 151a04c7475554743745be717e796c735d403667（v0.88 の統合。v0.87.1＋E-2＋2026-11-25 の決定）・BLOB = 36b848506691e5d00fd072b202b841f57491b8a2
 # それより前：REF = d381dfb2f8b1bd3b2fb7d04264b6da000944b997（p3e2-hurt-drop-src。ddd2d39 に被ダメージで運搬を手放す修正）・BLOB = 8f41da70b479ed31dc4e3c19b5b75fd02f91fa7f
 # それより前：REF = ddd2d3929b611fbaad02ecd46a991c2ba11a87aa（p3e2-truck-log-attrs。丸太の種類を保つ修正）・BLOB = a05aedc15339f5315cfbe06e1b7de0bc68a633e5
@@ -29,7 +30,7 @@ OUT = os.path.join(ROOT, 'previews', 'p3e2-forest', 'index.html')
 PRE = 'eiheiji_p3e2f_'  # 試遊版の設定のキーの頭
 
 ap = argparse.ArgumentParser()
-ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：v0.88 の統合に森の音の修正を足した b821333）')
+ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：v0.88.1（作業中）の 38f8836）')
 ap.add_argument('--src', help='git から取り出さず、このファイルを元にする')
 ap.add_argument('--out', help='出力先（既定：previews/p3e2-forest/index.html）')
 a = ap.parse_args()
@@ -91,7 +92,7 @@ s = rep(s, '<head><meta charset=utf8>', '<head><meta charset=utf8>' + guard)
 
 # ---- 版の表示 ----
 m = re.search(r'<span class="tver">(v[0-9.]+) デモ版', s)
-if not m or m.group(1) != 'v0.88':
+if not m or not re.fullmatch(r'v0\.88(?:\.[0-9]+)?', m.group(1)):
     sys.exit('版の表示が見つからない')
 s = s.replace(m.group(0), f'<span class="tver">{m.group(1)} 上志比の森林 検収用の試遊版（本編とは別に保存）', 1)
 

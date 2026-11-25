@@ -659,7 +659,7 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.88 防衛戦テスト版（本編とは別に保存）　第二章・上志比の森林</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.88.1 防衛戦テスト版（本編とは別に保存）　第二章・上志比の森林</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -707,7 +707,7 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
       <button id="btnToTitle">タイトルへ（自動セーブ）</button>
     </div>
     <div class="lbl" style="margin-top:10px">音</div>
-    <div class="btns" id="sndRow" style="flex-wrap:nowrap;gap:6px"><button id="sndSe" style="font-size:12px;padding:6px 8px">効果音：オン</button><button id="sndBgm" style="font-size:12px;padding:6px 8px">BGM：オン</button><button id="sndAmb" style="font-size:12px;padding:6px 8px">環境音：オン</button></div>
+    <div class="btns" id="sndRow" style="flex-wrap:wrap;gap:6px"><button id="sndSe" style="font-size:12px;padding:6px 8px">効果音：オン</button><button id="sndBgm" style="font-size:12px;padding:6px 8px">BGM：オン</button><button id="sndAmb" style="font-size:12px;padding:6px 8px">環境音：オン</button><button id="sndCar" style="font-size:12px;padding:6px 8px">車の音：オン</button></div>
   </div>
 </div>
 
@@ -4515,10 +4515,10 @@ function f31ToneWorld(){ world.traverse(o=>{ if(!o.material) return; for(const m
 
 // ---- BGM と環境音（WebAudio だけ。AudioContext は1つ、まとめの音量ノードは使い回す） ----
 const SND_KEY='REWILDED_EIHEIJI_SETTINGS';
-const SND={se:true,bgm:true,amb:true,bgmVol:0.4,ambVol:0.5};
-(function(){ try{ const q=JSON.parse(localStorage.getItem(SND_KEY)||'null'); if(q&&typeof q==='object') for(const k of ['se','bgm','amb']) if(typeof q[k]==='boolean') SND[k]=q[k]; }catch(e){} })();
-function f31SndSave(){ try{ localStorage.setItem(SND_KEY,JSON.stringify({v:1,se:SND.se,bgm:SND.bgm,amb:SND.amb})); }catch(e){} }
-const AU={ok:false,bgm:null,amb:null,scenes:{},cur:null,timer:null,wind:null,windG:null,windF:null,rainG:null,drone:null,droneG:null,fireG:null,bugT:0,crackT:0};
+const SND={se:true,bgm:true,amb:true,car:true,bgmVol:0.4,ambVol:0.5};
+(function(){ try{ const q=JSON.parse(localStorage.getItem(SND_KEY)||'null'); if(q&&typeof q==='object') for(const k of ['se','bgm','amb','car']) if(typeof q[k]==='boolean') SND[k]=q[k]; }catch(e){} })();
+function f31SndSave(){ try{ localStorage.setItem(SND_KEY,JSON.stringify({v:1,se:SND.se,bgm:SND.bgm,amb:SND.amb,car:SND.car})); }catch(e){} }
+const AU={ok:false,bgm:null,amb:null,car:null,scenes:{},cur:null,timer:null,wind:null,windG:null,windF:null,rainG:null,drone:null,droneG:null,fireG:null,bugT:0,crackT:0};
 // 場面ごとの曲：五音音階（ヨナ抜き）・1〜2声・ループ20〜40秒
 const PENTA=[0,2,4,7,9];
 const SONGS={
@@ -4536,6 +4536,7 @@ function f31Freq(root,deg){ const o=Math.floor(deg/5), n=PENTA[deg%5]; return 44
 function f31AudioStart(){ if(AU.ok||!AC) return; AU.ok=true;
   AU.bgm=AC.createGain(); AU.bgm.gain.value=SND.bgm?SND.bgmVol:0; AU.bgm.connect(AC.destination);
   AU.amb=AC.createGain(); AU.amb.gain.value=SND.amb?SND.ambVol:0; AU.amb.connect(AC.destination);
+  AU.car=AC.createGain(); AU.car.gain.value=0; AU.car.connect(AC.destination);
   for(const k in SONGS){ const g=AC.createGain(); g.gain.value=0; g.connect(AU.bgm); AU.scenes[k]={g,step:0,next:0,on:false,mel:f31Pattern(SONGS[k]),off:0}; }
   // 風：ゆるいノイズを帯域で絞って、ゆっくり揺らす（ループ1本を使い回す）
   if(!noiseBuf){ noiseBuf=AC.createBuffer(1,AC.sampleRate*1,AC.sampleRate); const ch=noiseBuf.getChannelData(0); for(let i=0;i<ch.length;i++) ch[i]=Math.random()*2-1; }
@@ -4575,14 +4576,22 @@ function f31Scene(){ if(S.mode==='title') return 'title'; if(prog.stage==='clear
 function f31SetScene(k){ if(!AU.ok||AU.cur===k) return; const now=AC.currentTime;
   if(AU.cur){ const o=AU.scenes[AU.cur]; o.g.gain.cancelScheduledValues(now); o.g.gain.setValueAtTime(o.g.gain.value,now); o.g.gain.linearRampToValueAtTime(0,now+1); o.off=now+1.1; }
   const n=AU.scenes[k]; if(!n.on){ n.on=true; n.step=0; n.next=now+0.05; } n.off=0; n.g.gain.cancelScheduledValues(now); n.g.gain.setValueAtTime(n.g.gain.value,now); n.g.gain.linearRampToValueAtTime(1,now+1); AU.cur=k; }
+function f31WindLevel(){
+  const wind=(0.035+0.02*Math.sin(S.time*0.13)+0.01*Math.sin(S.time*0.37))*(1+0.6*(typeof RIVSND!=='undefined'&&RIVSND?RIVSND.wind:0)); // v0.85：河原では風が少し強い
+  if(!E2SND||REG.cur!=='kamishihi'||P3A.inside) return wind;
+  const {kona,sugi,take}=E2SND.d;
+  const depth=clamp((kona+sugi+take)/40,0,1);
+  return wind*(1-(1-E2.snd.windForest)*depth);
+}
 function f31AudioUpdate(){ if(!AU.ok) return; f31SetScene(f31Scene()); const now=AC.currentTime;
   const ph=f10Has('F')?f10Phase():'day'; const night=ph==='night'&&S.mode!=='title';
-  const wind=(0.035+0.02*Math.sin(S.time*0.13)+0.01*Math.sin(S.time*0.37))*(1+0.6*(typeof RIVSND!=='undefined'&&RIVSND?RIVSND.wind:0)); AU.windG.gain.setTargetAtTime(wind,now,0.5); // v0.85：河原では風が少し強い
+  AU.windG.gain.setTargetAtTime(f31WindLevel(),now,0.5);
   AU.rainG.gain.setTargetAtTime(S.mode==='title'?0:0.035*weather.rain*weather.strength,now,0.25);
   const danger=night&&zoneNow==='danger'; AU.droneG.gain.setTargetAtTime(danger?0.05:0,now,0.8);
   AU.fireNear=!!(NW.on&&night&&f31NearFire());
-  const paused=S.mode==='paused'||S.mode==='menu'; AU.bgm.gain.setTargetAtTime(SND.bgm?SND.bgmVol*(paused?0.5:1):0,now,0.2); AU.amb.gain.setTargetAtTime(SND.amb?SND.ambVol*(paused?0.5:1):0,now,0.2); }
-function f31SndBtns(){ const set=(id,on,nm)=>{ const b=$(id); if(b) b.textContent=`${nm}：${on?'オン':'オフ'}`; }; set('sndSe',!S.muted,'効果音'); set('sndBgm',SND.bgm,'BGM'); set('sndAmb',SND.amb,'環境音'); }
+  const paused=S.mode==='paused'||S.mode==='menu'; AU.bgm.gain.setTargetAtTime(SND.bgm?SND.bgmVol*(paused?0.5:1):0,now,0.2); AU.amb.gain.setTargetAtTime(SND.amb?SND.ambVol*(paused?0.5:1):0,now,0.2);
+  truckSoundUpdate(now,paused); }
+function f31SndBtns(){ const set=(id,on,nm)=>{ const b=$(id); if(b) b.textContent=`${nm}：${on?'オン':'オフ'}`; }; set('sndSe',!S.muted,'効果音'); set('sndBgm',SND.bgm,'BGM'); set('sndAmb',SND.amb,'環境音'); set('sndCar',SND.car,'車の音'); }
 function f31SndToggle(k){ if(k==='se'){ S.muted=!S.muted;if(S.muted) stopBeastVoices51(); SND.se=!S.muted; } else SND[k]=!SND[k]; f31SndSave(); f31SndBtns(); f31AudioUpdate(); }
 
 // ---- まとめ：毎コマ（描画のあと） ----
@@ -4590,7 +4599,7 @@ function f31Update(){ f31LoreVis(); f31AudioUpdate();
   const f=NW.on&&f31Night()?f31NearFire():null; const i=f?torches.indexOf(f):-9; // 焚き火の番：近くの火だけ少し大きく（見た目だけ）
   for(let j=0;j<torches.length;j++) torches[j].userData.boost=(j===i||j===i+1)?1.15:1; }
 function f31Build(){ f31BuildLore(); f31BuildArmor(); f31ToneWorld(); S.muted=!SND.se;
-  for(const [id,k] of [['sndSe','se'],['sndBgm','bgm'],['sndAmb','amb']]){ const b=$(id); if(b) b.addEventListener('click',()=>{ audioInit(); f31SndToggle(k); }); } f31SndBtns(); }
+  for(const [id,k] of [['sndSe','se'],['sndBgm','bgm'],['sndAmb','amb'],['sndCar','car']]){ const b=$(id); if(b) b.addEventListener('click',()=>{ audioInit(); f31SndToggle(k); }); } f31SndBtns(); }
 function workbench(x,z){
   const g=new THREE.Group(); const wood=0x7a5a38;
   for(const sx of [-1,1]) for(const sz of [-1,1]) g.add(J(mesh(G.cyl8,mat(0x5e432c),sx*1.6,1.4+(sz<0?0.3:0),sz*1.1-0.4,0.09,2.8+(sz<0?0.6:0),0.09),0.12));
@@ -10153,7 +10162,7 @@ async function regionTravel(id,at=null,opt={}){
   if(!opt.force&&!regionCanTravel()){ toast('今は移動できない',true); return false; }
   if(id!=='komyoji'&&!REG.defs[id]){ toast(regionName(id)+'へはまだ行けない',true); return false; }
   if(f4Busy()) f4DropAll(''); // v0.67：担いだ丸太・押している一輪車は、出る前にその場へ置く（地域をまたいで運ばない）
-  const from=REG.cur, mode=S.mode; REG.busy=true; S.mode='loading'; regionLoading(true,regionName(id)); await nextFrame(); await nextFrame();
+  const from=REG.cur, mode=S.mode; REG.busy=true; S.mode='loading'; truckSoundReset(TRUCK.drive); regionLoading(true,regionName(id)); await nextFrame(); await nextFrame();
   try{
     if(REG.live){ regionDispose(REG.live); REG.live=null; REG.hfn=null; REG.cfn=null; }
     if(id==='komyoji'){ komyojiShow(true); if(REG.homeBounds){ Object.assign(BOUNDS,REG.homeBounds); REG.homeBounds=null; }
@@ -12417,6 +12426,7 @@ function applyDetail(v){ GFX.detail=v==='lite'?'lite':'std'; try{ localStorage.s
 // 切った広葉樹は生えてこない。植林したら生える。希少素材「山の薬草」を足す。数はすべて暫定。
 // 木の位置・数・番号（k区画_区画_番号）は今までのまま（切った木の記録が合う）。種類だけを地形から決め直す。
 const E2={share:{kona:0.30,take:0.10}, grow:2400, naegi:1, herbN:12, herbBack:1200, herbAid:{t:600,k:2}, far:{std:400,lite:300}, nearQ:{std:75,lite:45}, inkQ:{std:45,lite:25}, HT:0, thin:0.4, // 山の薬草12か所は2026-11-25 ユーザー決定。nearQ：細かい形にする4分の1の区画までの距離・inkQ：輪郭線（m。暫定）
+  snd:{leaf:0.0225,needle:0.02,windForest:0.5}, // 2026-11-25 ユーザー決定
   all:null, take:null, tg:null, geo:null, lo:[], stumpIM:null, sapIM:null, dirty:true, t:0, herbs:[]};
 // 0〜1 のなめらかな雑音（格子の角に決まった乱数を置いて、間をなめらかにつなぐ）。林のまとまりを作る
 function e2Noise(x,z,s,seed){ const fx=x/s, fz=z/s, i=Math.floor(fx), k=Math.floor(fz), a=fx-i, b=fz-k, u=a*a*(3-2*a), v=b*b*(3-2*b), h=(p,q)=>hash2(p*1.7+seed,q*2.3-seed*0.7);
@@ -12539,7 +12549,7 @@ function e2SoundTick(dt){ if(typeof AU==='undefined'||!AU.ok||!AC||!noiseBuf) re
     E2SND={leaf:mk('bandpass',3200,0.8),needle:mk('bandpass',900,0.6),t:0,d:{kona:0,sugi:0,take:0},gust:0.6,gT:0,knT:2,brT:5}; }
   const R=E2SND; R.t-=dt; if(R.t<=0){ R.t=0.5; R.d=on?e2Density():{kona:0,sugi:0,take:0}; }
   R.gT-=dt; if(R.gT<=0){ R.gT=1.5+Math.random()*3; R.gTo=0.35+Math.random()*0.75; } R.gust+=((R.gTo||0.6)-R.gust)*Math.min(1,dt*0.6); // 風の強弱
-  const wl=on?clamp((R.d.kona+R.d.take*0.6)/40,0,1)*0.045*R.gust:0, wn=on?clamp(R.d.sugi/45,0,1)*0.04*R.gust:0;
+  const wl=on?clamp((R.d.kona+R.d.take*0.6)/40,0,1)*E2.snd.leaf*R.gust:0, wn=on?clamp(R.d.sugi/45,0,1)*E2.snd.needle*R.gust:0;
   R.leaf.gain.value+=(wl-R.leaf.gain.value)*Math.min(1,dt*1.5); R.needle.gain.value+=(wn-R.needle.gain.value)*Math.min(1,dt*1.5);
   if(!on) return; const now=AC.currentTime;
   if(R.d.take>=3){ R.knT-=dt; if(R.knT<=0){ R.knT=1.2+Math.random()*3.5; const n=1+Math.floor(Math.random()*3); for(let j=0;j<n;j++) e2Knock(now+0.02+j*(0.09+Math.random()*0.12),clamp(R.d.take/12,0.3,1)); if(Math.random()<0.3) e2Creak(now+0.05); } } // 竹が打ち合う音・きしむ音
@@ -13923,14 +13933,14 @@ function truckSusp(dt){ const C=TRUCK_CFG, W=TRUCK_WHEELS, g=9.8;
   U.p=clamp(U.p,-0.6,0.6); U.q=clamp(U.q,-0.5,0.5); const lo=Math.min(...h)-0.4; if(U.Y<lo){ U.Y=lo; U.vY=Math.max(0,U.vY); }
   U.hp=h; U.px=TRUCK.x; U.pz=TRUCK.z; U.pa=TRUCK.a; const on=U.s.map(v=>v>0), was=U.air;
   TRUCK.gf=(on[0]+on[1])/2; TRUCK.gr=(on[2]+on[3])/2; U.air=on.some(v=>v)?0:U.air+dt; TRUCK.air=U.air;
-  if(TRUCK.drive&&was>0.15&&!U.air){ const hit=Math.min(1,was*1.8), sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a), Ld=TRUCK_SYS.hp.land; S.shake=Math.max(S.shake||0,0.1+0.25*hit); if(hit>0.4) sfx('hit'); if(was>Ld.min) truckDamage((was-Ld.min)*Ld.k); // 着地：画面が揺れ、土ぼこり。v0.78：高く跳ぶと車体が傷む
+  if(TRUCK.drive&&was>0.15&&!U.air){ const hit=Math.min(1,was*1.8), sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a), Ld=TRUCK_SYS.hp.land; S.shake=Math.max(S.shake||0,0.1+0.25*hit); TRUCK.soundLand=Math.max(TRUCK.soundLand||0,hit); if(was>Ld.min) truckDamage((was-Ld.min)*Ld.k); // 着地：画面が揺れ、土ぼこり。v0.78：高く跳ぶと車体が傷む
     for(const [lx,lz] of W){ const x=TRUCK.x+lx*ca+lz*sa, z=TRUCK.z-lx*sa+lz*ca; spawnParticles(x,groundH(x,z)+0.1,z,3,0xb8a888,2); } }
   const lift=Math.max(0,U.Y-(h[0]+h[1]+h[2]+h[3])/4); TRUCK.camLift=(TRUCK.camLift||0)+(lift*0.6-(TRUCK.camLift||0))*Math.min(1,dt*6);
   return {Y:U.Y,p:U.p,q:U.q,wo:U.s.map(v=>clamp(v-c0,-0.18,0.14))}; } // wo：車輪の上下（止まっているときの高さから。ねじれた地面でも4つとも接地して見える）
 // 乗る・降りる
 function truckBoard(){ if(TRUCK.drive||!truckOK()||trk().tip) return; if(HAUL.on) haulStop(); if(f4Busy()) f4DropAll(''); const t=trk();
   if(!stfP().departureComplete&&stfStage()==='sendoff'){ stfSendoff(); return; } // 初めて乗る前に、直した報告と見送り
-  TRUCK.drive=true; truckStop(); truckColOff(); P.atk=null; P.dodge=null; P.x=TRUCK.x; P.z=TRUCK.z; P.facing=TRUCK.a; truckSeatPose(); truckDoorOpen('r'); // 運転席のドアが開いて閉まる cam.yaw=TRUCK.a; cam.init=false;
+  TRUCK.drive=true; TRUCK.soundPedal=0; TRSND.travel=false; TRSND.phase='off'; truckStop(); truckColOff(); P.atk=null; P.dodge=null; P.x=TRUCK.x; P.z=TRUCK.z; P.facing=TRUCK.a; truckSeatPose(); truckDoorOpen('r'); // 運転席のドアが開いて閉まる cam.yaw=TRUCK.a; cam.init=false;
   toast('KEI truck に乗った（移動：運転・E／行動ボタン：降りる）'); }
 function truckExit(quiet){ if(!TRUCK.drive) return; const a=TRUCK.a, t=trk(); TRUCK.drive=false; truckStop(); truckSeatOff(); truckDoorOpen('r');
   const side=[[Math.cos(a)*-2.05,Math.sin(a)*2.05],[Math.cos(a)*2.05,-Math.sin(a)*2.05],[-Math.sin(a)*3.25,-Math.cos(a)*3.25],[Math.sin(a)*3.25,Math.cos(a)*3.25]]; // 右・左・後ろ・前（正式モデルの大きさ）
@@ -13948,6 +13958,7 @@ function truckStop(){ Object.assign(TRUCK,{v:0,vx:0,vz:0,yr:0,steer:0,slide:0,su
 //  ・タイヤが横に踏ん張れるのは grip まで（遠心力）。速いほど曲がれる半径は大きく、急に切ると外へ膨らんで滑り、速さが落ちる
 //  ・車体は曲がる外側へ傾き、ブレーキで前へ沈む（見た目だけ）
 function truckDrive(dt){ const C=TRUCK_CFG, {ix,iz}=truckInput(), pf=truckPerf(), x0=TRUCK.x, z0=TRUCK.z; // v0.78：最高速度・加速は改修の段階・傷み・燃料で変わる（truckPerf）
+  TRUCK.soundPedal=iz>0.05||(iz<-0.05&&TRUCK.v<=0.3)?Math.abs(iz):0;
   const sa=Math.sin(TRUCK.a), ca=Math.cos(TRUCK.a); // 前 F=(sin a, cos a)・右 R=(-cos a, sin a)
   let u=TRUCK.vx*sa+TRUCK.vz*ca, w=-TRUCK.vx*ca+TRUCK.vz*sa; const u0=u; // 前向きの速さ・右向きの速さ
   const gf=TRUCK.gf??1, gr=TRUCK.gr??1, gc=(gf+gr)/2; // 地面に着いている車輪（前・後ろ・全体の割合）。浮いている間はアクセル・ハンドル・踏ん張りが効かない
@@ -14054,6 +14065,152 @@ function trkSys(t,savedLogs){ if(TRK_N.has(t)) return t; const L=TRUCK_SYS; t.lv
   t.tip=t.tip===1||t.tip===-1?t.tip:0; TRK_N.add(t); return t; }
 function trkHpMax(t){ return TRUCK_SYS.hp.max[t.lv|0]; }
 function depotS(){ const p=stfP(); let d=p.depot; if(!d||typeof d!=='object'||Array.isArray(d)){ d={built:0}; if(prog.chapter2) p.depot=d; } d.built=d.built?1:0; return d; }
+// ---- KEI truck の音（走行やセーブの値は読み取りのみ） ----
+const TRSND={nodes:null,phase:'off',busTarget:0,travel:false,pedal:0,load:0,hz:0,level:0,bass:0,roll:0,skid:0,bursts:new Set(),
+  counts:{starter:0,start:0,backfire:0,land:0,stop:0,cough:0,starve:0}};
+function truckSoundNodes(){
+  const gain=(dest,value=0)=>{ const g=AC.createGain(); g.gain.value=value; g.connect(dest); return g; };
+  const filter=(type,hz,dest,q=0.7)=>{ const f=AC.createBiquadFilter(); f.type=type; f.frequency.value=hz; f.Q.value=q; f.connect(dest); return f; };
+  const osc=(type,hz,dest)=>{ const o=AC.createOscillator(); o.type=type; o.frequency.value=hz; o.connect(dest); o.start(); return o.frequency; };
+  const engine=gain(AU.car);
+  const muffler=filter('lowpass',280,engine);
+  const drive=AC.createWaveShaper();
+  drive.curve=Float32Array.from({length:257},(_,i)=>Math.tanh(2.3*(i-128)/128));
+  drive.connect(muffler);
+  // 排気の周期に合わせて鋸歯波の音量を揺らし、半分の周波数の低音を重ねる。
+  const pulse=gain(drive,0.56);
+  const main=osc('sawtooth',42,pulse), rhythm=osc('sine',42,gain(pulse.gain,0.32));
+  const bass=gain(engine), sub=osc('triangle',21,bass);
+  const crank=gain(AU.car), starter=gain(crank), motor=osc('triangle',155,starter);
+  osc('sine',19,gain(motor,31));
+  osc('sine',23,gain(starter.gain,0.011));
+  const roll=gain(AU.car), tread=filter('bandpass',360,roll);
+  const skid=gain(AU.car), squeal=filter('bandpass',1050,skid,4);
+  const n=AC.createBufferSource(); n.buffer=noiseBuf; n.loop=true;
+  n.connect(tread); n.connect(squeal); n.start();
+  return {engine,muffler,main,rhythm,bass,sub,crank,roll,tread,skid,squeal};
+}
+function truckSoundBurst(hz,vol,dur,delay=0){
+  const at=AC.currentTime+delay;
+  const n=AC.createBufferSource(), f=AC.createBiquadFilter(), g=AC.createGain();
+  n.buffer=noiseBuf; f.type='lowpass'; f.frequency.value=hz;
+  n.connect(f); f.connect(g); g.connect(AU.car);
+  g.gain.setValueAtTime(0,at);
+  g.gain.linearRampToValueAtTime(vol,at+0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001,at+dur);
+  TRSND.bursts.add(n);
+  n.onended=()=>{ TRSND.bursts.delete(n); n.disconnect(); f.disconnect(); g.disconnect(); };
+  n.start(at,Math.random()*0.65); n.stop(at+dur);
+}
+function truckSoundCancelBursts(){
+  for(const n of TRSND.bursts) n.stop();
+  TRSND.bursts.clear();
+}
+function truckSoundReset(travel=false){
+  const r=TRSND;
+  Object.assign(r,{phase:'off',busTarget:0,travel,pedal:0,load:0,hz:0,level:0,bass:0,roll:0,skid:0});
+  TRUCK.soundLand=0;
+  if(!AU.car) return;
+  truckSoundCancelBursts();
+  const now=AC.currentTime;
+  AU.car.gain.cancelScheduledValues(now);
+  AU.car.gain.setValueAtTime(0,now);
+  if(r.nodes) for(const k of ['engine','crank','roll','skid']){
+    const g=r.nodes[k].gain;
+    g.cancelScheduledValues(now); g.setValueAtTime(0,now);
+  }
+}
+function truckSoundUpdate(now,paused){
+  const r=TRSND, mode=S.mode;
+  if(REG.busy||mode==='loading'||mode==='title'){
+    if(r.busTarget||r.phase!=='off') truckSoundReset(r.travel);
+    return;
+  }
+  const driving=TRUCK.drive, pedal=TRUCK.soundPedal||0;
+  const resume=driving&&r.travel;
+  r.travel=false;
+  const vol=SND.car?(paused?0.5:1)*($('dialog').hidden?1:0.65):0, bus=AU.car.gain;
+  if(vol!==r.busTarget){
+    bus.cancelScheduledValues(now);
+    if(vol) bus.setTargetAtTime(vol,now,0.025);
+    else { bus.setValueAtTime(0,now); truckSoundCancelBursts(); }
+    r.busTarget=vol;
+  }
+  if(!r.nodes){
+    if(!driving) return;
+    r.nodes=truckSoundNodes();
+  } else if(!driving&&r.phase==='off') return;
+  const n=r.nodes, time=stats.time;
+  const t=driving?trk():null, fuel=!!t&&t.gas>0;
+  const change=phase=>{ r.phase=phase; r.since=now; };
+  if(resume){
+    // 到着後は始動時の吹け上がりを過ぎた状態から音を戻す。
+    Object.assign(r,{phase:fuel?'running':'empty',since:now-1,missEnd:0,lastMiss:null,nextMiss:time+1.6});
+  } else if(driving&&(r.phase==='off'||(r.phase==='stopping'||r.phase==='empty')&&fuel)){
+    change('crank'); r.counts.starter++; r.pedal=0; r.missEnd=0; r.lastMiss=null; r.nextMiss=time+1.6;
+  }
+  if(r.phase==='crank'&&now-r.since>=0.65&&driving){
+    change(fuel?'running':'empty');
+    if(fuel) r.counts.start++;
+  }
+  if(!driving&&r.phase==='crank') change('off');
+  if(r.phase==='running'&&!fuel){
+    truckSoundCancelBursts();
+    change('stopping'); r.stopAt=now; r.stopHz=r.hz; r.stopLevel=r.level; r.counts.stop++;
+  }
+  if(r.phase==='stopping'&&now-r.stopAt>=0.38) change(driving?'empty':'off');
+  if(!driving&&r.phase==='empty') change('off');
+
+  const speed=driving?Math.hypot(TRUCK.vx,TRUCK.vz):0, lv=t?t.lv:0;
+  const speedMix=clamp(speed/18,0,1);
+  let hz=42, level=0, bass=0.26+0.055*lv;
+  if(r.phase==='running'){
+    const age=now-r.since, flare=Math.max(0,1-age/0.43);
+    const load=clamp(0.67*speedMix+0.33*pedal,0,1);
+    hz=42-1.1*lv+99*load+38*flare;
+    level=(0.105+0.17*load+0.055*pedal+0.09*flare)*(1+0.026*lv);
+    if(vol&&mode==='playing'&&r.pedal>0.22&&pedal<0.08&&r.load>0.42&&Math.random()<0.20+0.63*r.load){
+      const count=2+Math.floor(Math.random()*3);
+      for(let i=0;i<count;i++) truckSoundBurst(420+Math.random()*850,(0.07+0.13*r.load)/(1+i*0.21),0.06+i*0.013,i*0.075);
+      r.counts.backfire+=count;
+    }
+    if(time>=r.nextMiss){
+      const damaged=t.hp<trkHpMax(t)*TRUCK_SYS.hp.weak, low=t.gas<=TRUCK_SYS.gas.low;
+      if(damaged||low){
+        const cough=damaged&&(!low||r.lastMiss!=='cough');
+        r.lastMiss=cough?'cough':'starve';
+        r.counts[r.lastMiss]++;
+        r.missEnd=time+(cough?0.25:0.16);
+        if(cough&&vol) truckSoundBurst(480,0.11,0.09);
+      }
+      r.nextMiss=time+1.4+1.7*Math.random();
+    }
+    if(time<r.missEnd){ hz*=r.lastMiss==='cough'?0.66:0.92; level*=0.08; }
+    if(!paused){ r.pedal=pedal; r.load=load; }
+  } else if(r.phase==='stopping'){
+    const left=clamp(1-(now-r.stopAt)/0.38,0,1);
+    hz=22+Math.max(0,r.stopHz-22)*left; level=r.stopLevel*left*left;
+  }
+  const contact=driving?((TRUCK.gf??1)+(TRUCK.gr??1))/2:0;
+  const paved=speed>0.4&&contact>0&&truckGroundIdx().paved(TRUCK.x,TRUCK.z)<0.2;
+  const roll=speedMix*contact*(paved?0.075:0.14);
+  const skid=contact*clamp((speed-4)/7,0,1)*clamp((TRUCK.slide-0.25)/1.6,0,1)*0.21;
+  if(TRUCK.soundLand){
+    if(driving&&vol){ truckSoundBurst(165,0.24+0.37*TRUCK.soundLand,0.26); r.counts.land++; }
+    TRUCK.soundLand=0;
+  }
+  if(!vol) level=0;
+  const adjust=(p,value,lag=0.04)=>p.setTargetAtTime(value,now,lag);
+  adjust(n.main,hz); adjust(n.rhythm,hz); adjust(n.sub,hz/2);
+  adjust(n.muffler.frequency,190+hz*3.1);
+  adjust(n.engine.gain,level,0.025); adjust(n.bass.gain,bass);
+  adjust(n.crank.gain,vol&&r.phase==='crank'?(0.10+0.025*Math.sin((now-r.since)*52)):0,0.025);
+  adjust(n.tread.frequency,(paved?250:590)+speed*13);
+  adjust(n.roll.gain,vol?roll:0); adjust(n.skid.gain,vol?skid:0);
+  adjust(n.squeal.frequency,900+speed*35);
+  Object.assign(r,{hz,level,bass,roll:vol?roll:0,skid:vol?skid:0});
+}
+
 // ---- 走る力：改修の段階・傷み・燃料 ----
 function truckPerf(){ const t=trk(), L=TRUCK_SYS, b=L.lv[t.lv|0]; let speed=b.speed, acc=b.acc;
   if(t.hp<=0||t.gas<=0||t.tip) acc=0; else if(t.hp<trkHpMax(t)*L.hp.weak) speed*=L.hp.weakK; return {speed,acc}; }
@@ -14644,7 +14801,7 @@ $('btnShadow').onclick=()=>{ applyShadow(!shadowPref); toast(shadowPref?'影を�
 $('btnShadow').textContent='高画質の影：'+(renderer.shadowMap.enabled?'オン':'オフ');
 $('btnDetail').onclick=()=>{ applyDetail(GFX.detail==='std'?'lite':'std'); toast(GFX.detail==='lite'?'描く細かさ：軽量（近くの家を細かく描く範囲を狭くし、小物を減らす）':'描く細かさ：標準'); }; $('btnDetail').textContent='描く細かさ：'+(GFX.detail==='lite'?'軽量':'標準'); // v0.87 P3-E（§20.4 の軽量版）
 $('btnSave').onclick=()=>{ saveGame(); toast(storageOK?(ev.kind||bossActive?'セーブした（戦闘中は開始前の状態で記録）':'セーブした'):'このブラウザでは保存できない',!storageOK); };
-$('btnToTitle').onclick=()=>{ saveGame(); regionResetHome(); if(SZ.m) SZ.m.g.visible=false; /* v0.70 */ truckHideAll(); /* v0.77 */ hideAllOv(); $('hud').hidden=true; S.mode='title'; lightMode='dusk'; snapLight(); P.x=158; P.z=22; $('title').hidden=false; $('btnContinue').hidden=!readSave(); for(const f of floats) f.d.style.display='none'; for(const b of hpBars) b.style.display='none'; for(const [,b] of barkEls){b.t=0;b.d.style.display='none';} };
+$('btnToTitle').onclick=()=>{ truckSoundReset(); saveGame(); regionResetHome(); if(SZ.m) SZ.m.g.visible=false; /* v0.70 */ truckHideAll(); /* v0.77 */ hideAllOv(); $('hud').hidden=true; S.mode='title'; lightMode='dusk'; snapLight(); P.x=158; P.z=22; $('title').hidden=false; $('btnContinue').hidden=!readSave(); for(const f of floats) f.d.style.display='none'; for(const b of hpBars) b.style.display='none'; for(const [,b] of barkEls){b.t=0;b.d.style.display='none';} };
 $('btnCraftClose').onclick=closeOverlay; $('btnDepotClose').onclick=closeOverlay; $('btnMgmtClose').onclick=closeOverlay; $('btnBookClose').onclick=closeOverlay; $('btnBook').onclick=()=>p3dOpenBook(); $('btnStoreClose').onclick=closeOverlay; $('btnNpcClose').onclick=closeOverlay; mapPtr(); $('objective').addEventListener('pointerdown',e=>{ e.stopPropagation(); objOpen.pin=!objOpen.pin; if(!objOpen.pin) objOpen.t=0; }); $('btnQuestClose').onclick=closeOverlay;
 $('btnInvClose').onclick=closeOverlay;
 $('btnRetry').onclick=retryFromBase;
