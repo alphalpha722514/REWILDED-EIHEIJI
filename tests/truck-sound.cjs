@@ -51,7 +51,7 @@ async function run() {
       await until(`stats.time >= ${start} + ${seconds}`, 900000);
     }
     const read = () => E(`({
-      phase: TRSND.phase, hz: TRSND.hz, level: TRSND.level, bass: TRSND.bass,
+      phase: TRSND.phase, rpm: TRSND.rpm, gear: TRSND.gear, level: TRSND.level, bass: TRSND.bass,
       roll: TRSND.roll, skid: TRSND.skid, car: AU.car.gain.value, engine: TRSND.nodes.engine.gain.value,
       ...TRSND.counts
     })`);
@@ -80,6 +80,44 @@ async function run() {
       window.__truckInput = { ix: 0, iz: 0 };
       truckInput = () => window.__truckInput;
     })()`);
+    await E(`(() => {
+      const probe = window.__truckAudioProbe = { oscillator: 0, wave: 0, frames: [] };
+      let updating = false;
+      // BGM や森の音の発音を除き、車音の更新中に作ったノードだけを数える。
+      for (const [name, key] of [['createOscillator', 'oscillator'], ['createPeriodicWave', 'wave']]) {
+        const create = AC[name].bind(AC);
+        AC[name] = (...args) => {
+          if (updating) probe[key]++;
+          return create(...args);
+        };
+      }
+      const update = truckSoundUpdate;
+      truckSoundUpdate = (...args) => {
+        updating = true;
+        try { update(...args); } finally { updating = false; }
+        if (probe.record && stats.time !== probe.frames.at(-1)?.time) {
+          probe.frames.push({
+            time: stats.time, rpm: TRSND.rpm, gear: TRSND.gear,
+            shift: TRSND.shift?.phase ?? null, level: TRSND.level
+          });
+        }
+      };
+      // 変速の短い間を記録できるよう、描画が遅いときの1コマの進みを抑える。
+      const rawMax = F11D.rawMax;
+      F11D.rawMax = 0.05;
+      const drive = truckDrive, walk = truckWalk, collide = resolve;
+      // 加減速は本編の処理を使い、試験中だけ平坦で障害物のない直線を走らせる。
+      truckDrive = dt => {
+        const { x, z } = TRUCK;
+        TRUCK.gf = TRUCK.gr = 1;
+        truckWalk = () => true;
+        resolve = () => {};
+        try { drive(dt); } finally { truckWalk = walk; resolve = collide; }
+        TRUCK.x = P.x = x;
+        TRUCK.z = P.z = z;
+      };
+      probe.finish = () => { truckDrive = drive; F11D.rawMax = rawMax; };
+    })()`);
     check(await E(`(() => {
       truckBoard();
       f31AudioUpdate();
@@ -90,12 +128,40 @@ async function run() {
     check((await read()).start === 1, 'セルのあとに始動する');
     await gwait(0.9);
     const idle = await read();
-    check(idle.phase === 'running' && idle.engine > 0.07 && idle.roll === 0 && idle.hz < 50, '停車中に低いアイドリングが鳴る');
+    check(idle.phase === 'running' && idle.engine > 0.05 && idle.roll === 0 &&
+      idle.rpm >= 800 && idle.rpm <= 1100 && idle.gear === 1, '停車中は1速でアイドリングが鳴る');
 
-    await E('(__truckInput.iz = 1)');
-    await gwait(2.2);
+    const nodes = await E('(({ oscillator, wave }) => ({ oscillator, wave }))(__truckAudioProbe)');
+    check(nodes.wave === 1 && nodes.oscillator > 0, '初回乗車で波形と発振器を作る');
+    await E('__truckAudioProbe.record = true; __truckInput.iz = 1');
+    await gwait(10);
     const moving = await read();
-    check(moving.hz > idle.hz + 25 && moving.engine > idle.engine && moving.roll > 0, '走ると排気音が高く大きくなり、タイヤが転がる');
+    const full = await E('__truckAudioProbe.record = false; __truckAudioProbe.frames');
+    const cutIndex = full.findIndex(frame => frame.shift === 'cut');
+    const before = full[cutIndex - 1];
+    const cut = full[cutIndex];
+    const engaged = full.findIndex((frame, i) => i > cutIndex && !frame.shift);
+    const after = full[engaged];
+    const shifting = cut && after ? full.slice(cutIndex, engaged) : [];
+    check(moving.shiftUp >= 2 && moving.gear >= 3 &&
+      full.some(frame => frame.gear === 2) && full.some(frame => frame.gear === 3), '全開加速で1速から順に3速以上へ上がる');
+    check(before && after && shifting.some(frame => frame.rpm <= before.rpm - 1200) &&
+      shifting.some(frame => frame.level < before.level * 0.5) &&
+      after.level >= before.level * 0.5 && after.time - cut.time <= 0.4,
+    '変速中に回転が1200rpm以上落ち、排気が半分未満にしぼんで0.4秒以内に戻る');
+    const rising = full.find(frame => frame.rpm >= 5000 && frame.gear === 1 && !frame.shift);
+    check(rising && before && before.rpm > rising.rpm && before.level > rising.level &&
+      moving.engine > idle.engine && moving.roll > 0, '加速で回転と排気音量が上がり、タイヤが転がる');
+    check(await E(`__truckAudioProbe.oscillator === ${nodes.oscillator} && __truckAudioProbe.wave === ${nodes.wave}`),
+      '10ゲーム秒走っても車音の波形と発振器を作り足さない');
+
+    await until('TRSND.gear === 5 && !TRSND.shift && Math.hypot(TRUCK.vx, TRUCK.vz) >= truckPerf().speed - 0.01');
+    const atTop = await read();
+    await gwait(3);
+    const held = await read();
+    check(held.gear === 5 && held.limiter === atTop.limiter &&
+      atTop.rpm >= 6000 && atTop.rpm <= 7000 && held.rpm >= 6000 && held.rpm <= 7000,
+    '5速の最高速で全開を3ゲーム秒続けても燃料カットが入らず、回転数は6000〜7000rpm');
 
     // 判定が起こる離し方を、乱数を固定した1コマで確かめる。
     const pops = await E(`(() => {
@@ -110,6 +176,18 @@ async function run() {
       return TRSND.counts.backfire - before;
     })()`);
     check(pops >= 2 && pops <= 4, `アクセルを離すと短い破裂音が鳴る（${pops}回）`);
+
+    await gwait(13);
+    const coast = await read();
+    check(coast.shiftDown > moving.shiftDown, 'アクセルを戻して減速するとシフトダウンする');
+    check(coast.rpm >= 800 && coast.rpm <= 1100 && coast.gear === 1 && coast.roll === 0,
+      '停車すると1速のアイドリングへ戻る');
+
+    await E('__truckAudioProbe.frames = []; __truckAudioProbe.record = true; __truckInput.iz = 0.4');
+    await gwait(3);
+    const light = await E(`__truckAudioProbe.record = false; __truckInput.iz = 0;
+      __truckAudioProbe.finish(); __truckAudioProbe.frames.find(frame => frame.shift === 'cut')`);
+    check(light && cut && light.rpm < cut.rpm - 1200, '軽く踏むと全開より低い回転数でシフトアップする');
 
     // 速いコーナーで車体の向きと速度がずれた状態を作り、物理側で横滑りさせる。
     const skid = await E(`(() => {
@@ -161,7 +239,7 @@ async function run() {
     await until("TRSND.phase === 'running'");
     await gwait(0.9);
     const upgraded = await read();
-    check(upgraded.hz < idle.hz && upgraded.bass > idle.bass && upgraded.level > idle.level, '改修すると低い音が太く、少し大きくなる');
+    check(Math.abs(upgraded.rpm - idle.rpm) < 100 && upgraded.bass > idle.bass && upgraded.level > idle.level, '改修すると低い音が太く、少し大きくなる');
 
     await E('openPause()');
     await until('Math.abs(AU.car.gain.value - 0.5) < 0.005 && Math.abs(AU.amb.gain.value - 0.25) < 0.005 && Math.abs(AU.bgm.gain.value - 0.2) < 0.005');
@@ -181,7 +259,7 @@ async function run() {
     check(muted.saved.v === 1 && muted.saved.car === false && muted.label === '車の音：オフ', '車の音のオフが設定に保存される');
     await pg.click('#sndCar');
     await pg.click('#btnResume');
-    await until('AU.car.gain.value > 0.95 && TRSND.nodes.engine.gain.value > 0.07');
+    await until('AU.car.gain.value > 0.95 && TRSND.nodes.engine.gain.value > 0.05');
 
     const beforeTravel = await read();
     const travel = await E(`(async () => {

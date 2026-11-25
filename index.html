@@ -14047,29 +14047,101 @@ function trkSys(t,savedLogs){ if(TRK_N.has(t)) return t; const L=TRUCK_SYS; t.lv
 function trkHpMax(t){ return TRUCK_SYS.hp.max[t.lv|0]; }
 function depotS(){ const p=stfP(); let d=p.depot; if(!d||typeof d!=='object'||Array.isArray(d)){ d={built:0}; if(prog.chapter2) p.depot=d; } d.built=d.built?1:0; return d; }
 // ---- KEI truck の音（走行やセーブの値は読み取りのみ） ----
-const TRSND={nodes:null,phase:'off',busTarget:0,travel:false,pedal:0,load:0,hz:0,level:0,bass:0,roll:0,skid:0,bursts:new Set(),
-  counts:{starter:0,start:0,backfire:0,land:0,stop:0,cough:0,starve:0}};
+// 暫定。ギア比と回転数は音だけに使う。
+const TRSND_CFG={idle:900,red:7800,top:6600,ratios:[3.4,2.15,1.55,1.18,0.92],
+  clutch:2600,upLow:4200,upHigh:7300,down:2300,cut:0.10,engage:0.16,blip:0.15,
+  pop:0.35,limitPeriod:0.06,riseLow:3500,riseHigh:9000,fall:2500};
+const TRSND={nodes:null,phase:'off',busTarget:0,travel:false,pedal:0,load:0,rpm:0,gear:1,shift:null,
+  tick:0,limitAt:null,level:0,bass:0,roll:0,skid:0,bursts:new Set(),
+  counts:{starter:0,start:0,backfire:0,land:0,stop:0,cough:0,starve:0,shiftUp:0,shiftDown:0,shiftPop:0,limiter:0}};
 function truckSoundNodes(){
   const gain=(dest,value=0)=>{ const g=AC.createGain(); g.gain.value=value; g.connect(dest); return g; };
   const filter=(type,hz,dest,q=0.7)=>{ const f=AC.createBiquadFilter(); f.type=type; f.frequency.value=hz; f.Q.value=q; f.connect(dest); return f; };
   const osc=(type,hz,dest)=>{ const o=AC.createOscillator(); o.type=type; o.frequency.value=hz; o.connect(dest); o.start(); return o.frequency; };
-  const engine=gain(AU.car);
-  const muffler=filter('lowpass',280,engine);
-  const drive=AC.createWaveShaper();
-  drive.curve=Float32Array.from({length:257},(_,i)=>Math.tanh(2.3*(i-128)/128));
-  drive.connect(muffler);
-  // 排気の周期に合わせて鋸歯波の音量を揺らし、半分の周波数の低音を重ねる。
-  const pulse=gain(drive,0.56);
-  const main=osc('sawtooth',42,pulse), rhythm=osc('sine',42,gain(pulse.gain,0.32));
-  const bass=gain(engine), sub=osc('triangle',21,bass);
+  const limiter=gain(AU.car,1), engine=gain(limiter);
+  const limiterDepth=gain(limiter.gain);
+  osc('square',1/TRSND_CFG.limitPeriod,limiterDepth);
+  const muffler=filter('lowpass',240,engine);
+  const shaper=AC.createWaveShaper();
+  shaper.curve=Float32Array.from({length:257},(_,i)=>Math.tanh(1.6*(i-128)/128));
+  shaper.connect(muffler);
+  const drive=gain(shaper,0.7);
+  // 2回転に6回の燃焼。強い脈の間に、決まった係数で小さなばらつきを混ぜる。
+  const real=new Float32Array(73), imag=new Float32Array(real.length);
+  for(let k=1;k<real.length;k++){
+    if(k%6===0) real[k]=6/k;
+    else imag[k]=0.09*Math.sin(k*2.4)/Math.sqrt(k);
+  }
+  const pulse=AC.createOscillator();
+  pulse.setPeriodicWave(AC.createPeriodicWave(real,imag));
+  pulse.frequency.value=TRSND_CFG.idle/120;
+  pulse.connect(drive); pulse.start();
+  const bass=gain(muffler), sub=osc('triangle',22.5,bass);
+  const grit=gain(muffler), gritBand=filter('bandpass',240,grit,0.65);
+  const rhythmDepth=gain(grit.gain);
+  const rhythm=osc('sine',45,rhythmDepth);
+  const intake=gain(engine), intakeBand=filter('bandpass',160,intake,0.7);
   const crank=gain(AU.car), starter=gain(crank), motor=osc('triangle',155,starter);
   osc('sine',19,gain(motor,31));
   osc('sine',23,gain(starter.gain,0.011));
   const roll=gain(AU.car), tread=filter('bandpass',360,roll);
   const skid=gain(AU.car), squeal=filter('bandpass',1050,skid,4);
   const n=AC.createBufferSource(); n.buffer=noiseBuf; n.loop=true;
-  n.connect(tread); n.connect(squeal); n.start();
-  return {engine,muffler,main,rhythm,bass,sub,crank,roll,tread,skid,squeal};
+  n.connect(tread); n.connect(squeal); n.connect(gritBand); n.connect(intakeBand); n.start();
+  return {engine,limiter,limiterDepth,muffler,pulse,drive,rhythm,rhythmDepth,grit,gritBand,intake,intakeBand,bass,sub,crank,roll,tread,skid,squeal};
+}
+function truckSoundRev(speed,pedal,dt,time,vol,topSpeed){
+  const r=TRSND, c=TRSND_CFG, last=c.ratios.length;
+  const reverse=TRUCK.v<-0.05;
+  if(reverse||speed<0.12){ r.gear=1; r.shift=null; }
+  const scale=c.top/(topSpeed*c.ratios[last-1]);
+  const geared=gear=>clamp(speed*c.ratios[gear-1]*scale,c.idle,c.red);
+  // 5速では最高速で約6600rpmになる。
+  let target=geared(r.gear);
+  if(r.gear===1) target=Math.max(target,c.idle+pedal*c.clutch);
+  const up=c.upLow+(c.upHigh-c.upLow)*clamp((pedal-0.4)/0.6,0,1);
+  if(!r.shift){
+    r.rpm+=clamp(clamp(target,c.idle,c.red)-r.rpm,-c.fall*dt,(c.riseLow+(c.riseHigh-c.riseLow)*pedal)*dt);
+    if(!reverse&&r.gear<last&&pedal>0&&r.rpm>=up&&target>=up){
+      r.shift={phase:'cut',at:time,from:r.rpm};
+      r.counts.shiftUp++;
+      if(vol&&Math.random()<c.pop){
+        const count=1+Math.floor(Math.random()*2);
+        for(let i=0;i<count;i++) truckSoundBurst(680,0.075,0.065,i*0.055);
+        r.counts.shiftPop+=count;
+      }
+    } else if(r.gear>1&&r.rpm<c.down){
+      r.gear--; r.counts.shiftDown++;
+      if(pedal>0) r.shift={phase:'blip',at:time,from:r.rpm};
+    }
+  }
+  const shift=r.shift;
+  let load=pedal, envelope=1;
+  if(shift){
+    const age=time-shift.at;
+    if(shift.phase==='blip'){
+      const p=clamp(age/c.blip,0,1);
+      r.rpm=shift.from+(geared(r.gear)-shift.from)*p+650*Math.sin(Math.PI*p);
+      if(p>=1) r.shift=null;
+    } else if(age<c.cut){
+      load=0; envelope=0.45;
+      r.rpm=shift.from+(geared(r.gear+1)-shift.from)*age/c.cut;
+    } else {
+      if(shift.phase==='cut'){ r.gear++; shift.phase='engage'; }
+      const p=clamp((age-c.cut)/c.engage,0,1);
+      r.rpm=geared(r.gear); load=pedal*p; envelope=0.45+0.55*p;
+      if(p>=1) r.shift=null;
+    }
+  }
+  if(r.gear===last&&pedal>=0.98&&r.rpm>=c.red-1&&!r.shift){
+    if(r.limitAt===null) r.limitAt=time;
+    if(time>=r.limitAt){
+      const pulses=1+Math.floor((time-r.limitAt)/c.limitPeriod);
+      r.counts.limiter+=pulses;
+      r.limitAt+=pulses*c.limitPeriod;
+    }
+  } else r.limitAt=null;
+  return {load,envelope};
 }
 function truckSoundBurst(hz,vol,dur,delay=0){
   const at=AC.currentTime+delay;
@@ -14089,7 +14161,7 @@ function truckSoundCancelBursts(){
 }
 function truckSoundReset(travel=false){
   const r=TRSND;
-  Object.assign(r,{phase:'off',busTarget:0,travel,pedal:0,load:0,hz:0,level:0,bass:0,roll:0,skid:0});
+  Object.assign(r,{phase:'off',busTarget:0,travel,pedal:0,load:0,rpm:0,gear:1,shift:null,tick:0,limitAt:null,level:0,bass:0,roll:0,skid:0});
   TRUCK.soundLand=0;
   if(!AU.car) return;
   truckSoundCancelBursts();
@@ -14122,35 +14194,43 @@ function truckSoundUpdate(now,paused){
     if(!driving) return;
     r.nodes=truckSoundNodes();
   } else if(!driving&&r.phase==='off') return;
-  const n=r.nodes, time=stats.time;
+  const n=r.nodes, time=stats.time, c=TRSND_CFG;
+  const dt=clamp(time-r.tick,0,0.1);
+  r.tick=time;
   const t=driving?trk():null, fuel=!!t&&t.gas>0;
   const change=phase=>{ r.phase=phase; r.since=now; };
   if(resume){
     // 到着後は始動時の吹け上がりを過ぎた状態から音を戻す。
-    Object.assign(r,{phase:fuel?'running':'empty',since:now-1,missEnd:0,lastMiss:null,nextMiss:time+1.6});
+    Object.assign(r,{phase:fuel?'running':'empty',since:now-1,rpm:c.idle,gear:1,shift:null,limitAt:null,missEnd:0,lastMiss:null,nextMiss:time+1.6});
   } else if(driving&&(r.phase==='off'||(r.phase==='stopping'||r.phase==='empty')&&fuel)){
-    change('crank'); r.counts.starter++; r.pedal=0; r.missEnd=0; r.lastMiss=null; r.nextMiss=time+1.6;
+    change('crank'); r.counts.starter++;
+    Object.assign(r,{rpm:0,gear:1,shift:null,limitAt:null,pedal:0,load:0}); r.missEnd=0; r.lastMiss=null; r.nextMiss=time+1.6;
   }
   if(r.phase==='crank'&&now-r.since>=0.65&&driving){
     change(fuel?'running':'empty');
-    if(fuel) r.counts.start++;
+    if(fuel){ r.rpm=2200; r.counts.start++; }
   }
   if(!driving&&r.phase==='crank') change('off');
   if(r.phase==='running'&&!fuel){
     truckSoundCancelBursts();
-    change('stopping'); r.stopAt=now; r.stopHz=r.hz; r.stopLevel=r.level; r.counts.stop++;
+    change('stopping'); r.stopAt=now; r.stopRpm=r.rpm; r.stopLevel=r.level; r.shift=null; r.limitAt=null; r.counts.stop++;
   }
   if(r.phase==='stopping'&&now-r.stopAt>=0.38) change(driving?'empty':'off');
   if(!driving&&r.phase==='empty') change('off');
 
   const speed=driving?Math.hypot(TRUCK.vx,TRUCK.vz):0, lv=t?t.lv:0;
   const speedMix=clamp(speed/18,0,1);
-  let hz=42, level=0, bass=0.26+0.055*lv;
+  let rpm=0, level=0, load=0, rpmMix=0;
+  const bass=0.16+0.022*lv;
   if(r.phase==='running'){
-    const age=now-r.since, flare=Math.max(0,1-age/0.43);
-    const load=clamp(0.67*speedMix+0.33*pedal,0,1);
-    hz=42-1.1*lv+99*load+38*flare;
-    level=(0.105+0.17*load+0.055*pedal+0.09*flare)*(1+0.026*lv);
+    const topSpeed=truckPerf().speed;
+    const rev=truckSoundRev(speed,pedal,dt,time,vol&&mode==='playing',topSpeed);
+    load=rev.load;
+    rpm=r.rpm;
+    rpmMix=clamp((rpm-c.idle)/(c.red-c.idle),0,1);
+    level=0.36*(0.34+0.66*rpmMix)*(0.55+0.45*load)
+      *(0.90+0.10*clamp(speed/topSpeed,0,1))*(1+0.026*lv);
+    level=Math.min(0.37,level)*rev.envelope;
     if(vol&&mode==='playing'&&r.pedal>0.22&&pedal<0.08&&r.load>0.42&&Math.random()<0.20+0.63*r.load){
       const count=2+Math.floor(Math.random()*3);
       for(let i=0;i<count;i++) truckSoundBurst(420+Math.random()*850,(0.07+0.13*r.load)/(1+i*0.21),0.06+i*0.013,i*0.075);
@@ -14167,12 +14247,12 @@ function truckSoundUpdate(now,paused){
       }
       r.nextMiss=time+1.4+1.7*Math.random();
     }
-    if(time<r.missEnd){ hz*=r.lastMiss==='cough'?0.66:0.92; level*=0.08; }
-    if(!paused){ r.pedal=pedal; r.load=load; }
+    if(time<r.missEnd){ rpm*=r.lastMiss==='cough'?0.66:0.92; level*=0.08; }
+    if(!paused){ r.pedal=pedal; r.load=clamp(0.67*speedMix+0.33*pedal,0,1); }
   } else if(r.phase==='stopping'){
     const left=clamp(1-(now-r.stopAt)/0.38,0,1);
-    hz=22+Math.max(0,r.stopHz-22)*left; level=r.stopLevel*left*left;
-  }
+    rpm=r.rpm=r.stopRpm*left; level=r.stopLevel*left*left;
+  } else r.rpm=0;
   const contact=driving?((TRUCK.gf??1)+(TRUCK.gr??1))/2:0;
   const paved=speed>0.4&&contact>0&&truckGroundIdx().paved(TRUCK.x,TRUCK.z)<0.2;
   const roll=speedMix*contact*(paved?0.075:0.14);
@@ -14183,14 +14263,25 @@ function truckSoundUpdate(now,paused){
   }
   if(!vol) level=0;
   const adjust=(p,value,lag=0.04)=>p.setTargetAtTime(value,now,lag);
-  adjust(n.main,hz); adjust(n.rhythm,hz); adjust(n.sub,hz/2);
-  adjust(n.muffler.frequency,190+hz*3.1);
-  adjust(n.engine.gain,level,0.025); adjust(n.bass.gain,bass);
+  const wobble=0.003*Math.sin(time*7)+0.001*Math.sin(time*17);
+  const firing=rpm*(1+wobble)/20;
+  adjust(n.pulse.frequency,firing/6,0.012);
+  adjust(n.rhythm,firing,0.012); adjust(n.sub,firing/2,0.012);
+  adjust(n.muffler.frequency,Math.max(40,firing*(4+4*load+rpmMix)),0.015);
+  adjust(n.drive.gain,0.65+1.2*load);
+  adjust(n.gritBand.frequency,Math.max(80,firing*5.4));
+  adjust(n.grit.gain,0.018+0.20*load);
+  adjust(n.rhythmDepth.gain,0.012+0.15*load);
+  adjust(n.intakeBand.frequency,Math.max(70,firing*3.6));
+  adjust(n.intake.gain,0.37*rpmMix*load*load);
+  adjust(n.limiter.gain,r.limitAt===null?1:0.62,0.004);
+  adjust(n.limiterDepth.gain,r.limitAt===null?0:0.38,0.004);
+  adjust(n.engine.gain,level,0.012); adjust(n.bass.gain,bass);
   adjust(n.crank.gain,vol&&r.phase==='crank'?(0.10+0.025*Math.sin((now-r.since)*52)):0,0.025);
   adjust(n.tread.frequency,(paved?250:590)+speed*13);
   adjust(n.roll.gain,vol?roll:0); adjust(n.skid.gain,vol?skid:0);
   adjust(n.squeal.frequency,900+speed*35);
-  Object.assign(r,{hz,level,bass,roll:vol?roll:0,skid:vol?skid:0});
+  Object.assign(r,{level,bass,roll:vol?roll:0,skid:vol?skid:0});
 }
 
 // ---- 走る力：改修の段階・傷み・燃料 ----
