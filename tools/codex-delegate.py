@@ -902,7 +902,7 @@ def parse_args(argv=None):
         if action == "run":
             command.add_argument("--model", default="gpt-6.2-sol")
             command.add_argument("--prompt", required=True)
-            command.add_argument("--max-runs", type=int, default=2)
+            command.add_argument("--max-runs", type=int, default=4)
         if action == "test":
             command.add_argument("--name", required=True)
             command.add_argument("--sandbox", action="store_true")

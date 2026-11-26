@@ -180,13 +180,15 @@ class DelegateTests(unittest.TestCase):
             self.assertEqual(git.call_args.args[0][3:], ["archive", "a" * 40])
         return result
 
-    def run_fake(self, situation="", limit=2):
+    def run_fake(self, situation="", limit=2, mode="rw"):
+        args = ["run", "--job", self.job, "--mode", mode, "--prompt", self.prompt]
+        if limit is not None:
+            args.extend(("--max-runs", limit))
         with patch.dict(os.environ, {
             "DEMO_TOKEN": "a-value-without-a-key-prefix", "AWS_CA_BUNDLE": "/cert.pem",
             "FAKE_CASE": situation,
         }), patch.object(delegate.socket, "socket", NoNetworkListener):
-            return self.cli("run", "--job", self.job, "--mode", "rw",
-                            "--prompt", self.prompt, "--max-runs", limit)
+            return self.cli(*args)
 
     def result(self, number=1):
         return json.loads((self.job / "runs" / str(number) / "report.json").read_text())
@@ -280,6 +282,28 @@ class DelegateTests(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertIn("-before\n+changed\n", diff)
         self.assertNotIn("added.txt", diff)
+
+    def test_default_run_limit(self):
+        self.assertEqual(self.prepare()[0], 0)
+        for number in range(1, 5):
+            status, _, error = self.run_fake(limit=None)
+            self.assertEqual(status, 0, error)
+            self.assertEqual(delegate.read_json(self.job / "job.json")["runs"], number)
+        status, _, error = self.run_fake(limit=None)
+        self.assertEqual(status, 1)
+        self.assertIn("実行回数の上限に達しました", error)
+        self.assertEqual(delegate.read_json(self.job / "job.json")["runs"], 4)
+
+    def test_explicit_run_limit_counts_both_modes(self):
+        self.assertEqual(self.prepare()[0], 0)
+        self.assertEqual(self.run_fake(limit=2, mode="ro")[0], 0)
+        self.assertEqual(self.run_fake(limit=2, mode="rw")[0], 0)
+        for mode in ("ro", "rw"):
+            with self.subTest(mode=mode):
+                status, _, error = self.run_fake(limit=2, mode=mode)
+                self.assertEqual(status, 1)
+                self.assertIn("実行回数の上限に達しました", error)
+                self.assertEqual(delegate.read_json(self.job / "job.json")["runs"], 2)
 
     def test_preflight_blocks_exec_and_consumes_attempt(self):
         self.assertEqual(self.prepare()[0], 0)
