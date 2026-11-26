@@ -395,6 +395,9 @@ async def main():
         await watch_pickups()
         await search(5, touch=True)
         await search(7, touch=True)
+        note_box = await page.locator('#banner small').bounding_box()
+        check(note_box and note_box['x'] >= 16 and note_box['x'] + note_box['width'] <= 390 - 16,
+              '390×844で古い地図の帯の2行目に左右16px以上の余白がある')
         await screenshot('search-banner-iphone.png')
         await map_open(touch=True)
         legend = page.locator('#oldMapLegend')
