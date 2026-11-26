@@ -34,7 +34,9 @@ node tests/chapter2-save.cjs
 THREE_JS=/path/to/three.min.js node tests/p3e3-farm-preview.cjs
 ```
 
-作り直しのテストは、保存済みの試遊版と生成結果をバイト単位で照合し、ページ内の JavaScript の構文も確認します。照合用の元ファイルは `PREVIEW_BUILD_SRC` で指定できます。試遊テストは Node の Playwright、Chromium、ローカルの three.js r128 を使います。Chromium の実行ファイルを指定する場合は `CHROMIUM_BIN` を使います。PC（1280×720）と iPhone（390×844）の画面と操作を再現し、ゲーム用のファイルは手元から読みます。
+作り直しのテストは、2026-11-26 に、REF のコミットの `index.html` から生成して保存済みの試遊版とバイト単位で照合する形に直しました。ページ内の JavaScript の構文も確認します。照合用の元ファイルは `PREVIEW_BUILD_SRC` で指定できます。試遊テストは Node の Playwright、Chromium、ローカルの three.js r128 を使います。Chromium の実行ファイルを指定する場合は `CHROMIUM_BIN` を使います。PC（1280×720）と iPhone（390×844）の画面と操作を再現し、ゲーム用のファイルは手元から読みます。
+
+元の版にカメラの上下の設定キー `eiheiji_camPitch` がある場合は、試遊版専用の `eiheiji_p3e3f_camPitch` に置き換えます。
 
 ## 公開のしかた
 

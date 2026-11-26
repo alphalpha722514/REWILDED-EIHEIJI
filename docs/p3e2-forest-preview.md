@@ -53,6 +53,7 @@
 | `eiheiji_vs_beasts_v010`（セーブ） | `eiheiji_vs_beasts_p3e2forest` |
 | `REWILDED_EIHEIJI_SETTINGS`（音） | `REWILDED_EIHEIJI_SETTINGS_p3e2forest` |
 | `eiheiji_weatherEffects`・`eiheiji_shadow`・`eiheiji_perf`・`eiheiji_aimMode`・`eiheiji_detail`（設定） | 頭を `eiheiji_p3e2f_` に変えたもの |
+| `eiheiji_camPitch`（元の版にある場合。上下の感度と反転） | `eiheiji_p3e2f_camPitch` |
 
 - 本編と同じ場所（`alphalpha722514.github.io`）で開くので、ブラウザの保存場所は本編と同じ。そのため、キーをすべて変えた。
 - そのうえ、ページのいちばん初めに「本編のキーを読む・書く・消すのを止める」小さなスクリプトを置いた。変え忘れがあっても、本編のキーには触れない。

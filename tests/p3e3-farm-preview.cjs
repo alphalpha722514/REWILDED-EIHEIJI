@@ -12,7 +12,7 @@ const THREE = fs.readFileSync(process.env.THREE_JS || '/home/claude/v010/node_mo
 const HTML = fs.readFileSync(path.join(ROOT, PAGE), 'utf8').replace(
   'function updateNPCs(dt){', 'window.__ev=code=>eval(code);\nfunction updateNPCs(dt){');
 const MAIN_KEYS = ['eiheiji_vs_beasts_v010', 'REWILDED_EIHEIJI_SETTINGS', 'eiheiji_weatherEffects',
-  'eiheiji_shadow', 'eiheiji_perf', 'eiheiji_aimMode', 'eiheiji_detail'];
+  'eiheiji_shadow', 'eiheiji_perf', 'eiheiji_aimMode', 'eiheiji_detail', 'eiheiji_camPitch'];
 const SAVE_KEY = 'eiheiji_vs_beasts_p3e3farm';
 const DETAIL_KEY = 'eiheiji_p3e3f_detail';
 const PLAYING = "S.mode==='playing'&&!REG.busy&&!P3A.busy&&!FARM_PREVIEW.busy";
@@ -69,7 +69,7 @@ async function run(browser, mobile) {
     await page.goto(ORIGIN + '/' + PAGE, { timeout: 120000 });
     await wait("typeof P3IN==='object'");
     assert.match(await page.locator('.tver').textContent(),
-      /^v0\.(?:88\.1|89(?:\.[0-9]+)?) 古い農家（E3-1） 検収用の試遊版（本編とは別に保存）　第二章・/);
+      /^v0\.(?:88\.1|(?:89|9[0-9])(?:\.[0-9]+)?) 古い農家（E3-1） 検収用の試遊版（本編とは別に保存）　第二章・/);
     assert.deepEqual(await ev('[SAVE_KEY,SND_KEY,WEATHER_PREF]'),
       [SAVE_KEY, 'REWILDED_EIHEIJI_SETTINGS_p3e3farm', 'eiheiji_p3e3f_weatherEffects']);
     assert.equal(await page.locator('#btnFarmStart').textContent(), 'テスト：古い農家の前で始める');

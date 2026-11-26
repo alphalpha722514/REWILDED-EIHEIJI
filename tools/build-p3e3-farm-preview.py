@@ -38,8 +38,8 @@ blob = hashlib.sha1(b'blob %d\0' % len(raw) + raw).hexdigest()
 if not a.src and blob != BLOB:
     sys.exit(f'元の index.html が想定と違う（{blob}）')
 src = raw.decode('utf8')
-if not re.search(r'<span class="tver">v0\.8[89](?:\.[0-9]+)? デモ版', src):
-    sys.exit('元の index.html が v0.88 系または v0.89 系ではない')
+if not re.search(r'<span class="tver">v0\.(?:8[89]|9[0-9])(?:\.[0-9]+)? デモ版', src):
+    sys.exit('元の index.html が v0.88・v0.89・v0.9x 系ではない')
 
 
 def rep(s, a_, b_, n=1):
@@ -56,8 +56,11 @@ s = rep(s, "const SND_KEY='REWILDED_EIHEIJI_SETTINGS'", "const SND_KEY='REWILDED
 s = rep(s, "const WEATHER_PREF='eiheiji_weatherEffects'", f"const WEATHER_PREF='{PRE}weatherEffects'")
 for k, n in (('shadow', 2), ('perf', 2), ('aimMode', 3), ('detail', 2)):
     s = rep(s, f"'eiheiji_{k}'", f"'{PRE}{k}'", n)
+# 古い REF の index.html には上下の設定がない。
+if "'eiheiji_camPitch'" in s:
+    s = rep(s, "'eiheiji_camPitch'", f"'{PRE}camPitch'")
 MAIN_KEYS = ['eiheiji_vs_beasts_v010', 'REWILDED_EIHEIJI_SETTINGS', 'eiheiji_weatherEffects',
-             'eiheiji_shadow', 'eiheiji_perf', 'eiheiji_aimMode', 'eiheiji_detail']
+             'eiheiji_shadow', 'eiheiji_perf', 'eiheiji_aimMode', 'eiheiji_detail', 'eiheiji_camPitch']
 for k in MAIN_KEYS:
     if re.search(r"['\"`]" + re.escape(k) + r"['\"`]", s):
         sys.exit(f'本編のキーが残っている：{k}')
@@ -77,7 +80,7 @@ s = rep(s, '<head><meta charset=utf8>', '<head><meta charset=utf8>' + guard)
 
 # ---- 版の表示 ----
 m = re.search(r'<span class="tver">(v[0-9.]+) デモ版', s)
-if not m or not re.fullmatch(r'v0\.8[89](?:\.[0-9]+)?', m.group(1)):
+if not m or not re.fullmatch(r'v0\.(?:8[89]|9[0-9])(?:\.[0-9]+)?', m.group(1)):
     sys.exit('版の表示が見つからない')
 s = s.replace(m.group(0), f'<span class="tver">{m.group(1)} 古い農家（E3-1） 検収用の試遊版（本編とは別に保存）', 1)
 
