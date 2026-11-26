@@ -215,7 +215,12 @@ async def main():
             a[:2] == b[:2] and all(abs(x - y) <= 0.05 for x, y in zip(a[2:], b[2:]))
             for a, b in zip(rooms, ROOMS)), '部屋6つの名前と寸法')
         check(await ev("P3A.interior.marks.map(k=>[k.id,k.label,!!k.exit])")
-              == [['exit', '外へ出る', True]], '印は出口の1つだけ')
+              == [['exit', '外へ出る', True],
+                  ['search0', 'かまどを調べる', False], ['search1', '流しと水甕を調べる', False],
+                  ['search2', '農具の棚を調べる', False], ['search3', '囲炉裏を調べる', False],
+                  ['search4', '茶箪笥を調べる', False], ['search5', '仏壇に手を合わせる', False],
+                  ['search6', '箪笥と長持を調べる', False], ['search7', '蔵の棚を調べる', False]],
+              '地点は出口と調べる所8か所')
         gaps = await ev("""P3IN.farm.plan().walls.filter(w=>w[5]).map(([a,b,c,d,,[lo,hi]])=>{
           const t=(lo+hi)/2/dist(a,b,c,d); return [lerp(a,c,t),lerp(b,d,t),hi-lo];
         }).sort((a,b)=>a[0]-b[0]||a[1]-b[1])""")
