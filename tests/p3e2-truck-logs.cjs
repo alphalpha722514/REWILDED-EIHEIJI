@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 // KEI truck の丸太の印・旧版とのセーブ互換。THREE_JS=…/three.min.js node tests/p3e2-truck-logs.cjs
-// OLD_HTML=旧本編のファイル。TRUCK_PAGE=試遊版のファイル、OLD_PAGE=旧試遊版のファイル。
+// 旧本編は v0.87.1 が既定で、OLD_HTML=旧本編のファイルで差し替え可。TRUCK_PAGE=試遊版のファイルを使う場合は OLD_PAGE=旧試遊版のファイルが必須。
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
-const { chromium } = require('playwright');
 
 const ROOT = path.dirname(__dirname);
 const ORIGIN = 'http://game.local';
@@ -16,11 +15,29 @@ const OLD_URL = path.posix.join(path.posix.dirname(PAGE), '__old_truck_test.html
 const SAVE_KEY = PREVIEW ? 'eiheiji_vs_beasts_p3e2forest' : 'eiheiji_vs_beasts_v010';
 const MAIN_KEYS = ['eiheiji_vs_beasts_v010', 'REWILDED_EIHEIJI_SETTINGS', 'eiheiji_weatherEffects',
   'eiheiji_shadow', 'eiheiji_perf', 'eiheiji_aimMode', 'eiheiji_detail'];
-const THREE = fs.readFileSync(process.env.THREE_JS || '/home/claude/v010/node_modules/three/build/three.min.js');
+// v0.87.1（2026-11-24 の main）。丸太の印の仕組み（logAttr）が入る前の最後の版。main が進んでも変えない。
+const OLD_REF = '9999131fb935211f766b621400f634bb1a793a67';
 const oldFile = PREVIEW ? process.env.OLD_PAGE : process.env.OLD_HTML;
-const oldGitPath = PREVIEW ? 'previews/p3e2-forest/index.html' : 'index.html';
-const OLD_HTML = oldFile ? fs.readFileSync(oldFile, 'utf8') : execFileSync('git',
-  ['show', 'origin/main:' + oldGitPath], { cwd: ROOT, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
+if (PREVIEW && !oldFile) {
+  console.error('試遊版の比較には、印の仕組みが入る前の試遊版を OLD_PAGE= で指定してください。');
+  process.exit(1);
+}
+
+function readOldMain() {
+  try {
+    return execFileSync('git', ['show', `${OLD_REF}:index.html`], {
+      cwd: ROOT, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch {
+    console.error('旧版の本編（v0.87.1）を読み込めませんでした。');
+    console.error(`git fetch --unshallow（または git fetch origin ${OLD_REF}）で履歴を取るか、OLD_HTML= に v0.87.1 の index.html を指定してください。`);
+    process.exit(1);
+  }
+}
+
+const OLD_HTML = oldFile ? fs.readFileSync(oldFile, 'utf8') : readOldMain();
+const { chromium } = require('playwright');
+const THREE = fs.readFileSync(process.env.THREE_JS || '/home/claude/v010/node_modules/three/build/three.min.js');
 
 function exposeGame(html) {
   const marker = 'function updateNPCs(dt){';
