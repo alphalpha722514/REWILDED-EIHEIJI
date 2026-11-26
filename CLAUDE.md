@@ -115,7 +115,7 @@
 | `docs/food-image-request.md` | 料理の絵（2026-11-20）：絵が必要な料理19品・ChatGPT へのプロンプト（共通の決まり＋料理ごと）・§5 受け取った19枚の組み込み（v0.86.1：`assets/food/` の WebP・元の絵は `src/`・`tools/food_icons.py`・手持ちバー・持ち物・食料庫）・§6 かまどの選択肢にも絵（v0.86.2） |
 | `docs/p3e2-forest-preview.md` | P3-E の E-2（v0.88・上志比の森林）の検収用の試遊版 `previews/p3e2-forest/`（2026-11-23・作業ブランチ `p3e2-forest-preview`。2026-11-25 承認・main へ。統合後も残す）：元にした v0.88（2026-11-24 から `p3e2-truck-log-attrs` の `ddd2d39`＝伐採の修正＋丸太の種類を保つ修正入り。その前は `f0abc54`、さらに前は `e378a7b`）・作り方 `tools/build-p3e2-forest-preview.py`・本編と別の保存キーと設定のキー（本編のキーには触れない）・「上志比の森で始める」と試遊メニュー（場所を移る・KEI truck と救急箱・光明寺のかまど・苗木と薬草と素材・時間を進める・朝9時・描く細かさ）・確認 `node tests/p3e2-forest-preview.cjs`・`FELL_PAGE=… node tests/p3e2-felling.cjs`・`TRUCK_PAGE=… node tests/p3e2-truck-logs.cjs`・公開のしかた |
 | `docs/p3e3-farm-preview.md` | 古い農家（E3-1）の検収用試遊版 `previews/p3e3-farm/`。開始ボタン・試遊メニュー・保存の分離・作り直し・確認・公開のしかた。2026-11-26 承認・main へ。公開後も残す |
-| `docs/camera-pitch.md` | 三人称カメラの上下の操作（2026-11-26 承認・main へ（v0.90）） |
+| `docs/camera-pitch.md` | 三人称カメラの上下の操作（2026-11-26 承認・v0.90 で main へ・公開済み） |
 | `docs/prompt-ui.md` | 「調べる」の案内（`#prompt`）を小さくする（2026-11-23 ユーザー依頼。まず試遊版 `previews/p3e2-forest/` だけ・作業ブランチ `p3e2-prompt-ui`・承認待ち）：今の作り（すべての対象が `interactables()` → `#prompt` の1か所）・新しい形（名前だけの1行・上の真ん中・まわりを測って重ならない所へ・押すと詳しく・「長押し」は残す）・変えていないもの・今までの形との切り替え・確認 `node tests/p3e2-prompt-ui.cjs`（PC・iPhone 縦・横）・改善前後 `docs/prompt-ui/` |
 
 - 拠点を真上から撮った図（施設の名前つき）：`python3 tools/base-topdown.py 出力.png [中心x 中心z 幅m]`。
