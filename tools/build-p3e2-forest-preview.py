@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """v0.88（P3-E の E-2：上志比の森林）の検収用の試遊版を作る（previews/p3e2-forest/index.html）。docs/p3e2-forest-preview.md
 
-- 元にするのは v0.88 系（E-2）の index.html（既定はコミット 38f8836＝v0.88.1（作業中）。森の音を静かにする調整と KEI truck の音（2026-11-25、作業ブランチ v0.88.1-sound））。本編の index.html（main）は使わない・変えない
+- 元にするのは v0.89 の index.html（既定はコミット b8d3596。P3-E の E3-1・古い農家の中の公開の準備、p3e3-farm-interior、2026-11-26）。本編の index.html（main）は使わない・変えない
 - 保存キーと設定のキーを、すべて試遊版だけのものに変える（本編のセーブ・設定を読まない・書かない）
   さらにページのいちばん初めで、本編のキーを読む・書く・消すのを止める（変え忘れがあっても本編に触れない）
 - タイトル画面の右上に「テスト：上志比の森で始める」ボタン
@@ -19,8 +19,9 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REF = 'a4120aa61866a1cdea4ea88ae83c66ca94fd2010'  # v0.88.1（作業中）：森の音を静かに・KEI truck の音（作り直し：5段ギア・水平対向4気筒・始動音）（v0.88.1-sound、2026-11-25）
-BLOB = '96f9ee20178d091de855e63d61e345f0c2867707'  # そのときの index.html（git の blob）
+REF = 'b8d35964acbec591c3c9f6f9fd39bf9cb8a530fe'  # v0.89（P3-E の E3-1・古い農家の中）の公開の準備、p3e3-farm-interior、2026-11-26
+BLOB = '4365d9987c4c277969e1ee241ac3e6be3c49e33d'  # そのときの index.html（git の blob）
+# それより前：REF = a4120aa61866a1cdea4ea88ae83c66ca94fd2010（v0.88.1（作業中）：森の音を静かに・KEI truck の音（作り直し：5段ギア・水平対向4気筒・始動音）、v0.88.1-sound、2026-11-25）・BLOB = 96f9ee20178d091de855e63d61e345f0c2867707
 # それより前：REF = a12e3faf3bfef6be203778926b04d85d65a88877（v0.88.1（作業中）：森の音を静かに・KEI truck の音・地域移動ですぐ無音、v0.88.1-sound、2026-11-25）・BLOB = dc4bbc7f5e85398a0eb75851c5d053bec9b33353
 # それより前：REF = 38f883654f64401c29296f874269ff16ede4ccfb（v0.88.1（作業中）：森の音を静かに・KEI truck の音、v0.88.1-sound、2026-11-25）・BLOB = ab50466f2f746ef6ec3a8996c96424ab3a2d7d2a
 # それより前：REF = b821333719011fe6bc89324d561abfef03171c81（v0.88 の統合＋森の音の修正、2026-11-25）・BLOB = af8f36656f017ef5554655a8dbb908d1bfc73b82
@@ -32,7 +33,7 @@ OUT = os.path.join(ROOT, 'previews', 'p3e2-forest', 'index.html')
 PRE = 'eiheiji_p3e2f_'  # 試遊版の設定のキーの頭
 
 ap = argparse.ArgumentParser()
-ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：v0.88.1（作業中）の 38f8836）')
+ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：v0.89 の b8d3596）')
 ap.add_argument('--src', help='git から取り出さず、このファイルを元にする')
 ap.add_argument('--out', help='出力先（既定：previews/p3e2-forest/index.html）')
 a = ap.parse_args()
