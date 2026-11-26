@@ -3,6 +3,7 @@
 
 import asyncio
 import json
+import math
 import os
 from pathlib import Path
 import runpy
@@ -43,6 +44,8 @@ READ = 'JSON.parse(localStorage.getItem(SAVE_KEY))'
 STATE = '[prog.p3.e3.s,prog.p3.e3.map]'
 EMPTY = [[0] * 8, 0]
 DONE = [[1] * 8, 1]
+FARM_LABEL = '古い農家に入る'
+HERB_LABEL = '森の奥の木陰に、白い花の薬草がある：山の薬草を摘む'
 
 
 def old_html():
@@ -58,6 +61,12 @@ def old_html():
 
 def label(i, again=False):
     return '仏壇に手を合わせる' if i == 5 else SPOTS[i][0] + ('を見る' if again else 'を調べる')
+
+
+def herb_offset(i):
+    # 地図のずらし方から、各薬草の中心の期待値を求める。
+    angle, distance = [(math.sin(i * 127.1 + j * 311.7) * 43758.5453) % 1 for j in (15, 16)]
+    return math.cos(angle * math.tau) * (3 + distance * 4), math.sin(angle * math.tau) * (3 + distance * 4)
 
 
 def tracked(d):
@@ -176,7 +185,40 @@ async def main():
             await wait(f'{PLAYING}&&P3A.inside')
 
         async def farm(touch=False):
-            await enter('house26', '古い農家に入る', touch)
+            await enter('house26', FARM_LABEL, touch)
+
+        async def farm_with_suzuki():
+            for order, down, expected in [
+                ('wait', False, 'スズキに指示する'),
+                ('wait', True, 'スズキを助け起こす（E を長押し）'),
+                ('follow', False, FARM_LABEL),
+            ]:
+                await ev(f"""(()=>{{ const d=P3A.doors.find(d=>d.id==='house26'), [x,z]=p3cBld(26);
+                  const a=Math.atan2(d.z-z,d.x-x), dx=Math.cos(a), dz=Math.sin(a);
+                  P.x=d.x+2*dx; P.z=d.z+2*dz;
+                  szPut(P.x+dz,P.z-dx); szOrder('{order}');
+                  SZ.still=SZ.upT=0; SZ.down={json.dumps(down)}; SZ.hp=SZ.down?0:SZ.maxHp;
+                  for(const e of enemies) if(dist(e.x,e.z,P.x,P.z)<220) e.x+=900;
+                }})()""")
+                await wait("curInter?.label===" + json.dumps(expected))
+                check(await ev("""(()=>{ const d=P3A.doors.find(d=>d.id==='house26');
+                  return dist(P.x,P.z,SZ.x,SZ.z)+0.3<dist(P.x,P.z,d.x,d.z)&&
+                    dist(P.x,P.z,d.x,d.z)<2.6;
+                })()"""), f'{expected}（スズキのほうが近い）')
+                if expected == 'スズキに指示する':
+                    await page.keyboard.press('e')
+                    choice = page.locator('#defenseChoice')
+                    check(await choice.get_by_text('スズキへの指示', exact=True).is_visible(),
+                          '待機中は E で指示を開く')
+                    await choice.get_by_role('button', name='戻る', exact=True).click()
+                elif down:
+                    await page.keyboard.down('e')
+                    check(await ev('SZR.on&&!P3A.inside'), '倒れているときは E で助け起こしを始める')
+                    await page.keyboard.up('e')
+                    await wait('!SZR.on')
+            await page.keyboard.press('e')
+            await wait(f"{PLAYING}&&P3A.inside&&P3A.inId==='farm'")
+            check(await ev('p3bSzInside()'), '追従中は E で古い農家に入り、スズキも入る')
 
         async def stand(i):
             x, z = SPOTS[i][2]
@@ -229,6 +271,12 @@ async def main():
             else:
                 check(await ev(f'{READ}.p3.e3.s[{i}]===1&&({READ}.chapter2.progress.e3farm.s&(1<<{i}))!==0') and
                       await ev(f'{READ}.inv') == inv, f'{i+1}は記録と報酬をすぐ保存')
+                for k in ('rice', 'food'):
+                    if k in expected_reward:
+                        batches = await ev(f'{READ}.f7.hand.{k}')
+                        check(batches[-1:] == [[expected_reward[k], 0]] and
+                              sum(n for n, age in batches if age > 60) == before[k],
+                              f'{i+1}は既存の束に加えて作りたての{k}を保存')
             check(await ev("['rice','food'].every(k=>prog.f7.hand[k].reduce((sum,b)=>sum+b[0],0)===inv[k])"),
                   '米と食料の鮮度の束と個数が一致')
 
@@ -249,6 +297,23 @@ async def main():
 
         def herb_circles(draw):
             return [c[:3] for c in draw['circles'] if c[3].startswith('rgba(164, 224, 146,')]
+
+        async def check_herb_positions(circles, mini=False):
+            nodes = await ev("""Array.from({length:12},(_,i)=>{
+              const n=REG.live.kw.nodes.find(n=>n.key==='h'+i&&n.k==='herb'); return [n.x,n.z];
+            })""")
+            if mini:
+                cx, cz = await ev('[P.x,P.z]')
+                w, h, scale = 150, 196, 1 / 1.6
+            else:
+                cx, cz, w, h, zoom, bounds = await ev('[MAPV.cx,MAPV.cz,MAPV.W,MAPV.H,MAPV.zoom,REG.live.bounds]')
+                scale = min(w / (bounds['maxX'] - bounds['minX'] + 40),
+                            h / (bounds['maxZ'] - bounds['minZ'] + 40)) * zoom
+            for i, (x, z) in enumerate(nodes):
+                dx, dz = herb_offset(i)
+                expected = ((x + dx - cx) * scale + w / 2, (z + dz - cz) * scale + h / 2, 15 * scale)
+                check(i < len(circles) and all(abs(a - b) < .001 for a, b in zip(circles[i], expected)),
+                      f'{"ミニマップ" if mini else "全体地図"}の薬草 h{i} の位置と半径')
 
         async def screenshot(name):
             if shots:
@@ -272,6 +337,19 @@ async def main():
           localStorage.setItem(SAVE_KEY,JSON.stringify(d));
         })()""")
         legacy = await ev('localStorage.getItem(SAVE_KEY)')
+        for bits, map_value, expected in [
+            (256, 2, EMPTY), (3.9, '1', EMPTY), (-1, -1, EMPTY),
+            ('3', 'true', EMPTY), (None, None, EMPTY),
+            (255, 1, DONE), (1, True, [[1] + [0] * 7, 1]),
+        ]:
+            save = json.loads(legacy)
+            save['p3']['e3'] = {'farm': 1}
+            save['chapter2']['progress']['e3farm'] = {'s': bits, 'map': map_value}
+            await ev(f'localStorage.setItem(SAVE_KEY,{json.dumps(json.dumps(save))})')
+            await boot('#btnContinue')
+            check(await ev(STATE) == expected and await ev('prog.p3.e3.farm') == 1,
+                  f'写し s={bits!r}, map={map_value!r} の読み込み')
+        await ev(f'localStorage.setItem(SAVE_KEY,{json.dumps(legacy)})')
         await boot('#btnContinue')
         check(await ev(STATE) == EMPTY and await ev('p3cOn()'), '旧セーブは拠点を保ち、全地点が未調査')
         await map_open()
@@ -284,7 +362,7 @@ async def main():
         await enter('hq', '拠点本部に入る')
         hq_triangles = await triangles()
         await leave()
-        await farm()
+        await farm_with_suzuki()
         check(await ev("P3A.interior.mk.length===1&&P3A.interior.marks.filter(m=>m.glow===false).length===8"),
               '光る箱は出口だけ')
         points = await ev("""P3A.interior.marks.filter(m=>!m.exit).map(m=>
@@ -317,6 +395,7 @@ async def main():
             check(result['free'] and result['hit'] and stopped, f'{name}を通り抜けない')
 
         await watch_pickups()
+        await ev("foodAdd('rice',1); foodAdd('food',1); f7Age(120)")
         initial = await inventory()
         for i in range(len(SPOTS)):
             await search(i)
@@ -327,6 +406,7 @@ async def main():
             await search(i, again=True)
 
         await leave()
+        await ev("szOrder('wait')")
         await map_open()
         world_map = await map_trace()
         circles = herb_circles(world_map)
@@ -335,6 +415,7 @@ async def main():
         check({'よろず屋', '集会所'}.issubset(world_map['labels']) and world_map['outlines'] == 2 and
               len(circles) == 12, '全体地図に縁取り2件・名前2件・薬草の円12個')
         check(herb_circles(await map_trace()) == circles, '薬草の円の位置が安定する')
+        await check_herb_positions(circles)
         await screenshot('search-map-pc.png')
         await page.keyboard.press('g')
         await ev("""(()=>{ const h=REG.live.kw.nodes.find(n=>n.key==='h0');
@@ -345,11 +426,20 @@ async def main():
               any(0 <= x <= 150 and 0 <= z <= 196 and abs(r-15/1.6)<0.001 and
                   0 < ((x-75)**2 + (z-98)**2)**0.5 < 7/1.6 + .001
                   for x, z, r in herb_circles(mini_map)), 'ミニマップはずらした半径15mの円だけを追加')
+        await check_herb_positions(herb_circles(mini_map), mini=True)
         check(any(abs(x-75)<.001 and abs(z-98)<.001 and r==2 and col=='#7ad0ff'
                   for x, z, r, col in mini_map['circles']), 'ずがに汁はミニマップに薬草の小さな点を描く')
         await map_open()
         check(any(r==3.4 and col=='#7ad0ff' for _, _, r, col in (await map_trace())['circles']),
               'ずがに汁は全体地図にも点を描く')
+        await page.keyboard.press('g')
+        herbs_before = await ev('inv.mherb')
+        await press(HERB_LABEL)
+        check(await ev("prog.kami.n.h0>stats.time") and await ev('inv.mherb') > herbs_before,
+              '薬草 h0 を採集した')
+        check(len(herb_circles(await map_trace(mini=True))) == 12, '採集後もミニマップの薬草の円は12個')
+        await map_open()
+        check(len(herb_circles(await map_trace())) == 12, '採集後も全体地図の薬草の円は12個')
         await page.keyboard.press('g')
         await ev("regionTravel('komyoji',null,{force:true})")
         await wait(f"{PLAYING}&&REG.cur==='komyoji'")
