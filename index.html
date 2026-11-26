@@ -8916,7 +8916,10 @@ function interactables(){
   {const d=dist(P.x,P.z,SCOUT.x,SCOUT.z);
    if(d<2.6)L.push({d,label:prog.scoutTower?'見張り台：見張り中':'見張り台を建設（木材10・縄4）',act:()=>buildScoutTower()});}
   g4Interactables(L); szInteractables(L); truckInteractables(L); // v0.70：スズキへの指示。v0.77：KEI truck・部品・燃料
-  L.sort((a,b)=>a.d-b.d); return L[0]||null;
+  L.sort((a,b)=>a.d-b.d);
+  // 古い農家の入口に立っている間、ついて来るスズキの指示で入室を遮らない。
+  if(L[0]?.act===szTalk&&SZ.order==='follow'&&L[1]?.farmEntrance) return L[1];
+  return L[0]||null;
 }
 function interact(){ if(bossCinema52()) return; if(P3D.fish){ p3dPress(); return; } if(curInter) curInter.act(); } // v0.84：釣りのあいだは「投げる・合わせる」
 function gatherNode(n){
@@ -10952,7 +10955,7 @@ function p3bYardTruckHit(){ const p=p3bState(), Y=P3B.yardTruck, at=P3A.yardTruc
 function p3bOutside(L){ const p=p3bState(); p3cOutside(L); p3cResInteractables(L); p3cReqOutside(L); p3dOutside(L);
   for(const dr of P3A.doors){ if(dr.future) continue; const d=dist(P.x,P.z,dr.x,dr.z); if(d>=2.6) continue;
     const def=P3IN[dr.inId||'hq'];
-    if(def.canEnter()) L.push({d,label:def.label(),act:()=>p3aEnter(dr)});
+    if(def.canEnter()) L.push({d,label:def.label(),act:()=>p3aEnter(dr),farmEntrance:dr.inId==='farm'});
     else if(def.locked) L.push({d,...def.locked}); }
   const at=P3A.yardTruck; if(at&&!p.got.yardTruck){ const d=dist(P.x,P.z,at.x,at.z)-1.2; if(d<1.6) L.push({d,label:`置き去りの軽トラックを解体する（${p.got.yardHits}/${P3B.yardTruck.hits}）`,act:p3bYardTruckHit}); } }
 function p3bOutsideTick(){ const p=p3bState(); if(p.hq.beasts||!p3bOpen()||!REG.live||P3A.inside) return; const dr=P3A.doors.find(d=>d.id==='hq'); if(!dr||dist(P.x,P.z,dr.x,dr.z)>80) return;
