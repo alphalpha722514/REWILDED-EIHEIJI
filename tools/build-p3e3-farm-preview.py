@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""古い農家（E3-1）の検収用の試遊版を作る。docs/p3e3-farm-preview.md を参照。"""
+"""古い農家（E3-1・E3-2）の検収用の試遊版を作る。docs/p3e3-farm-preview.md を参照。"""
 import argparse
 import hashlib
 import os
@@ -8,15 +8,17 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REF = '93b1da2095306396794992ecb0761c0752aaddbf'  # v0.90：三人称カメラの上下の操作の公開の準備、cam-pitch、2026-11-26
-BLOB = '01d98dbdb6d7fc7b01ff04836507e845c989a8be'  # v0.90 の index.html（git の blob）
+REF = 'b0d81988bbf755f63bb556b077df7f411ec4d1ef'  # E3-2：古い農家の調査・アイテム発見と入口の選び方の直し、p3e3-search、2026-11-26
+BLOB = 'b0ae7edaa9ae04d2f00f3b4bf3873843bb20c2f1'  # E3-2 の index.html（git の blob）
+# それより前：REF = e41f38854bbbe464187c8b54f91613d1d244419a（E3-2：古い農家の調査・アイテム発見、p3e3-search、2026-11-26）・BLOB = 8685c4d8c0f6045548970337c49931f483c3e96e
+# それより前：REF = 93b1da2095306396794992ecb0761c0752aaddbf（v0.90：三人称カメラの上下の操作の公開の準備、cam-pitch、2026-11-26）・BLOB = 01d98dbdb6d7fc7b01ff04836507e845c989a8be
 # それより前：REF = b8d35964acbec591c3c9f6f9fd39bf9cb8a530fe（v0.89（P3-E の E3-1・古い農家の中）の公開の準備、p3e3-farm-interior、2026-11-26）・BLOB = 4365d9987c4c277969e1ee241ac3e6be3c49e33d
 # それより前：REF = d2cf2f4f3d1c7a92b89da44cc9387ee99ca5862f（v0.88.1 に E3-1 を入れたもの）・BLOB = 603f7ce7421bef937bc12f998b049b19386f650c
 OUT = os.path.join(ROOT, 'previews', 'p3e3-farm', 'index.html')
 PRE = 'eiheiji_p3e3f_'  # 試遊版の設定のキーの頭
 
 ap = argparse.ArgumentParser()
-ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：93b1da2）')
+ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：b0d8198）')
 ap.add_argument('--src', help='git から取り出さず、このファイルを元にする')
 ap.add_argument('--out', help='出力先（既定：previews/p3e3-farm/index.html）')
 a = ap.parse_args()
@@ -83,7 +85,7 @@ s = rep(s, '<head><meta charset=utf8>', '<head><meta charset=utf8>' + guard)
 m = re.search(r'<span class="tver">(v[0-9.]+) デモ版', s)
 if not m or not re.fullmatch(r'v0\.(?:8[89]|9[0-9])(?:\.[0-9]+)?', m.group(1)):
     sys.exit('版の表示が見つからない')
-s = s.replace(m.group(0), f'<span class="tver">{m.group(1)} 古い農家（E3-1） 検収用の試遊版（本編とは別に保存）', 1)
+s = s.replace(m.group(0), f'<span class="tver">{m.group(1)} 古い農家（E3-1・E3-2） 検収用の試遊版（本編とは別に保存）', 1)
 
 # ---- タイトル画面のボタン ----
 BTN = 'style="font-size:12px;padding:6px 10px;min-height:36px;touch-action:manipulation"'
@@ -93,7 +95,7 @@ s = rep(s, '    <div class="tact">',
         f'<button id="btnFarmStart" {BTN}>テスト：古い農家の前で始める</button></div>\n    <div class="tact">')
 
 test_code = r"""
-// ---- 古い農家（E3-1）の試遊版だけ。docs/p3e3-farm-preview.md ----
+// ---- 古い農家（E3-1・E3-2）の試遊版だけ。docs/p3e3-farm-preview.md ----
 const FARM_TIMES=[
   ['朝', 9, 'day'], ['夕方', 17, 'dusk'], ['夜', 23, 'night']
 ];
@@ -159,7 +161,7 @@ async function farmPreviewGo(start=false){
   pn.style.cssText='position:fixed;left:calc(8px + env(safe-area-inset-left,0px));z-index:40;width:min(calc(100% - 16px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)),540px);overflow-y:auto;'+
     'background:rgba(18,26,20,.93);color:#eef3ea;border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:8px 10px;box-sizing:border-box;font-size:12px;line-height:1.5';
   pn.innerHTML='<div id="farmStat"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px">'+
-    [['go','古い農家の前へ'],['suzuki',''],['time',''],['detail','']].map(([id,label])=>
+    [['go','古い農家の前へ'],['suzuki',''],['time',''],['detail',''],['resetSearch','調査記録を初期化して試す']].map(([id,label])=>
       `<button data-farm="${id}" style="font-size:12px;padding:7px 6px;min-height:36px;touch-action:manipulation">${label}</button>`).join('')+'</div>';
   document.body.append(tg,pn); tg.hidden=true; pn.hidden=true;
   tg.setAttribute('aria-controls',pn.id); tg.setAttribute('aria-expanded','false');
@@ -203,6 +205,14 @@ async function farmPreviewGo(start=false){
     }else if(action==='time'){
       farmPreviewClock(((FARM_PREVIEW.time??-1)+1)%FARM_TIMES.length); saveGame();
     }else if(action==='detail') applyDetail(GFX.detail==='lite'?'std':'lite');
+    else if(action==='resetSearch'){
+      p3eFarmMerge(p3bState().e3,null,null);
+      // 保存時に統合する控えも消しておく。
+      prog.chapter2.progress.e3farm={s:0,map:0};
+      saveGame();
+      setOpen(false);
+      toast('調査記録と地図の印を初期化しました。拾った物は残ります');
+    }
     updateMenu(); cv.focus();
   });
   setInterval(()=>{
