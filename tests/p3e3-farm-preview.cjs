@@ -69,7 +69,7 @@ async function run(browser, mobile) {
     await page.goto(ORIGIN + '/' + PAGE, { timeout: 120000 });
     await wait("typeof P3IN==='object'");
     assert.match(await page.locator('.tver').textContent(),
-      /^v0\.88\.1 古い農家（E3-1） 検収用の試遊版（本編とは別に保存）　第二章・/);
+      /^v0\.(?:88\.1|89(?:\.[0-9]+)?) 古い農家（E3-1） 検収用の試遊版（本編とは別に保存）　第二章・/);
     assert.deepEqual(await ev('[SAVE_KEY,SND_KEY,WEATHER_PREF]'),
       [SAVE_KEY, 'REWILDED_EIHEIJI_SETTINGS_p3e3farm', 'eiheiji_p3e3f_weatherEffects']);
     assert.equal(await page.locator('#btnFarmStart').textContent(), 'テスト：古い農家の前で始める');

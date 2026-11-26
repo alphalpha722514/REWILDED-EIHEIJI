@@ -55,8 +55,8 @@ blob = hashlib.sha1(b'blob %d\0' % len(raw) + raw).hexdigest()
 if not a.src and a.ref == REF and blob != BLOB:
     sys.exit(f'元の index.html が想定と違う（{blob}）')
 src = raw.decode('utf8')
-if 'v0.88' not in src:
-    sys.exit('元の index.html が v0.88 ではない')
+if not re.search(r'<span class="tver">v0\.8[89](?:\.[0-9]+)? デモ版', src):
+    sys.exit('元の index.html が v0.88 系または v0.89 系ではない')
 
 
 def rep(s, a_, b_, n=1):
@@ -94,7 +94,7 @@ s = rep(s, '<head><meta charset=utf8>', '<head><meta charset=utf8>' + guard)
 
 # ---- 版の表示 ----
 m = re.search(r'<span class="tver">(v[0-9.]+) デモ版', s)
-if not m or not re.fullmatch(r'v0\.88(?:\.[0-9]+)?', m.group(1)):
+if not m or not re.fullmatch(r'v0\.8[89](?:\.[0-9]+)?', m.group(1)):
     sys.exit('版の表示が見つからない')
 s = s.replace(m.group(0), f'<span class="tver">{m.group(1)} 上志比の森林 検収用の試遊版（本編とは別に保存）', 1)
 

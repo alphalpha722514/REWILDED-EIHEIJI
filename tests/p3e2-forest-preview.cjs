@@ -47,7 +47,7 @@ async function run(mobile) {
   await pg.goto('http://game.local/previews/p3e2-forest/', { waitUntil: 'load', timeout: 300000 });
   await pg.waitForFunction("typeof window.__ev==='function'", null, { timeout: 300000 });
   const head = await E("[document.querySelector('.tver').textContent, SAVE_KEY, localStorage.getItem('eiheiji_vs_beasts_v010'), (localStorage.setItem('eiheiji_detail','x'), 1)]");
-  check(/^v0\.88(?:\.[0-9]+)? 上志比の森林 検収用の試遊版/.test(head[0]) && head[1] === 'eiheiji_vs_beasts_p3e2forest' && head[2] === null, `${tag}版の表示・試遊版の保存キー・本編のキーは読めない ${JSON.stringify(head.slice(0, 3))}`);
+  check(/^v0\.8[89](?:\.[0-9]+)? 上志比の森林 検収用の試遊版/.test(head[0]) && head[1] === 'eiheiji_vs_beasts_p3e2forest' && head[2] === null, `${tag}版の表示・試遊版の保存キー・本編のキーは読めない ${JSON.stringify(head.slice(0, 3))}`);
   if (SHOTS && mobile) { fs.mkdirSync(SHOTS, { recursive: true }); await pg.screenshot({ path: path.join(SHOTS, 'iphone-title.png') }); }
 
   await press('#btnFTStart');
