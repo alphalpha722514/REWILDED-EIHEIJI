@@ -665,7 +665,7 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>中ボタンのドラッグ：カメラ（左右・上下）・X／Z：上を見る／下を見る<br>スマホ：画面の左をなぞって移動。画面の右側をなぞる：カメラ（左右・上下）。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.90 古い農家（E3-1・E3-2） 検収用の試遊版（本編とは別に保存）　第二章・上志比の森林</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.91 古い農家（E3-1・E3-2） 検収用の試遊版（本編とは別に保存）　第二章・上志比の森林</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -10990,9 +10990,9 @@ const P3B_SV=[{x:11,z:3.6,label:'倉庫の資材と棚を調べる',msg:'倉庫�
 const P3B_TALK=[["S","うわ、広っ！ ここなら雨の日でも走り回れるな。"],["H","走るための建物じゃないぞ。"],["S","そっか。でも、屋根も壁もあるし、案外まだ使えそうじゃね？"],[null,"主人公は棚に残された工具や、奥へ続く階段を見渡す。"],["H","……ここなら倉庫も作業場も作れる。上の階を直せば、住む場所にもなる。"],["S","ってことは、上志比の新しい基地ってことか！"],["H","まだ何もできてない。でも、ここを直せば、戻ってきた人たちが暮らせる場所になる。"],["S","いいじゃん！ じゃあ、何から始める？"],["H","まずは倉庫と作業場だ。使えそうなものを探そう。"],["S","おっしゃ！ ……で、掃除ってどこからやればいいんだ？"]];
 function p3Fresh(){ return {v:1,hq:{sv:[0,0,0],talk:0,plan:0,beasts:0,visited:0},rep:{storage:[0,0,0],workshop:[0,0,0]},got:{gen:0,yardTruck:0,yardHits:0},e3:{farm:0,s:Array(8).fill(0),map:0}}; }
 function p3eFarmMerge(e3,record,copy){
-  const bits=num(copy?.s,0,0,255);
+  const s=copy?.s, bits=Number.isInteger(s)&&s>=0&&s<=255?s:0;
   e3.s=e3.s.map((_,i)=>Number(Boolean((Array.isArray(record?.s)&&record.s[i])||(bits&(1<<i)))));
-  e3.map=record?.map||copy?.map?1:0;
+  e3.map=record?.map||copy?.map===1||copy?.map===true?1:0;
 }
 function p3Save(){
   const p=p3bState(), progress=prog.chapter2.progress;
@@ -12325,6 +12325,7 @@ function p3eFarmMarks(){
 }
 function p3eFarmInteract(mark){
   if(mark.exit) return p3aExit();
+  if(P3A.busy) return;
   const spot=P3E_FARM_SEARCH[mark.search], e3=p3bState().e3;
   const first=!e3.s[mark.search];
   if(first){

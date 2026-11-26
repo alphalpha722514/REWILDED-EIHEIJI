@@ -126,6 +126,9 @@ html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;backgrou
 .maplegend{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:11px;color:var(--washi-dim);}
 .maplegend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px;border:1px solid rgba(0,0,0,.5);}
 .maplegend i.dia{background:#f0c34a;transform:rotate(45deg);}
+#oldMapLegend{display:flex;}
+.maplegend i.oldMapBuilding{background:transparent;border:1px solid #ffe08a;}
+.maplegend i.oldMapHerbs{background:rgba(164,224,146,.38);border:1px solid #a4e092;border-radius:50%;}
 .maplegend i.ring{background:transparent;border:2px solid #7ad0e0;border-radius:50%;}
 .mapbtns{margin-top:0;}
 .mapbtns button{padding:6px 14px;}
@@ -169,6 +172,9 @@ html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;backgrou
 @keyframes tin{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
 #banner{left:0;right:0;top:32%;text-align:center;font-family:var(--display);font-size:clamp(28px,5vw,54px);letter-spacing:.12em;text-shadow:0 2px 12px rgba(0,0,0,.8);opacity:0;transition:opacity .4s;}
 #banner small{display:block;font-family:var(--body);font-size:16px;letter-spacing:.05em;margin-top:6px;color:var(--washi);}
+@media (max-width:480px){
+  #banner .old-map-banner-note{margin-inline:16px;white-space:normal;overflow-wrap:anywhere;}
+}
 #banner.show{opacity:1;}
 #vignette{inset:0;pointer-events:none;box-shadow:inset 0 0 160px rgba(200,40,30,0);transition:box-shadow .25s;}
 #labels{position:fixed;inset:0;pointer-events:none;overflow:hidden;}
@@ -659,7 +665,7 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
       <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>中ボタンのドラッグ：カメラ（左右・上下）・X／Z：上を見る／下を見る<br>スマホ：画面の左をなぞって移動。画面の右側をなぞる：カメラ（左右・上下）。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.90 変異したサル テスト版（本編とは別に保存）　第二章・上志比の森林</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.91 変異したサル テスト版（本編とは別に保存）　第二章・上志比の森林</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -781,6 +787,7 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
     <div class="maphead"><h2>地図</h2><span id="mapObj"></span></div>
     <canvas id="mapCv"></canvas>
     <div class="maplegend"><span><i style="background:#fff"></i>現在地（白い扇＝見ている向き）</span><span><i class="dia"></i>目的</span><span><i class="ring"></i>依頼</span><span><i style="background:#f0a8bc"></i>掲示板</span><span><i style="background:#d8b04a"></i>作業台</span><span><i style="background:#b08458"></i>丸太置き場</span><span><i style="background:rgba(140,220,150,.9)"></i>安全地帯</span><span><i style="background:#e0533c"></i>獣・壊れた柵</span><span><i style="background:#c8c4b8"></i>石</span><span><i style="background:#e8c860"></i>藁</span><span><i style="background:#9ad070"></i>竹</span><span><i class="dia" style="background:#a8a6a0"></i>採石できる岩</span><span><i style="background:#c8d0d8"></i>屑鉄の回収場所</span><span><i style="background:#7ec850;border-radius:50%"></i>共同菜園（明るい＝収穫できる）</span></div>
+    <div class="maplegend" id="oldMapLegend" hidden><span><i class="oldMapBuilding" aria-hidden="true"></i><i class="oldMapHerbs" aria-hidden="true"></i>古い地図：よろず屋・集会所・薬草の生えやすい所</span></div>
     <div class="btns mapbtns"><button id="mapIn" aria-label="拡大">＋</button><button id="mapOut" aria-label="縮小">－</button><button id="mapMe">現在地へ</button><button class="pri" id="mapClose">閉じる（G）</button></div>
   </div>
 </div>
@@ -3052,6 +3059,7 @@ function clampMapCenter(){ const s=mapScale(), hw=MAPV.W/2/s, hh=MAPV.H/2/s; con
 function mapZoom(k,ax,az){ const z0=MAPV.zoom; MAPV.zoom=clamp(MAPV.zoom*k,1,8); if(ax!=null){ const r=MAPV.zoom/z0; MAPV.cx=ax+(MAPV.cx-ax)/r; MAPV.cz=az+(MAPV.cz-az)/r; } drawMap(); }
 function drawMap(){ const cv=$('mapCv'); if(!cv||$('mapOv').hidden) return; const c=cv.getContext('2d'); const d=MAPV.dpr, W=MAPV.W, H=MAPV.H; c.setTransform(d,0,0,d,0,0);
   const lg=document.querySelector('#mapOv .maplegend'); if(lg) lg.hidden=!!(REG.live&&REG.live.drawMap); // 光明寺の凡例は光明寺だけ
+  $('oldMapLegend').hidden=REG.cur!=='kamishihi'||!p3bState().e3.map;
   if(REG.live&&REG.live.drawMap){ REG.live.drawMap(c,W,H); return; } // v0.60 ほかの地域の地図
   clampMapCenter();
   const s=mapScale(); const X=x=>(x-MAPV.cx)*s+W/2, Z=z=>(z-MAPV.cz)*s+H/2;
@@ -7108,7 +7116,7 @@ function chapter2Panel(n,st,bx){
 }
 function freshState(){
   inv={armor:0,wood:0,food:1,hide:0,fenceKit:0,trapKit:0,stakeKit:0,spikeKit:0,pitKit:0,baitKit:0,onigiri:1,bento:0,grilledVeg:0,herbPorridge:0,meat:0,veg:0,rice:0,katsudon:0,botan:0,gomadofu:0,koroni:0,kushi:0,fang:0,mutScale:0,procScale:0,charcoal:0,straw:0,rope:0,stone:0,bamboo:0,iron:0,seed:0,riceSeed:0,oldParts:0,shelfKit:0,toolSet:0,gatePart:0,liftJack:0,winchPart:0,bell:0,fAyu:0,fUgui:0,fOikawa:0,fAbura:0,fMutsu:0,fKoi:0,fFuna:0,fYamame:0,fIwana:0,fNigoi:0,fKamatsuka:0,zugani:0,kawamushi:0,ayuShio:0,keiShio:0,ayuMeshi:0,koikoku:0,funaKanro:0,kawaKushi:0,zakoTen:0,kawaZosui:0,zuganiJiru:0,nigoiTsumire:0,ore:0,hardwood:0,steel:0,spindle:0,naegi:0,mherb:0} /* v0.85：川底の鉱石・山地の硬木・鋼材・加工機の主軸。v0.88：広葉樹の苗木・山の薬草 */; // v0.84：魚11種・モクズガニ・川虫・魚料理 // v0.81：古い機械部品・専用部品（棚の金具・作業場の工具一式）。v0.83：水門の部品・整備工場の特殊部品・巻き上げ機の部品・半鐘
-  prog={gear:f47Fresh(),stage:'talk',unlockTrap:false,unlockBoss:false,clues:[false,false,false],bossDefeated:false,scoutTower:false,scoutWarned:false,scoutRaidWarned:false,prepT:150,gatherT:0,introSeen:false,lastSaveT:0,townRequests:loadTownRequests(),g4:g4Fresh(),f4:f4Fresh(),level:1,exp:0,mastery:{nata:0,axe:0,club:0,spear:0},xph:0}; prog.f7=f7FromInv(); f7Sync(); prog.f8=f8Fresh(); prog.paddy=paddyFresh(); prog.conv=facFresh(); prog.kama=kamaFresh(); prog.f9=f9Fresh(); prog.f10=f10Fresh(); prog.kami=kamiFresh(); prog.p3=p3Fresh(); prog.stash=stashFresh(); prog.p3c=p3cFresh(); p3cVehApply(); prog.p3d=p3dFresh(); prog.chapter2=chapter2State(null,false);
+  prog={gear:f47Fresh(),stage:'talk',unlockTrap:false,unlockBoss:false,clues:[false,false,false],bossDefeated:false,scoutTower:false,scoutWarned:false,scoutRaidWarned:false,prepT:150,gatherT:0,introSeen:false,lastSaveT:0,townRequests:loadTownRequests(),g4:g4Fresh(),f4:f4Fresh(),level:1,exp:0,mastery:{nata:0,axe:0,club:0,spear:0},xph:0}; prog.f7=f7FromInv(); f7Sync(); prog.f8=f8Fresh(); prog.paddy=paddyFresh(); prog.conv=facFresh(); prog.kama=kamaFresh(); prog.f9=f9Fresh(); prog.f10=f10Fresh(); prog.kami=kamiFresh(); prog.p3=p3Fresh(); prog.stash=stashFresh(); prog.p3c=p3cFresh(); p3cVehApply(); prog.p3d=p3dFresh(); prog.chapter2=chapter2State(null,false); prog.chapter2.progress.e3farm={s:0,map:0};
   stats={kills:0,deaths:0,crafts:0,time:0,perfect:0,hunt:loadHuntRecords()};
   P.lvx48=0;P.lvz48=0;
   szFresh(); // v0.70
@@ -8940,7 +8948,10 @@ function interactables(){
   {const d=dist(P.x,P.z,SCOUT.x,SCOUT.z);
    if(d<2.6)L.push({d,label:prog.scoutTower?'見張り台：見張り中':'見張り台を建設（木材10・縄4）',act:()=>buildScoutTower()});}
   g4Interactables(L); szInteractables(L); truckInteractables(L); // v0.70：スズキへの指示。v0.77：KEI truck・部品・燃料
-  L.sort((a,b)=>a.d-b.d); return L[0]||null;
+  L.sort((a,b)=>a.d-b.d);
+  // 古い農家の入口に立っている間、ついて来るスズキの指示で入室を遮らない。
+  if(L[0]?.act===szTalk&&SZ.order==='follow'&&L[1]?.farmEntrance) return L[1];
+  return L[0]||null;
 }
 function interact(){ if(bossCinema52()) return; if(P3D.fish){ p3dPress(); return; } if(curInter) curInter.act(); } // v0.84：釣りのあいだは「投げる・合わせる」
 function gatherNode(n){
@@ -9424,7 +9435,7 @@ function applySave(d){
     prog.f9=f9Load(d.f9); // 古いセーブは「頼んでいない」で始める
     prog.f8=f8Load(d.f8); // 古いセーブは未開始のまま始める
     prog.paddy=paddyLoad(d.paddy); // v0.79：拠点の田んぼ（古いセーブは育っている途中から）
-    prog.conv=facLoad('conv',d.conv); prog.kama=kamaLoad(d.kama); prog.kami=kamiLoad(d.kami); prog.p3=p3Load(d.p3); prog.stash=stashLoad(d.stash); prog.p3c=p3cLoad(d.p3c); p3cVehApply();
+    prog.conv=facLoad('conv',d.conv); prog.kama=kamaLoad(d.kama); prog.kami=kamiLoad(d.kami); prog.p3=p3Load(d.p3,prog.chapter2.progress.e3farm); prog.stash=stashLoad(d.stash); prog.p3c=p3cLoad(d.p3c); p3cVehApply();
     const truck=prog.chapter2.progress.truck;
     if(truck&&typeof truck==='object'&&!Array.isArray(truck)) trkSys(truck,d.logAttr?.v===1?d.logAttr.bed:null);
     prog.p3d=p3dLoad(d.p3d); P3D.fish=null; szApplyLoad(d.suzuki); // v0.73：スズキ（古いセーブは「まだ仲間でない」） // v0.67：上志比の採集・伐採・獣（古いセーブは何も取っていない状態） // v0.63：変換炉・v0.64：かまど（古いセーブは未建設）
@@ -10844,7 +10855,7 @@ const P3IN={ hq:{o:P3A_IN,w:81,d:19,entry:{x:2.2,z:8.5},gapZ:8.5,gapW:4.2,lights
     onEnter:p3cFactoryEntered,interact:p3cFactoryInteract},
   farm:{o:{x:21000,z:21120},w:16.4,d:21.7,entry:{x:1.6,z:15.6},gapZ:15.6,gapW:2.4,
     plan:()=>P3E_FARM,props:p3eFarmProps,marks:p3eFarmMarks,canEnter:p3cOn,label:()=>'古い農家に入る',
-    onEnter:p3eFarmEntered,interact:p3aExit,
+    onEnter:p3eFarmEntered,interact:p3eFarmInteract,
     lights:[
       ...[7,9.2,11.4].map(at=>({wall:'w',at,w:1.1,op:0.40})),
       ...[8.5,12.8,14.6].map(at=>({wall:'s',at,w:1.2,op:0.49})),
@@ -10875,9 +10886,21 @@ const P3B_SV=[{x:11,z:3.6,label:'倉庫の資材と棚を調べる',msg:'倉庫�
 // 拠点設立の会話（指示書 v1.1 §3.3【正式採用・変更禁止】。1字も変えない）
 /* 話す人は "S"＝スズキ・"H"＝主人公・null＝地の文（話す人の名前は作業Fの STF_SZW・STF_HERO を使う。後ろで定義されるので会話を始めるときに引く） */
 const P3B_TALK=[["S","うわ、広っ！ ここなら雨の日でも走り回れるな。"],["H","走るための建物じゃないぞ。"],["S","そっか。でも、屋根も壁もあるし、案外まだ使えそうじゃね？"],[null,"主人公は棚に残された工具や、奥へ続く階段を見渡す。"],["H","……ここなら倉庫も作業場も作れる。上の階を直せば、住む場所にもなる。"],["S","ってことは、上志比の新しい基地ってことか！"],["H","まだ何もできてない。でも、ここを直せば、戻ってきた人たちが暮らせる場所になる。"],["S","いいじゃん！ じゃあ、何から始める？"],["H","まずは倉庫と作業場だ。使えそうなものを探そう。"],["S","おっしゃ！ ……で、掃除ってどこからやればいいんだ？"]];
-function p3Fresh(){ return {v:1,hq:{sv:[0,0,0],talk:0,plan:0,beasts:0,visited:0},rep:{storage:[0,0,0],workshop:[0,0,0]},got:{gen:0,yardTruck:0,yardHits:0},e3:{farm:0}}; }
-function p3Save(){ return prog.p3; }
-function p3Load(q){ const p=p3Fresh(); if(!q||typeof q!=='object'||q.v!==1) return p; const b=v=>v?1:0, h=q.hq||{};
+function p3Fresh(){ return {v:1,hq:{sv:[0,0,0],talk:0,plan:0,beasts:0,visited:0},rep:{storage:[0,0,0],workshop:[0,0,0]},got:{gen:0,yardTruck:0,yardHits:0},e3:{farm:0,s:Array(8).fill(0),map:0}}; }
+function p3eFarmMerge(e3,record,copy){
+  const s=copy?.s, bits=Number.isInteger(s)&&s>=0&&s<=255?s:0;
+  e3.s=e3.s.map((_,i)=>Number(Boolean((Array.isArray(record?.s)&&record.s[i])||(bits&(1<<i)))));
+  e3.map=record?.map||copy?.map===1||copy?.map===true?1:0;
+}
+function p3Save(){
+  const p=p3bState(), progress=prog.chapter2.progress;
+  p3eFarmMerge(p.e3,p.e3,progress.e3farm);
+  progress.e3farm={s:p.e3.s.reduce((bits,seen,i)=>bits|(seen<<i),0),map:p.e3.map};
+  return p;
+}
+function p3Load(q,copy){ const p=p3Fresh();
+  p3eFarmMerge(p.e3,q?.v===1?q.e3:null,copy);
+  if(!q||typeof q!=='object'||q.v!==1) return p; const b=v=>v?1:0, h=q.hq||{};
   if(Array.isArray(h.sv)) p.hq.sv=[0,1,2].map(i=>b(h.sv[i])); for(const k of ['talk','plan','beasts','visited']) p.hq[k]=b(h[k]);
   for(const f of ['storage','workshop']) if(q.rep&&Array.isArray(q.rep[f])) p.rep[f]=[0,1,2].map(i=>b(q.rep[f][i]));
   const g=q.got||{}; p.got.gen=b(g.gen); p.got.yardTruck=b(g.yardTruck); p.got.yardHits=num(g.yardHits,0,0,99);
@@ -10964,7 +10987,7 @@ function p3bYardTruckHit(){ const p=p3bState(), Y=P3B.yardTruck, at=P3A.yardTruc
 function p3bOutside(L){ const p=p3bState(); p3cOutside(L); p3cResInteractables(L); p3cReqOutside(L); p3dOutside(L);
   for(const dr of P3A.doors){ if(dr.future) continue; const d=dist(P.x,P.z,dr.x,dr.z); if(d>=2.6) continue;
     const def=P3IN[dr.inId||'hq'];
-    if(def.canEnter()) L.push({d,label:def.label(),act:()=>p3aEnter(dr)});
+    if(def.canEnter()) L.push({d,label:def.label(),act:()=>p3aEnter(dr),farmEntrance:dr.inId==='farm'});
     else if(def.locked) L.push({d,...def.locked}); }
   const at=P3A.yardTruck; if(at&&!p.got.yardTruck){ const d=dist(P.x,P.z,at.x,at.z)-1.2; if(d<1.6) L.push({d,label:`置き去りの軽トラックを解体する（${p.got.yardHits}/${P3B.yardTruck.hits}）`,act:p3bYardTruckHit}); } }
 function p3bOutsideTick(){ const p=p3bState(); if(p.hq.beasts||!p3bOpen()||!REG.live||P3A.inside) return; const dr=P3A.doors.find(d=>d.id==='hq'); if(!dr||dist(P.x,P.z,dr.x,dr.z)>80) return;
@@ -12174,7 +12197,55 @@ const P3E_FARM={wh:3.0,cut:1.1,t:0.22,posts:true,floorDetails:true,
     [11,4.4,11,13,0,[3.3,5.3],1,{doorColor:0xddd1b3}],
     [11,13,11,21.6,0,[3.3,5.3],1,{doorColor:0xddd1b3}]
   ]};
-function p3eFarmMarks(){ const {x,z}=P3IN.farm.o; return [{id:'exit',x:x+1.2,z:z+15.6,label:'外へ出る',exit:true}]; }
+const P3E_FARM_SEARCH=[
+  {x:2.6,z:19.6,r:1.3,name:'かまど',give:{charcoal:2},
+    first:'焚き口の灰をよけると、燃え残りの炭が出てきた。（木炭 ×2）',again:'かまどは冷えきっている。'},
+  {x:1.8,z:19.0,r:1.3,name:'流しと水甕',give:{rice:2},
+    first:'流しの下の米びつに、米が少し残っていた。（米 ×2）',again:'甕の水は濁っている。飲まないほうがいい。'},
+  {x:1.2,z:7.2,r:1.6,name:'農具の棚',give:{rope:2,iron:1},
+    first:'農具の間に、束ねた縄が掛けてあった。刃の欠けた鎌も、鉄くずとして使えそうだ。（縄 ×2・屑鉄 ×1）',again:'鍬も鎌も、長く使い込まれている。'},
+  {x:8.5,z:17.3,r:1.9,name:'囲炉裏',give:{charcoal:1},
+    first:'炉縁の脇の炭入れに、炭がひとつかみ残っていた。（木炭 ×1）',again:'自在鉤に鍋が掛かったままだ。'},
+  {x:10.2,z:20.2,r:1.4,name:'茶箪笥',give:{food:1},
+    first:'茶箪笥の下の段に、封をした乾物の袋があった。（食料 ×1）',again:'湯呑みが一つ、倒れたままになっている。'},
+  {x:15.1,z:17.6,r:1.6,label:'仏壇に手を合わせる',dialog:true,first:'小さく手を合わせた。'},
+  {x:8.4,z:5.9,r:1.8,name:'箪笥と長持',
+    first:'引き出しが半分開いたままになっている。長持には、着物が畳まれたまま入っていた。',again:'着物が畳まれたまま残っている。'},
+  {x:14.5,z:2.2,r:1.6,name:'蔵の棚',map:true,give:{oldParts:1,iron:2},
+    first:'棚の奥の木箱に、折り畳んだ紙が入っていた。広げると、この辺りを描いた古い地図だった。',
+    again:'棚には古い道具の箱が並んでいる。（古い地図は地図の画面で見られる）'}
+];
+function p3eFarmMarks(){
+  const {x,z}=P3IN.farm.o;
+  return [{id:'exit',x:x+1.2,z:z+15.6,label:'外へ出る',exit:true},
+    ...P3E_FARM_SEARCH.map((spot,i)=>({id:'search'+i,x:x+spot.x,z:z+spot.z,r:spot.r,glow:false,search:i,
+      get label(){ return spot.label||spot.name+(p3bState().e3.s[i]?'を見る':'を調べる'); }}))];
+}
+function p3eFarmInteract(mark){
+  if(mark.exit) return p3aExit();
+  if(P3A.busy) return;
+  const spot=P3E_FARM_SEARCH[mark.search], e3=p3bState().e3;
+  const first=!e3.s[mark.search];
+  if(first){
+    e3.s[mark.search]=1;
+    if(spot.map) e3.map=1;
+    if(spot.give){
+      for(const [id,n] of Object.entries(spot.give)){
+        if(FOODS[id]) foodAdd(id,n);
+        else inv[id]+=n;
+      }
+    }
+    saveGame();
+    if(spot.give) sfx('pickup');
+  }
+  if(spot.map&&first){
+    queueDialog([[null,spot.first]],()=>{
+      banner('古い地図を手に入れた。','地図（PC は G、スマホは「地図」ボタン）に印が増えた');
+      $('banner').lastElementChild.classList.add('old-map-banner-note');
+    });
+  }else if(spot.dialog) queueDialog([[null,spot.first]]);
+  else toast(first?spot.first:spot.again);
+}
 function p3eFarmEntered(){ const e3=p3bState().e3; if(e3.farm) return; e3.farm=1; saveGame(); toast('古い農家に入った'); }
 function p3eFarmProps({gb,X,Z,prop,flat,cols,PL}){
   const wood=0x76553b, dark=0x4e3d30, paper=0xe6dcc2;
@@ -12389,7 +12460,7 @@ function p3aInteriorBuild(){ if(P3A.interior) return P3A.interior; const id=P3A.
   const ember=DEF===P3IN.farm?p3eFarmEmber(g,X,Z):null;
   for(const c of cols) c.active=false; g.visible=false;
   // 調べる所・直す所の光る印（今の進み具合から）
-  const marks=DEF.marks(); const mk=[]; for(const k of marks){ const s=new THREE.Mesh(G.box,new THREE.MeshBasicMaterial({color:k.exit?0x9fd4e0:k.rep?0x8fe07a:0xf0c34a,transparent:true,opacity:0.8})); s.scale.set(0.35,0.35,0.35); s.position.set(k.x,1.2,k.z); s.rotation.set(0.6,0.6,0); g.add(s); mk.push(s); }
+  const marks=DEF.marks(); const mk=[]; for(const k of marks){ if(k.glow===false) continue; const s=new THREE.Mesh(G.box,new THREE.MeshBasicMaterial({color:k.exit?0x9fd4e0:k.rep?0x8fe07a:0xf0c34a,transparent:true,opacity:0.8})); s.scale.set(0.35,0.35,0.35); s.position.set(k.x,1.2,k.z); s.rotation.set(0.6,0.6,0); g.add(s); mk.push(s); }
   P3A.interior={id,g,cols,rooms,marks,mk,uppers,doors,ember,floorY:0}; return P3A.interior; }
 let P3B_DM=null; function P3B_DOORMAT(){ return P3B_DM||(P3B_DM=new THREE.MeshLambertMaterial({color:0x8a7a62})); }
 // 屋内を今の進み具合で作り直す（直した・見つけた・調べたとき）。中にいるなら見え方と当たりを戻す
@@ -13067,6 +13138,7 @@ function kamishihiBuild(ctx){
     const km=K.nx/TW; c2.drawImage(mk,sx*km,sz*km,sw*km,sh*km,0,0,W,H);
     const X=x=>(x-P.x)/MINI_M+W/2, Z=z=>(z-P.z)/MINI_M+H/2;
     for(const e of enemies){ if(e.state==='dead'||dist(e.x,e.z,P.x,P.z)>truckSee()) continue; c2.fillStyle='#e0533c'; c2.beginPath(); c2.arc(X(e.x),Z(e.z),2.4,0,TAU); c2.fill(); }
+    p3eOldMapDraw(ctx,c2,X,Z,1/MINI_M);
     const ex=D.exitWest; c2.fillStyle='#f0c34a'; c2.fillRect(X(ex.x)-3,Z(ex.z)-3,6,6); p3dScoutDraw(c2,X,Z,false); /* v0.84 ずがに汁 */
     c2.save(); c2.translate(W/2,H/2); c2.rotate(-P.facing+Math.PI); c2.fillStyle='#ffffff'; c2.beginPath(); c2.moveTo(0,-5); c2.lineTo(3.5,4); c2.lineTo(-3.5,4); c2.closePath(); c2.fill(); c2.restore(); };
   // ---- 全体地図（地面の絵をそのまま使う） ----
@@ -13076,6 +13148,7 @@ function kamishihiBuild(ctx){
     c2.imageSmoothingEnabled=true; c2.drawImage(cv,X(K.X0),Z(K.Z0),K.W*s0,K.DD*s0); c2.drawImage(mk,X(K.X0),Z(K.Z0),K.W*s0,K.DD*s0);
     c2.fillStyle='rgba(10,8,6,.55)'; c2.beginPath(); c2.rect(0,0,W,H); c2.rect(X(B.minX),Z(B.minZ),(B.maxX-B.minX)*s0,(B.maxZ-B.minZ)*s0); c2.fill('evenodd');
     const lab=(t,x,y,col='#fff',sz=12)=>{ c2.font=`bold ${sz}px "Zen Kaku Gothic New",sans-serif`; c2.lineWidth=3; c2.strokeStyle='rgba(0,0,0,.75)'; c2.strokeText(t,x,y); c2.fillStyle=col; c2.fillText(t,x,y); };
+    p3eOldMapDraw(ctx,c2,X,Z,s0,lab);
     for(const st of D.pts.station){ c2.fillStyle='#fff'; c2.fillRect(X(st[0])-4,Z(st[1])-4,8,8); lab(st[2]+'駅',X(st[0])+7,Z(st[1])+4); }
     lab('← 光明寺',Math.max(6,X(D.exitWest.x)+4),Z(D.exitWest.z)-8,'#ffe08a',13); lab('上志比',10,24,'#fff',16); // 地域名は画面の左上に固定（拡大しても切れない）
     c2.save(); c2.translate(X(P.x),Z(P.z)); c2.rotate(-P.facing+Math.PI); c2.fillStyle='#ffd23a'; c2.strokeStyle='#000'; c2.lineWidth=1.5; c2.beginPath(); c2.moveTo(0,-9); c2.lineTo(6,7); c2.lineTo(0,3); c2.lineTo(-6,7); c2.closePath(); c2.fill(); c2.stroke(); c2.restore();
@@ -13084,6 +13157,43 @@ function kamishihiBuild(ctx){
     p3dScoutDraw(c2,X,Z,true); // v0.84 ずがに汁
     lab('地形：国土地理院 標高タイル／道・建物：© OpenStreetMap contributors',8,H-10,'#cfc6b4',10); };
   kamiPopulate(ctx,dmg0); // v0.67：獣・採集・伐採
+}
+
+// E3-2：古い地図の各項目は、対応する建物や採集地点があるときに重ねる。
+const OLDMAP=[
+  {find:()=>p3cBld(110),draw:(c,X,Z,b,scale,lab)=>p3eOldMapBuilding(c,X,Z,b,lab,'よろず屋')},
+  {find:()=>p3cBld(16),draw:(c,X,Z,b,scale,lab)=>p3eOldMapBuilding(c,X,Z,b,lab,'集会所')},
+  {mini:true,find:ctx=>ctx.kw?.nodes.filter(n=>n.k==='herb'&&/^h(?:[0-9]|1[01])$/.test(n.key)),
+    draw:p3eOldMapHerbs}
+];
+function p3eOldMapDraw(ctx,c,X,Z,scale,lab){
+  if(!p3bState().e3.map) return;
+  c.save();
+  for(const layer of OLDMAP){
+    if(!lab&&!layer.mini) continue;
+    const data=layer.find(ctx);
+    if(data) layer.draw(c,X,Z,data,scale,lab);
+  }
+  c.restore();
+}
+function p3eOldMapBuilding(c,X,Z,b,lab,name){
+  const [x,z,l,w,a]=b, cs=Math.cos(a), sn=Math.sin(a);
+  c.strokeStyle='#ffe08a'; c.lineWidth=1.5; c.beginPath();
+  [[-l/2,-w/2],[l/2,-w/2],[l/2,w/2],[-l/2,w/2]].forEach(([u,v],i)=>{
+    const px=X(x+u*cs-v*sn), pz=Z(z+u*sn+v*cs);
+    if(i) c.lineTo(px,pz); else c.moveTo(px,pz);
+  });
+  c.closePath(); c.stroke();
+  lab(name,X(x)+5,Z(z)-5,'#ffe08a');
+}
+function p3eOldMapHerbs(c,X,Z,nodes,scale){
+  c.fillStyle='rgba(164,224,146,.38)';
+  for(const n of nodes){
+    const i=Number(n.key.slice(1)), angle=hash2(i,15)*TAU, offset=3+hash2(i,16)*4;
+    c.beginPath();
+    c.arc(X(n.x+Math.cos(angle)*offset),Z(n.z+Math.sin(angle)*offset),15*scale,0,TAU);
+    c.fill();
+  }
 }
 
 // ================= v0.67（P2）上志比の獣・採集・伐採 =================

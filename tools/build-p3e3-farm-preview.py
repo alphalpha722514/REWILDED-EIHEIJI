@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""古い農家（E3-1・E3-2）の検収用の試遊版を作る。docs/p3e3-farm-preview.md を参照。"""
+"""v0.91 の index.html から古い農家（E3-1・E3-2）の検収用の試遊版を作る。docs/p3e3-farm-preview.md を参照。"""
 import argparse
 import hashlib
 import os
@@ -8,8 +8,9 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REF = 'b0d81988bbf755f63bb556b077df7f411ec4d1ef'  # E3-2：古い農家の調査・アイテム発見と入口の選び方の直し、p3e3-search、2026-11-26
-BLOB = 'b0ae7edaa9ae04d2f00f3b4bf3873843bb20c2f1'  # E3-2 の index.html（git の blob）
+REF = '4ec7bae7ff7743dfcfae233a252534ad4127b4ce'  # v0.91：古い農家の調査・アイテム発見の公開の準備、p3e3-search、2026-11-26
+BLOB = '0ca510a9e5f7373a45fa189ce67750eb599eff48'  # v0.91 の index.html（git の blob）
+# それより前：REF = b0d81988bbf755f63bb556b077df7f411ec4d1ef（E3-2：古い農家の調査・アイテム発見と入口の選び方の直し、p3e3-search、2026-11-26）・BLOB = b0ae7edaa9ae04d2f00f3b4bf3873843bb20c2f1
 # それより前：REF = e41f38854bbbe464187c8b54f91613d1d244419a（E3-2：古い農家の調査・アイテム発見、p3e3-search、2026-11-26）・BLOB = 8685c4d8c0f6045548970337c49931f483c3e96e
 # それより前：REF = 93b1da2095306396794992ecb0761c0752aaddbf（v0.90：三人称カメラの上下の操作の公開の準備、cam-pitch、2026-11-26）・BLOB = 01d98dbdb6d7fc7b01ff04836507e845c989a8be
 # それより前：REF = b8d35964acbec591c3c9f6f9fd39bf9cb8a530fe（v0.89（P3-E の E3-1・古い農家の中）の公開の準備、p3e3-farm-interior、2026-11-26）・BLOB = 4365d9987c4c277969e1ee241ac3e6be3c49e33d
@@ -18,7 +19,7 @@ OUT = os.path.join(ROOT, 'previews', 'p3e3-farm', 'index.html')
 PRE = 'eiheiji_p3e3f_'  # 試遊版の設定のキーの頭
 
 ap = argparse.ArgumentParser()
-ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：b0d8198）')
+ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：v0.91 の 4ec7bae）')
 ap.add_argument('--src', help='git から取り出さず、このファイルを元にする')
 ap.add_argument('--out', help='出力先（既定：previews/p3e3-farm/index.html）')
 a = ap.parse_args()

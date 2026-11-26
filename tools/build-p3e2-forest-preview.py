@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """v0.88（P3-E の E-2：上志比の森林）の検収用の試遊版を作る（previews/p3e2-forest/index.html）。docs/p3e2-forest-preview.md
 
-- 元にするのは v0.90 の index.html（既定はコミット 93b1da2。三人称カメラの上下の操作の公開の準備、cam-pitch、2026-11-26）。本編の index.html（main）は使わない・変えない
+- 元にするのは v0.91 の index.html（既定はコミット 4ec7bae。古い農家の調査・アイテム発見の公開の準備、p3e3-search、2026-11-26）。本編の index.html（main）は使わない・変えない
 - 保存キーと設定のキーを、すべて試遊版だけのものに変える（本編のセーブ・設定を読まない・書かない）
   さらにページのいちばん初めで、本編のキーを読む・書く・消すのを止める（変え忘れがあっても本編に触れない）
 - タイトル画面の右上に「テスト：上志比の森で始める」ボタン
@@ -19,8 +19,9 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REF = '93b1da2095306396794992ecb0761c0752aaddbf'  # v0.90：三人称カメラの上下の操作の公開の準備、cam-pitch、2026-11-26
-BLOB = '01d98dbdb6d7fc7b01ff04836507e845c989a8be'  # v0.90 の index.html（git の blob）
+REF = '4ec7bae7ff7743dfcfae233a252534ad4127b4ce'  # v0.91：古い農家の調査・アイテム発見の公開の準備、p3e3-search、2026-11-26
+BLOB = '0ca510a9e5f7373a45fa189ce67750eb599eff48'  # v0.91 の index.html（git の blob）
+# それより前：REF = 93b1da2095306396794992ecb0761c0752aaddbf（v0.90：三人称カメラの上下の操作の公開の準備、cam-pitch、2026-11-26）・BLOB = 01d98dbdb6d7fc7b01ff04836507e845c989a8be
 # それより前：REF = b8d35964acbec591c3c9f6f9fd39bf9cb8a530fe（v0.89（P3-E の E3-1・古い農家の中）の公開の準備、p3e3-farm-interior、2026-11-26）・BLOB = 4365d9987c4c277969e1ee241ac3e6be3c49e33d
 # それより前：REF = a4120aa61866a1cdea4ea88ae83c66ca94fd2010（v0.88.1（作業中）：森の音を静かに・KEI truck の音（作り直し：5段ギア・水平対向4気筒・始動音）、v0.88.1-sound、2026-11-25）・BLOB = 96f9ee20178d091de855e63d61e345f0c2867707
 # それより前：REF = a12e3faf3bfef6be203778926b04d85d65a88877（v0.88.1（作業中）：森の音を静かに・KEI truck の音・地域移動ですぐ無音、v0.88.1-sound、2026-11-25）・BLOB = dc4bbc7f5e85398a0eb75851c5d053bec9b33353
@@ -34,7 +35,7 @@ OUT = os.path.join(ROOT, 'previews', 'p3e2-forest', 'index.html')
 PRE = 'eiheiji_p3e2f_'  # 試遊版の設定のキーの頭
 
 ap = argparse.ArgumentParser()
-ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：v0.90 の 93b1da2）')
+ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：v0.91 の 4ec7bae）')
 ap.add_argument('--src', help='git から取り出さず、このファイルを元にする')
 ap.add_argument('--out', help='出力先（既定：previews/p3e2-forest/index.html）')
 a = ap.parse_args()
