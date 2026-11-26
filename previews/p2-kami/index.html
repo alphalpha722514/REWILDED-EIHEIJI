@@ -656,10 +656,10 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
         <button id="btnAimTitle">攻撃方向：カーソル</button>
       </div>
       <p id="saveNote"></p>
-      <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>スマホ：画面の左をなぞって移動、ボタンで操作。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
+      <p class="tkeys">PC：WASD 移動・左クリック 攻撃・右クリック 強攻撃・Space 回避・E 調べる<br>中ボタンのドラッグ：カメラ（左右・上下）・X／Z：上を見る／下を見る<br>スマホ：画面の左をなぞって移動。画面の右側をなぞる：カメラ（左右・上下）。詳しくは「操作方法」へ<br><span class="tdemo">デモ版です。内容は今後変わることがあります。</span></p>
     </div>
   </div>
-  <div class="tfoot"><span class="tver">v0.89 上志比の獣・採集 テスト版（本編とは別に保存）　第二章・上志比の森林</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
+  <div class="tfoot"><span class="tver">v0.90 上志比の獣・採集 テスト版（本編とは別に保存）　第二章・上志比の森林</span><span class="credit">地形・地図：国土地理院の標高データ、© OpenStreetMap contributors（ODbL）、e-Stat 国勢調査の境界データを加工して作成。道・建物・駅・神社・寺の位置は実際のもの（形は簡略化）。拠点・柵・人物・物語はすべて架空です。タイトルの英字：Anton（The Anton Project Authors、SIL Open Font License 1.1）の字形を加工。</span></div>
 </div>
 
 <div class="ov" id="howto" hidden>
@@ -667,7 +667,9 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
     <h2>操作方法</h2>
     <div class="ctl">
       <kbd>W A S D</kbd><span>移動（カメラの向きが前）。歩くとカメラが自然に背後へ回り込みます</span>
-      <kbd>← →</kbd><span>カメラを回す（ホイールを押しながらドラッグでも可）。C で主人公の背後へ</span>
+      <kbd>← →</kbd><span>カメラを左右に回す。C で主人公の背後と標準の角度へ</span>
+      <kbd>中ボタン</kbd><span>ドラッグでカメラを左右・上下に回す</span>
+      <kbd>X / Z</kbd><span>上を見る／下を見る</span>
       <kbd>マウス</kbd><span>攻撃はマウスの方向に出ます。立ち止まるとマウスの方を向きます</span>
       <kbd>左クリック / J</kbd><span>通常攻撃の連続技（鉈・棍棒・槍は3段、斧は2段）。出が速く隙が小さい</span>
       <kbd>右クリック / K</kbd><span>強攻撃。通常攻撃の途中で押すと派生技になる。スタミナを使う</span>
@@ -682,7 +684,7 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
       <kbd>Esc</kbd><span>一時停止</span>
       <kbd>M</kbd><span>効果音のオン・オフ</span>
     </div>
-    <p style="font-size:14px;margin-top:12px"><b>スマホ</b>：画面の左下をなぞって移動、右側をなぞってカメラを回す。右下のボタンで攻撃（押しっぱなしで連続）・強攻撃・回避・調べる。「持替」は武器が2つ以上あるときに出て、光っている間に攻撃すると切り替え技。攻撃は近くの獣へ自動で向きます。アイテムは画面左のおにぎり等をタップ。</p>
+    <p style="font-size:14px;margin-top:12px"><b>スマホ</b>：画面の左下をなぞって移動、右側をなぞってカメラを左右・上下に回す。右下のボタンで攻撃（押しっぱなしで連続）・強攻撃・回避・調べる。「持替」は武器が2つ以上あるときに出て、光っている間に攻撃すると切り替え技。攻撃は近くの獣へ自動で向きます。アイテムは画面左のおにぎり等をタップ。</p>
     <p style="font-size:13px;color:var(--washi-dim);margin-top:12px">獣の攻撃には必ず予兆があります。赤い印が出たら回避の準備を。イノシシは障害物にぶつかると目を回します。</p>
     <div class="btns"><button class="pri" id="btnHowBack">もどる</button></div>
   </div>
@@ -706,6 +708,8 @@ img.ld{background:rgba(255,255,255,.05);border-radius:10px;}
       <button id="btnPerfRec" hidden>計測を記録（30秒）</button>
       <button id="btnToTitle">タイトルへ（自動セーブ）</button>
     </div>
+    <div class="lbl" style="margin-top:10px">カメラ</div>
+    <div class="btns" style="flex-wrap:wrap;gap:6px"><button id="camPitchSens" style="font-size:12px;padding:6px 8px">上下の感度：標準</button><button id="camPitchInv" style="font-size:12px;padding:6px 8px">上下の反転：オフ</button></div>
     <div class="lbl" style="margin-top:10px">音</div>
     <div class="btns" id="sndRow" style="flex-wrap:wrap;gap:6px"><button id="sndSe" style="font-size:12px;padding:6px 8px">効果音：オン</button><button id="sndBgm" style="font-size:12px;padding:6px 8px">BGM：オン</button><button id="sndAmb" style="font-size:12px;padding:6px 8px">環境音：オン</button><button id="sndCar" style="font-size:12px;padding:6px 8px">車の音：オン</button></div>
   </div>
@@ -1510,8 +1514,8 @@ function genBuilding(gb,lo,b){
   gb.tess=0; gb.frame(x,y0,z,rot);
   if(wreck){ const r=lvD===5?collapseHouse(gb,lo,gi0,gv0,li0,L,W,fh,roofTop,x,z):blowOffHouse(gb,gi0,gv0,L,W,fh,roofTop,lastH,x,z,kind); if(r) roofTop=r; }
   else houseDamage(gb,L,W,fh,lastH,Math.min(lvD,4),kind,x,z); // G3：被害と補修を重ねる
-  addOBox(x,z,L+0.3,W+0.3,rot,'house',{h:y0+roofTop});
-  return {kind,top:y0+roofTop};
+  const col=addOBox(x,z,L+0.3,W+0.3,rot,'house',{h:y0+roofTop,roofBase:y0+fh+(kind==='green'?1.6:lastH-0.55)});
+  return {kind,top:y0+roofTop,col};
 }
 const bldChunks=new Map();
 function buildBuildings(){
@@ -1844,7 +1848,7 @@ function baseHall(ox,oz,w,d){
   // 室外機・物置
   g.add(J(mesh(rbox(0.8,0.6,0.35,0.05),mat(0xd8dad6),w/2+0.45,0.6,-d/4),0.04)); g.add(mesh(G.cyl,mat(0x6a6e70),w/2+0.63,0.62,-d/4,0.2,0.04,0.2)).rotation&&0;
   const sign=signBoard([{text:'光明寺防衛区 桜隊 詰所'}],3.2,0.42,{sakura:true,grain:true,bg:'#efe6cf'}); sign.position.set(0,3.05,d/2+0.12);
-  const r=placeBase(g,ox,oz,[sign],0); addHouseBox(r.x,r.z,w,d,4.5); /* 入口は拠点の内側を向く */ regFade(r.m,r.x,r.z,Math.max(w,d)/2+0.8,6); return r; }
+  const r=placeBase(g,ox,oz,[sign],0); addOBox(r.x,r.z,w+0.4,d+0.4,0,'house',{h:4.5,roofBase:2.63,roofPeak:4.32}); /* 入口は拠点の内側を向く */ regFade(r.m,r.x,r.z,Math.max(w,d)/2+0.8,6); return r; }
 // プレハブ（倉庫・無線室）
 function prefab(ox,oz,w,d,opt={}){
   const g=new THREE.Group(); const H=2.6; siding(g,w,H,d,0xd6dad6);
@@ -7594,7 +7598,7 @@ function sfx(k){
 
 // ================= 入力 =================
 const keys=new Set(); const mouse={x:0,y:0,active:false};
-const ray=new THREE.Raycaster(); const groundPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0); const mp=new THREE.Vector3(); const ndc=new THREE.Vector2();
+const ray=new THREE.Raycaster(); const groundPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0); const feetPlane=groundPlane.clone(); const mp=new THREE.Vector3(); const ndc=new THREE.Vector2();
 window.addEventListener('keydown',e=>{
   const k=e.key.toLowerCase();
   if([' ','tab','arrowup','arrowdown','arrowleft','arrowright'].includes(k)||e.code==='Space') e.preventDefault();
@@ -7607,6 +7611,7 @@ window.addEventListener('keydown',e=>{
   if(k==='tab'){ if(S.mode==='playing') openInv(); else if(S.mode==='menu'&&!$('inv').hidden) closeOverlay(); return; }
   if(k==='m'){ S.muted=!S.muted;if(S.muted) stopBeastVoices51(); toast(S.muted?'効果音：オフ':'効果音：オン'); return; }
   if(S.mode!=='playing') return;
+  if((k==='x'||k==='z')&&!camPitchInput()) return;
   keys.add(k);
   if(k==='e') interact();
   else if(k===' ') tryDodge();
@@ -7616,13 +7621,13 @@ window.addEventListener('keydown',e=>{
   else if(k==='f') scaleWaveBtn(); // v0.64：変異した鱗の衝撃波
   else if(k>='1'&&k<='9') hotbarPick(+k-1); // v0.45：手持ちバーの選択（武器は装備、食べ物は食べる）
   else if(k==='0') hotbarPick(9); // v0.45：10番目（インベントリ）
-  else if(k==='c'){ cam.yaw=P.facing; cam.manualT=0.8; }
+  else if(k==='c'){ cam.yaw=P.facing; cam.manualT=0.8; if(camPitchInput()){ cam.pitch[camPitchScene()]=0; cam.dragDY=0; } }
 });
 window.addEventListener('keyup',e=>{ const k=e.key.toLowerCase(); keys.delete(k); if(k==='e'&&P3D.fish) p3dRelease(); });
 window.addEventListener('blur',()=>{ keys.clear(); if(S.mode==='playing'&&!touchMode) openPause(); }); // v0.32.1：スマホでは画面の端からのなぞり（OSの操作）でも blur が来るので止めない。ほかのアプリへ移ったときは下の visibilitychange で止まる
 document.addEventListener('visibilitychange',()=>{ if(document.hidden&&S.mode==='playing') openPause(); });
 const cv=$('cv');
-cv.addEventListener('pointermove',e=>{ if(e.pointerType!=='mouse') return; if(e.buttons&4){ cam.dragDX+=e.movementX||0; } mouse.x=e.clientX; mouse.y=e.clientY; mouse.active=true; });
+cv.addEventListener('pointermove',e=>{ if(e.pointerType!=='mouse') return; if(e.buttons&4){ cam.dragDX+=e.movementX||0; if(camPitchInput()) cam.dragDY+=e.movementY||0; } mouse.x=e.clientX; mouse.y=e.clientY; mouse.active=true; });
 cv.addEventListener('pointerdown',e=>{ if(e.pointerType!=='mouse') return; e.preventDefault(); audioInit(); cv.focus();
   if(S.mode==='dialog'){ advanceDialog(); return; }
   if(S.mode!=='playing') return; mouse.x=e.clientX; mouse.y=e.clientY; mouse.active=true;
@@ -7634,6 +7639,31 @@ $('dialog').addEventListener('pointerdown',e=>{ e.preventDefault(); audioInit();
 
 // ================= タッチ操作 =================
 // v0.45：攻撃方向の設定。cursor＝カーソル地点へ攻撃／facing＝体の向いている方向へ攻撃。保存して次回起動も維持。
+const CAM_PITCH_KEY='eiheiji_camPitch';
+const CAM_PITCH_SENS={low:{label:'低',gain:0.6},std:{label:'標準',gain:1},high:{label:'高',gain:1.5}};
+function readCamPitchSettings(){
+  try{
+    const value=JSON.parse(localStorage.getItem(CAM_PITCH_KEY));
+    if(value?.v===1&&typeof value.sens==='string'&&Object.hasOwn(CAM_PITCH_SENS,value.sens)&&typeof value.inv==='boolean') return value;
+  }catch(e){}
+  return {v:1,sens:'std',inv:false};
+}
+const camPitchSettings=readCamPitchSettings();
+function showCamPitchSettings(){
+  $('camPitchSens').textContent='上下の感度：'+CAM_PITCH_SENS[camPitchSettings.sens].label;
+  $('camPitchInv').textContent='上下の反転：'+(camPitchSettings.inv?'オン':'オフ');
+}
+function saveCamPitchSettings(){
+  try{ localStorage.setItem(CAM_PITCH_KEY,JSON.stringify(camPitchSettings)); }catch(e){}
+  showCamPitchSettings();
+}
+$('camPitchSens').onclick=()=>{
+  const levels=Object.keys(CAM_PITCH_SENS);
+  camPitchSettings.sens=levels[(levels.indexOf(camPitchSettings.sens)+1)%levels.length];
+  saveCamPitchSettings();
+};
+$('camPitchInv').onclick=()=>{ camPitchSettings.inv=!camPitchSettings.inv; saveCamPitchSettings(); };
+showCamPitchSettings();
 const AIM={mode:(function(){ try{ const m=localStorage.getItem('eiheiji_aimMode'); if(m==='facing'||m==='cursor') return m; }catch(e){} return 'cursor'; })()};
 function saveAimMode(){ try{ localStorage.setItem('eiheiji_aimMode',AIM.mode); }catch(e){} }
 function updateAimBtns(){ for(const id of ['btnAim','btnAimTitle']){ const b=$(id); if(b) b.textContent='攻撃方向：'+(AIM.mode==='facing'?'プレイヤーの向き':'カーソル'); } }
@@ -7696,9 +7726,18 @@ tbtn('tbAct',()=>{ held.act=true; interact(); },()=>{ held.act=false; }); // v0.
 tbtn('tbMap',()=>openMap()); // v0.45：持ち物ボタンは廃止（手持ちバー端の🎒とTabで開く）
 tbtn('tbPause',()=>openPause());
 // 画面右側をなぞるとカメラが回る
-const camZone=$('camZone'); const cz={id:null,x:0};
-camZone.addEventListener('pointerdown',e=>{ e.preventDefault(); enableTouch(); if(cz.id!==null) return; cz.id=e.pointerId; cz.x=e.clientX; try{ camZone.setPointerCapture(e.pointerId);}catch(_){} });
-camZone.addEventListener('pointermove',e=>{ if(e.pointerId!==cz.id) return; e.preventDefault(); cam.dragDX+=(e.clientX-cz.x)*1.3; cz.x=e.clientX; });
+const camZone=$('camZone'); const cz={id:null,x:0,y:0,travel:0};
+camZone.addEventListener('pointerdown',e=>{ e.preventDefault(); enableTouch(); if(cz.id!==null) return; cz.id=e.pointerId; cz.x=e.clientX; cz.y=e.clientY; cz.travel=0; try{ camZone.setPointerCapture(e.pointerId);}catch(_){} });
+camZone.addEventListener('pointermove',e=>{
+  if(e.pointerId!==cz.id) return;
+  e.preventDefault();
+  const dx=e.clientX-cz.x, dy=e.clientY-cz.y;
+  cam.dragDX+=dx*1.3;
+  // なぞり始めだけ、横移動に伴う小さな縦ぶれを抑える。
+  if(camPitchInput()&&(cz.travel>=10||Math.abs(dy)>=Math.abs(dx)*0.35)) cam.dragDY+=dy*1.3;
+  cz.travel+=Math.hypot(dx,dy);
+  cz.x=e.clientX; cz.y=e.clientY;
+});
 const czEnd=e=>{ if(e.pointerId===cz.id) cz.id=null; }; camZone.addEventListener('pointerup',czEnd); camZone.addEventListener('pointercancel',czEnd);
 /* v0.45：食べ物のタップは手持ちバーのスロットへ移設 */
 function joyVec(){ const m=Math.hypot(joy.x,joy.y); return m>0.18?{x:joy.x,z:joy.y,m:Math.min(1,(m-0.18)/0.7+0.3)}:null; }
@@ -7710,18 +7749,24 @@ function autoAim(){
   return best;
 }
 
-function mouseGround(){
+function mouseGround(plane=groundPlane){
   ndc.set(mouse.x/window.innerWidth*2-1,-(mouse.y/window.innerHeight)*2+1);
-  ray.setFromCamera(ndc,camera); return ray.ray.intersectPlane(groundPlane,mp)?mp:null;
+  ray.setFromCamera(ndc,camera); return ray.ray.intersectPlane(plane,mp)?mp:null;
+}
+function mouseGroundAngle(g){
+  if(!g) return null;
+  const dx=g.x-P.x, dz=g.z-P.z, d2=dx*dx+dz*dz;
+  return d2>0.04&&d2<6400?Math.atan2(dx,dz):null;
 }
 function aimAngle(){
   if(AIM.mode==='facing') return P.facing; // v0.45：向きモード。カーソルも古いマウス座標も使わず、体の向き＝攻撃方向
   if(mouse.active){
-    const g=mouseGround();
-    if(g){ const dx=g.x-P.x, dz=g.z-P.z, d2=dx*dx+dz*dz;
-      // 地面との交点が極端に遠い場合（地平線付近など）は誤った方向へ振らない
-      if(d2>0.04&&d2<6400) return Math.atan2(dx,dz);
-    }
+    const angle=mouseGroundAngle(mouseGround());
+    if(angle!==null) return angle;
+    // 地平線付近などでは、主人公の足元の高さでも交点を探す。
+    feetPlane.constant=-groundH(P.x,P.z);
+    const feetAngle=mouseGroundAngle(mouseGround(feetPlane));
+    if(feetAngle!==null) return feetAngle;
   }
   const a=autoAim(); return a==null?P.facing:a;
 }
@@ -8621,7 +8666,7 @@ function failEvent(){
 
 // ================= ヌシ演出 v0.52 =================
 function bossCinema52(){return typeof bossE!=='undefined'&&bossE&&!bossE.removed&&bossE.state==='intro'&&S.mode==='playing';}
-function clearCinemaInput52(){keys.clear();held.atk=false;joy.id=null;joy.x=joy.y=0;cam.dragDX=0;P.dbuf=0;}
+function clearCinemaInput52(){keys.clear();held.atk=false;joy.id=null;joy.x=joy.y=0;cam.dragDX=0;cam.dragDY=0;P.dbuf=0;}
 function beastImpact52(e,power){
  const distance=dist(e.x,e.z,P.x,P.z);
  const attenuation=Math.max(0,1-distance/55);
@@ -8712,7 +8757,7 @@ function beginFarewell52(e){
  farewell52={e:e,index:0,t:0};
  e.state='farewell';e.st=0;e.spd=0;
  S.mode='nushiFarewell52';S.resultT=0;
- keys.clear();held.atk=false;joy.id=null;joy.x=joy.y=0;cam.dragDX=0;
+ keys.clear();held.atk=false;joy.id=null;joy.x=joy.y=0;cam.dragDX=0;cam.dragDY=0;
  stopBeastVoices51();
  document.body.classList.remove('cinema52');
  document.body.classList.add('nushiFarewell52');
@@ -8790,7 +8835,7 @@ function queueDialog(lines,onEnd){ dlgQueue.push(...lines); if(onEnd) dlgOnEnd=o
 function nextDialog(){
   if(!dlgQueue.length){ $('dialog').hidden=true; if(S.mode==='dialog') S.mode='playing'; const f=dlgOnEnd; dlgOnEnd=null; if(f) f(); return; }
   const [who,text,o]=dlgQueue.shift();
-  S.mode='dialog'; $('dialog').hidden=false; $('dlgName').textContent=who?who.name:''; $('dlgText').textContent=text;
+  S.mode='dialog'; cam.dragDY=0; $('dialog').hidden=false; $('dlgName').textContent=who?who.name:''; $('dlgText').textContent=text;
   { const tg=$('dlgTag'); if(tg) tg.hidden=!(o&&o.prov); } // v0.77：承認前の台詞（草案）には「草案（未承認）」の札を出す
   keys.clear();
 }
@@ -9102,7 +9147,7 @@ function renderDepot(){ const t=trk(), L=TRUCK_SYS, hm=trkHpMax(t);
 
 // ================= オーバーレイ管理 =================
 function hideAllOv(){ for(const id of ['title','howto','pause','craft','depotOv','mgmtOv','bookOv','inv','dead','result','quests','mapOv','store','npcOv']) $(id).hidden=true; const c=document.getElementById('defenseChoice');if(c)c.remove(); }
-function openPause(){ if(S.mode!=='playing') return; S.mode='paused'; keys.clear(); $('pause').hidden=false; f11Pause(); f31Pause();
+function openPause(){ if(S.mode!=='playing') return; S.mode='paused'; keys.clear(); cam.dragDY=0; $('pause').hidden=false; f11Pause(); f31Pause();
   $('pauseInfo').textContent=`経過 ${fmtTime(stats.time)}　撃退 ${stats.kills}　見切り ${stats.perfect}`; }
 function openCraft(at){ CRAFT.at=at==='truck'?'truck':at==='hq'?'hq':at==='works'?'works':'bench'; CRAFT.det=false; stopBeastVoices51(); S.mode='menu'; keys.clear(); renderCraft(); $('craft').hidden=false; }
 function renderHuntRecords(){
@@ -9143,7 +9188,7 @@ function openInv(){ f31Inv(); f34Body(); renderHuntRecords(); { const st=p3dStat
   renderArms();
   f9InvLine(); $('inv').hidden=false;
 }
-function closeOverlay(){ $('pause').hidden=true; $('craft').hidden=true; $('depotOv').hidden=true; $('mgmtOv').hidden=true; $('bookOv').hidden=true; $('store').hidden=true; $('npcOv').hidden=true; $('quests').hidden=true; $('mapOv').hidden=true; $('inv').hidden=true; $('howto').hidden=true; if(S.mode==='paused'||S.mode==='menu') S.mode='playing'; cv.focus(); if(dlgQueue.length) nextDialog(); }
+function closeOverlay(){ $('pause').hidden=true; $('craft').hidden=true; $('depotOv').hidden=true; $('mgmtOv').hidden=true; $('bookOv').hidden=true; $('store').hidden=true; $('npcOv').hidden=true; $('quests').hidden=true; $('mapOv').hidden=true; $('inv').hidden=true; $('howto').hidden=true; if(S.mode==='paused'||S.mode==='menu'){ clearCamPitchInput(); S.mode='playing'; } cv.focus(); if(dlgQueue.length) nextDialog(); }
 function fmtTime(s){ s=Math.floor(s); return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
 
 // ================= 敗北・リトライ =================
@@ -9390,6 +9435,7 @@ function applySave(d){
 
 // ================= ゲーム開始・リセット =================
 function resetWorld(extra){
+  resetCamPitch();
   resetWeather();
   f47ApplyVisual();
   clearRaidEnemies(); ev.kind=null; ev.phase=null; ev.queue=[]; ev.ended=false;
@@ -10010,7 +10056,18 @@ function updateLabels(dt){
 
 // ================= カメラ =================
 // 近距離の三人称カメラ：背後からやや低く追う。移動すると背後へ回り込み、戦闘中は相手を画面に入れる
-const cam={yaw:Math.PI,curDist:CAM.dist,pos:new THREE.Vector3(),look:new THREE.Vector3(),init:false,foe:null,fov:64,dragDX:0};
+const cam={yaw:Math.PI,curDist:CAM.dist,pos:new THREE.Vector3(),look:new THREE.Vector3(),init:false,foe:null,fov:64,dragDX:0,dragDY:0,pitch:{out:0,in:0,truck:0}};
+const CAM_DEG=Math.PI/180;
+// 仰角の範囲は度数で指定する。屋内に天井を作ったら min を下げられる。
+const CAM_PITCH={
+  out:{min:-10,max:60,def:Math.atan2(CAM.h-1.3,CAM.dist)},
+  in:{min:35,max:80,def:Math.atan2(7-1.3,5.2)},
+  truck:{min:8,max:40,def:Math.atan2(CAM.h+1.25-1.3,CAM.dist+3.9)}
+};
+function camPitchScene(){ return P3A.inside?'in':TRUCK.drive?'truck':'out'; }
+function camPitchInput(){ return S.mode==='playing'&&!cam.override&&!bossCinema52(); }
+function clearCamPitchInput(){ cam.dragDY=0; keys.delete('x'); keys.delete('z'); }
+function resetCamPitch(){ cam.pitch={out:0,in:0,truck:0}; clearCamPitchInput(); }
 function setCam(y){ cam.yaw=y; cam.init=false; }
 function camFoe(){
   let best=null,bd=1e9;
@@ -10038,6 +10095,49 @@ function camObstruct(ax,ay,az,bx,by,bz){
   }
   return best;
 }
+// 庇の張り出しを含む屋根の箱。頭が庇の下にある場合も線分の交差を調べる。
+const CAM_ROOF_OVERHANG=2.5;
+function camRoofBlocked(list,ax,ay,az,bx,by,bz){
+  for(const b of list){
+    const base=b.detailRoof?.roofBase??b.roofBase;
+    if(!b.active||base==null) continue;
+    const pad=CAM_ROOF_OVERHANG, dx=bx-ax, dz=bz-az;
+    const x=ax-b.x, z=az-b.z, hx=b.hx+pad, hz=b.hz+pad;
+    const top=b.detailRoof?.roofPeak??b.roofPeak??b.h;
+    let enter=0, exit=1;
+    for(const [p,d,lo,hi] of [
+      [x*b.c+z*b.s,dx*b.c+dz*b.s,-hx,hx],
+      [-x*b.s+z*b.c,-dx*b.s+dz*b.c,-hz,hz],
+      [ay,by-ay,base,top]
+    ]){
+      if(Math.abs(d)<1e-6){ if(p<lo||p>hi) exit=-1; }
+      else {
+        const a=(lo-p)/d, c=(hi-p)/d;
+        enter=Math.max(enter,Math.min(a,c));
+        exit=Math.min(exit,Math.max(a,c));
+      }
+      if(enter>exit) break;
+    }
+    if(enter<=exit) return true;
+  }
+  return false;
+}
+function camRoofAngle(e0,e,x,y,z,fx,fz,sx,sz,radius,gy){
+  // 回転で変わる候補をまとめて、近くの区画だけから屋根を探す。
+  const reach=radius+CAM.shoulder+CAM_ROOF_OVERHANG*Math.SQRT2;
+  const list=gridQuery(x-reach,x+reach,z-reach,z+reach);
+  const clear=angle=>{
+    const d=radius*Math.cos(angle);
+    return !camRoofBlocked(list,x,y,z,x-fx*d+sx,gy+1.3+radius*Math.sin(angle),z-fz*d+sz);
+  };
+  if(clear(e)) return e;
+  let lo=e0, hi=e;
+  for(let i=0;i<8;i++){
+    const mid=(lo+hi)/2;
+    if(clear(mid)) lo=mid; else hi=mid;
+  }
+  return lo;
+}
 // カメラと主人公の間にある森の杉を、その場で半透明の代役に差し替える
 const fadedF=new Map(), forestPool=[]; const _fm4=new THREE.Matrix4(), _zero=new THREE.Matrix4().makeScale(0,0,0); let forestFadeMat=null;
 function fadeForest(cx,cz,px,pz){
@@ -10052,6 +10152,8 @@ function fadeForest(cx,cz,px,pz){
     t[4].getMatrixAt(t[5],m.userData.m4); m.geometry=forestTreeGeo(); m.material=forestFadeMat; m.matrix.copy(m.userData.m4); m.visible=true; t[4].setMatrixAt(t[5],_zero); t[4].instanceMatrix.needsUpdate=true; fadedF.set(t,m); }
 }
 function updateCamera(dt){
+  const pitchInput=camPitchInput();
+  if(!pitchInput) clearCamPitchInput();
  if(S.mode==='nushiFarewell52'){farewellCamera52(dt);return;}
  if(bossCinema52()){ cinemaCamera52(dt); return; }
   if(S.mode==='title'&&!cam.override){ titleCam(); return; }
@@ -10077,11 +10179,40 @@ function updateCamera(dt){
   if(intro){ D=8.5; Hh=1.5; lookH=3.2; }
   if(TRUCK.drive){ D+=3.9; Hh+=1.25; lookH+=0.45; }
   if(P3A.inside){ D=5.2; Hh=7.0; lookH=0.6; ahead=0.4; } // P3-A：屋内は上から見下ろす（壁で主人公が隠れないように） // v0.77：運転中は少し引いて高く（正式モデルは全長 約4.1m・高さ 約2.5m）
+  const pitchScene=camPitchScene(), limit=CAM_PITCH[pitchScene];
   const fx=Math.sin(cam.yaw), fz=Math.cos(cam.yaw);
-  const gy=groundH(P.x,P.z)+(TRUCK.drive?(TRUCK.camLift||0):0); // v0.77：車が跳ねるとカメラも少し上がる
+  const ground=groundH(P.x,P.z);
+  const gy=ground+(TRUCK.drive?(TRUCK.camLift||0):0); // 車が跳ねるとカメラも少し上がる
+  const sx=-fz*CAM.shoulder, sz=fx*CAM.shoulder; // 右へずらして主人公を画面のやや左に置く
+  let change=0;
+  if(pitchInput){
+    const keyPitch=(Number(keys.has('z'))-Number(keys.has('x')))*0.9*dt;
+    const dragPitch=cam.dragDY*0.0065*0.6*CAM_PITCH_SENS[camPitchSettings.sens].gain*(camPitchSettings.inv?-1:1);
+    change=keyPitch+dragPitch;
+    cam.dragDY=0;
+  }
+  if(change||cam.pitch[pitchScene]){
+    const e0=Math.atan2(Hh-1.3,D), min=limit.min*CAM_DEG, max=limit.max*CAM_DEG;
+    if(change){
+      const next=clamp(cam.pitch[pitchScene]+change,min-e0,max-e0);
+      cam.pitch[pitchScene]=Math.abs(next)<1e-12?0:next;
+    }
+    const offset=cam.pitch[pitchScene];
+    if(offset){
+      let e=clamp(e0+offset,min,max);
+      if(playing&&!P3A.inside&&e>e0){
+        e=camRoofAngle(e0,e,P.x,ground+1.6,P.z,fx,fz,sx,sz,Math.hypot(D,Hh-1.3),gy);
+      }
+      const up=clamp((e0-e)/Math.max(CAM_DEG,e0-min),0,1);
+      const down=clamp((e-e0)/Math.max(CAM_DEG,max-e0),0,1);
+      const radius=Math.hypot(D,Hh-1.3)*(1-0.25*up);
+      if(e!==e0){ D=radius*Math.cos(e); Hh=1.3+radius*Math.sin(e); }
+      lookH+=up;
+      ahead*=1-0.7*down;
+    }
+  }
   let tx=P.x, tz=P.z;
   if(foe){ const k=foe.type==='boss'?0.3:0.2; tx=lerp(P.x,foe.x,k); tz=lerp(P.z,foe.z,k); }
-  const sx=-fz*CAM.shoulder, sz=fx*CAM.shoulder; // 右へずらして主人公を画面のやや左に置く
   _lv.set(tx+fx*ahead+sx,gy+lookH,tz+fz*ahead+sz);
   if(intro) _lv.set(bossE.x,groundH(bossE.x,bossE.z)+3.4,bossE.z);
   const py=gy+1.3;
@@ -10094,6 +10225,15 @@ function updateCamera(dt){
   if(!cam.init){ cam.pos.copy(_cv); cam.look.copy(_lv); cam.init=true; cam.curDist=want; }
   if(cam.pos.distanceTo(_cv)>25){ cam.pos.copy(_cv); cam.look.copy(_lv); }
   cam.pos.lerp(_cv,1-Math.exp(-dt*11)); cam.look.lerp(_lv,1-Math.exp(-dt*12));
+  // 上下に回した屋内では、補間中に手前の壁へ入り込まないようにする。
+  if(playing&&P3A.inside&&cam.pitch.in){
+    const hit=camObstruct(P.x,py,P.z,cam.pos.x,cam.pos.y,cam.pos.z);
+    if(hit<1){
+      const t=Math.max(0,hit-0.06);
+      cam.pos.set(lerp(P.x,cam.pos.x,t),lerp(py,cam.pos.y,t),lerp(P.z,cam.pos.z,t));
+    }
+  }
+  cam.pos.y=Math.max(cam.pos.y,groundH(cam.pos.x,cam.pos.z)+0.4);
   const sh=Math.min(0.8,S.shake)*0.32; S.shake=Math.max(0,S.shake-dt*2.6);
   camera.position.set(cam.pos.x+(Math.random()-0.5)*sh,cam.pos.y+(Math.random()-0.5)*sh*0.7-(cam.footPulse48||0)*.012,cam.pos.z+(Math.random()-0.5)*sh);
   camera.lookAt(cam.look);
@@ -10170,7 +10310,7 @@ async function regionTravel(id,at=null,opt={}){
   if(!opt.force&&!regionCanTravel()){ toast('今は移動できない',true); return false; }
   if(id!=='komyoji'&&!REG.defs[id]){ toast(regionName(id)+'へはまだ行けない',true); return false; }
   if(f4Busy()) f4DropAll(''); // v0.67：担いだ丸太・押している一輪車は、出る前にその場へ置く（地域をまたいで運ばない）
-  const from=REG.cur, mode=S.mode; REG.busy=true; S.mode='loading'; truckSoundReset(TRUCK.drive); regionLoading(true,regionName(id)); await nextFrame(); await nextFrame();
+  const from=REG.cur, mode=S.mode; REG.busy=true; S.mode='loading'; clearCamPitchInput(); truckSoundReset(TRUCK.drive); regionLoading(true,regionName(id)); await nextFrame(); await nextFrame();
   try{
     if(REG.live){ regionDispose(REG.live); REG.live=null; REG.hfn=null; REG.cfn=null; }
     if(id==='komyoji'){ komyojiShow(true); if(REG.homeBounds){ Object.assign(BOUNDS,REG.homeBounds); REG.homeBounds=null; }
@@ -10433,7 +10573,8 @@ function p3aHouse(ctx,gb,yd,b,type,rnd){ const [x,z,l0,w0,rot]=b; const L=Math.m
     gb.box(L/2-0.8,fh+0.9,W/2+1.0,0.9,1.8,0.75,cc(0xc83a2a)); gb.box(L/2-0.8,fh+1.2,W/2+1.38,0.7,0.9,0.02,cc(0x9fd4e0)); // 自販機
     p3aGutter(gb,L,W,fh+h1+h2-0.05,0.55); door.lx=0;
   }
-  ctx.obox(x,z,L+0.3,W+0.3,rot,'house',{h:y0+top,p3a:1});
+  const eave=type==='farm'?2.1:type==='farm2'?2.3:2.4;
+  ctx.obox(x,z,L+0.3,W+0.3,rot,'house',{h:y0+top,roofBase:y0+fh+eave,p3a:1});
   const [dx,dz]=P_(door.face===2?door.lx+1.2:door.lx,door.face===2?0:door.lz+1.2);
   if(b.idx===26) P3A.doors.push({id:'house26',x:dx,z:dz,type,inId:'farm'});
   else P3A.doors.push({id:'house'+b.idx,x:dx,z:dz,type,label:'（家の中の探索は P3-E。入口の位置だけ決めた）',future:true});
@@ -11412,7 +11553,7 @@ function p3dLanded(){ const F=P3D.fish, f=F.fishPick, st=p3dState(); const cm=Ma
 function p3dAragako(cm){ const F=P3D.fish, st=p3dState(); F.st='ara'; F.t=0; const first=!st.ara.caughtReleased; st.ara.observed=1; st.ara.caughtReleased=1;
   const e=st.book.ara||(st.book.ara={n:0,max:0,where:'',band:'',seen:1}); e.n++; e.seen=1; e.max=Math.max(e.max,cm); if(!e.where){ e.where=`${F.place}（${P3D_AREA[F.area]}）`; e.band=P3D_BAND[p3dBand()]; }
   const ux=(P.x+F.x)/2, uz=(P.z+F.z)/2, y=Math.max(F.y,groundH(P.x,P.z)); /* v0.86：岸が高いときに地面に埋もれないように */ p3dFishMesh(ARAGAKO,cm,P.x+Math.sin(P.facing)*1.2,y+0.9,P.z+Math.cos(P.facing)*1.2);
-  P3D.camOv=1; cam.override={p:new THREE.Vector3(P.x+Math.sin(P.facing+1.2)*2.2,y+1.5,P.z+Math.cos(P.facing+1.2)*2.2), l:new THREE.Vector3(P.x+Math.sin(P.facing)*1.2,y+0.9,P.z+Math.cos(P.facing)*1.2), fov:42};
+  P3D.camOv=1; clearCamPitchInput(); cam.override={p:new THREE.Vector3(P.x+Math.sin(P.facing+1.2)*2.2,y+1.5,P.z+Math.cos(P.facing+1.2)*2.2), l:new THREE.Vector3(P.x+Math.sin(P.facing)*1.2,y+0.9,P.z+Math.cos(P.facing)*1.2), fov:42};
   saveGame(); sfx('pickup'); banner('アラレガコ',`${cm}cm。頭が大きく、石のような模様。すぐに川へ戻そう`,3.4);
   setTimeout(()=>{ if(!P3D.fish||P3D.fish.st!=='ara') return; P3D.fish.st='release'; P3D.fish.t=0; toast(first?'アラレガコを、そっと川へ戻した。（図鑑に記録：釣ったあと川へ戻した）':'アラレガコを、そっと川へ戻した',true); },3400); }
 function p3dAfterCast(){ const c=p3cState(); if(c.soichi.found||REG.cur!=='kamishihi') return; if(!P3D.meetT) P3D.meetT=1.2; } // 初めて釣りをしたとき、宗一が来る
@@ -11582,7 +11723,7 @@ function rivObsTick(dt){ if(!RIV.obs) return; const ph=f10Phase(); for(const R o
 function rivObsOutside(L){ if(!RIV.obs||P3D.fish) return; for(const R of RIV.obs){ const d=dist(P.x,P.z,R.s.sx,R.s.sz); if(d<4.5) L.push({d:d+0.4,label:`観察する（${R.o.name}）`,act:()=>rivObserve(R)}); } }
 function rivObserve(R){ const o=R.o, ph=f10Phase(); if(!o.bands.includes(ph)){ toast(ph==='night'?'暗くて、よく見えない。明るいうちに来よう':'いまは姿が見えない。時間を変えて来てみよう'); return; }
   const st=p3dState(); if(!st.obs) st.obs={}; const e=st.obs[o.id]||(st.obs[o.id]={n:0,band:''}); const first=!e.n; e.n++; if(first) e.band=P3D_BAND[p3dBand()]; saveGame(); sfx('pickup');
-  const s=R.s, fx=Math.sin(s.dir), fz=Math.cos(s.dir), bx=s.sx-fx*0.6+fz*2.4, bz=s.sz-fz*0.6-fx*2.4; cam.override={p:new THREE.Vector3(bx,kamiH(bx,bz)+1.5,bz),l:new THREE.Vector3(s.wx,s.wy+(o.id==='oAyu'?-0.2:o.id==='oSagi'?0.8:1.0),s.wz),fov:38}; RIV.camT=4.5; // 主人公の横から（頭で隠れないように）
+  const s=R.s, fx=Math.sin(s.dir), fz=Math.cos(s.dir), bx=s.sx-fx*0.6+fz*2.4, bz=s.sz-fz*0.6-fx*2.4; clearCamPitchInput(); cam.override={p:new THREE.Vector3(bx,kamiH(bx,bz)+1.5,bz),l:new THREE.Vector3(s.wx,s.wy+(o.id==='oAyu'?-0.2:o.id==='oSagi'?0.8:1.0),s.wz),fov:38}; RIV.camT=4.5; // 主人公の横から（頭で隠れないように）
   if(first) banner(`図鑑に記録：${o.name}`,o.note,4.2); else toast(o.note); }
 function rivCamTick(dt){ if(RIV.camT>0){ RIV.camT-=dt; if(RIV.camT<=0&&!P3D.fish) cam.override=null; } }
 function p3dObsIcon(id){ const g=new THREE.Group(), B=(c,w,h,d,x,y,z)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color:c})); m.position.set(x,y,z); g.add(m); };
@@ -12255,7 +12396,7 @@ function p3bInteriorTick(dt){ const I=P3A.interior; if(!I||!I.g.visible) return;
   for(const d of I.doors){ const near=dist(P.x,P.z,d.x,d.z)<2.4||(typeof szHere==='function'&&szHere()&&dist(SZ.x,SZ.z,d.x,d.z)<2.2); d.o+=((near?1:0)-d.o)*Math.min(1,dt*8); const off=d.o*d.w*0.92; if(d.ax==='x') d.m.position.x=d.x+off; else d.m.position.z=d.z+off; }
   const cx=camera.position.x, cz=camera.position.z; for(const u of I.uppers) u.m.visible=!p3bSegHit(cx,cz,P.x,P.z,u.x0,u.z0,u.x1,u.z1); }
 function p3bSegHit(ax,az,bx,bz,cx,cz,dx,dz){ const d1=(bx-ax)*(cz-az)-(bz-az)*(cx-ax), d2=(bx-ax)*(dz-az)-(bz-az)*(dx-ax), d3=(dx-cx)*(az-cz)-(dz-cz)*(ax-cx), d4=(dx-cx)*(bz-cz)-(dz-cz)*(bx-cx); return d1*d2<0&&d3*d4<0; }
-async function p3aEnter(door){ if(P3A.busy||P3A.inside) return; P3A.busy=true; S.mode='dialog'; await stfFade(true);
+async function p3aEnter(door){ if(P3A.busy||P3A.inside) return; P3A.busy=true; S.mode='dialog'; clearCamPitchInput(); await stfFade(true);
   const want=door&&door.inId||'hq'; if(P3A.interior&&P3A.interior.id!==want) p3inDispose(); P3A.inId=want; const DEF=P3IN[want];
   const I=p3aInteriorBuild(); P3A.ret={x:P.x,z:P.z,f:P.facing,hfn:REG.hfn}; I.g.visible=true; for(const c of I.cols) if(!c.off) c.active=true;
   if(REG.live) REG.live.group.visible=false; P3A.inside=true; REG.inB={minX:DEF.o.x-1,maxX:DEF.o.x+DEF.w,minZ:DEF.o.z-1,maxZ:DEF.o.z+DEF.d}; REG.hfn=(x,z)=>(x>P3A_IN.x-10&&z>P3A_IN.z-10)?0:P3A.ret.hfn(x,z);
@@ -12264,7 +12405,7 @@ async function p3aEnter(door){ if(P3A.busy||P3A.inside) return; P3A.busy=true; S
   await stfWait(250); S.mode='playing'; await stfFade(false); P3A.busy=false; p3cResVis(); DEF.onEnter(); }
 function p3bHqEntered(){
   const hq=p3bState().hq; if(!hq.visited){ hq.visited=1; saveGame(); toast('中は暗く、ほこりっぽい。倉庫・作業場・上の階を調べてみよう'); } p3bTalkCheck(true); }
-async function p3aExit(){ if(P3A.busy||!P3A.inside) return; P3A.busy=true; S.mode='dialog'; await stfFade(true); const I=P3A.interior;
+async function p3aExit(){ if(P3A.busy||!P3A.inside) return; P3A.busy=true; S.mode='dialog'; clearCamPitchInput(); await stfFade(true); const I=P3A.interior;
   I.g.visible=false; for(const c of I.cols) c.active=false; if(REG.live) REG.live.group.visible=true; P3A.inside=false; REG.inB=null; REG.hfn=P3A.ret.hfn;
   const szIn=typeof szHere==='function'&&szHere()&&SZ.x>P3A_IN.x-60; P.x=P3A.ret.x; P.z=P3A.ret.z; P.facing=P3A.ret.f+Math.PI; cam.yaw=P.facing; if(szIn){ SZ.crumbs.length=0; szPlaceBehind(); } /* 中にいたスズキも外へ */ p3cResVis(); await stfWait(250); S.mode='playing'; await stfFade(false); P3A.busy=false; }
 function p3aMove(dx,dz){ P.x+=dx; P.z+=dz; }
@@ -12571,7 +12712,7 @@ const E1NUL={p:[],i:[],v:0,seed:0,jit:0,frame(){},box(){},quad(){},tri(){},wx:()
 function e1Start(c){ const R=gfxRad(), kw=E1.ctx&&E1.ctx.kw; E1.na=kw?kw.nodes.filter(n=>Math.abs(n.x-c.cx)<70&&Math.abs(n.z-c.cz)<70):[]; /* 採集・がれきの場所には小物を置かない */ E1.busy={c,i:0,A:new GB(),B:new GB(),G:[],F:[],S:new GB(),cols:[],hide:[],rnd:p3aRng(c.k*13+7),stage:0,prop:R.prop,lite:GFX.detail==='lite'}; E1.busy.A.jit=0.05; E1.busy.B.jit=0.04; }
 function e1Step(budget){ const J=E1.busy, c=J.c, D=KAMI.D, t0=performance.now();
   while(J.stage===0&&J.i<c.bld.length&&performance.now()-t0<budget){ const bi=c.bld[J.i++], b=D.bld[bi], F=e1Front(b), st=e1Style(b), dmg=dmgLevel(b[0],b[1]), rnd=p3aRng(bi*7919+31), RS=p3aRoadSegs({x:b[0],z:b[1]},Math.max(F.L,F.W)+16);
-    E1.leaf=J.B; const FB=J.lite?E1NUL:J.B, info=e1House(J.A,FB,b,F,st,dmg,rnd); if(!info) continue; e1Damage(J.A,b,info.y0,info.fh,dmg); if(J.prop>=1||rnd()<J.prop) e1Yard(J.A,FB,J.G,J.cols,b,F,st,dmg,rnd,info,RS); J.hide.push(b);
+    E1.leaf=J.B; const FB=J.lite?E1NUL:J.B, info=e1House(J.A,FB,b,F,st,dmg,rnd); if(!info) continue; e1Damage(J.A,b,info.y0,info.fh,dmg); if(J.prop>=1||rnd()<J.prop) e1Yard(J.A,FB,J.G,J.cols,b,F,st,dmg,rnd,info,RS); J.hide.push({b,roofBase:info.y0+info.fh+2.1,roofPeak:info.top});
     { const cs=Math.cos(F.rot), sn=Math.sin(F.rot); for(const [lx,lz] of info.pil) J.cols.push(addCircle(b[0]+lx*cs-lz*sn,b[1]+lx*sn+lz*cs,0.14,'post',{h:info.y0+info.fh+2.5})); } } // 家の前に出た柱（玄関・下屋・入口の庇）
   if(J.stage===0){ if(J.i>=c.bld.length) J.stage=1; return false; } // 家が済んだら、次のフレームで道の小物
   if(J.stage===1){ J.stage=2; const A=J.A, B=J.B, rnd=J.rnd; e2Floor(J,c); // v0.88：林床
@@ -12601,7 +12742,12 @@ function e1Step(budget){ const J=E1.busy, c=J.c, D=KAMI.D, t0=performance.now();
     if(J.F.length){ const geo=E1.fern||(E1.fern=p3aGrassGeo('fern')), im=new THREE.InstancedMesh(geo,p3aMats().sway,J.F.length), m4=new THREE.Matrix4(), q=new THREE.Quaternion(), e=new THREE.Euler(), sc=new THREE.Vector3(), v=new THREE.Vector3(); // 下草（シダ）
       J.F.forEach((p,j)=>{ const s=0.8+hash2(p[0]*1.3,p[1])*0.7; e.set(0,hash2(p[1],p[0]*0.7)*TAU,0); q.setFromEuler(e); sc.set(s,s,s); v.set(p[0],kamiH(p[0],p[1])-0.03,p[1]); m4.compose(v,q,sc); im.setMatrixAt(j,m4); }); im.receiveShadow=true; ctx.group.add(im); o.meshes.push(im); o.fern=im; }
     if(J.S.i.length){ const g=J.S.geo(), m=new THREE.Mesh(g,e2SunMat()); m.renderOrder=2; m.raycast=()=>{}; ctx.group.add(m); o.meshes.push(m); o.own.push(g); o.sun=m; } // 木漏れ日
-    for(const b of J.hide) e1Hide(b,o.hide); c.o=o; E1.busy=null; E1.made++; return true; } }
+    for(const roof of J.hide){
+      e1Hide(roof.b,o.hide);
+      const col=E1.rng.get(roof.b)?.col;
+      if(col) col.detailRoof=roof;
+    }
+    o.roofs=J.hide; c.o=o; E1.busy=null; E1.made++; return true; } }
 // 輪郭線の形（inkGeo と同じ作り方。同じ位置の頂点の法線を平均して外へずらす。鍵を数にして速くした）
 function e1InkGeo(geo,d){ const P=geo.attributes.position.array, N=geo.attributes.normal.array, cnt=P.length/3; let mx=1e9,my=1e9,mz=1e9; for(let i=0;i<cnt;i++){ if(P[i*3]<mx) mx=P[i*3]; if(P[i*3+1]<my) my=P[i*3+1]; if(P[i*3+2]<mz) mz=P[i*3+2]; }
   const ids=new Map(), id=new Int32Array(cnt); let nu=0; for(let i=0;i<cnt;i++){ const k=Math.round((P[i*3]-mx)*400)*17179869184+Math.round((P[i*3+1]-my)*400)*131072+Math.round((P[i*3+2]-mz)*400); let u=ids.get(k); if(u===undefined){ u=nu++; ids.set(k,u); } id[i]=u; }
@@ -12612,6 +12758,7 @@ function e1InkGeo(geo,d){ const P=geo.attributes.position.array, N=geo.attribute
 function e1Hide(b,list){ const R=E1.rng.get(b); if(!R||!R.t.bld) return; for(const m of [R.t.bld,R.t.bldInk]){ const a=m.geometry.attributes.position, arr=a.array, s=R.v0*3, e=R.v1*3; const save=arr.slice(s,e), X=arr[s], Y=arr[s+1]-50, Z=arr[s+2];
     for(let n=s;n<e;n+=3){ arr[n]=X; arr[n+1]=Y; arr[n+2]=Z; } a.needsUpdate=true; list.push([a,s,save]); } }
 function e1Drop(c){ const o=c.o; if(!o) return; const ctx=E1.ctx; for(const m of o.meshes){ ctx.group.remove(m); if(m.isInstancedMesh&&m.dispose) m.dispose(); } for(const g of o.own) g.dispose(); for(const k of o.cols) gridRemove(k);
+  for(const roof of o.roofs){ const col=E1.rng.get(roof.b)?.col; if(col) delete col.detailRoof; }
   for(const [a,s,save] of o.hide){ a.array.set(save,s); a.needsUpdate=true; } c.o=null; E1.drop++; }
 function e1Cancel(){ const J=E1.busy; if(!J) return; for(const k of J.cols) gridRemove(k); if(J.gA) J.gA.dispose(); if(J.gB) J.gB.dispose(); E1.busy=null; }
 function e1RectD(c,px,pz){ const h=E1.DC/2; return Math.hypot(Math.max(0,Math.abs(px-c.cx)-h),Math.max(0,Math.abs(pz-c.cz)-h)); }
@@ -12872,7 +13019,7 @@ function kamishihiBuild(ctx){
   // ---- 5) 建物（光明寺と同じ作り方。いくつかは獣に荒らされている） ----
   const e1rng=new Map(); // v0.87 P3-E（E-1）：建物ごとの頂点の範囲（近くで細かい家にするとき、この範囲をつぶして隠す）
   { const by=new Map(); D.bld.forEach((b,bi)=>{ const t=tileOf(b[0],b[1]); let a=by.get(t); if(!a){ a=[]; by.set(t,a); } a.push(p3aSkipBld(bi)?{p3aGhost:b}:b); }); // 当たり判定は genBuilding が足す（P3-A：試作の建物は外して別に作る）
-    for(const [t,list] of by){ const gb=new GB(), lo=new GB(); for(const b of list){ if(b.p3aGhost){ p3aGhostBuilding(b.p3aGhost); continue; } const v0=gb.v; genBuilding(gb,lo,b); e1rng.set(b,{t,v0,v1:gb.v}); }
+    for(const [t,list] of by){ const gb=new GB(), lo=new GB(); for(const b of list){ if(b.p3aGhost){ p3aGhostBuilding(b.p3aGhost); continue; } const v0=gb.v, {col}=genBuilding(gb,lo,b); e1rng.set(b,{t,v0,v1:gb.v,col}); }
       t.bld=new THREE.Mesh(own(gb.geo()),vcMat); t.bld.castShadow=true; t.bld.receiveShadow=true; t.bld.visible=false; ctx.add(t.bld);
       t.bldInk=new THREE.Mesh(own(inkGeo(t.bld.geometry,0.07)),inkMat); t.bldInk.visible=false; t.bldInk.raycast=()=>{}; ctx.add(t.bldInk);
       t.bldLo=new THREE.Mesh(own(lo.geo()),vcMat); t.bldLo.visible=false; ctx.add(t.bldLo); } }
@@ -13809,7 +13956,7 @@ function stfObjective(){ const p=stfP(), st=stfStage();
 const stfWait=ms=>new Promise(r=>setTimeout(r,ms));
 function stfFadeEl(){ let el=document.getElementById('stfFade'); if(!el){ el=document.createElement('div'); el.id='stfFade'; document.body.appendChild(el); } return el; }
 async function stfFade(on){ stfFadeEl().style.opacity=on?'1':'0'; await stfWait(500); }
-function stfCam(p,l,fov){ STF.camOwn=true; cam.override={p:new THREE.Vector3(p[0],p[1],p[2]),l:new THREE.Vector3(l[0],l[1],l[2]),fov:fov||CAM.fov}; }
+function stfCam(p,l,fov){ STF.camOwn=true; clearCamPitchInput(); cam.override={p:new THREE.Vector3(p[0],p[1],p[2]),l:new THREE.Vector3(l[0],l[1],l[2]),fov:fov||CAM.fov}; }
 function stfCamOff(yaw){ if(!STF.camOwn) return; STF.camOwn=false; cam.override=null; if(yaw!=null) cam.yaw=yaw; cam.init=false; camera.fov=CAM.fov; camera.updateProjectionMatrix(); }
 // 暗い間に少し動かして、人の形を新しい場所に置く（会話の間はゲームが止まるため）
 async function stfSettle(){ S.mode='playing'; clearCinemaInput52(); await nextFrame(); await nextFrame(); clearCinemaInput52(); S.mode='dialog'; }
@@ -14144,9 +14291,9 @@ function truckSusp(dt){ const C=TRUCK_CFG, W=TRUCK_WHEELS, g=9.8;
 // 乗る・降りる
 function truckBoard(){ if(TRUCK.drive||!truckOK()||trk().tip) return; if(HAUL.on) haulStop(); if(f4Busy()) f4DropAll(''); const t=trk();
   if(!stfP().departureComplete&&stfStage()==='sendoff'){ stfSendoff(); return; } // 初めて乗る前に、直した報告と見送り
-  TRUCK.drive=true; TRUCK.soundPedal=0; TRSND.travel=false; TRSND.phase='off'; truckStop(); truckColOff(); P.atk=null; P.dodge=null; P.x=TRUCK.x; P.z=TRUCK.z; P.facing=TRUCK.a; truckSeatPose(); truckDoorOpen('r'); // 運転席のドアが開いて閉まる cam.yaw=TRUCK.a; cam.init=false;
+  cam.dragDY=0; TRUCK.drive=true; TRUCK.soundPedal=0; TRSND.travel=false; TRSND.phase='off'; truckStop(); truckColOff(); P.atk=null; P.dodge=null; P.x=TRUCK.x; P.z=TRUCK.z; P.facing=TRUCK.a; truckSeatPose(); truckDoorOpen('r'); // 運転席のドアが開いて閉まる cam.yaw=TRUCK.a; cam.init=false;
   toast('KEI truck に乗った（移動：運転・E／行動ボタン：降りる）'); }
-function truckExit(quiet){ if(!TRUCK.drive) return; const a=TRUCK.a, t=trk(); TRUCK.drive=false; if(TRSND.startup) truckSoundReset(); truckStop(); truckSeatOff(); truckDoorOpen('r');
+function truckExit(quiet){ if(!TRUCK.drive) return; const a=TRUCK.a, t=trk(); cam.dragDY=0; TRUCK.drive=false; if(TRSND.startup) truckSoundReset(); truckStop(); truckSeatOff(); truckDoorOpen('r');
   const side=[[Math.cos(a)*-2.05,Math.sin(a)*2.05],[Math.cos(a)*2.05,-Math.sin(a)*2.05],[-Math.sin(a)*3.25,-Math.cos(a)*3.25],[Math.sin(a)*3.25,Math.cos(a)*3.25]]; // 右・左・後ろ・前（正式モデルの大きさ）
   let put=false; for(const [dx,dz] of side){ const x=TRUCK.x+dx, z=TRUCK.z+dz; if(szWalkable(x,z)&&szFree(x,z,0.5)){ P.x=x; P.z=z; put=true; break; } }
   if(!put){ P.x=TRUCK.x-Math.cos(a)*2.05; P.z=TRUCK.z+Math.sin(a)*2.05; }
@@ -15249,7 +15396,7 @@ $('btnShadow').onclick=()=>{ applyShadow(!shadowPref); toast(shadowPref?'影を�
 $('btnShadow').textContent='高画質の影：'+(renderer.shadowMap.enabled?'オン':'オフ');
 $('btnDetail').onclick=()=>{ applyDetail(GFX.detail==='std'?'lite':'std'); toast(GFX.detail==='lite'?'描く細かさ：軽量（近くの家を細かく描く範囲を狭くし、小物を減らす）':'描く細かさ：標準'); }; $('btnDetail').textContent='描く細かさ：'+(GFX.detail==='lite'?'軽量':'標準'); // v0.87 P3-E（§20.4 の軽量版）
 $('btnSave').onclick=()=>{ saveGame(); toast(storageOK?(ev.kind||bossActive?'セーブした（戦闘中は開始前の状態で記録）':'セーブした'):'このブラウザでは保存できない',!storageOK); };
-$('btnToTitle').onclick=()=>{ truckSoundReset(); saveGame(); regionResetHome(); if(SZ.m) SZ.m.g.visible=false; /* v0.70 */ truckHideAll(); /* v0.77 */ hideAllOv(); $('hud').hidden=true; S.mode='title'; lightMode='dusk'; snapLight(); P.x=158; P.z=22; $('title').hidden=false; $('btnContinue').hidden=!readSave(); for(const f of floats) f.d.style.display='none'; for(const b of hpBars) b.style.display='none'; for(const [,b] of barkEls){b.t=0;b.d.style.display='none';} };
+$('btnToTitle').onclick=()=>{ resetCamPitch(); truckSoundReset(); saveGame(); regionResetHome(); if(SZ.m) SZ.m.g.visible=false; /* v0.70 */ truckHideAll(); /* v0.77 */ hideAllOv(); $('hud').hidden=true; S.mode='title'; lightMode='dusk'; snapLight(); P.x=158; P.z=22; $('title').hidden=false; $('btnContinue').hidden=!readSave(); for(const f of floats) f.d.style.display='none'; for(const b of hpBars) b.style.display='none'; for(const [,b] of barkEls){b.t=0;b.d.style.display='none';} };
 $('btnCraftClose').onclick=closeOverlay; $('btnDepotClose').onclick=closeOverlay; $('btnMgmtClose').onclick=closeOverlay; $('btnBookClose').onclick=closeOverlay; $('btnBook').onclick=()=>p3dOpenBook(); $('btnStoreClose').onclick=closeOverlay; $('btnNpcClose').onclick=closeOverlay; mapPtr(); $('objective').addEventListener('pointerdown',e=>{ e.stopPropagation(); objOpen.pin=!objOpen.pin; if(!objOpen.pin) objOpen.t=0; }); $('btnQuestClose').onclick=closeOverlay;
 $('btnInvClose').onclick=closeOverlay;
 $('btnRetry').onclick=retryFromBase;

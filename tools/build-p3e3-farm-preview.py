@@ -8,14 +8,15 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REF = 'b8d35964acbec591c3c9f6f9fd39bf9cb8a530fe'  # v0.89（P3-E の E3-1・古い農家の中）の公開の準備、p3e3-farm-interior、2026-11-26
-BLOB = '4365d9987c4c277969e1ee241ac3e6be3c49e33d'
+REF = '93b1da2095306396794992ecb0761c0752aaddbf'  # v0.90：三人称カメラの上下の操作の公開の準備、cam-pitch、2026-11-26
+BLOB = '01d98dbdb6d7fc7b01ff04836507e845c989a8be'  # v0.90 の index.html（git の blob）
+# それより前：REF = b8d35964acbec591c3c9f6f9fd39bf9cb8a530fe（v0.89（P3-E の E3-1・古い農家の中）の公開の準備、p3e3-farm-interior、2026-11-26）・BLOB = 4365d9987c4c277969e1ee241ac3e6be3c49e33d
 # それより前：REF = d2cf2f4f3d1c7a92b89da44cc9387ee99ca5862f（v0.88.1 に E3-1 を入れたもの）・BLOB = 603f7ce7421bef937bc12f998b049b19386f650c
 OUT = os.path.join(ROOT, 'previews', 'p3e3-farm', 'index.html')
 PRE = 'eiheiji_p3e3f_'  # 試遊版の設定のキーの頭
 
 ap = argparse.ArgumentParser()
-ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：b8d3596）')
+ap.add_argument('--ref', default=REF, help='index.html を取り出すコミット（既定：93b1da2）')
 ap.add_argument('--src', help='git から取り出さず、このファイルを元にする')
 ap.add_argument('--out', help='出力先（既定：previews/p3e3-farm/index.html）')
 a = ap.parse_args()
