@@ -12198,6 +12198,7 @@ function p3eShopPack(g,x,y,z,kind,color,label){
   if(kind===4){ // 食品缶
     p3eShopRound(g,x,y,z,0.115,0.19,label?color:0x9d9d8b);
     p3eShopRound(g,x,y+0.19,z,0.119,0.014,0xb1afa0);
+    if(label) p3eShopFace(g,x,y+0.055,z+0.101,0.105,0.065,0xf0d59e);
     return;
   }
   if(kind===5){ // くびれのある瓶と栓
@@ -12210,6 +12211,17 @@ function p3eShopPack(g,x,y,z,kind,color,label){
     p3eShopRound(g,x,y,z,0.13,0.025,0x816245);
     p3eShopRound(g,x,y+0.025,z,0.105,0.13,0xb19772);
     p3eShopRound(g,x,y+0.155,z,0.13,0.025,0x937955);
+    return;
+  }
+  if(kind===7){ // 種袋。口を折った薄紙に二色刷りの双葉。
+    g.box(x,y+0.145,z,0.24,0.29,0.075,cc(color));
+    const face=z+0.041;
+    p3eShopFace(g,x,y+0.235,face,0.23,0.035,0xd9c69a);
+    if(label){
+      p3eShopFace(g,x,y+0.045,face,0.19,0.155,0xe6d8af);
+      g.tri([x,y+0.09,face+0.003],[x-0.011,y+0.147,face+0.003],[x-0.072,y+0.16,face+0.003],cc(0x506b51));
+      g.tri([x,y+0.09,face+0.003],[x+0.079,y+0.169,face+0.003],[x+0.032,y+0.16,face+0.003],cc(0x506b51));
+    }
     return;
   }
   const [w,h,d]=[[0.27,0.20,0.20],[0.27,0.24,0.19],[0.28,0.12,0.17],[0.34,0.17,0.21]][kind];
@@ -12229,6 +12241,8 @@ function p3eShopPack(g,x,y,z,kind,color,label){
     p3eShopFace(g,x,mid-0.04,front,w*0.78,0.08,0xe1cfaa);
     g.quad([x-0.032,mid,front+0.003],[x,mid-0.028,front+0.003],
       [x+0.032,mid,front+0.003],[x,mid+0.028,front+0.003],cc(0x8d4b3a));
+    if(!fold) g.quad([x-0.038,y+h+0.003,z+d/2],[x+0.038,y+h+0.003,z+d/2],
+      [x+0.038,y+h+0.003,z-d/2],[x-0.038,y+h+0.003,z-d/2],cc(0xe1cfaa));
   }
 }
 function p3eShopRack(g,length,depth,levels){
@@ -12239,12 +12253,12 @@ function p3eShopRack(g,length,depth,levels){
   g.box(0,top-0.13,-depth/2+0.04,length-0.12,0.15,0.055,cc(0x513a2e));
 }
 // 墨の線で「70」「20」。筆の傾きと太さが少し違う棚札。
-function p3eShopPrice(g,x,y,z,two){
-  p3eShopFace(g,x,y,z,0.33,0.15,0xe5d6aa);
+function p3eShopPrice(g,x,y,z,two,scale=1){
+  p3eShopFace(g,x,y,z,0.33*scale,0.15*scale,0xe5d6aa);
   const stroke=(a,b,c,d)=>{
     const k=0.008/Math.hypot(c-a,d-b),dx=(d-b)*k,dy=(a-c)*k;
-    g.quad([x+a+dx,y+b+dy,z+0.003],[x+c+dx,y+d+dy,z+0.003],
-      [x+c-dx,y+d-dy,z+0.003],[x+a-dx,y+b-dy,z+0.003],cc(0x4b3930));
+    g.quad([x+(a+dx)*scale,y+(b+dy)*scale,z+0.004],[x+(c+dx)*scale,y+(d+dy)*scale,z+0.004],
+      [x+(c-dx)*scale,y+(d-dy)*scale,z+0.004],[x+(a-dx)*scale,y+(b-dy)*scale,z+0.004],cc(0x4b3930));
   };
   stroke(-0.10,0.116,-0.023,0.12); stroke(-0.023,0.12,-0.083,0.029);
   if(two) stroke(-0.083,0.029,-0.016,0.032);
@@ -12252,29 +12266,41 @@ function p3eShopPrice(g,x,y,z,two){
   stroke(0.078,0.031,0.023,0.036); stroke(0.023,0.036,0.032,0.109);
 }
 function p3eShopSales({gb,X,Z},detail,solid){
-  const palettes=[[0xa85b45,0xc9a364,0x819582,0xd4bc91],[0x829895,0xc7b993,0x98a8ac,0xbd8d75],[0x98845d,0xa1a47a,0xbca578,0x788875]];
-  const kinds=[[0,1,4,2,1],[2,5,2,1,2],[3,6,1,0,3]];
-  // 棚の長手をローカルx、札の付く面を+zとする。
+  const palettes=[[0xae5942,0xcfac6a,0x62847b],[0x74938f,0xe0c797,0x788da2],[0xb19a6a,0x7d906c,0xbeb17e]];
+  // 同じ包みを数点ずつまとめ、隣の棚の品を一種類混ぜる。-1 は棚板の見える一画。
+  const rows=[
+    [[1,1,3,-1,4],[0,0,4,4,2],[4,1,-1,0,0]],
+    [[0,2,2,-1,1],[5,5,-1,2,2],[2,2,0,-1,5]],
+    [[3,3,-1,6,1],[7,7,6,-1,0]]
+  ];
   for(const [id,x,z,length,depth,angle,levels] of [
-    [0,2.6,2.2,2.8,0.8,-Math.PI/2,[0.24,0.58,0.90]],
-    [1,5.8,2.2,2.8,0.8,Math.PI/2,[0.24,0.58,0.90]],
-    [2,2.7,11.8,2.4,0.65,Math.PI,[0.30,0.78]]
+    [0,2.6,2.8,3.9,0.8,-Math.PI/2,[0.24,0.65,1.06]],
+    [1,5.8,2.8,3.9,0.8,Math.PI/2,[0.24,0.60,0.96]],
+    [2,2.7,10.6,3.5,0.76,Math.PI/2,[0.28,0.86]]
   ]){
     const top=levels[levels.length-1];
     gb.frame(X+x,0,Z+z,angle); p3eShopRack(gb,length,depth,levels);
-    solid(x,z,id===2?length:depth,id===2?depth:length,top+0.3);
+    solid(x,z,depth,length,top+0.3);
     for(const [row,y] of levels.entries()){
-      const askew=id===0&&row===1, n=id===2?4:5;
-      for(let i=0;i<n;i++){
-        const u=(i-(n-1)/2)*(id===2?0.45:0.46), v=askew?(i-2)*0.055:0.045;
+      const askew=id===0&&row===1;
+      for(const [i,kind] of rows[id][row].entries()){
+        if(kind<0) continue;
+        const u=(i-2)*(length-0.78)/4, v=askew?(i-2)*0.052:0.105;
         detail.frame(gb.wx(u,v),y,gb.wz(u,v),angle+(askew?0.16:0));
-        p3eShopPack(detail,0,0,0,kinds[id][(i+row)%5],palettes[id][(i+row)%4],(i+row)%3!==1);
+        const color=palettes[id][(row+Math.floor(i/2))%3];
+        p3eShopPack(detail,-0.175,0,0,kind,color,i!==2);
+        if((i+row)%3!==1) p3eShopPack(detail,0.175,0,-0.045,kind,color,i!==0);
+        if(i===0&&row===0) p3eShopPack(detail,0,0,-0.29,kind,color,false);
       }
     }
     detail.frame(X+x,0,Z+z,angle);
     p3eShopPrice(detail,0.54,top-0.135,depth/2+0.012,id===1);
+    // 通路側の木口。色付きの縁と大判の手札が、棚の正面に回る前から見える。
++    detail.frame(X+x,top,Z+z+(id===2?-1:1)*length/2,id===2?Math.PI:0);
+    detail.box(0,-0.11,0,depth,0.23,0.04,cc([0x99513b,0x527973,0x6c7853][id]));
+    p3eShopPrice(detail,0,-0.20,0.025,id===1,1.36);
   }
-  detail.frame(X+2.84,0,Z+3.34,0.29);
+  detail.frame(X+2.92,0,Z+4.52,0.29);
   p3eShopPack(detail,0,0,0,0,0xb79160,true);
 }
 function p3eShopCounter({gb,X,Z,prop},detail,glass,solid){
@@ -12289,6 +12315,13 @@ function p3eShopCounter({gb,X,Z,prop},detail,glass,solid){
   detail.box(6.331,1.19,10.62,0.015,0.08,0.35,cc(0x3c433d));
   for(const x of [6.13,6.21,6.29]) for(const z of [10.47,10.57,10.67,10.77])
     detail.box(x,1.09,z,0.05,0.028,0.066,cc(0x5d5145));
+  // 手前は釣銭の浅い皿と使いかけの複写伝票。包み紙は登録機の脇に重ねる。
+  detail.box(6.20,0.944,9.57,0.36,0.025,0.23,cc(0x5e8279));
+  detail.box(6.20,0.959,9.57,0.29,0.008,0.16,cc(0x91a699));
+  detail.box(6.35,0.945,9.99,0.28,0.026,0.32,cc(0x956e51));
+  detail.box(6.35,0.965,9.98,0.27,0.016,0.29,cc(0xe2d4aa));
+  for(const z of [9.91,9.97,10.03]) detail.box(6.35,0.976,z,0.19,0.004,0.009,alloy);
+  detail.box(6.37,0.949,11.04,0.46,0.036,0.26,cc(0xb79971));
   // ケースはレジの奥端に接続。両側のガラス越しに、片端を空けた二段の菓子皿が見える。
   const cx=6.3, cz=12.19, w=0.8, d=1.58;
   solid(cx,cz,w,d,0.91);
@@ -12302,8 +12335,15 @@ function p3eShopCounter({gb,X,Z,prop},detail,glass,solid){
   gb.box(cx,0.58,cz,w-0.08,0.028,d-0.08,cc(0xbab5a0));
   for(const y of [0.34,0.60]) for(let i=0;i<3;i++){
     detail.box(cx,y+0.012,cz-0.43+i*0.29,0.52,0.024,0.25,cc(0xd7c9a9));
-    for(const dx of [-0.12,0.12]) detail.box(cx+dx,y+0.065,cz-0.43+i*0.29,0.17,0.085,0.15,cc([0xc69673,0x965a4f,0xb29e65][i]));
+    for(const dx of [-0.12,0.12]){
+      const x=cx+dx,z=cz-0.43+i*0.29;
+      detail.box(x,y+0.065,z,0.17,0.085,0.15,cc([0xbd8054,0x995549,0xb2a455][i]));
+      p3eShopFace(detail,x,y+0.024,z+0.078,0.05,0.081,0xe6d7b2);
+      detail.quad([x-0.025,y+0.11,z+0.075],[x+0.025,y+0.11,z+0.075],
+        [x+0.025,y+0.11,z-0.075],[x-0.025,y+0.11,z-0.075],cc(0xe6d7b2));
+    }
   }
+  detail.box(cx,0.612,cz+0.53,0.52,0.024,0.28,cc(0xd7c9a9));
   glass.frame(X+cx,0,Z+cz,0); glass.box(0,0.60,0,w-0.032,0.50,d-0.032,cc(0xb0c9c3));
   // 壁際の琺瑯冷蔵庫。背・左右・天板で空洞を作り、蝶番から扉一枚を12度開ける。
   const fx=7.02,fz=0.62;
@@ -12315,6 +12355,7 @@ function p3eShopCounter({gb,X,Z,prop},detail,glass,solid){
   gb.box(0,0.17,0,1.40,0.34,0.84,cc(0x969c90));
   for(const y of [0.64,1.04,1.44]) gb.box(0,y,0,1.20,0.032,0.68,alloy);
   detail.frame(X+fx,0,Z+fz,0);
+  for(const y of [0.105,0.16,0.215]) p3eShopFace(detail,0,y,0.425,0.96,0.02,0x596259);
   for(let i=0;i<3;i++) p3eShopPack(detail,-0.37+i*0.31,i===2?1.057:0.657,0,i===2?0:5,0xb6a78b,i===0);
   const a=0.21, hingeX=fx-0.64,hingeZ=fz+0.42,doorW=1.28;
   gb.frame(X+hingeX,0,Z+hingeZ,a); glass.frame(X+hingeX,0,Z+hingeZ,a);
@@ -12359,6 +12400,98 @@ function p3eShopStock({gb,X,Z},detail,solid){
   for(const dx of [-0.27,0.27]) gb.box(x+dx,0.55,z+0.46,0.055,0.60,0.055,cc(0x737c76));
   gb.box(x,0.83,z+0.46,0.59,0.06,0.06,cc(0x65574b));
 }
+function p3eShopNotices(X,Z,uppers){
+  // 入口の正面。倉庫戸より手前の仕切りに掛け、回り込んだときはその上壁に追従させる。
+  const partition=uppers.find(u=>u.x0===X+8&&u.x1===u.x0&&u.z0===Z);
+  const hang=(wall,name,board)=>{
+    const mesh=new THREE.Mesh(board.geo(),vcMat);
+    mesh.name=name; wall.m.add(mesh);
+    return mesh;
+  };
+  const boardAt=z=>new GB().frame(X+7.85,0,Z+z,Math.PI/2);
+  const calendar=boardAt(5.78);
+  // 日曜だけ朱刷りの月めくり。綴じ金具と下から覗く翌月の紙。
+  p3eShopFace(calendar,0.025,1.00,0,0.81,0.96,0xb7a887);
+  p3eShopFace(calendar,0,1.04,0.008,0.81,0.95,0xeee0c0);
+  p3eShopFace(calendar,0,1.74,0.016,0.81,0.25,0xa45844);
+  p3eShopFace(calendar,0,1.965,0.022,0.85,0.045,0x534e42);
+  for(let row=0;row<5;row++) for(let day=0;day<7;day++){
+    if((row===0&&day<2)||(row===4&&day>4)) continue;
+    p3eShopFace(calendar,(day-3)*0.103,1.62-row*0.125,0.018,0.043,0.057,day===0?0xa05440:0x625e51);
+  }
+  hang(partition,'shopWallCalendar',calendar);
+
+  // 腰板まで届く二色刷りの飲料広告。瓶・柑橘の輪切り・波の帯だけで描く。
+  const poster=new GB();
+  p3eShopFace(poster,0,0.27,0,1.18,1.51,0xe6d6ac);
+  p3eShopFace(poster,0,0.34,0.008,1.06,1.37,0x4e817a);
+  for(let i=0;i<12;i++){
+    const a=i*Math.PI/6,b=a+Math.PI/6;
+    poster.tri([0.12,1.26,0.014],[0.12+0.34*Math.cos(a),1.26+0.34*Math.sin(a),0.014],
+      [0.12+0.34*Math.cos(b),1.26+0.34*Math.sin(b),0.014],cc(i%2?0xe6ad68:0xecc58b));
+  }
+  poster.quad([-0.53,0.34,0.022],[0.53,0.34,0.022],[0.53,0.82,0.022],[-0.53,0.56,0.022],cc(0xb25e45));
+  p3eShopFace(poster,-0.18,0.46,0.028,0.31,0.58,0xf0ddb4);
+  poster.quad([-0.335,1.04,0.028],[-0.025,1.04,0.028],[-0.12,1.16,0.028],[-0.24,1.16,0.028],cc(0xf0ddb4));
+  p3eShopFace(poster,-0.18,1.16,0.028,0.12,0.21,0xf0ddb4);
+  p3eShopFace(poster,-0.18,1.36,0.034,0.15,0.055,0xa95640);
+  p3eShopFace(poster,-0.18,0.62,0.034,0.31,0.22,0x537c72);
+  const wallPoster=hang(partition,'shopWallPoster',poster);
+  wallPoster.position.set(X+7.85,0,Z+6.99);
+  wallPoster.rotation.y=-Math.PI/2;
+
+  const prices=boardAt(4.84);
+  p3eShopPrice(prices,-0.08,1.52,0,true,2.0);
+  p3eShopPrice(prices,0.06,1.13,0,false,1.72);
+  hang(partition,'shopWallPrices',prices);
+  const signs=new GB().frame(X+7.84,2.32,Z+6.36,Math.PI/2);
+  for(let i=0;i<8;i++){
+    const a=i*Math.PI/4,b=a+Math.PI/4;
+    for(const [r,z,color] of [[0.44,0,0x634833],[0.37,0.018,0xe5d7b5]])
+      signs.tri([0,0,z],[r*Math.cos(a),r*Math.sin(a),z],[r*Math.cos(b),r*Math.sin(b),z],cc(color));
+    p3eShopFace(signs,Math.cos(a)*0.305,Math.sin(a)*0.305-0.023,0.025,0.031,0.046,0x665746);
+  }
+  signs.quad([-0.019,0,0.032],[0.019,0,0.032],[0.016,0.25,0.032],[-0.008,0.25,0.032],cc(0x493b32));
+  signs.quad([0,-0.018,0.036],[0.17,-0.10,0.036],[0.18,-0.064,0.036],[0,0.019,0.036],cc(0x493b32));
+  hang(partition,'shopWallClock',signs);
+
+  // 鴨居の腕金に掛けた販促札と小さな日めくり時計。広告は壁と同じ版を使う。
+  const lintel=uppers.find(u=>u.x0===X&&u.x1===X&&Math.abs(u.z0-Z-5.6)<0.01&&Math.abs(u.z1-Z-8)<0.01);
+  const hanger=new GB().frame(X+1.46,0,Z+6.8,Math.PI/2);
+  for(const u of [-0.34,0.28]){
+    hanger.box(u,2.93,0.69,0.024,0.032,1.40,cc(0x686657));
+    const bottom=u<0?2.53:2.41;
+    hanger.box(u,(bottom+2.93)/2,0,0.014,2.93-bottom,0.014,cc(0x736e5e));
+  }
+  hanger.box(-0.03,2.93,0.49,0.64,0.026,0.023,cc(0x686657));
+  hanger.box(0.07,2.77,0.49,0.014,0.32,0.014,cc(0x736e5e));
+  hanger.box(-0.34,2.534,0,0.28,0.03,0.024,cc(0x73583e));
+  hanger.box(0.28,2.397,0,0.32,0.035,0.024,cc(0x73583e));
+  lintel.m.add(new THREE.Mesh(hanger.geo(),vcMat));
+  const entryPoster=new THREE.Mesh(wallPoster.geometry,vcMat);
+  entryPoster.name='shopEntryPoster'; entryPoster.scale.setScalar(0.22);
+  entryPoster.position.set(X+1.44,2.14,Z+6.46); entryPoster.rotation.y=-Math.PI/2;
+  lintel.m.add(entryPoster);
+  const tag=new GB().frame(X+1.44,0,Z+7.08,Math.PI/2);
+  p3eShopPrice(tag,0,2.23,0,true);
+  hang(lintel,'shopEntryPrice',tag);
+
+  const dial=new GB().frame(X+0.97,2.51,Z+6.87,Math.PI/2);
+  dial.box(0,-0.038,0,0.195,0.276,0.045,cc(0x466860));
+  for(let i=0;i<12;i++){
+    const a=i*Math.PI/6,b=a+Math.PI/6,r=0.081;
+    dial.tri([0,0,0.028],[r*Math.cos(a),r*Math.sin(a),0.028],[r*Math.cos(b),r*Math.sin(b),0.028],cc(0xf2e2b8));
+  }
+  p3eShopFace(dial,0,0,0.033,0.012,0.060,0x463e32);
+  p3eShopFace(dial,0.018,-0.006,0.034,0.046,0.012,0x463e32);
+  hang(lintel,'shopEntryClock',dial);
+  const leaf=new GB().frame(X+0.94,2.345,Z+6.87,Math.PI/2);
+  p3eShopFace(leaf,0,0,0,0.14,0.083,0xe9dbb7);
+  p3eShopFace(leaf,0,0.068,0.003,0.14,0.016,0xa05643);
+  for(const y of [0.012,0.034,0.055]) p3eShopFace(leaf,0,y,0.005,0.031,0.006,0x655446);
+  for(const x of [-0.014,0.014]) p3eShopFace(leaf,x,0.012,0.005,0.006,0.049,0x655446);
+  hang(lintel,'shopEntryDate',leaf);
+}
 function p3eShopSurfaces({X,Z,g,uppers,doors},detail){
   // 正面の引き戸と倉庫戸。扉自身の座標系で組むと開閉にも追従する。
   for(const {m} of doors){
@@ -12370,35 +12503,20 @@ function p3eShopSurfaces({X,Z,g,uppers,doors},detail){
     }
     m.add(new THREE.Mesh(boards.geo(),vcMat));
   }
-  const signs=new GB();
-  // 奥壁の暦、色刷りの広告、八角の掛け時計を上壁と一緒に隠す。
-  signs.frame(X+4.3,0,Z+13.47,Math.PI);
-  p3eShopFace(signs,0,1.20,0,0.53,0.68,0xded5b9);
-  p3eShopFace(signs,0,1.67,0.004,0.53,0.21,0x936457);
-  for(let row=0;row<4;row++) for(let day=0;day<7;day++)
-    p3eShopFace(signs,(day-3)*0.062,1.57-row*0.088,0.006,0.023,0.045,day===0?0x995f51:0x696658);
-  signs.frame(X+2.6,0,Z+13.47,Math.PI);
-  p3eShopFace(signs,0,1.43,0,0.90,1.08,0xdac8a2);
-  p3eShopFace(signs,0,1.56,0.004,0.78,0.76,0x88a29b);
-  signs.tri([-0.39,1.56,0.008],[0.35,1.56,0.008],[0.05,2.18,0.008],cc(0xb16c50));
-  signs.quad([-0.38,1.56,0.012],[0.39,1.56,0.012],[0.39,1.75,0.012],[-0.38,1.64,0.012],cc(0x777f62));
-  for(const [x,w] of [[-0.23,0.22],[0.11,0.36]]) p3eShopFace(signs,x,2.38,0.005,w,0.044,0x806347);
-  signs.frame(X+6.45,2.19,Z+13.45,Math.PI);
-  for(let i=0;i<8;i++){
-    const a=i*Math.PI/4,b=a+Math.PI/4;
-    for(const [r,z,color] of [[0.35,0,0x644e3c],[0.29,0.012,0xdacdad]])
-      signs.tri([0,0,z],[r*Math.cos(a),r*Math.sin(a),z],[r*Math.cos(b),r*Math.sin(b),z],cc(color));
-    p3eShopFace(signs,Math.cos(a)*0.24,Math.sin(a)*0.24-0.014,0.018,0.024,0.030,0x665746);
-  }
-  signs.quad([-0.014,0,0.024],[0.014,0,0.024],[0.015,0.19,0.024],[-0.004,0.19,0.024],cc(0x4e4438));
-  signs.quad([0,-0.015,0.026],[0.13,-0.08,0.026],[0.14,-0.052,0.026],[0,0.016,0.026],cc(0x4e4438));
-  signs.frame(X+5.0,0,Z+13.28,0);
-  signs.box(0,2.92,0,1.44,0.12,0.32,cc(0x827f70));
-  signs.box(0,2.84,0,1.27,0.06,0.12,cc(0xbdbbab));
-  uppers.find(u=>u.z0===Z+13.6&&u.z1===u.z0).m.add(new THREE.Mesh(signs.geo(),vcMat));
+  p3eShopNotices(X,Z,uppers);
+  const lamp=new GB().frame(X+5.0,0,Z+13.28,0);
+  lamp.box(0,2.92,0,1.44,0.12,0.32,cc(0x827f70));
+  lamp.box(0,2.84,0,1.27,0.06,0.12,cc(0xbdbbab));
+  uppers.find(u=>u.z0===Z+13.6&&u.z1===u.z0).m.add(new THREE.Mesh(lamp.geo(),vcMat));
 
   // 打ち継ぎ目と摩耗した骨材。床面の色に近い薄片を小物と同じバッチへ。
   detail.frame(X,0,Z,0);
+  // 戸口には縁が擦れた深緑のゴムマット。浅い溝を残し、端からコンクリートへ抜ける。
+  detail.box(1.13,0.012,6.8,1.36,0.022,2.02,cc(0x4f5e52));
+  for(let i=0;i<8;i++){
+    const x=0.55+i*0.16;
+    detail.quad([x,0.026,7.70],[x+0.023,0.026,7.70],[x+0.023,0.026,5.90],[x,0.026,5.90],cc(0x687366));
+  }
   for(const x of [3.9,8.1]) detail.quad([x,0.005,13.48],[x+0.018,0.005,13.48],
     [x+0.018,0.005,0.12],[x,0.005,0.12],cc(0x827f76));
   for(let i=0;i<80;i++){

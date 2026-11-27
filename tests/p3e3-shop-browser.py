@@ -323,6 +323,8 @@ async def main():
                     ('冷蔵庫', 7.02, 0.62), ('冷蔵庫の開いた扉', 7.56, 1.29),
                     ('奥壁の在庫棚', 10.5, 12.95), ('側壁の在庫棚', 12.09, 10.96),
                     ('木箱', 8.74, 11.73), ('台車', 8.85, 10.42),
+                    ('食品棚の通路端', 2.6, 4.71), ('日用品棚の通路端', 5.8, 4.71),
+                    ('農業棚の通路端', 2.7, 8.89), ('木の台とケースの継ぎ目', 6.3, 11.4),
                 ]
                 for name, x, z in fixture_hits:
                     check(await ev(f"!szFree(P3A.interior.def.o.x+{x},P3A.interior.def.o.z+{z},0.04)"),
@@ -332,6 +334,9 @@ async def main():
                     [(1.6,5.4),(7.2,5.4)], [(1.6,8.2),(7.2,8.2)],
                     [(4.2,6.8),(4.2,0.8)], [(4.5,6.8),(4.5,12.2),(5.3,12.2)],
                     [(8.8,8.7),(11,9.6),(10.7,11.7),(10.7,12.0)],
+                    [(1.6,6.8),(1.6,4.05),(1.6,1.6)],
+                    [(3.7,9.15),(3.7,12.65),(5.3,12.65)],
+                    [(4.2,4.1),(4.2,5.4),(7.15,5.4),(7.15,2.05)],
                 ]
                 for path in paths:
                     samples = FARM['sample_path'](path)
@@ -365,18 +370,55 @@ async def main():
                 check(0 < report[1] <= report[0] <= 50,
                       f'1階は {report[0]} メッシュ、入口からの屋内通常描画は {report[1]} calls')
 
+            async def wall_notices():
+                # 通常の入口では鴨居の販促物、見上げた時と中央通路では仕切り壁の実物を検査する。
+                previous = await ev('[P.facing,cam.pitch.in]')
+                entrance = ['shopEntryClock','shopEntryDate','shopEntryPrice','shopEntryPoster']
+                wall = ['shopWallClock','shopWallCalendar','shopWallPrices','shopWallPoster']
+                try:
+                    for x, pitch, meshes, view in [(1.6,0,entrance,'入店する'),
+                                                   (1.6,-0.21,wall,'入口から見上げる'),
+                                                   (3.2,0,wall,'中央通路に入る')]:
+                        await at(x,6.8)
+                        await ev(f'P.facing=Math.PI/2;cam.pitch.in={pitch};setCam(P.facing)')
+                        await seconds(1.15)
+                        visible = await ev("""(names=>{const f=P3A.interior, o=f.def.o, solids=[];
+                          f.g.traverseVisible(m=>{if(m.isMesh&&!m.material.transparent) solids.push(m)});
+                          return names.map(name=>{
+                            const m=f.g.getObjectByName(name);
+                            if(!m?.isMesh||!f.uppers.some(u=>u.m===m.parent)) return false;
+                            // 三角形内の点を投影し、その画素から最初に当たる不透明面を調べる。
+                            const geom=m.geometry, p=new THREE.Vector3(), v=new THREE.Vector3();
+                            for(let i=0;i<3;i++) p.add(v.fromBufferAttribute(geom.attributes.position,geom.index.getX(i)));
+                            m.localToWorld(p.multiplyScalar(1/3));
+                            if(p.x<=o.x||p.x>=o.x+8||p.z<=o.z||p.z>=o.z+7.7) return false;
+                            p.project(camera);
+                            if(Math.abs(p.x)>=1||Math.abs(p.y)>=1||Math.abs(p.z)>=1) return false;
+                            const ray=new THREE.Raycaster();
+                            ray.setFromCamera(p,camera);
+                            return ray.intersectObjects(solids,false)[0]?.object===m;
+                          });})(""" + json.dumps(meshes) + ")")
+                        for ok, name in zip(visible, ['時計','カレンダー','手書きの値札','広告ポスター']):
+                            check(ok, f'{view}と、売場の{name}がカメラに映る')
+                finally:
+                    await at(1.6,6.8)
+                    await ev(f'[P.facing,cam.pitch.in]={json.dumps(previous)};setCam(P.facing);p3aSzFollow()')
+
             async def screenshots():
                 if shot_dir is None:
                     return
                 shot_dir.mkdir(parents=True, exist_ok=True)
                 previous = await ev('[prog.f10.tod,lightMode,P.facing,cam.pitch.in]')
-                spots = [('entry',1.6,6.8,1.57), ('sales',4.2,4.8,3.14),
-                         ('register',4.7,10.2,0.89), ('stock',10.8,9.6,0.08)]
+                spots = [('entry',1.6,6.8,1.57,0), ('entry-aisle',3.2,6.8,1.57,0),
+                         ('sales',4.2,4.8,3.14,0), ('sales-from-register',4.7,9.8,-2.98,0),
+                         ('sales-from-back',7.1,6.5,-1.54,0), ('sales-up',1.6,6.8,1.57,-0.21),
+                         ('sales-down',4.2,4.8,3.14,0.36),
+                         ('register',4.7,10.2,0.89,0), ('stock',10.8,9.6,0.08,0)]
                 try:
                     await ev("prog.f10.tod=6*P3B.hour;lightMode='day';snapLight();cam.pitch.in=0")
-                    for name, x, z, yaw in spots:
+                    for name, x, z, yaw, pitch in spots:
                         await at(x,z)
-                        await ev(f'P.facing={yaw};setCam(P.facing)')
+                        await ev(f'P.facing={yaw};cam.pitch.in={pitch};setCam(P.facing)')
                         await seconds(0.65)
                         check(await ev("p3bClock()[0]===12&&lightMode==='day'"), f'{name} を昼に撮影')
                         await page.screenshot(path=str(shot_dir / f'{name}-{w}x{h}.png'))
@@ -387,6 +429,7 @@ async def main():
 
             await geometry(1)
             await ground_floor()
+            await wall_notices()
             await screenshots()
             check(await ev("""(()=>{const {o}=P3A.interior.def, blocked=(x,z)=>!szFree(o.x+x,o.z+z,0.42);
               const path=[[1.6,6.8],[6.2,6.8],[7.2,8.7],[8.8,8.7],[11,7.1],[11,5.6]];
