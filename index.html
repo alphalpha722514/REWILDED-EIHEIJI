@@ -8867,7 +8867,12 @@ function chooseDefense(title,options,keep,ex){ // v0.86.1：opt.ic／opt.ics（�
     const ics=(opt.ic?[opt.ic]:opt.ics||[]).filter(Boolean); if(ics.length){ b.textContent=''; b.style.display='flex'; b.style.alignItems='center'; b.style.gap='8px'; b.style.textAlign='left'; b.style.padding='6px 9px'; for(const u of ics){ const im=document.createElement('img'); im.src=u; im.alt=''; im.style.cssText='width:40px;height:40px;object-fit:contain;flex:none;filter:drop-shadow(0 1px 2px #000a)'; b.appendChild(im); } const sp=document.createElement('span'); sp.textContent=opt.label; sp.style.cssText='flex:1;min-width:0'; b.appendChild(sp); }
     b.onclick=()=>{close();if(opt.act)opt.act();};panel.appendChild(b);
   }
-  wrap.appendChild(panel);wrap.onclick=e=>{if(e.target===wrap)close();};
+  wrap.appendChild(panel);
+  // 行動ボタンで開いたタップの click を、背景を押した操作として扱わない。
+  let pressedBackdrop=false;
+  wrap.onpointerdown=e=>{ pressedBackdrop=e.target===wrap; };
+  wrap.onpointercancel=()=>{ pressedBackdrop=false; };
+  wrap.onclick=e=>{ if(pressedBackdrop&&e.target===wrap) close(); pressedBackdrop=false; };
   wrap.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}};
   document.body.appendChild(wrap);keys.clear();S.mode='menu';wrap.focus();
 }
