@@ -11,3 +11,10 @@
 1. GitHub の main が 8945e8a のままか、`p3e3-shop` の先頭がこの文書の commit かを確かめる。
 2. `impl-task1.md` の中の参照先を、このフォルダのファイル（`docs/p3e3-shop-design/…`）に読み替えて、Codex に実装1回目を頼む（書き込み可。`--model gpt-6.2-astra`。three.js r128 の場所を `THREE_JS` で渡す）。
 3. 次の回：1回目の結果を Claude Code がブラウザー（`tests/p3e3-shop-browser.py`、PC 1280×720・iPhone 390×844）で確かめたあと、本格的な家具（1階：売場・レジ・ガラスケース・冷蔵庫・裏倉庫。2階：居間・寝室・台所・収納）、照明（昼・夕方・夜・夜の補助の光）、環境音（重ならない）、性能、独立レビュー、試遊版（本編とキーを分ける）、技術文書、の順。
+
+## 2026-11-27 の進み（作業途中・未検証）
+- 委任ツールに `--reasoning-effort`（low・medium・high・xhigh）を足した（ブランチ `a2-codex-workflow-update` に commit、push はまだ）。
+- 実装の2回目（`--model gpt-6.2-astra --reasoning-effort xhigh`）は22分動いたあと、Codex の利用枠の上限で止まった（「try again at 2:49 PM」）。xhigh は受け付けられた（実際に使われた設定は記録に残らない）。
+- その途中の成果をこの commit に入れた：`index.html`（よろず屋の屋内の土台の作業途中）・`tests/p3e3-shop-browser.py`（作業途中）・`wip/shop-check.cjs`（Codex が砂場で使った確かめの道具）。**ブラウザーでのテストも、Codex の返答もまだ無い。** 構文と `node tests/chapter2-save.cjs` だけ通ることを確かめた。
+- E3-3a の実装の回数（上限24）：1回目 失敗（利用枠、変更なし）・2回目 途中で利用枠（変更あり）。
+- 再開：Codex に、この commit の `index.html`・テストの続きから、`impl-task1.md` の残りを仕上げさせる（何ができていて何が残るかを最初に確かめさせる）。そのあと Claude Code がブラウザーで `tests/p3e3-shop-browser.py` を流す。

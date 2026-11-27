@@ -304,6 +304,7 @@ button:disabled{opacity:.4;cursor:not-allowed;}
 #dialog .card{position:relative;}
 #dlgTag{position:absolute;top:8px;right:12px;font-size:11px;color:#1d1a12;background:#d8b45a;border-radius:4px;padding:1px 6px;letter-spacing:.06em;}
 #stfFade{position:fixed;inset:0;background:#050707;opacity:0;pointer-events:none;z-index:55;transition:opacity .45s ease;}
+#stfFade.shopTransition{pointer-events:auto;touch-action:none;}
 .result-stats{display:grid;grid-template-columns:auto 1fr;gap:4px 18px;font-size:14px;margin:10px 0;}
 .result-stats b{font-variant-numeric:tabular-nums;color:var(--gold);}
 #fatal{z-index:9;}
@@ -7583,6 +7584,8 @@ const ray=new THREE.Raycaster(); const groundPlane=new THREE.Plane(new THREE.Vec
 window.addEventListener('keydown',e=>{
   const k=e.key.toLowerCase();
   if([' ','tab','arrowup','arrowdown','arrowleft','arrowright'].includes(k)||e.code==='Space') e.preventDefault();
+  if(k==='e'&&(p3ShopFading||p3ShopKeyHeld)){ p3ShopKeyHeld=true; p3eShopBlocksAction(); return; }
+  if(p3ShopFading) return;
   if(e.repeat&&k!=='w'&&k!=='a'&&k!=='s'&&k!=='d') { return; }
   audioInit();
   if(S.mode==='dialog'){ if(k==='e'||k===' '||k==='enter') advanceDialog(); return; }
@@ -7604,8 +7607,8 @@ window.addEventListener('keydown',e=>{
   else if(k==='0') hotbarPick(9); // v0.45：10番目（インベントリ）
   else if(k==='c'){ cam.yaw=P.facing; cam.manualT=0.8; if(camPitchInput()){ cam.pitch[camPitchScene()]=0; cam.dragDY=0; } }
 });
-window.addEventListener('keyup',e=>{ const k=e.key.toLowerCase(); keys.delete(k); if(k==='e'&&P3D.fish) p3dRelease(); });
-window.addEventListener('blur',()=>{ keys.clear(); if(S.mode==='playing'&&!touchMode) openPause(); }); // v0.32.1：スマホでは画面の端からのなぞり（OSの操作）でも blur が来るので止めない。ほかのアプリへ移ったときは下の visibilitychange で止まる
+window.addEventListener('keyup',e=>{ const k=e.key.toLowerCase(); keys.delete(k); if(k==='e') p3ShopKeyHeld=false; if(k==='e'&&P3D.fish) p3dRelease(); });
+window.addEventListener('blur',()=>{ keys.clear(); p3ShopKeyHeld=false; if(S.mode==='playing'&&!touchMode) openPause(); }); // v0.32.1：スマホでは画面の端からのなぞり（OSの操作）でも blur が来るので止めない。ほかのアプリへ移ったときは下の visibilitychange で止まる
 document.addEventListener('visibilitychange',()=>{ if(document.hidden&&S.mode==='playing') openPause(); });
 const cv=$('cv');
 cv.addEventListener('pointermove',e=>{ if(e.pointerType!=='mouse') return; if(e.buttons&4){ cam.dragDX+=e.movementX||0; if(camPitchInput()) cam.dragDY+=e.movementY||0; } mouse.x=e.clientX; mouse.y=e.clientY; mouse.active=true; });
@@ -7703,7 +7706,7 @@ function tbtn(id,down,up){ const b=$(id); b.addEventListener('pointerdown',e=>{ 
 tbtn('tbAtk',()=>{ held.atk=true; tryAttack('light'); },()=>{ held.atk=false; });
 tbtn('tbHeavy',()=>tryAttack('heavy')); tbtn('tbSwap',()=>cycleArm());
 tbtn('tbDodge',()=>tryDodge()); tbtn('tbWave',()=>scaleWaveBtn()); // v0.64
-tbtn('tbAct',()=>{ held.act=true; interact(); },()=>{ held.act=false; }); // v0.72：押している間（スズキを助け起こす長押し）
+tbtn('tbAct',()=>{ if(held.act) return; held.act=true; interact(); },()=>{ held.act=false; }); // v0.72：押している間（スズキを助け起こす長押し）
 tbtn('tbMap',()=>openMap()); // v0.45：持ち物ボタンは廃止（手持ちバー端の🎒とTabで開く）
 tbtn('tbPause',()=>openPause());
 // 画面右側をなぞるとカメラが回る
@@ -8869,7 +8872,7 @@ function chooseDefense(title,options,keep,ex){ // v0.86.1：opt.ic／opt.ics（�
   document.body.appendChild(wrap);keys.clear();S.mode='menu';wrap.focus();
 }
 function interactables(){
-  if(STF.busy||STF.cut) return null; // v0.77：作業F の場面の間は出さない
+  if(p3ShopFading||STF.busy||STF.cut) return null; // v0.77：作業F の場面の間は出さない
   if(TRUCK.drive) return {d:0,label:'KEI truck を降りる',act:()=>truckExit()}; // v0.77
   const L=[];
   for(const n of NPCS){ const d=dist(P.x,P.z,n.x,n.z); if(d<(n.y?3.6:2.3)) L.push({d:d+f9Pen(n),label:f9Label(n),act:()=>f9Interact(n)}); }
@@ -8917,11 +8920,11 @@ function interactables(){
    if(d<2.6)L.push({d,label:prog.scoutTower?'見張り台：見張り中':'見張り台を建設（木材10・縄4）',act:()=>buildScoutTower()});}
   g4Interactables(L); szInteractables(L); truckInteractables(L); // v0.70：スズキへの指示。v0.77：KEI truck・部品・燃料
   L.sort((a,b)=>a.d-b.d);
-  // 古い農家の入口に立っている間、ついて来るスズキの指示で入室を遮らない。
-  if(L[0]?.act===szTalk&&SZ.order==='follow'&&L[1]?.farmEntrance) return L[1];
+  // 入口・階段などで、同行中の通常指示だけが先に来たときの例外。
+  if(L[0]?.act===szTalk&&SZ.order==='follow'&&L[1]?.preferOverFollow) return L[1];
   return L[0]||null;
 }
-function interact(){ if(bossCinema52()) return; if(P3D.fish){ p3dPress(); return; } if(curInter) curInter.act(); } // v0.84：釣りのあいだは「投げる・合わせる」
+function interact(){ if(p3eShopBlocksAction()||bossCinema52()) return; if(P3D.fish){ p3dPress(); return; } if(curInter) curInter.act(); } // v0.84：釣りのあいだは「投げる・合わせる」
 function gatherNode(n){
   if(!n.avail) return;
   const amt=(n.k==='wood'?2:(n.chest?2:1+(Math.random()<0.5?1:0)))+(P.gatherT>0?1:0); // v0.84：雑魚の天ぷらで +1
@@ -9341,6 +9344,8 @@ function updateLighting(dt){
 
 // ================= セーブ =================
 const SAVE_KEY='eiheiji_vs_beasts_v010';
+// 保存上の章を店先まで修飾する。旧版もプレイ中の章番号は openingStarted から復元する。
+const P3E_SHOP_FRONT='2/kamishihi/house110';
 let storageOK=true;
 function checkpointStage(){ const s=prog.stage; return s==='raid'?'buildFence':s==='invasion'?'invasionPrep':s==='boss'?'toBoss':s; }
 function saveGame(){
@@ -9353,6 +9358,9 @@ function saveGame(){
       prog:Object.assign({stage:checkpointStage(),unlockTrap:prog.unlockTrap,unlockBoss:prog.unlockBoss,clues:prog.clues,bossDefeated:prog.bossDefeated,scoutTower:!!prog.scoutTower,scoutWarned:!!prog.scoutWarned,scoutRaidWarned:!!prog.scoutRaidWarned,townRequests:prog.townRequests},f31SaveProg()),
       fences:GAPS.map(g=>g.fence.type?{type:g.fence.type,hp:g.fence.broken?0:g.fence.hp}:null),
       traps:traps.map(saveTrap),stats,nodes:NODES.map(n=>n.avail?1:0),g4:prog.g4,f4:f4Save(),f7:f7Save(),f8:f8Save(),paddy:paddySave(),f9:f9Save(),f10:f10Save(),conv:facSave('conv'),kama:kamaSave(),kami:kamiSave(),suzuki:szSave(),p3:p3Save(),stash:stashSave(),p3c:p3cSave(),p3d:prog.p3d}; // v0.81：拠点本部（p3）・資材置き場（stash）。新しいキー // v0.73：スズキ（新しいキー suzuki）
+    if(data.chapter2.currentRegion==='kamishihi'&&P3A.inside&&P3A.inId==='shop'){
+      data.chapter2={...data.chapter2,currentChapter:P3E_SHOP_FRONT};
+    }
     localStorage.setItem(SAVE_KEY,JSON.stringify(data));
   }catch(e){ storageOK=false; }
 }
@@ -9454,7 +9462,7 @@ function continueGame(){
   const d=readSave(); if(!d){ startNew(); return; }
   regionResetHome(); const extra=applySave(d); resetWorld(extra); hideAllOv(); $('hud').hidden=false; S.mode='playing'; cv.focus();
   prog.raidDelay=-3; toast('つづきから再開した');
-  { const r=prog.chapter2&&prog.chapter2.currentRegion; if(r&&r!=='komyoji'&&REG.defs[r]) regionTravel(r,null,{force:true}); } // v0.60 最後にいた地域から再開
+  { const r=prog.chapter2&&prog.chapter2.currentRegion; if(r&&r!=='komyoji'&&REG.defs[r]) regionTravel(r,null,{force:true,shopFront:d.chapter2.currentChapter===P3E_SHOP_FRONT}); } // v0.60 最後にいた地域から再開
   if(prog.f7Migrated){ prog.f7Migrated=false; saveGame(); } // 移行したらすぐ保存（次のロードで新品に戻らない）
 }
 
@@ -10306,7 +10314,8 @@ async function regionTravel(id,at=null,opt={}){
       try{ def.build(ctx); } finally { const have=new Set(ctx.colliders); for(const o of [...boxes.slice(n0[0]),...circles.slice(n0[1]),...oboxes.slice(n0[2])]) if(!have.has(o)) ctx.colliders.push(o); }
       if(!ctx.h||!ctx.bounds||!ctx.arrival) throw new Error('地域の形が足りない');
       Object.assign(BOUNDS,ctx.bounds);
-      const a=at||ctx.arrival; P.x=a.x; P.z=a.z; P.facing=a.facing||0; }
+      const front=opt.shopFront&&id==='kamishihi'&&P3A.doors.find(door=>door.inId==='shop');
+      const a=at||front||ctx.arrival; P.x=a.x; P.z=a.z; P.facing=a.facing||0; }
     REG.cur=id; if(prog.chapter2) prog.chapter2.currentRegion=id; stfAfterTravel(true); szAfterTravel(from,id); // v0.70：ついて来ているスズキも移る。v0.77：作業F の初遭遇の途中なら始まる前に戻す・運転中の KEI truck も移る
     setCam(P.facing); resetCombat(); updateChunks(0,true); saveGame();
     S.mode=mode==='loading'?'playing':mode; regionLoading(false); REG.busy=false; return true;
@@ -10561,6 +10570,7 @@ function p3aHouse(ctx,gb,yd,b,type,rnd){ const [x,z,l0,w0,rot]=b; const L=Math.m
   ctx.obox(x,z,L+0.3,W+0.3,rot,'house',{h:y0+top,roofBase:y0+fh+eave,p3a:1});
   const [dx,dz]=P_(door.face===2?door.lx+1.2:door.lx,door.face===2?0:door.lz+1.2);
   if(b.idx===26) P3A.doors.push({id:'house26',x:dx,z:dz,type,inId:'farm'});
+  else if(b.idx===110) P3A.doors.push({id:'house110',x:dx,z:dz,type,inId:'shop',facing:Math.atan2(-s,c)});
   else P3A.doors.push({id:'house'+b.idx,x:dx,z:dz,type,label:'（家の中の探索は P3-E。入口の位置だけ決めた）',future:true});
   return y0+top; }
 function p3aBuildHouses(ctx){ const D=KAMI.D, gb=new GB(), yd=new GB(), rnd=p3aRng(911); gb.jit=0.05; yd.jit=0.05;
@@ -10821,7 +10831,9 @@ const P3IN={ hq:{o:P3A_IN,w:81,d:19,entry:{x:2.2,z:8.5},gapZ:8.5,gapW:4.2,lights
   factory:{o:{x:21000,z:21060},w:31,d:15,entry:{x:1.6,z:7.5},gapZ:7.5,gapW:4.2,lights:[4,10,16],
     plan:()=>P3C_FACTORY,props:p3cFactoryProps,marks:p3cFactoryMarks,canEnter:p3cOn,label:()=>'整備工場跡に入る',
     onEnter:p3cFactoryEntered,interact:p3cFactoryInteract},
-  farm:{o:{x:21000,z:21120},w:16.4,d:21.7,entry:{x:1.6,z:15.6},gapZ:15.6,gapW:2.4,
+  shop:{floors:[p3eShopFloor(1),p3eShopFloor(2)],available:p3cOn,canEnter:()=>p3cOn()&&!!p3bState().e3.map,
+    label:()=>'よろず屋に入る',locked:{label:'入口を調べる',act:door=>p3aEnter(door)},preferOverFollow:true,interact:p3eShopInteract},
+  farm:{preferOverFollow:true,o:{x:21000,z:21120},w:16.4,d:21.7,entry:{x:1.6,z:15.6},gapZ:15.6,gapW:2.4,
     plan:()=>P3E_FARM,props:p3eFarmProps,marks:p3eFarmMarks,canEnter:p3cOn,label:()=>'古い農家に入る',
     onEnter:p3eFarmEntered,interact:p3eFarmInteract,
     lights:[
@@ -10830,7 +10842,7 @@ const P3IN={ hq:{o:P3A_IN,w:81,d:19,entry:{x:2.2,z:8.5},gapZ:8.5,gapW:4.2,lights
       ...[16,18].map(at=>({wall:'e',at,w:1.2,op:0.48})),
       {wall:'n',at:8.5,w:0.85,op:0.35},{wall:'n',at:13.5,w:0.55,op:0.25}
     ]} };
-function p3inDef(){ return P3IN[P3A.inId||'hq']; }
+function p3inDef(){ const def=P3IN[P3A.inId||'hq']; return P3A.interior?.def||def.floors?.[0]||def; }
 // ================= v0.81 P3-B：拠点本部（調べる・拠点設立の会話・倉庫と総合作業場の初回修復）・持ち物の重さ・資材置き場・時刻 =================
 // 数はすべて暫定（2026-11-19）。素材の数は P3-A の案（2026-11-19 ユーザー「よい」）
 const P3B={ hour:50, h0:6, // 1日1200秒＝24時間・1時間50秒・tod 0＝6:00（2026-11-18 ユーザー決定「1日を均等に24時間に分ける」）
@@ -10955,8 +10967,10 @@ function p3bYardTruckHit(){ const p=p3bState(), Y=P3B.yardTruck, at=P3A.yardTruc
 function p3bOutside(L){ const p=p3bState(); p3cOutside(L); p3cResInteractables(L); p3cReqOutside(L); p3dOutside(L);
   for(const dr of P3A.doors){ if(dr.future) continue; const d=dist(P.x,P.z,dr.x,dr.z); if(d>=2.6) continue;
     const def=P3IN[dr.inId||'hq'];
-    if(def.canEnter()) L.push({d,label:def.label(),act:()=>p3aEnter(dr),farmEntrance:dr.inId==='farm'});
-    else if(def.locked) L.push({d,...def.locked}); }
+    if(def.available&&!def.available()) continue;
+    if(dr.inId==='shop'&&!p3eShopAtDoor(dr)) continue;
+    if(def.canEnter()) L.push({d,label:def.label(),act:()=>p3aEnter(dr),preferOverFollow:def.preferOverFollow});
+    else if(def.locked) L.push({d,label:def.locked.label,act:()=>def.locked.act(dr),preferOverFollow:def.preferOverFollow}); }
   const at=P3A.yardTruck; if(at&&!p.got.yardTruck){ const d=dist(P.x,P.z,at.x,at.z)-1.2; if(d<1.6) L.push({d,label:`置き去りの軽トラックを解体する（${p.got.yardHits}/${P3B.yardTruck.hits}）`,act:p3bYardTruckHit}); } }
 function p3bOutsideTick(){ const p=p3bState(); if(p.hq.beasts||!p3bOpen()||!REG.live||P3A.inside) return; const dr=P3A.doors.find(d=>d.id==='hq'); if(!dr||dist(P.x,P.z,dr.x,dr.z)>80) return;
   p.hq.beasts=1; const H=P3A.HQ, c=Math.cos(H.rot), s=Math.sin(H.rot); for(const [type,lx,lz] of P3B.yardBeasts){ const ax=H.L/2+lx, x=H.x+ax*c-lz*s, z=H.z+ax*s+lz*c; try{ kamiSpawnBeast(REG.live,type,x,z); }catch(e){} }
@@ -12143,6 +12157,103 @@ const P3B_PLAN={ wh:2.6, cut:1.15, t:0.25,
     [54,4,54,12,0],[64,4,64,12,0],[44,12,80,12,0],[62,12,62,18,0]],
   boarded:[[53,12],[71,12]], // 板で打ちつけた戸（復興で開く部屋。P3-C 以降）
   stairs:{x:27.3,z:13.05}, entry:{x:2.2,z:8.5}, up:{x:47,z:2}, down:{x:26,z:15} };
+// よろず屋。階の原点はセーブ内のスズキの座標からも判別するため固定する。
+function p3eShopFloor(level){
+  const lower=level===1, o={x:lower?21000:21044,z:21180}, w=12.6, d=13.6;
+  const windows=lower?[2.6,10.9]:[1.3,3.7,6.1,8.5,10.9];
+  const wood={doorColor:0x654d38}, paper={doorColor:0xd6cbb1};
+  const plan={wh:lower?3.2:2.7,cut:0.9,t:0.22,floorDetails:true,ceilingEdge:true,colors:{outer:0xaa9b84,inner:0xc9bca2,trim:0x544536},
+    rooms:lower?[
+      ['sales','売場',0,0,8,9,0x96948b],['register','レジ',0,9,8,d,0x918f86],['stock','裏倉庫',8,0,w,d,0x827f75]
+    ]:[
+      ['living','居間',0,0,8,8.6,0xb9b284],['bed','寝室',0,8.6,8,d,0xb0aa7b],
+      ['landing','踊り場',8,0,w,8.6,0x99795a],['kitchen','台所',8,8.6,w,11.6,0xa38261],['closet','収納',8,11.6,w,d,0x957659]
+    ],
+    walls:[
+      [0,0,0,d,1,lower?[5.6,8]:null,lower,{doorColor:0x647476,windows}],
+      [0,0,w,0,1],[w,0,w,d,1],[0,d,w,d,1],
+      [8,0,8,d,0,lower?[7.7,9.7]:[5.8,8.2],1,wood]
+    ]};
+  if(!lower) plan.floorPieces={landing:[[8,0,9.9,8.6],[12.1,0,w,8.6],[9.9,0,12.1,0.5],[9.9,4.9,12.1,8.6]]};
+  if(!lower) plan.walls.push([0,8.6,8,8.6,0,[3,5],1,paper],[8,11.6,w,11.6,0,[1.2,3.2],1,wood]);
+  const marks=()=>{ const steps={id:'stairs',x:o.x+11,z:o.z+5.6,r:1.15,band:[9.9,4.9,12.1,6.65],
+      label:lower?'2階へ上がる':'1階へ下りる',to:lower?2:1,glow:false};
+    return lower?[{id:'exit',x:o.x+0.55,z:o.z+6.8,r:1.45,band:[0,5.6,1.15,8],label:'外へ出る',exit:true},steps]:[steps]; };
+  return {o,w,d,entry:{x:1.6,z:6.8},landing:{x:11,z:7.1},companion:{x:11,z:9.6},gapW:lower?2.4:0,gapZ:6.8,
+    plan:()=>plan,props:args=>p3eShopProps(args,lower),marks,lights:windows.map(at=>({wall:'w',at,w:lower?2.4:1.2,op:0.26}))};
+}
+function p3eShopProps({gb,X,Z,cols,prop,flat},lower){
+  if(lower){
+    for(const x of [2.6,5.8]) prop(x,2.2,0.8,1.05,2.8,0x5d4432);
+    prop(2.7,11.8,2.4,1.05,0.65,0x614934); prop(6.3,10.3,0.8,0.9,2.2,0x72563f);
+    prop(10.5,12.95,3.1,1.45,0.65,0x604b39);
+  }else{
+    // 仮の畳縁と板目。家具の入る場所を空けておく。
+    for(const z of [2.1,4.2,6.3,10.3,12]) flat(4,z,7.8,0.035,0x78775b);
+    for(let x=8.5;x<12.6;x+=0.5) flat(x,10.1,0.025,2.98,0x7b644e);
+  }
+  gb.frame(X,0,Z,0);
+  // 上階は階段口を一段ずつ低く見せる。登降は平らな段前でのみ受け付ける。
+  for(let i=0;i<10;i++){
+    const h=(lower?10-i:i+1)*0.20;
+    gb.box(11,(lower?0:-2.0)+h/2,0.72+i*0.44,2.2,h,0.44,cc(i%2?0x887058:0x987e62));
+  }
+  for(const x of [9.94,12.06]){
+    const rail=lower?2.31:0.94;
+    for(const z of [0.64,2.7,4.76]) gb.box(x,rail/2,z,0.08,rail,0.08,cc(0x63513e));
+    gb.box(x,rail,2.7,0.10,0.09,4.3,cc(0x66513c));
+  }
+  cols.push(addBox(X+11,Z+2.7,2.2,4.4,'wall',{h:2.35,p3a:1}));
+}
+function p3eShopAtDoor(door){
+  const dx=P.x-door.x, dz=P.z-door.z;
+  return REG.cur==='kamishihi'&&P3A.on&&!P3A.inside&&Math.hypot(dx,dz)<2.6&&dx*Math.sin(door.facing)+dz*Math.cos(door.facing)>-0.8;
+}
+function p3eShopFloorAt(x,z){
+  return P3IN.shop.floors.findIndex(f=>x>=f.o.x&&x<=f.o.x+f.w&&z>=f.o.z&&z<=f.o.z+f.d)+1;
+}
+// 店先の空点を共用する。屋内保存でも屋外の当たりは検索できる。
+function p3eShopFrontPoint(door,player){
+  const sx=Math.sin(door.facing), sz=Math.cos(door.facing);
+  for(const out of [1.35,2.2,3.4,4.8]){
+    for(const side of [0,1.4,-1.4,2.8,-2.8]){
+      const x=door.x+out*sx+side*sz, z=door.z+out*sz-side*sx;
+      if(dist(player.x,player.z,x,z)>P.r+SZ.r&&szWalkable(x,z)&&szFree(x,z,SZ.r+0.08)) return {x,z};
+    }
+  }
+  return door;
+}
+// 屋外の地形と当たりを戻してから呼ぶ。入店前から屋外で待つ相手は呼び手が除く。
+function p3eShopReturnSuzuki(){
+  const door=P3A.doors.find(d=>d.inId==='shop'), point=p3eShopFrontPoint(door,P);
+  szPut(point.x,point.z,door.facing); resolve(SZ,false);
+  SZ.wx=SZ.x; SZ.wz=SZ.z; SZ.place=false; SZ.crumbs.length=0;
+}
+function p3eShopCanUse(mark){
+  const I=P3A.interior;
+  if(!P3A.inside||I?.id!=='shop'||!I.marks.includes(mark)) return false;
+  const [x0,z0,x1,z1]=mark.band, x=P.x-I.def.o.x, z=P.z-I.def.o.z;
+  return x>=x0&&x<=x1&&z>=z0&&z<=z1&&dist(P.x,P.z,mark.x,mark.z)<=mark.r;
+}
+function p3eShopInteract(mark){
+  if(S.mode!=='playing'||P3A.busy||!p3eShopCanUse(mark)) return;
+  if(mark.exit) return p3aExit();
+  return p3inTransition(true,()=>{
+    const follow=szHere()&&SZ.order==='follow'&&!SZ.down;
+    const floor=p3inActivate(mark.to).def;
+    p3eShopArrive(floor,floor.landing,0,follow,floor.companion);
+  });
+}
+function p3eShopArrive(floor,spot,facing,follow,companion){
+  P.x=P._px=floor.o.x+spot.x; P.z=P._pz=floor.o.z+spot.z; P.lvx48=P.lvz48=0;
+  P.facing=facing; setCam(facing);
+  if(follow){
+    SZ.place=false; szCombatReset(); szRescueCancel(); SZ.crumbs.length=0;
+    const x=floor.o.x+companion.x, z=floor.o.z+companion.z;
+    if(szSpotOK(x,z,2)&&szLine(P.x,P.z,x,z)) szPut(x,z,facing);
+    else szPlaceBehind();
+  }else if(SZ.m&&!szHere()) SZ.m.g.visible=false;
+}
 // 古い農家の母屋と土蔵（座標は P3IN.farm.o からの m）
 const P3E_FARM={wh:3.0,cut:1.1,t:0.22,posts:true,floorDetails:true,
   colors:{outer:0x77604b,inner:0xb6a07a,trim:0x49392b},
@@ -12392,7 +12503,13 @@ function p3bHqProps({gb,X,Z,prop,flat,cols,PL}){
   prop(O+28,8,3.0,0.75,1.4,0x7a6a5a); prop(O+34.6,8,0.15,1.6,2.4,0xd8d2c2,false); prop(O+22,10.5,1.0,1.1,0.6,0x3e4a52);
   for(const [x,z] of PL.boarded){ gb.frame(X+x,0,Z+z,0); gb.box(0,1.0,0,1.6,2.0,0.3,cc(0x6a5440)); for(const dy of [-0.4,0.3]) gb.box(0,1.0+dy,0.18,1.9,0.18,0.06,cc(0x8a6a44)); }
 }
-function p3aInteriorBuild(){ if(P3A.interior) return P3A.interior; const id=P3A.inId||'hq', DEF=P3IN[id]; const g=new THREE.Group(); g.name='p3aInterior'; scene.add(g); const gb=new GB(); gb.jit=0.06; const X=DEF.o.x, Z=DEF.o.z, cols=[], rooms=[], uppers=[], doors=[];
+function p3aInteriorBuild(){
+  if(P3A.interior) return P3A.interior;
+  const id=P3A.inId||'hq', building=P3IN[id];
+  P3A.floors=(building.floors||[building]).map((def,i)=>p3inBuildFloor(id,def,i+1));
+  return P3A.interior=P3A.floors[0];
+}
+function p3inBuildFloor(id,DEF,level){ const g=new THREE.Group(); g.name='p3aInterior'; scene.add(g); const gb=new GB(); gb.jit=0.06; const X=DEF.o.x, Z=DEF.o.z, cols=[], rooms=[], uppers=[], doors=[];
   const PL=DEF.plan(), {inner:WALL=0xd9d3c4,outer:WALL2=0xb9b4a8,trim:TRIM=0x5d5448}=PL.colors||{}, {wh:WH=2.6,cut:CUT=1.15,t:T=0.25}=PL;
   // 壁：下の部分（腰まで）はまとめて描き、上の部分は壁ごとに分けて、カメラと主人公の間に来たら隠す（手前の壁で主人公が見えなくならないように）
   const upper=(x0,z0,x1,z1,fn)=>{ const ub=new GB(); fn(ub); const m=new THREE.Mesh(ub.geo(),vcMat); g.add(m); uppers.push({m,x0:X+x0,z0:Z+z0,x1:X+x1,z1:Z+z1}); };
@@ -12400,7 +12517,19 @@ function p3aInteriorBuild(){ if(P3A.interior) return P3A.interior; const id=P3A.
     const seg=(s0,s1)=>{ if(s1-s0<0.05) return; const mx=lerp(x0,x1,(s0+s1)/2/L), mz=lerp(z0,z1,(s0+s1)/2/L); gb.frame(X+mx,0,Z+mz,a); gb.box(0,CUT/2,0,s1-s0,CUT,T,cc(col)); gb.box(0,CUT+0.02,0,s1-s0,0.04,T+0.02,cc(TRIM));
       const posts=PL.posts?[-(s1-s0)/2+0.11,(s1-s0)/2-0.11]:[];
       for(const px of posts) gb.box(px,CUT/2,0,0.22,CUT,T+0.02,cc(TRIM));
-      upper(lerp(x0,x1,s0/L),lerp(z0,z1,s0/L),lerp(x0,x1,s1/L),lerp(z0,z1,s1/L),ub=>{ ub.frame(X+mx,0,Z+mz,a); ub.box(0,(CUT+WH)/2,0,s1-s0,WH-CUT,T,cc(col)); for(const px of posts) ub.box(px,(CUT+WH)/2,0,0.22,WH-CUT,T+0.02,cc(TRIM)); ub.box(0,WH+0.04,0,s1-s0,0.08,T+0.04,cc(TRIM)); });
+      upper(lerp(x0,x1,s0/L),lerp(z0,z1,s0/L),lerp(x0,x1,s1/L),lerp(z0,z1,s1/L),ub=>{ ub.frame(X+mx,0,Z+mz,a); ub.box(0,(CUT+WH)/2,0,s1-s0,WH-CUT,T,cc(col)); for(const px of posts) ub.box(px,(CUT+WH)/2,0,0.22,WH-CUT,T+0.02,cc(TRIM)); ub.box(0,WH+0.04,0,s1-s0,0.08,T+0.04,cc(TRIM));
+        if(PL.ceilingEdge&&outer){
+          // 天井は室内側の縁を残す。手前の上壁を隠すと窓・天井板も一緒に隠れる。
+          const inward=(ca?z0===0:x0!==0)?1:-1;
+          ub.box(0,WH,inward*0.23,s1-s0,0.10,0.54,cc(0x918577),true,true);
+          for(const at of style.windows||[]){
+            if(at<=s0||at>=s1) continue;
+            const u=at-(s0+s1)/2, width=level===1?2.4:1.2;
+            ub.box(u,1.35,-0.13,width+0.10,1.00,0.07,cc(TRIM));
+            ub.box(u,1.35,-0.18,width,0.90,0.04,cc(0xa7b6ae));
+          }
+        }
+      });
       cols.push(addBox(X+mx,Z+mz,ca?s1-s0:T,ca?T:s1-s0,'wall',{h:WH,p3a:1})); };
     if(gap){ seg(0,gap[0]); seg(gap[1],L); const gm=(gap[0]+gap[1])/2/L, gx=lerp(x0,x1,gm), gz=lerp(z0,z1,gm), gw=gap[1]-gap[0];
       upper(lerp(x0,x1,gap[0]/L),lerp(z0,z1,gap[0]/L),lerp(x0,x1,gap[1]/L),lerp(z0,z1,gap[1]/L),ub=>{ ub.frame(X+gx,0,Z+gz,a); ub.box(0,WH-0.15,0,gw,0.3,T,cc(col)); }); // 戸口の上
@@ -12417,9 +12546,11 @@ function p3aInteriorBuild(){ if(P3A.interior) return P3A.interior; const id=P3A.
   const floor=(x0,z0,x1,z1,col)=>{ gb.frame(X,0,Z,0); gb.box((x0+x1)/2,-0.05,(z0+z1)/2,x1-x0,0.1,z1-z0,cc(col)); if(!PL.floorDetails) for(let x=x0+1;x<x1;x+=1) gb.box(x,0.003,(z0+z1)/2,0.03,0.006,z1-z0,cc(0x7a756b)); };
   const prop=(x,z,sx,sy,sz,col,solid=true,y=0)=>{ gb.frame(X,0,Z,0); gb.box(x,y+sy/2,z,sx,sy,sz,cc(col)); if(solid) cols.push(addBox(X+x,Z+z,sx,sz,'wall',{h:y+sy,p3a:1})); };
   const flat=(x,z,sx,sz,col,y=0.012)=>{ gb.frame(X,0,Z,0); gb.box(x,y,z,sx,0.01,sz,cc(col)); };
-  for(const [id,name,x0,z0,x1,z1,col] of PL.rooms){ floor(x0,z0,x1,z1,col); rooms.push({id,name,x0:X+x0,z0:Z+z0,x1:X+x1,z1:Z+z1}); }
+  for(const [roomId,name,x0,z0,x1,z1,col] of PL.rooms){
+    for(const rect of PL.floorPieces?.[roomId]||[[x0,z0,x1,z1]]) floor(...rect,col);
+    rooms.push({id:roomId,name,x0:X+x0,z0:Z+z0,x1:X+x1,z1:Z+z1}); }
   for(const w of PL.walls) wall(w);
-  cols.push(addBox(X-0.3,Z+DEF.gapZ,0.4,DEF.gapW,'wall',{h:WH,p3a:1})); // 西の入口（外へは「外へ出る」で）
+  if(DEF.gapW) cols.push(addBox(X-0.3,Z+DEF.gapZ,0.4,DEF.gapW,'wall',{h:WH,p3a:1})); // 西の入口（外へは「外へ出る」で）
   DEF.props({gb,X,Z,prop,flat,cols,PL});
   // 明かり：屋内は暗め＋窓から入る光の筋
   const geo=gb.geo(); const m=new THREE.Mesh(geo,vcMat); m.receiveShadow=true; g.add(m); const ink=new THREE.Mesh(inkGeo(geo,0.05),inkMat); g.add(ink);
@@ -12429,33 +12560,103 @@ function p3aInteriorBuild(){ if(P3A.interior) return P3A.interior; const id=P3A.
   for(const c of cols) c.active=false; g.visible=false;
   // 調べる所・直す所の光る印（今の進み具合から）
   const marks=DEF.marks(); const mk=[]; for(const k of marks){ if(k.glow===false) continue; const s=new THREE.Mesh(G.box,new THREE.MeshBasicMaterial({color:k.exit?0x9fd4e0:k.rep?0x8fe07a:0xf0c34a,transparent:true,opacity:0.8})); s.scale.set(0.35,0.35,0.35); s.position.set(k.x,1.2,k.z); s.rotation.set(0.6,0.6,0); g.add(s); mk.push(s); }
-  P3A.interior={id,g,cols,rooms,marks,mk,uppers,doors,ember,floorY:0}; return P3A.interior; }
+  return {id,def:DEF,level,g,cols,rooms,marks,mk,uppers,doors,ember,floorY:0}; }
 let P3B_DM=null; function P3B_DOORMAT(){ return P3B_DM||(P3B_DM=new THREE.MeshLambertMaterial({color:0x8a7a62})); }
-// 屋内を今の進み具合で作り直す（直した・見つけた・調べたとき）。中にいるなら見え方と当たりを戻す
-function p3bRebuild(){ const I=P3A.interior; if(!I) return; const vis=I.g.visible; for(const c of I.cols) gridRemove(c); scene.remove(I.g); I.g.traverse(o=>{ if(o.geometry&&o.geometry!==G.box) o.geometry.dispose(); if(o.material&&o.material!==vcMat&&o.material!==inkMat&&o.material!==P3B_DM) o.material.dispose(); });
-  P3A.interior=null; const J=p3aInteriorBuild(); if(vis){ J.g.visible=true; for(const c of J.cols) c.active=true; } }
+// 現階をまとめて選択する。行先の歩行範囲が有効になってから登場人物を置く。
+function p3inActivate(level){
+  const selected=P3A.floors[level-1];
+  for(const floor of P3A.floors){
+    floor.g.visible=floor===selected;
+    for(const c of floor.cols) c.active=floor===selected&&!c.off;
+  }
+  const {o,w,d}=selected.def;
+  REG.inB={minX:o.x-(selected.id==='shop'?0:1),maxX:o.x+w,minZ:o.z-(selected.id==='shop'?0:1),maxZ:o.z+d};
+  P3A.interior=selected;
+  return selected;
+}
+function p3bRebuild(){
+  const old=P3A.interior; if(!old) return;
+  const visible=old.g.visible;
+  p3inDispose(); p3aInteriorBuild();
+  if(visible) p3inActivate(old.level);
+}
 // 引き戸と、手前の壁を隠す（毎フレーム）
 function p3bInteriorTick(dt){ const I=P3A.interior; if(!I||!I.g.visible) return;
   if(I.ember) I.ember.opacity=0.45+Math.sin(P3A.t*1.6)*0.10;
   for(const d of I.doors){ const near=dist(P.x,P.z,d.x,d.z)<2.4||(typeof szHere==='function'&&szHere()&&dist(SZ.x,SZ.z,d.x,d.z)<2.2); d.o+=((near?1:0)-d.o)*Math.min(1,dt*8); const off=d.o*d.w*0.92; if(d.ax==='x') d.m.position.x=d.x+off; else d.m.position.z=d.z+off; }
   const cx=camera.position.x, cz=camera.position.z; for(const u of I.uppers) u.m.visible=!p3bSegHit(cx,cz,P.x,P.z,u.x0,u.z0,u.x1,u.z1); }
 function p3bSegHit(ax,az,bx,bz,cx,cz,dx,dz){ const d1=(bx-ax)*(cz-az)-(bz-az)*(cx-ax), d2=(bx-ax)*(dz-az)-(bz-az)*(dx-ax), d3=(dx-cx)*(az-cz)-(dz-cz)*(ax-cx), d4=(dx-cx)*(bz-cz)-(dz-cz)*(bx-cx); return d1*d2<0&&d3*d4<0; }
-async function p3aEnter(door){ if(P3A.busy||P3A.inside) return; P3A.busy=true; S.mode='dialog'; clearCamPitchInput(); await stfFade(true);
-  const want=door&&door.inId||'hq'; if(P3A.interior&&P3A.interior.id!==want) p3inDispose(); P3A.inId=want; const DEF=P3IN[want];
-  const I=p3aInteriorBuild(); P3A.ret={x:P.x,z:P.z,f:P.facing,hfn:REG.hfn}; I.g.visible=true; for(const c of I.cols) if(!c.off) c.active=true;
-  if(REG.live) REG.live.group.visible=false; P3A.inside=true; REG.inB={minX:DEF.o.x-1,maxX:DEF.o.x+DEF.w,minZ:DEF.o.z-1,maxZ:DEF.o.z+DEF.d}; REG.hfn=(x,z)=>(x>P3A_IN.x-10&&z>P3A_IN.z-10)?0:P3A.ret.hfn(x,z);
-  P.x=DEF.o.x+DEF.entry.x; P.z=DEF.o.z+DEF.entry.z; P.facing=Math.PI/2; cam.yaw=Math.PI/2;
-  p3aSzFollow(); // スズキも一緒に入る（2026-11-18 ユーザー回答「入る」。待たせているとき・倒れているときは外に残る）
-  await stfWait(250); S.mode='playing'; await stfFade(false); P3A.busy=false; p3cResVis(); DEF.onEnter(); }
+// 店の暗転は物理入力の立ち上がりだけを使う。連打が明転にまたがった場合は最後の押下から少し待つ。
+let p3ShopFading=false, p3ShopKeyHeld=false, p3ShopActionAfter=0;
+function p3eShopBlocksAction(){
+  if(!p3ShopFading&&performance.now()>=p3ShopActionAfter) return false;
+  p3ShopActionAfter=performance.now()+220;
+  return true;
+}
+async function p3inTransition(shop,move){
+  if(P3A.busy) return;
+  P3A.busy=true; p3ShopFading=shop;
+  S.mode=shop?'interiorTransition':'dialog'; clearCamPitchInput();
+  if(shop){
+    p3ShopKeyHeld=keys.has('e'); curInter=null; clearCinemaInput52(); held.act=false; cz.id=null; szRescueCancel();
+    stfFadeEl().classList.add('shopTransition');
+  }
+  try{
+    await stfFade(true); move();
+    await stfWait(250); S.mode='playing'; await stfFade(false);
+  }finally{
+    if(shop){
+      stfFadeEl().classList.remove('shopTransition'); p3ShopActionAfter=performance.now()+220; p3ShopFading=false;
+    }
+    P3A.busy=false;
+  }
+}
+async function p3aEnter(door){
+  if(P3A.busy||P3A.inside) return;
+  const want=door?.inId||'hq', def=P3IN[want], shop=want==='shop';
+  if(shop){
+    if(S.mode!=='playing'||!p3eShopAtDoor(door)||!def.available()) return;
+    if(!def.canEnter()){ sfx('deny'); toast('ここから入る手がかりがない',true); return; }
+  }
+  await p3inTransition(shop,()=>{
+    const follow=shop&&szHere()&&SZ.order==='follow'&&!SZ.down;
+    if(P3A.interior&&P3A.interior.id!==want) p3inDispose();
+    P3A.inId=want; p3aInteriorBuild();
+    P3A.ret={x:P.x,z:P.z,f:P.facing,hfn:REG.hfn};
+    if(REG.live) REG.live.group.visible=false;
+    P3A.inside=true; const floor=p3inActivate(1).def;
+    REG.hfn=(x,z)=>(x>P3A_IN.x-10&&z>P3A_IN.z-10)?0:P3A.ret.hfn(x,z);
+    if(shop) p3eShopArrive(floor,floor.entry,Math.PI/2,follow,{x:4.1,z:6.8});
+    else{
+      P.x=floor.o.x+floor.entry.x; P.z=floor.o.z+floor.entry.z; P.facing=Math.PI/2; cam.yaw=Math.PI/2;
+      p3aSzFollow();
+    }
+  });
+  p3cResVis(); def.onEnter?.();
+}
 function p3bHqEntered(){
   const hq=p3bState().hq; if(!hq.visited){ hq.visited=1; saveGame(); toast('中は暗く、ほこりっぽい。倉庫・作業場・上の階を調べてみよう'); } p3bTalkCheck(true); }
-async function p3aExit(){ if(P3A.busy||!P3A.inside) return; P3A.busy=true; S.mode='dialog'; clearCamPitchInput(); await stfFade(true); const I=P3A.interior;
-  I.g.visible=false; for(const c of I.cols) c.active=false; if(REG.live) REG.live.group.visible=true; P3A.inside=false; REG.inB=null; REG.hfn=P3A.ret.hfn;
-  const szIn=typeof szHere==='function'&&szHere()&&SZ.x>P3A_IN.x-60; P.x=P3A.ret.x; P.z=P3A.ret.z; P.facing=P3A.ret.f+Math.PI; cam.yaw=P.facing; if(szIn){ SZ.crumbs.length=0; szPlaceBehind(); } /* 中にいたスズキも外へ */ p3cResVis(); await stfWait(250); S.mode='playing'; await stfFade(false); P3A.busy=false; }
+async function p3aExit(){
+  if(P3A.busy||!P3A.inside) return;
+  const I=P3A.interior, shop=I.id==='shop';
+  await p3inTransition(shop,()=>{
+    const szIn=shop?SZ.joined&&SZ.region===REG.cur&&p3eShopFloorAt(SZ.x,SZ.z):szHere()&&SZ.x>P3A_IN.x-60;
+    I.g.visible=false; for(const c of I.cols) c.active=false;
+    if(REG.live) REG.live.group.visible=true; P3A.inside=false; REG.inB=null; REG.hfn=P3A.ret.hfn;
+    P.x=P3A.ret.x; P.z=P3A.ret.z; P.facing=P3A.ret.f+Math.PI; cam.yaw=P.facing;
+    if(shop){ P._px=P.x; P._pz=P.z; P.lvx48=P.lvz48=0; setCam(P.facing); }
+    if(szIn){
+      SZ.crumbs.length=0;
+      if(shop&&(SZ.order==='wait'||SZ.down)) p3eShopReturnSuzuki();
+      else szPlaceBehind();
+    }
+    p3cResVis();
+  });
+}
 function p3aMove(dx,dz){ P.x+=dx; P.z+=dz; }
 function p3aSzFollow(){ if(typeof szHere!=='function'||!szHere()||SZ.order!=='follow'||SZ.down) return false; szCombatReset(); szRescueCancel(); SZ.crumbs.length=0; szPlaceBehind(); return true; } // ついて来ているスズキを主人公の後ろへ
-function p3aInteractables(L){ if(!P3A.on||REG.cur!=='kamishihi') return;
-  if(P3A.inside){ const I=P3A.interior; if(!I) return; const def=P3IN[I.id]; for(const k of I.marks){ const d=dist(P.x,P.z,k.x,k.z); if(d>(k.r||1.8)) continue; L.push({d,label:k.rep?p3bRepLabel(k.rep[0],k.rep[1]):k.req?p3cStepLabel(P3C_REQ_BY[k.req[0]],p3cReq(k.req[0]),k.req[1]):k.label,act:()=>k.req?p3cReqDo(k.req[0],k.req[1]):def.interact(k)}); } p3cResInteractables(L); return; }
+function p3aInteractables(L){ if(p3ShopFading||!P3A.on||REG.cur!=='kamishihi') return;
+  if(P3A.inside){ const I=P3A.interior; if(!I) return; const def=P3IN[I.id]; for(const k of I.marks){ const d=dist(P.x,P.z,k.x,k.z); if(d>(k.r||1.8)||(k.band&&!p3eShopCanUse(k))) continue; L.push({d,preferOverFollow:I.id==='shop',label:k.rep?p3bRepLabel(k.rep[0],k.rep[1]):k.req?p3cStepLabel(P3C_REQ_BY[k.req[0]],p3cReq(k.req[0]),k.req[1]):k.label,act:()=>k.req?p3cReqDo(k.req[0],k.req[1]):def.interact(k)}); } p3cResInteractables(L); return; }
   p3bOutside(L); }
 // ---- v0.85 P3-D（D-3）川の音（§19.3）：本流の流れ（いちばん近い本流までの距離）・支流と水路のせせらぎ・浅瀬の水音（ときどき）・河原の風。鳥は f31Sched（昼） ----
 var RIVSND=null; // var：起動の途中で参照されても止まらないように
@@ -12480,7 +12681,17 @@ function p3aUpdate(dt){ if(!P3A.on) return; P3A.t+=dt; RIV.uT.value=P3A.t; const
   p3cUpdate(dt); // v0.82 P3-C：住民・救助
   if(P3D.look>0) P3D.look-=dt; if(P3D.srch>0) P3D.srch-=dt; p3dTick(dt); // v0.84 P3-D：釣り・宗一
   rivSoundTick(dt); rivObsTick(dt); rivCamTick(dt); e2SoundTick(dt); } // v0.85 P3-D（D-3）：川の音（本流・支流・浅瀬・河原の風）・観察地点
-function p3inDispose(){ if(!P3A.interior) return; const I=P3A.interior; for(const c of I.cols) gridRemove(c); scene.remove(I.g); I.g.traverse(o=>{ if(o.geometry&&o.geometry!==G.box) o.geometry.dispose(); if(o.material&&o.material!==vcMat&&o.material!==inkMat&&o.material!==P3B_DM) o.material.dispose(); }); P3A.interior=null; }
+function p3inDispose(){
+  for(const floor of P3A.floors||[]){
+    for(const c of floor.cols) gridRemove(c);
+    scene.remove(floor.g);
+    floor.g.traverse(o=>{
+      if(o.geometry&&o.geometry!==G.box) o.geometry.dispose();
+      if(o.material&&o.material!==vcMat&&o.material!==inkMat&&o.material!==P3B_DM) o.material.dispose();
+    });
+  }
+  P3A.interior=null; P3A.floors=null;
+}
 function p3aDispose(){ p3inDispose(); p3cResHideAll();
   if(P3A.inside){ P3A.inside=false; REG.inB=null; if(P3A.ret) REG.hfn=P3A.ret.hfn; } P3A.near=[]; P3A.doors=[]; P3A.fishSpots=[]; P3A.yardTruck=null; P3A.waterU=null; P3A.sunSpots=null; if(RIVSND){ RIVSND.main.gain.value=0; RIVSND.brook.gain.value=0; RIVSND.wind=0; } e2SoundStop(); }
 
@@ -13647,7 +13858,10 @@ function kamiDrawMarks(ctx,c2,X,Z){ const kw=ctx.kw, dot=(x,z,col,r)=>{ c2.fillS
 // SZA・SZ（数と状態）は、早く使われる（freshState）ので SUZUKI_OPTS の後ろに置いた
 function szFresh(){ Object.assign(SZ,{joined:false,order:'follow',region:'komyoji',wx:0,wz:0,hp:SZ.maxHp,down:false,upT:0,roam:null,still:0,ci:-1,crumbT:0,pose:null,place:false}); szCombatReset(); szRescueCancel();
   SZ.crumbs.length=0; if(SZ.m) SZ.m.g.visible=false; }
-function szHere(){ return SZ.joined&&SZ.region===REG.cur&&!REG.busy; }
+function szHere(){
+  return SZ.joined&&SZ.region===REG.cur&&!REG.busy&&
+    (!P3A.inside||P3A.inId!=='shop'||P3A.interior.level===p3eShopFloorAt(SZ.x,SZ.z));
+}
 function szModel(){ if(!SZ.m){ SZ.m=makeHuman(SUZUKI_OPTS); SZ.m.g.visible=false; scene.add(SZ.m.g); } return SZ.m; }
 // 当たり判定のない所か（獣だけを止める門の柵は通れる＝主人公と同じ。2026-11-15 ユーザー了承）
 function szFree(x,z,r){ for(const b of gridQuery(x-r,x+r,z-r,z+r)){ if(b.active===false||b.enemyOnly) continue;
@@ -13747,7 +13961,13 @@ function szAfterTravel(from,to){ if(!SZ.joined) return; szCombatReset(); szRescu
 // ---- 第4段階：セーブ（新しいキー suzuki・v:1）。古いセーブ・不正な値は「まだ仲間でない」。docs/save-and-flags.md ----
 const SZ_ORDERS=['follow','wait','base'], SZ_REGIONS=['komyoji','kamishihi'];
 function szSave(){ if(!SZ.joined) return {v:1,joined:false}; const r=v=>Math.round(v*100)/100;
-  return {v:1,joined:true,order:SZ.order,region:SZ.region,x:r(SZ.x),z:r(SZ.z),wx:r(SZ.wx),wz:r(SZ.wz),hp:SZ.down?0:Math.max(1,Math.round(SZ.hp)),down:!!SZ.down}; }
+  let spot=SZ, wx=SZ.wx, wz=SZ.wz;
+  if(P3A.inside&&P3A.inId==='shop'&&SZ.region===REG.cur&&p3eShopFloorAt(SZ.x,SZ.z)){
+    const door=P3A.doors.find(d=>d.inId==='shop');
+    spot=p3eShopFrontPoint(door,door);
+    wx=spot.x; wz=spot.z;
+  }
+  return {v:1,joined:true,order:SZ.order,region:SZ.region,x:r(spot.x),z:r(spot.z),wx:r(wx),wz:r(wz),hp:SZ.down?0:Math.max(1,Math.round(SZ.hp)),down:!!SZ.down}; }
 // 読み込んだ値を確かめる（ゲームの状態には触れない）
 function szLoadState(q,maxHp){ const N=v=>typeof v==='number'&&isFinite(v);
   const o={joined:false,order:'follow',region:'komyoji',x:null,z:null,wx:null,wz:null,hp:maxHp,down:false};
@@ -13765,7 +13985,7 @@ function szApplyLoad(q){ szFresh(); const o=szLoadState(q,SZ.maxHp); if(!o.joine
   if(o.wx!=null){ SZ.wx=o.wx; SZ.wz=o.wz; }
   if(o.x!=null){ SZ.x=o.x; SZ.z=o.z; SZ._px=o.x; SZ._pz=o.z; }
   SZ.place=(o.order==='follow'&&!o.down)||o.x==null; }
-function szPlaceTick(){ if(!SZ.place||!SZ.joined||REG.busy) return; if(SZ.order==='follow'&&!SZ.down) SZ.region=REG.cur; if(SZ.region===REG.cur){ szPlaceBehind(); SZ.place=false; } }
+function szPlaceTick(){ if(!SZ.place||!SZ.joined||REG.busy||(P3A.inside&&P3A.inId==='shop'&&!szHere())) return; if(SZ.order==='follow'&&!SZ.down) SZ.region=REG.cur; if(SZ.region===REG.cur){ szPlaceBehind(); SZ.place=false; } }
 // ---- 第3段階：倒れる・助け起こす・戦いの後の回復・主人公が倒れたとき ----
 // 助け起こす：倒れたスズキの2.5m 以内で E（iPhone は行動ボタン）を3秒長押し。離す・離れる・攻撃を受けると止まり、はじめから。動けない。90で起きる
 function szRescueStart(){ if(!SZ.down||!szHere()||SZR.on) return; SZR.on=true; SZR.t=0; szRescueUI(); }
