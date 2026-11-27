@@ -88,3 +88,8 @@ Claude Code が1回目の実装をヘッドレス Chromium（SwiftShader）で�
 - `p3e3-farm-browser` は1回目の実装で3回中2回合格。初回だけ「主人公が蔵に着いてから5ゲーム秒以内にスズキが6m以内に来る」が失敗した。その後、同じ版で2回、main 相当（`f552300`）で1回合格し、失敗は再現していない。
 - `p3b-hq`、`p3c-residents`、`p3c-requests`、`p3d-cook`、`kami-wild`、`hud-layout`、`region`、`suzuki`、`wardrobe`、`cam-pitch`（57項目）、`p3e-forest`、`p3e2-herb`、`chapter2-save` は合格。`suzuki-save` は main と同じ既知の3件が失敗した（スズキの体力が期待値より1多い）。
 - 390×844 では古い地図の案内の帯の2行目が画面の左右端近く（余白約2 px）まで届いた。1280×720 では問題なし。iPhone 実機では未確認。今回の帯の修正は、このあと Claude Code がブラウザーで確認する。
+
+### 2026-11-27 の最終テスト
+
+Claude Code がヘッドレス Chromium（SwiftShader）で公開候補 `1c080de` を確認し、独立レビュー後の追加項目と v0.90 の実ページでの巻き戻り試験を含む `p3e3-search-browser` 239項目、`p3e3-farm-browser` 30項目が合格した。
+古い農家の試遊版は PC 1280×720 と iPhone 390×844 で合格し、試遊版7つの再生成結果はバイト一致した。既知の失敗を含む全結果は `docs/v091-release-checklist.md` に記録した。
