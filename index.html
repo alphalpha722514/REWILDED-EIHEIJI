@@ -12175,11 +12175,23 @@ function p3eShopFloor(level){
     ]};
   if(!lower) plan.floorPieces={landing:[[8,0,9.9,8.6],[12.1,0,w,8.6],[9.9,0,12.1,0.5],[9.9,4.9,12.1,8.6]]};
   if(!lower) plan.walls.push([0,8.6,8,8.6,0,[3,5],1,paper],[8,11.6,w,11.6,0,[1.2,3.2],1,wood]);
+  if(!lower) plan.fixtures=[
+    {id:'kotatsu',room:'living',x:3.8,z:3.6,turn:0},
+    {id:'tvStand',room:'living',x:4.1,z:0.64,turn:0},
+    {id:'phoneStand',room:'living',x:6.1,z:0.58,turn:0},
+    {id:'futon',room:'bed',x:2.15,z:11.24,turn:0},
+    {id:'dresser',room:'bed',x:6.18,z:13.00,turn:2},
+    {id:'sink',room:'kitchen',x:12.05,z:9.34,turn:-1},
+    {id:'stove',room:'kitchen',x:12.05,z:10.88,turn:-1},
+    {id:'cupboard',room:'kitchen',x:8.53,z:10.63,turn:1},
+    {id:'fridge',room:'kitchen',x:8.59,z:9.03,turn:1},
+    {id:'linenCloset',room:'closet',x:10.35,z:13.12,turn:2}
+  ];
   const marks=()=>{ const steps={id:'stairs',x:o.x+11,z:o.z+5.6,r:1.15,band:[9.9,4.9,12.1,6.65],
       label:lower?'2階へ上がる':'1階へ下りる',to:lower?2:1,glow:false};
     return lower?[{id:'exit',x:o.x+0.55,z:o.z+6.8,r:1.45,band:[0,5.6,1.15,8],label:'外へ出る',exit:true},steps]:[steps]; };
   return {o,w,d,entry:{x:1.6,z:6.8},landing:{x:11,z:7.1},companion:{x:11,z:9.6},gapW:lower?2.4:0,gapZ:6.8,
-    plan:()=>plan,props:args=>p3eShopProps(args,lower),marks,lights:lower?[]:windows.map(at=>({wall:'w',at,w:1.2,op:0.26}))};
+    plan:()=>plan,props:args=>p3eShopProps(args,lower),marks,lights:[]};
 }
 function p3eShopFace(g,x,y,z,w,h,color){
   g.quad([x-w/2,y,z],[x+w/2,y,z],[x+w/2,y+h,z],[x-w/2,y+h,z],cc(color));
@@ -12554,14 +12566,293 @@ function p3eShopGroundProps(args){
   }));
   g.add(panes);
 }
+// 住まいの家具は正面を +z として作る。天板・畳の織り目などの水平面。
+function p3eShopTop(g,x,y,z,w,d,color){
+  g.quad([x-w/2,y,z+d/2],[x+w/2,y,z+d/2],[x+w/2,y,z-d/2],[x-w/2,y,z-d/2],cc(color));
+}
+function p3eShopQuilt(g,x,y,z,w,d,h,inset,color){
+  const rim=(a,b,c)=>[[x-a,b,z+c],[x+a,b,z+c],[x+a,b,z-c],[x-a,b,z-c]];
+  const hem=rim(w/2,y,d/2), top=rim(w/2-inset,y+h,d/2-inset);
+  for(let i=0;i<4;i++) g.quad(hem[i],hem[(i+1)%4],top[(i+1)%4],top[i],cc(color));
+  g.quad(...top,cc(color));
+}
+function p3eShopHomeModel(id){
+  const g=new GB(), wood=0x76533b, dark=0x493b31, ivory=0xdad1ad, metal=0x929a90;
+  const box=(x,y,z,w,h,d,color)=>g.box(x,y,z,w,h,d,cc(color));
+  const round=(x,y,z,r,h,color)=>p3eShopRound(g,x,y,z,r,h,color);
+  const top=(x,y,z,w,d,color)=>p3eShopTop(g,x,y,z,w,d,color);
+  switch(id){
+    case 'kotatsu':
+      // 藍色の掛け布団の裾と格子織り、面取りのある木の天板。
+      p3eShopQuilt(g,0,0.03,0,2.06,1.68,0.41,0.25,0x596872);
+      for(const x of [-0.77,-0.43,0,0.43,0.77]){
+        for(const side of [-1,1]){
+          const a=[x-0.028,0.035,side*0.842], b=[x+0.028,0.035,side*0.842];
+          const c=[x*0.75+0.025,0.441,side*0.592], d=[x*0.75-0.025,0.441,side*0.592];
+          g.quad(...(side>0?[a,b,c,d]:[b,a,d,c]),cc(0xaca58e));
+        }
+      }
+      box(0,0.477,0,1.62,0.085,1.23,wood);
+      // 茶托と湯のみ、急須の横手・注ぎ口、二つ折りの新聞。
+      for(const x of [-0.48,0.42]){
+        round(x,0.52,0.29,0.118,0.014,dark);
+        round(x,0.534,0.29,0.073,0.115,ivory);
+        round(x,0.649,0.29,0.058,0.003,0x665439);
+      }
+      round(-0.24,0.52,-0.14,0.15,0.135,0x955d40);
+      round(-0.24,0.655,-0.14,0.12,0.029,0xae7956);
+      round(-0.24,0.684,-0.14,0.033,0.028,dark);
+      box(-0.24,0.61,-0.34,0.066,0.059,0.22,wood);
+      g.quad([-0.37,0.55,-0.09],[-0.37,0.64,-0.09],[-0.493,0.70,-0.09],[-0.485,0.65,-0.09],cc(0x955d40));
+      box(-0.44,0.646,-0.14,0.10,0.069,0.10,0x955d40);
+      box(0.40,0.529,-0.18,0.53,0.018,0.38,0xd8d2b9);
+      top(0.41,0.540,-0.31,0.43,0.048,0x5e6159);
+      for(const x of [0.21,0.28,0.35,0.42,0.49,0.56]) top(x,0.540,-0.14,0.021,0.21,0x898779);
+      break;
+    case 'tvStand':
+      box(0,0.25,0,1.50,0.49,0.76,wood);
+      p3eShopFace(g,0,0.085,0.382,1.30,0.30,dark);
+      box(0,0.24,0.36,1.30,0.034,0.055,0x9f805e);
+      box(0,0.53,0,1.28,0.09,0.66,dark);
+      box(0,0.93,0,1.32,0.74,0.66,0x7a5843);
+      box(-0.12,0.94,0.338,0.93,0.60,0.04,0x383934);
+      // ブラウン管の丸い隅と膨らんだ暗緑のガラス。
+      {
+        const rim=[[-0.41,-0.18],[-0.35,-0.245],[0.35,-0.245],[0.41,-0.18],
+          [0.41,0.18],[0.35,0.245],[-0.35,0.245],[-0.41,0.18]];
+        for(let i=0;i<rim.length;i++){
+          const [x,y]=rim[i], [u,v]=rim[(i+1)%rim.length];
+          g.tri([-0.12,0.94,0.394],[x-0.12,y+0.94,0.363],[u-0.12,v+0.94,0.363],cc(0x505b57));
+        }
+      }
+      for(const y of [0.99,1.17]) box(0.49,y,0.35,0.115,0.11,0.055,dark);
+      for(let i=0;i<5;i++) p3eShopFace(g,0.48,0.67+i*0.046,0.332,0.20,0.018,0x443c31);
+      break;
+    case 'phoneStand':
+      box(0,0.40,0,0.86,0.80,0.64,wood);
+      p3eShopFace(g,0,0.46,0.322,0.76,0.25,0x956f51);
+      box(0,0.60,0.341,0.19,0.025,0.035,dark);
+      box(0,0.87,0.02,0.38,0.14,0.30,0x373c37);
+      round(0,0.94,0.065,0.095,0.018,0xb4ad99);
+      for(let i=0;i<9;i++) round(0.069*Math.cos(i*0.65),0.958,0.065+0.069*Math.sin(i*0.65),0.014,0.003,dark);
+      box(0,1.043,-0.072,0.43,0.066,0.084,0x343934);
+      for(const x of [-0.18,0.18]) box(x,0.998,-0.07,0.105,0.093,0.13,0x343934);
+      break;
+    case 'futon':
+      p3eShopQuilt(g,0,0.014,0,1.38,2.32,0.085,0.04,ivory);
+      p3eShopQuilt(g,0,0.099,0.23,1.43,1.79,0.16,0.085,0x986b61);
+      for(const z of [-0.40,0.07,0.54,0.95]) top(0,0.260,z,1.236,0.023,0xba9280);
+      top(0,0.261,-0.49,1.24,0.17,0xd8c5ae);
+      p3eShopQuilt(g,0,0.099,-0.87,0.72,0.40,0.12,0.05,0xe6dac2);
+      break;
+    case 'dresser':
+      box(0,0.79,0,1.82,1.58,0.76,dark);
+      for(let i=0;i<4;i++){
+        const y=0.26+i*0.36;
+        box(0,y,0.383,1.71,0.33,0.045,i%2?wood:0x826046);
+        for(const x of [-0.5,0.5]){
+          box(x,y+0.028,0.419,0.18,0.039,0.04,dark);
+          box(x,y-0.004,0.437,0.13,0.026,0.025,0xa48b65);
+        }
+      }
+      break;
+    case 'sink':
+      box(0,0.42,0,1.70,0.84,0.77,0xa8afa1);
+      for(const x of [-0.42,0.42]){
+        p3eShopFace(g,x,0.08,0.387,0.80,0.66,0xc8c9ad);
+        box(x,0.68,0.40,0.22,0.03,0.034,dark);
+      }
+      // 四方のステンレス縁で浅いシンクを囲み、水栓の口は槽の上へ向ける。
+      top(-0.32,0.843,0,0.82,0.53,0x6b7878);
+      for(const z of [-0.325,0.325]) box(0,0.87,z,1.70,0.06,0.12,metal);
+      for(const x of [-0.79,0.13]) box(x,0.87,0,0.10,0.06,0.54,metal);
+      box(0.51,0.87,0,0.68,0.06,0.54,metal);
+      for(const x of [0.28,0.39,0.50,0.61,0.72]) top(x,0.902,0,0.026,0.44,0xbcc3b6);
+      box(-0.32,1.04,-0.32,0.05,0.30,0.05,metal);
+      box(-0.32,1.17,-0.20,0.05,0.052,0.27,metal);
+      box(-0.32,1.135,-0.072,0.055,0.09,0.05,metal);
+      break;
+    case 'stove':
+      box(0,0.35,0,1.30,0.70,0.76,wood);
+      box(0,0.79,0,1.27,0.18,0.70,0xacc0b0);
+      for(const x of [-0.33,0.33]){
+        round(x,0.88,0,0.20,0.026,0x484b43);
+        for(const z of [-0.13,0.13]) box(x,0.914,z,0.37,0.039,0.031,dark);
+        round(x,0.908,0,0.095,0.018,0x645e4c);
+        box(x,0.78,0.362,0.11,0.063,0.038,dark);
+      }
+      break;
+    case 'cupboard':
+      box(0,0.91,-0.22,1.47,1.82,0.12,wood);
+      for(const x of [-0.695,0.695]) box(x,0.91,0,0.08,1.82,0.63,wood);
+      box(0,0.32,0,1.38,0.64,0.62,0x886443);
+      for(const y of [0.66,1.16,1.80]) box(0,y,0,1.45,0.055,0.64,wood);
+      for(const x of [-0.35,0.32]){
+        for(let i=0;i<4;i++) round(x,0.69+i*0.048,0,0.22-i*0.008,0.032,ivory);
+        round(x,1.19,0.05,0.12,0.17,0xbfc6b4);
+        round(x,1.36,0.05,0.096,0.003,0x888b79);
+      }
+      break;
+    case 'fridge':
+      box(0,0.79,0,0.82,1.58,0.75,0x778c81);
+      for(const [y,h] of [[0.60,1.02],[1.36,0.46]]){
+        box(0,y,0.365,0.80,h,0.10,0xc8cfb9);
+        box(-0.26,y+0.09,0.434,0.058,0.19,0.044,metal);
+      }
+      break;
+    case 'linenCloset':
+      box(0,0.95,-0.28,3.50,1.90,0.08,0x8a7157);
+      for(const x of [-1.73,0.45,1.73]) box(x,0.95,0,0.075,1.90,0.68,wood);
+      for(const y of [0.09,0.89,1.88]) box(0,y,0,3.52,0.07,0.70,wood);
+      for(let i=0;i<3;i++){
+        p3eShopQuilt(g,-0.64,0.93+i*0.21,0,1.77,0.65,0.205,0.037,i===1?0xaf8980:ivory);
+        p3eShopFace(g,-0.64,1.00+i*0.21,0.317,1.57,0.027,0xab9985);
+      }
+      for(const x of [-1.11,-0.20,1.06]){
+        box(x,0.38,0,0.79,0.50,0.57,0xa38661);
+        box(x,0.635,0,0.82,0.052,0.60,0xb59a73);
+        p3eShopFace(g,x,0.40,0.287,0.24,0.105,ivory);
+        p3eShopFace(g,x,0.446,0.290,0.13,0.015,wood);
+      }
+      for(const x of [0.78,1.29]){
+        round(x,0.926,0,0.17,0.33,0x9eaa98);
+        round(x,1.256,0,0.145,0.046,0x70796a);
+      }
+      break;
+    default: throw new Error('Unknown shop furniture: '+id);
+  }
+  return g;
+}
+function p3eShopHomeFloors({g,X,Z,PL}){
+  for(const [room,,x0,z0,x1,z1] of PL.rooms){
+    if(room==='landing') continue;
+    const surface=new GB().frame(X,0,Z,0);
+    const tatami=room==='living'||room==='bed';
+    if(tatami){
+      // 二畳ごとに向きを返す。い草の織り目と布縁は同じ低い面に焼き込む。
+      const rows=room==='living'?4:3, cellX=(x1-x0)/4, cellZ=(z1-z0)/rows;
+      for(let row=0;row<rows;row++) for(let col=0;col<4;col++) for(let half=0;half<2;half++){
+        const alongX=(row+col)%2===0;
+        const w=cellX/(alongX?1:2), d=cellZ/(alongX?2:1);
+        const x=x0+col*cellX+w*(alongX?0.5:half+0.5), z=z0+row*cellZ+d*(alongX?half+0.5:0.5);
+        p3eShopTop(surface,x,0.009,z,w-0.012,d-0.012,alongX?0xbcb685:0xafa87a);
+        for(const side of [-1,1]) p3eShopTop(surface,x+(alongX?0:side*(w/2-0.024)),0.012,
+          z+(alongX?side*(d/2-0.024):0),alongX?w-0.012:0.040,alongX?0.040:d-0.012,0x69735c);
+        for(let i=1;i<12;i++) p3eShopTop(surface,x+(alongX?w*(i/12-0.5):0),0.013,
+          z+(alongX?0:d*(i/12-0.5)),alongX?0.012:w-0.11,alongX?d-0.11:0.012,0xb2aa7e);
+      }
+    }else{
+      const boards=room==='kitchen'?12:8, depth=(z1-z0)/boards;
+      const tones=[0xa88460,0xad8b64,0xa7815d,0xb28d69];
+      for(let row=0;row<boards;row++){
+        const joint=x0+1.2+(row%3)*1.02, z=z0+(row+0.5)*depth;
+        for(const [a,b] of [[x0,joint],[joint,x1]]){
+          const x=(a+b)/2;
+          p3eShopTop(surface,x,0.010,z,b-a-0.015,depth-0.015,tones[(row+(a===x0?0:1))%4]);
+          p3eShopTop(surface,x,0.012,z+0.055,(b-a)*0.65,0.012,0x9e7c5b);
+        }
+      }
+    }
+    const mesh=new THREE.Mesh(surface.geo(),vcMat);
+    mesh.name='shopFloor-'+room; mesh.receiveShadow=true; g.add(mesh);
+  }
+}
+function p3eShopHomeWindows({g,X,Z,PL,uppers}){
+  const west=uppers.find(u=>u.x0===X&&u.x1===X);
+  const frames=new GB(), sun=new GB().frame(X,0,Z,0);
+  const windows=PL.walls[0][7].windows, divider=PL.rooms.find(r=>r[0]==='bed')[3];
+  for(const at of windows){
+    // 境の窓は仕切りをまたぐ。各室に見える幅で窓飾りと採光を切り分ける。
+    for(const [a,b,shoji] of [[at-0.60,Math.min(at+0.60,divider-0.11),false],
+                                [Math.max(at-0.60,divider+0.11),at+0.60,true]]){
+      if(b<=a) continue;
+      const w=b-a;
+      frames.frame(X+0.217,0,Z+(a+b)/2,-Math.PI/2);
+      if(shoji){
+        frames.box(0,1.35,0,w,0.89,0.033,cc(0xe1d7bb));
+        for(const y of [0.93,1.15,1.38,1.60,1.78]) frames.box(0,y,0.026,w,0.025,0.032,cc(0x907657));
+        for(let i=0;i<=3;i++) frames.box(w*(i/3-0.5),1.35,0.028,0.028,0.90,0.032,cc(0x896e50));
+      }else{
+        frames.box(0,1.86,0.04,w+0.07,0.043,0.055,cc(0x655340));
+        frames.box(0,1.36,0.018,0.032,0.88,0.028,cc(0x7e8374));
+        for(const side of [-1,1]) for(let i=0;i<4;i++){
+          const x=side*(w/2-i*w*0.047);
+          const foot=x+side*(i*0.015-0.027), depth=0.07+0.027*(i%2);
+          frames.quad([foot-w*0.026,0.94,depth],[foot+w*0.026,0.94,depth],
+            [x+w*0.027,1.83,0.081],[x-w*0.027,1.83,0.081],cc(i%2?0xb09b72:0xc4b287));
+        }
+      }
+      const end=shoji?2.22:3.15, shift=Math.min(0.48,Math.max(0,divider-0.12-b));
+      for(const side of [-1,1]){
+        const mid=(a+b)/2+side*w*0.25, r=w*0.226;
+        sun.quad([0.23,0.022,mid+r],[end,0.022,mid+r+shift],[end,0.022,mid-r+shift],
+          [0.23,0.022,mid-r],cc(shoji?0xd6caa0:0xf4e1ad));
+      }
+    }
+  }
+  west.m.add(new THREE.Mesh(frames.geo(),vcMat));
+  const light=new THREE.Mesh(sun.geo(),new THREE.MeshLambertMaterial({vertexColors:true,transparent:true,depthWrite:false}));
+  light.name='shopHomeSun';
+  light.onBeforeRender=()=>{ light.material.opacity=lightMode==='day'?0.40:lightMode==='dusk'?0.12:0; };
+  g.add(light);
+}
+function p3eShopHomeTrim({X,Z,doors,uppers}){
+  for(const door of doors){
+    const paper=door.ax==='x'&&Math.abs(door.z-Z-8.6)<0.01;
+    const trim=new GB().frame(0,0,0,door.ax==='x'?0:Math.PI/2);
+    for(const side of [-1,1]){
+      for(const x of [-0.483,0.483]) trim.box(x,0,side*0.54,0.028,1,0.12,cc(0x584533));
+      for(const y of paper?[-0.487,0.487]:[-0.48,-0.25,0.24,0.48])
+        trim.box(0,y,side*0.54,0.95,0.022,0.12,cc(paper?0x594b3c:0x897254));
+      trim.box(-0.36,-0.06,side*0.60,paper?0.055:0.026,paper?0.044:0.095,0.15,cc(0x423d34));
+    }
+    door.m.add(new THREE.Mesh(trim.geo(),vcMat));
+  }
+  // 振子時計と乳白の壁灯。どちらも取り付け先の上壁と一緒に隠れる。
+  const clock=new GB().frame(X+5.54,0,Z+0.19,0);
+  clock.box(0,1.75,0,0.48,0.83,0.14,cc(0x624631));
+  p3eShopFace(clock,0,1.41,0.072,0.30,0.28,0x3e3930);
+  clock.box(0,1.58,0.081,0.022,0.18,0.018,cc(0xa98d56));
+  p3eShopFace(clock,0,1.44,0.093,0.115,0.095,0xb29764);
+  p3eShopFace(clock,0,1.75,0.073,0.39,0.36,0xe1d7b8);
+  for(const x of [-0.15,0.15]) p3eShopFace(clock,x,1.925,0.078,0.033,0.021,0x5b5142);
+  clock.box(0,1.986,0.082,0.016,0.112,0.012,cc(0x4f483c));
+  clock.box(0.047,1.93,0.084,0.11,0.014,0.012,cc(0x4f483c));
+  uppers.find(u=>u.z0===Z&&u.z1===Z).m.add(new THREE.Mesh(clock.geo(),vcMat));
+  const lamp=new GB().frame(X+12.34,0,Z+9.39,Math.PI/2);
+  lamp.box(0,2.22,0,1.18,0.14,0.20,cc(0x878779));
+  lamp.box(0,2.17,0.12,1.04,0.075,0.078,cc(0xcac7af));
+  uppers.find(u=>u.x0===u.x1&&u.x0===X+12.6).m.add(new THREE.Mesh(lamp.geo(),vcMat));
+}
+function p3eShopHomeProps(args){
+  const {X,Z,g,cols,PL}=args;
+  p3eShopHomeFloors(args);
+  p3eShopHomeWindows(args);
+  p3eShopHomeTrim(args);
+  for(const {id,x,z,turn} of PL.fixtures){
+    const mesh=new THREE.Mesh(p3eShopHomeModel(id).geo(),vcMat);
+    mesh.name='shopHome-'+id; mesh.position.set(X+x,0,Z+z);
+    mesh.rotation.y=turn*Math.PI/2; mesh.receiveShadow=true; g.add(mesh);
+    const bounds=new THREE.Box3().setFromObject(mesh);
+    const size=bounds.getSize(new THREE.Vector3()), mid=bounds.getCenter(new THREE.Vector3());
+    cols.push(addBox(mid.x,mid.z,size.x,size.z,'wall',{h:bounds.max.y,p3a:1}));
+    if(id==='kotatsu'){
+      // 薄い座布団には乗れる。こたつの裾だけを家具の当たりにする。
+      const pads=new GB().frame(X+x,0,Z+z,0);
+      for(const [dx,dz] of [[0,1.24],[0,-1.24],[1.46,0],[-1.46,0]]){
+        p3eShopQuilt(pads,dx,0.018,dz,0.64,0.61,0.076,0.046,0x8e7370);
+        p3eShopTop(pads,dx,0.096,dz,0.046,0.045,0x6b5550);
+      }
+      g.add(new THREE.Mesh(pads.geo(),vcMat));
+    }
+  }
+}
 function p3eShopProps(args,lower){
-  const {gb,X,Z,cols,flat}=args;
+  const {gb,X,Z,cols}=args;
   if(lower){
     p3eShopGroundProps(args);
   }else{
-    // 仮の畳縁と板目。家具の入る場所を空けておく。
-    for(const z of [2.1,4.2,6.3,10.3,12]) flat(4,z,7.8,0.035,0x78775b);
-    for(let x=8.5;x<12.6;x+=0.5) flat(x,10.1,0.025,2.98,0x7b644e);
+    p3eShopHomeProps(args);
   }
   gb.frame(X,0,Z,0);
   // 上階は階段口を一段ずつ低く見せる。登降は平らな段前でのみ受け付ける。

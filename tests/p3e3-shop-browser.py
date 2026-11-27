@@ -404,16 +404,114 @@ async def main():
                     await at(1.6,6.8)
                     await ev(f'[P.facing,cam.pitch.in]={json.dumps(previous)};setCam(P.facing);p3aSzFollow()')
 
-            async def screenshots():
+            async def upper_floor():
+                fixtures = await ev("""(()=>{const f=P3A.interior, {o}=f.def, old=[P.x,P.z];
+                  try {return f.def.plan().fixtures.map(({id,room,x,z,turn})=>{
+                    const m=f.g.getObjectByName('shopHome-'+id), r=f.rooms.find(r=>r.id===room);
+                    if(!m||!r) return [id,false];
+                    const b=new THREE.Box3().setFromObject(m), near=(a,b)=>Math.abs(a-b)<0.004;
+                    const match=f.cols.some(c=>c.active&&near(c.minX,b.min.x)&&near(c.maxX,b.max.x)&&
+                      near(c.minZ,b.min.z)&&near(c.maxZ,b.max.z)&&near(c.h,b.max.y));
+                    P.x=m.position.x; P.z=m.position.z;
+                    const center=near(P.x,o.x+x)&&near(P.z,o.z+z)&&P.x>r.x0&&P.x<r.x1&&P.z>r.z0&&P.z<r.z1;
+                    const hit=!szFree(P.x,P.z,0.02);
+                    if(turn===0) P.z=b.max.z+0.54;
+                    if(turn===2) P.z=b.min.z-0.54;
+                    if(turn===1) P.x=b.max.x+0.54;
+                    if(turn===-1) P.x=b.min.x-0.54;
+                    const offers=[]; p3aInteractables(offers);
+                    return [id,center&&match&&hit&&szFree(P.x,P.z,P.r)&&!offers.length];
+                  });} finally {[P.x,P.z]=old;}})()""")
+                expected = {'kotatsu','tvStand','phoneStand','futon','dresser','sink','stove',
+                            'cupboard','fridge','linenCloset'}
+                check(len(fixtures)==len(expected) and {id for id,_ in fixtures}==expected and
+                      await ev("P3A.interior.marks.map(m=>m.id).join()==='stairs'"),
+                      'E3-3b用の家具一覧に固有IDが10件あり、操作地点は階段のみ')
+                for id, ok in fixtures:
+                    check(ok, f'{id} の部屋・実物・当たりが一致し、正面に立っても調査の案内は出ない')
+                paths = [
+                    ('living', [(11,5.6),(11,7.1),(8,7),(6,7),(6,3.6)]),
+                    ('living', [(11,9.6),(11,7.1),(8,7),(4,6),(1.6,6),(1.6,2)]),
+                    ('bed', [(11,7.1),(8,7),(4,7),(4,8.6),(4,11.6),(5.9,11.6)]),
+                    ('kitchen', [(11,7.1),(11,9.6),(10.3,9.6),(10.3,10.9)]),
+                    ('closet', [(11,7.1),(10.2,9.6),(10.2,11.6),(10.2,12.24),(11.75,12.24)]),
+                ]
+                for room, points in paths:
+                    samples = FARM['sample_path'](points)
+                    check(await ev(f"""(()=>{{const f=P3A.interior, {{o}}=f.def;
+                      const pts={json.dumps(samples)}, [x,z]=pts[pts.length-1], r=f.rooms.find(r=>r.id==={json.dumps(room)});
+                      return o.x+x>r.x0&&o.x+x<r.x1&&o.z+z>r.z0&&o.z+z<r.z1&&pts.every(([x,z])=>
+                        szWalkable(o.x+x,o.z+z)&&szFree(o.x+x,o.z+z,Math.max(P.r,SZ.r)));}})()"""),
+                          f'2階 {points[0]} から {room} の {points[-1]} まで二人とも通れる')
+                check(await ev("""(()=>{const f=P3A.interior,{o}=f.def;
+                  // 実際に描く床を上から打ち、畳縁とい草、板の継ぎ目の両側の色を読む。
+                  function color(room,x,z){
+                    const m=f.g.getObjectByName('shopFloor-'+room);
+                    const ray=new THREE.Raycaster(new THREE.Vector3(o.x+x,1,o.z+z),new THREE.Vector3(0,-1,0));
+                    const hit=m&&ray.intersectObject(m)[0];
+                    return hit&&new THREE.Color().fromBufferAttribute(m.geometry.attributes.color,hit.face.a).getHex();
+                  }
+                  return ['living','bed'].every((id,i)=>{
+                    const z=i?8.6:0;
+                    return color(id,0.73,z+0.025)===0x69735c&&color(id,0.73,z+0.21)===0xbcb685;
+                  })&&color('kitchen',8.81,8.72)===0xa88460&&color('kitchen',9.55,8.72)===0xad8b64;
+                })()"""), '居間と寝室には縁のある畳、台所には継ぎ目のある板が描かれる')
+                check(await ev("""(()=>{const f=P3A.interior, sun=f.g.getObjectByName('shopHomeSun'), {o}=f.def;
+                  let glow=0; f.g.traverse(m=>{
+                    if(m.isLight) glow++;
+                    if(m.isMesh) for(const mat of [].concat(m.material)) if(mat!==inkMat&&
+                      (mat.isMeshBasicMaterial||mat.emissive?.getHex()>0||mat.blending===THREE.AdditiveBlending)) glow++;
+                  });
+                  const p=sun.geometry.attributes.position;
+                  return !glow&&[1.3,3.7,6.1,8.5,10.9].every(z=>{
+                    for(let i=0;i<p.count;i+=4) if(Math.abs(p.getX(i)-o.x-0.23)<0.01&&
+                      Math.abs(p.getZ(i)-o.z-z)<0.61&&p.getX(i+1)>o.x+2&&p.getY(i)<0.03) return true;
+                    return false;
+                  });})()"""), '正面5窓から床に採光。2階の家電・階段を含め発光材質と光源はゼロ')
+                report = await ev("""(()=>{const f=P3A.interior, shadows=renderer.shadowMap.enabled;
+                  let meshes=0; f.g.traverse(m=>{if(m.isMesh) meshes++});
+                  try {renderer.shadowMap.enabled=false;renderer.render(scene,camera);
+                    const calls=renderer.info.render.calls;f.g.visible=false;renderer.render(scene,camera);
+                    return [meshes,calls-renderer.info.render.calls];
+                  } finally {f.g.visible=true;renderer.shadowMap.enabled=shadows;renderer.render(scene,camera);}
+                })()""")
+                check(0 < report[1] <= report[0] <= 50,
+                      f'2階は {report[0]} メッシュ、踊り場からの屋内通常描画は {report[1]} calls')
+
+            async def walk_into_rooms():
+                # 戸口の手前に立ち、通常の前進入力で部屋境界を越える。
+                for name, x, z, yaw, target in [
+                    ('居間',8.85,7,-1.5708,'P.x<o.x+7.65'),
+                    ('寝室',4,7.8,0,'P.z>o.z+8.95'),
+                    ('台所',10.2,7.8,0,'P.z>o.z+8.95'),
+                    ('収納',10.2,10.8,0,'P.z>o.z+11.95'),
+                ]:
+                    await at(x,z)
+                    await ev(f'P.facing={yaw};setCam(P.facing);cam.inYaw=null')
+                    await page.keyboard.down('w')
+                    try:
+                        await wait(f'((o)=>{target})(P3A.interior.def.o)')
+                    finally:
+                        await page.keyboard.up('w')
+                    check(await ev(f"""P3A.interior.rooms.some(r=>r.name==={json.dumps(name)}&&
+                      P.x>r.x0&&P.x<r.x1&&P.z>r.z0&&P.z<r.z1)"""), f'前進入力で{name}に入れる')
+
+            async def screenshots(level=1):
                 if shot_dir is None:
                     return
                 shot_dir.mkdir(parents=True, exist_ok=True)
                 previous = await ev('[prog.f10.tod,lightMode,P.facing,cam.pitch.in]')
+                origin = await ev('[P.x-P3A.interior.def.o.x,P.z-P3A.interior.def.o.z]')
                 spots = [('entry',1.6,6.8,1.57,0), ('entry-aisle',3.2,6.8,1.57,0),
                          ('sales',4.2,4.8,3.14,0), ('sales-from-register',4.7,9.8,-2.98,0),
                          ('sales-from-back',7.1,6.5,-1.54,0), ('sales-up',1.6,6.8,1.57,-0.21),
                          ('sales-down',4.2,4.8,3.14,0.36),
                          ('register',4.7,10.2,0.89,0), ('stock',10.8,9.6,0.08,0)]
+                if level == 2:
+                    spots = [('living-tea',5.5,5.3,-2.48,0.16), ('living-tv',3.5,2.1,2.78,-0.15),
+                             ('bed-futon',3.7,10.55,-1.13,0.20), ('bed-dresser',5.6,11.6,0.38,0),
+                             ('kitchen-sink',10.6,9.7,1.45,0.06), ('kitchen-cupboard',10.35,10.15,-1.48,0),
+                             ('closet-linen',10.15,12.15,0.22,-0.20), ('closet-boxes',11.67,12.24,-0.80,0.04)]
                 try:
                     await ev("prog.f10.tod=6*P3B.hour;lightMode='day';snapLight();cam.pitch.in=0")
                     for name, x, z, yaw, pitch in spots:
@@ -423,7 +521,7 @@ async def main():
                         check(await ev("p3bClock()[0]===12&&lightMode==='day'"), f'{name} を昼に撮影')
                         await page.screenshot(path=str(shot_dir / f'{name}-{w}x{h}.png'))
                 finally:
-                    await at(1.6,6.8)
+                    await at(*origin)
                     await ev(f"""[prog.f10.tod,lightMode,P.facing,cam.pitch.in]={json.dumps(previous)};
                       snapLight();setCam(P.facing);p3aSzFollow()""")
 
@@ -450,6 +548,7 @@ async def main():
             await ev("szPut(P.x+0.2,P.z+0.15,0)")
             await cross(UP, inside(2))
             await geometry(2)
+            await upper_floor()
             if not touch:
                 await ev("P.facing=0;setCam(0);cam.inYaw=null")
                 before_z = await ev('P.z')
@@ -464,6 +563,9 @@ async def main():
               P3A.interior.rooms.map(r=>r.name).join()==='居間,寝室,踊り場,台所,収納'"""),
                   '再構築後も二人は2階。店主の住まいの部屋が残る')
 
+            await screenshots(2)
+            if not touch:
+                await walk_into_rooms()
             await stairs(1)
             await leave()
             check(await ev("SZ.order==='follow'&&szHere()&&dist(P.x,P.z,SZ.x,SZ.z)<8"), '同行者も店先へ出る')
