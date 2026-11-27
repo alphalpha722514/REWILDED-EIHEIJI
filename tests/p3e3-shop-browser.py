@@ -49,6 +49,7 @@ def check(condition, message):
 
 async def main():
     three = Path(os.environ.get('THREE_JS', '/home/claude/v010/node_modules/three/build/three.min.js')).read_bytes()
+    shot_dir = Path(os.environ['SHOP_SHOTS']) if os.environ.get('SHOP_SHOTS') else None
     errors = []
 
     async def route(r):
@@ -303,6 +304,9 @@ async def main():
                 counts = await ev("""P3A.floors.map(f=>{let n=0; f.g.traverse(m=>{
                   if(m.isMesh) n+=(m.geometry.index?.count??m.geometry.attributes.position.count)/3*(m.isInstancedMesh?m.count:1);
                   });return n})""")
+                active = await ev('P3A.floors.filter(f=>f.g.visible).map(f=>f.level)')
+                check(active == [level] and 0 < counts[level-1] <= 10000,
+                      f'表示階 {level} の屋内は輪郭込み {counts[level-1]} 三角形')
                 await ev('P.facing=Math.PI/2;setCam(P.facing)')
                 await seconds(0.45)
                 screen = await ev('renderer.info.render.triangles')
@@ -312,13 +316,84 @@ async def main():
                   !P3A.floors[1].mk.length&&P3A.interior.marks.every(k=>k.exit||k.glow===false)"""),
                       '出口だけが発光する')
 
+            async def ground_floor():
+                fixture_hits = [
+                    ('食品棚', 2.6, 2.2), ('日用品棚', 5.8, 2.2), ('農業棚', 2.7, 11.8),
+                    ('カウンター', 6.3, 10.3), ('菓子ケース', 6.3, 12.19),
+                    ('冷蔵庫', 7.02, 0.62), ('冷蔵庫の開いた扉', 7.56, 1.29),
+                    ('奥壁の在庫棚', 10.5, 12.95), ('側壁の在庫棚', 12.09, 10.96),
+                    ('木箱', 8.74, 11.73), ('台車', 8.85, 10.42),
+                ]
+                for name, x, z in fixture_hits:
+                    check(await ev(f"!szFree(P3A.interior.def.o.x+{x},P3A.interior.def.o.z+{z},0.04)"),
+                          f'{name}の実物の位置に当たりがある')
+                paths = [
+                    [(0.6,6.8),(6.2,6.8),(7.2,8.7),(8.8,8.7),(11,7.1),(11,5.6)],
+                    [(1.6,5.4),(7.2,5.4)], [(1.6,8.2),(7.2,8.2)],
+                    [(4.2,6.8),(4.2,0.8)], [(4.5,6.8),(4.5,12.2),(5.3,12.2)],
+                    [(8.8,8.7),(11,9.6),(10.7,11.7),(10.7,12.0)],
+                ]
+                for path in paths:
+                    samples = FARM['sample_path'](path)
+                    check(await ev(f"""(()=>{{const {{o}}=P3A.interior.def;
+                      return {json.dumps(samples)}.every(([x,z])=>szWalkable(o.x+x,o.z+z)&&
+                        szFree(o.x+x,o.z+z,Math.max(P.r,SZ.r)));}})()"""),
+                          f'二人分の当たり半径で経路 {path[0]} → {path[-1]} が通る')
+                check(await ev("""(()=>{const f=P3A.interior, luminous=[];
+                  f.g.traverse(m=>{
+                    if(m.isLight) luminous.push(m);
+                    if(!m.isMesh) return;
+                    for(const mat of [].concat(m.material)) if(mat!==inkMat&&
+                      (mat.isMeshBasicMaterial||mat.emissive?.getHex()>0||mat.blending===THREE.AdditiveBlending))
+                      luminous.push(m);
+                  });
+                  const exit=f.marks.find(k=>k.exit);
+                  return luminous.length===1&&luminous[0]===f.mk[0]&&
+                    Math.hypot(luminous[0].position.x-exit.x,luminous[0].position.z-exit.z)<0.001;
+                })()"""), '発光する実メッシュは出口の位置に一つ。冷蔵庫と照明は消灯')
+
+                report = await ev("""(()=>{const f=P3A.interior, shadows=renderer.shadowMap.enabled;
+                  let meshes=0;
+                  f.g.traverse(m=>{if(m.isMesh) meshes++});
+                  try {
+                    renderer.shadowMap.enabled=false;
+                    renderer.render(scene,camera); const withShop=renderer.info.render.calls;
+                    f.g.visible=false; renderer.render(scene,camera);
+                    return [meshes,withShop-renderer.info.render.calls];
+                  } finally {f.g.visible=true;renderer.shadowMap.enabled=shadows;renderer.render(scene,camera)}
+                })()""")
+                check(0 < report[1] <= report[0] <= 50,
+                      f'1階は {report[0]} メッシュ、入口からの屋内通常描画は {report[1]} calls')
+
+            async def screenshots():
+                if shot_dir is None:
+                    return
+                shot_dir.mkdir(parents=True, exist_ok=True)
+                previous = await ev('[prog.f10.tod,lightMode,P.facing,cam.pitch.in]')
+                spots = [('entry',1.6,6.8,1.57), ('sales',4.2,4.8,3.14),
+                         ('register',4.7,10.2,0.89), ('stock',10.8,9.6,0.08)]
+                try:
+                    await ev("prog.f10.tod=6*P3B.hour;lightMode='day';snapLight();cam.pitch.in=0")
+                    for name, x, z, yaw in spots:
+                        await at(x,z)
+                        await ev(f'P.facing={yaw};setCam(P.facing)')
+                        await seconds(0.65)
+                        check(await ev("p3bClock()[0]===12&&lightMode==='day'"), f'{name} を昼に撮影')
+                        await page.screenshot(path=str(shot_dir / f'{name}-{w}x{h}.png'))
+                finally:
+                    await at(1.6,6.8)
+                    await ev(f"""[prog.f10.tod,lightMode,P.facing,cam.pitch.in]={json.dumps(previous)};
+                      snapLight();setCam(P.facing);p3aSzFollow()""")
+
             await geometry(1)
+            await ground_floor()
+            await screenshots()
             check(await ev("""(()=>{const {o}=P3A.interior.def, blocked=(x,z)=>!szFree(o.x+x,o.z+z,0.42);
               const path=[[1.6,6.8],[6.2,6.8],[7.2,8.7],[8.8,8.7],[11,7.1],[11,5.6]];
               return [[0,2],[8,4],[12.6,7],[2.6,2.2],[5.8,2.2],[2.7,11.8],[6.3,10.3],[10.5,12.95],[11,2.7]]
                 .every(([x,z])=>blocked(x,z))&&path.every(([x,z],i)=>!blocked(x,z)&&(!i||
                   szLine(o.x+path[i-1][0],o.z+path[i-1][1],o.x+x,o.z+z)));
-              })()"""), '外壁・仕切り・仮棚・レジ・段の当たりと中央通路から階段までの経路')
+              })()"""), '外壁・仕切り・商品棚・レジ・段の当たりと中央通路から階段までの経路')
             if not touch:
                 await at(1.55, 2.2)
                 await ev("P.facing=Math.PI/2;setCam(P.facing);cam.inYaw=null")
