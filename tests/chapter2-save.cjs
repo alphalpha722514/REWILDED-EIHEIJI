@@ -54,6 +54,18 @@ saved=JSON.parse(vm.runInContext('stored.value',ctx));
 assert.equal(saved.chapter2.unlocked,true);
 assert.equal(saved.prog.stage,'cleared');
 assert.deepEqual(state(saved.chapter2,saved.prog.bossDefeated),saved.chapter2);
+// 同じ進行を屋外と店の両階で保存し、読み込み補正を通さず全項目を比較する。
+vm.runInContext("REG.defs={kamishihi:{}};prog.chapter2.currentRegion='kamishihi';prog.chapter2.progress.openingStarted=true;const P3A={inside:false,inId:'shop'};saveGame()",ctx);
+const outdoor=JSON.parse(vm.runInContext('stored.value',ctx));
+assert.equal(outdoor.chapter2.currentChapter,2);
+assert.equal(outdoor.chapter2.currentRegion,'kamishihi');
+for(const level of [1,2]){
+  vm.runInContext(`P3A.inside=true;P3A.interior={level:${level}};stored=null;saveGame()`,ctx);
+  assert.equal(vm.runInContext('storageOK',ctx),true);
+  const indoor=JSON.parse(vm.runInContext('stored.value',ctx));
+  assert.equal(typeof indoor.chapter2.currentChapter,'number');
+  assert.deepEqual(indoor,outdoor);
+}
 assert.match(html,/prog\.chapter2=chapter2State\(d\.chapter2,prog\.bossDefeated\)/);
 assert.match(html,/prog\.chapter2=chapter2State\(null,false\)/);
 // v0.67：上志比の状態 kami（古いセーブ・不正な値・往復）

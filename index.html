@@ -7584,7 +7584,7 @@ const ray=new THREE.Raycaster(); const groundPlane=new THREE.Plane(new THREE.Vec
 window.addEventListener('keydown',e=>{
   const k=e.key.toLowerCase();
   if([' ','tab','arrowup','arrowdown','arrowleft','arrowright'].includes(k)||e.code==='Space') e.preventDefault();
-  if(k==='e'&&(p3ShopFading||p3ShopKeyHeld)){ p3ShopKeyHeld=true; p3eShopBlocksAction(); return; }
+  if(k==='e'&&(p3eShopBlocksAction()||p3ShopKeyHeld)){ p3ShopKeyHeld=true; return; }
   if(p3ShopFading) return;
   if(e.repeat&&k!=='w'&&k!=='a'&&k!=='s'&&k!=='d') { return; }
   audioInit();
@@ -7706,7 +7706,7 @@ function tbtn(id,down,up){ const b=$(id); b.addEventListener('pointerdown',e=>{ 
 tbtn('tbAtk',()=>{ held.atk=true; tryAttack('light'); },()=>{ held.atk=false; });
 tbtn('tbHeavy',()=>tryAttack('heavy')); tbtn('tbSwap',()=>cycleArm());
 tbtn('tbDodge',()=>tryDodge()); tbtn('tbWave',()=>scaleWaveBtn()); // v0.64
-tbtn('tbAct',()=>{ if(held.act) return; held.act=true; interact(); },()=>{ held.act=false; }); // v0.72：押している間（スズキを助け起こす長押し）
+tbtn('tbAct',()=>{ if(held.act||p3eShopBlocksAction()) return; held.act=true; interact(); },()=>{ held.act=false; }); // v0.72：押している間（スズキを助け起こす長押し）
 tbtn('tbMap',()=>openMap()); // v0.45：持ち物ボタンは廃止（手持ちバー端の🎒とTabで開く）
 tbtn('tbPause',()=>openPause());
 // 画面右側をなぞるとカメラが回る
@@ -9344,8 +9344,6 @@ function updateLighting(dt){
 
 // ================= セーブ =================
 const SAVE_KEY='eiheiji_vs_beasts_v010';
-// 保存上の章を店先まで修飾する。旧版もプレイ中の章番号は openingStarted から復元する。
-const P3E_SHOP_FRONT='2/kamishihi/house110';
 let storageOK=true;
 function checkpointStage(){ const s=prog.stage; return s==='raid'?'buildFence':s==='invasion'?'invasionPrep':s==='boss'?'toBoss':s; }
 function saveGame(){
@@ -9358,9 +9356,6 @@ function saveGame(){
       prog:Object.assign({stage:checkpointStage(),unlockTrap:prog.unlockTrap,unlockBoss:prog.unlockBoss,clues:prog.clues,bossDefeated:prog.bossDefeated,scoutTower:!!prog.scoutTower,scoutWarned:!!prog.scoutWarned,scoutRaidWarned:!!prog.scoutRaidWarned,townRequests:prog.townRequests},f31SaveProg()),
       fences:GAPS.map(g=>g.fence.type?{type:g.fence.type,hp:g.fence.broken?0:g.fence.hp}:null),
       traps:traps.map(saveTrap),stats,nodes:NODES.map(n=>n.avail?1:0),g4:prog.g4,f4:f4Save(),f7:f7Save(),f8:f8Save(),paddy:paddySave(),f9:f9Save(),f10:f10Save(),conv:facSave('conv'),kama:kamaSave(),kami:kamiSave(),suzuki:szSave(),p3:p3Save(),stash:stashSave(),p3c:p3cSave(),p3d:prog.p3d}; // v0.81：拠点本部（p3）・資材置き場（stash）。新しいキー // v0.73：スズキ（新しいキー suzuki）
-    if(data.chapter2.currentRegion==='kamishihi'&&P3A.inside&&P3A.inId==='shop'){
-      data.chapter2={...data.chapter2,currentChapter:P3E_SHOP_FRONT};
-    }
     localStorage.setItem(SAVE_KEY,JSON.stringify(data));
   }catch(e){ storageOK=false; }
 }
@@ -9462,7 +9457,7 @@ function continueGame(){
   const d=readSave(); if(!d){ startNew(); return; }
   regionResetHome(); const extra=applySave(d); resetWorld(extra); hideAllOv(); $('hud').hidden=false; S.mode='playing'; cv.focus();
   prog.raidDelay=-3; toast('つづきから再開した');
-  { const r=prog.chapter2&&prog.chapter2.currentRegion; if(r&&r!=='komyoji'&&REG.defs[r]) regionTravel(r,null,{force:true,shopFront:d.chapter2.currentChapter===P3E_SHOP_FRONT}); } // v0.60 最後にいた地域から再開
+  { const r=prog.chapter2&&prog.chapter2.currentRegion; if(r&&r!=='komyoji'&&REG.defs[r]) regionTravel(r,null,{force:true}); } // v0.60 最後にいた地域から再開
   if(prog.f7Migrated){ prog.f7Migrated=false; saveGame(); } // 移行したらすぐ保存（次のロードで新品に戻らない）
 }
 
@@ -10314,8 +10309,7 @@ async function regionTravel(id,at=null,opt={}){
       try{ def.build(ctx); } finally { const have=new Set(ctx.colliders); for(const o of [...boxes.slice(n0[0]),...circles.slice(n0[1]),...oboxes.slice(n0[2])]) if(!have.has(o)) ctx.colliders.push(o); }
       if(!ctx.h||!ctx.bounds||!ctx.arrival) throw new Error('地域の形が足りない');
       Object.assign(BOUNDS,ctx.bounds);
-      const front=opt.shopFront&&id==='kamishihi'&&P3A.doors.find(door=>door.inId==='shop');
-      const a=at||front||ctx.arrival; P.x=a.x; P.z=a.z; P.facing=a.facing||0; }
+      const a=at||ctx.arrival; P.x=a.x; P.z=a.z; P.facing=a.facing||0; }
     REG.cur=id; if(prog.chapter2) prog.chapter2.currentRegion=id; stfAfterTravel(true); szAfterTravel(from,id); // v0.70：ついて来ているスズキも移る。v0.77：作業F の初遭遇の途中なら始まる前に戻す・運転中の KEI truck も移る
     setCam(P.facing); resetCombat(); updateChunks(0,true); saveGame();
     S.mode=mode==='loading'?'playing':mode; regionLoading(false); REG.busy=false; return true;
@@ -12213,20 +12207,27 @@ function p3eShopFloorAt(x,z){
   return P3IN.shop.floors.findIndex(f=>x>=f.o.x&&x<=f.o.x+f.w&&z>=f.o.z&&z<=f.o.z+f.d)+1;
 }
 // 店先の空点を共用する。屋内保存でも屋外の当たりは検索できる。
-function p3eShopFrontPoint(door,player){
+function p3eShopFrontPoint(door,player,r=SZ.r){
+  if(!door) return null;
+  const avoidSuzuki=SZ.joined&&SZ.region===REG.cur&&(SZ.down||SZ.order==='wait');
+  const arrival=REG.live?.arrival;
   const sx=Math.sin(door.facing), sz=Math.cos(door.facing);
   for(const out of [1.35,2.2,3.4,4.8]){
     for(const side of [0,1.4,-1.4,2.8,-2.8]){
-      const x=door.x+out*sx+side*sz, z=door.z+out*sz-side*sx;
-      if(dist(player.x,player.z,x,z)>P.r+SZ.r&&szWalkable(x,z)&&szFree(x,z,SZ.r+0.08)) return {x,z};
+      // 保存精度にそろえた座標そのもので空きを判定する。
+      const x=Math.round((door.x+out*sx+side*sz)*100)/100, z=Math.round((door.z+out*sz-side*sx)*100)/100;
+      if(dist(player.x,player.z,x,z)<=P.r+r||(arrival&&dist(arrival.x,arrival.z,x,z)<=P.r+r)) continue;
+      if(avoidSuzuki&&dist(SZ.x,SZ.z,x,z)<=SZ.r+r) continue;
+      if(szWalkable(x,z)&&szFree(x,z,r+0.08)) return {x,z};
     }
   }
-  return door;
+  return null;
 }
 // 屋外の地形と当たりを戻してから呼ぶ。入店前から屋外で待つ相手は呼び手が除く。
 function p3eShopReturnSuzuki(){
   const door=P3A.doors.find(d=>d.inId==='shop'), point=p3eShopFrontPoint(door,P);
-  szPut(point.x,point.z,door.facing); resolve(SZ,false);
+  if(point) szPut(point.x,point.z,door.facing);
+  else szPlaceBehind();
   SZ.wx=SZ.x; SZ.wz=SZ.z; SZ.place=false; SZ.crumbs.length=0;
 }
 function p3eShopCanUse(mark){
@@ -12595,20 +12596,26 @@ function p3eShopBlocksAction(){
 }
 async function p3inTransition(shop,move){
   if(P3A.busy) return;
+  const mode=S.mode, fade=stfFadeEl();
   P3A.busy=true; p3ShopFading=shop;
-  S.mode=shop?'interiorTransition':'dialog'; clearCamPitchInput();
-  if(shop){
-    p3ShopKeyHeld=keys.has('e'); curInter=null; clearCinemaInput52(); held.act=false; cz.id=null; szRescueCancel();
-    stfFadeEl().classList.add('shopTransition');
-  }
   try{
-    await stfFade(true); move();
-    await stfWait(250); S.mode='playing'; await stfFade(false);
-  }finally{
+    S.mode=shop?'interiorTransition':'dialog'; clearCamPitchInput();
     if(shop){
-      stfFadeEl().classList.remove('shopTransition'); p3ShopActionAfter=performance.now()+220; p3ShopFading=false;
+      p3ShopKeyHeld=keys.has('e'); curInter=null; clearCinemaInput52(); held.act=false; cz.id=null; szRescueCancel();
+      fade.classList.add('shopTransition');
     }
-    P3A.busy=false;
+    await stfFade(true); await move();
+    await stfWait(250);
+  }finally{
+    S.mode=mode;
+    try{ await stfFade(false); }
+    finally{
+      fade.style.opacity='0';
+      if(shop){
+        fade.classList.remove('shopTransition'); p3ShopActionAfter=performance.now()+220; p3ShopFading=false;
+      }
+      P3A.busy=false;
+    }
   }
 }
 async function p3aEnter(door){
@@ -12644,7 +12651,14 @@ async function p3aExit(){
     I.g.visible=false; for(const c of I.cols) c.active=false;
     if(REG.live) REG.live.group.visible=true; P3A.inside=false; REG.inB=null; REG.hfn=P3A.ret.hfn;
     P.x=P3A.ret.x; P.z=P3A.ret.z; P.facing=P3A.ret.f+Math.PI; cam.yaw=P.facing;
-    if(shop){ P._px=P.x; P._pz=P.z; P.lvx48=P.lvz48=0; setCam(P.facing); }
+    if(shop){
+      if(!szIn&&szHere()&&(SZ.down||SZ.order==='wait')&&dist(P.x,P.z,SZ.x,SZ.z)<P.r+SZ.r){
+        const point=p3eShopFrontPoint(P3A.doors.find(d=>d.inId==='shop'),P,P.r);
+        if(point){ P.x=point.x; P.z=point.z; }
+        else p3eShopReturnSuzuki();
+      }
+      P._px=P.x; P._pz=P.z; P.lvx48=P.lvz48=0; setCam(P.facing);
+    }
     if(szIn){
       SZ.crumbs.length=0;
       if(shop&&(SZ.order==='wait'||SZ.down)) p3eShopReturnSuzuki();
@@ -13957,15 +13971,16 @@ function szInteractables(L){ if(!szHere()) return; const d=dist(P.x,P.z,SZ.x,SZ.
 function szJoin(){ szModel(); SZ.joined=true; SZ.order='follow'; SZ.region=REG.cur; SZ.down=false; SZ.hp=SZ.maxHp; SZ.crumbs.length=0; szPlaceBehind(); }
 // 地域を移ったとき：ついて来ているスズキは一緒に移る。待っている・拠点にいる・倒れているときは、その地域に残る
 function szAfterTravel(from,to){ if(!SZ.joined) return; szCombatReset(); szRescueCancel(); if(SZ.region===from&&SZ.order==='follow'&&!SZ.down){ SZ.region=to; SZ.crumbs.length=0; szPlaceBehind(); }
+  // 保存時に店先が埋まっていた場合は、屋外の当たりがそろったここで再配置する。
+  if(to==='kamishihi'&&SZ.region===to&&(SZ.down||SZ.order==='wait')&&p3eShopFloorAt(SZ.x,SZ.z)) p3eShopReturnSuzuki();
   if(SZ.m) SZ.m.g.visible=false; }
 // ---- 第4段階：セーブ（新しいキー suzuki・v:1）。古いセーブ・不正な値は「まだ仲間でない」。docs/save-and-flags.md ----
 const SZ_ORDERS=['follow','wait','base'], SZ_REGIONS=['komyoji','kamishihi'];
 function szSave(){ if(!SZ.joined) return {v:1,joined:false}; const r=v=>Math.round(v*100)/100;
   let spot=SZ, wx=SZ.wx, wz=SZ.wz;
-  if(P3A.inside&&P3A.inId==='shop'&&SZ.region===REG.cur&&p3eShopFloorAt(SZ.x,SZ.z)){
-    const door=P3A.doors.find(d=>d.inId==='shop');
-    spot=p3eShopFrontPoint(door,door);
-    wx=spot.x; wz=spot.z;
+  if(P3A.inside&&P3A.inId==='shop'&&(SZ.order==='wait'||SZ.down)&&SZ.region===REG.cur&&p3eShopFloorAt(SZ.x,SZ.z)){
+    const door=P3A.doors.find(d=>d.inId==='shop'), front=p3eShopFrontPoint(door,P3A.ret);
+    if(front){ spot=front; wx=front.x; wz=front.z; }
   }
   return {v:1,joined:true,order:SZ.order,region:SZ.region,x:r(spot.x),z:r(spot.z),wx:r(wx),wz:r(wz),hp:SZ.down?0:Math.max(1,Math.round(SZ.hp)),down:!!SZ.down}; }
 // 読み込んだ値を確かめる（ゲームの状態には触れない）

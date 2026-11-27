@@ -14,15 +14,26 @@ from playwright.async_api import async_playwright
 # 農家試験と同じ本編・評価用フック・章進行で起動する。
 FARM = runpy.run_path(str(Path(__file__).with_name('p3e3-farm-browser.py')))
 ROOT, HTML, BASE, PLAYING = (FARM[k] for k in ('ROOT', 'HTML', 'BASE', 'PLAYING'))
+MAP_TEST = runpy.run_path(str(Path(__file__).with_name('p3e3-search-browser.py')))
 SHOP = 'よろず屋に入る'
 UP, DOWN, EXIT = '2階へ上がる', '1階へ下りる', '外へ出る'
 READY = f"{PLAYING}&&performance.now()>=p3ShopActionAfter"
 DOOR = "P3A.doors.find(d=>d.inId==='shop')"
 FRONT = f"dist(P.x,P.z,({DOOR}).x,({DOOR}).z)<3"
 SZ_FRONT = f"dist(SZ.x,SZ.z,({DOOR}).x,({DOOR}).z)<6&&szFree(SZ.x,SZ.z,SZ.r-0.01)"
+ARRIVAL = "dist(P.x,P.z,REG.live.arrival.x,REG.live.arrival.z)<0.05"
 SZ_POS = '[SZ.x,SZ.z,SZ.wx,SZ.wz]'
 COUNTER = """window.shopFades=0; const oldFade=stfFade;
-  stfFade=async on=>{if(on) window.shopFades++; await oldFade(on)};"""
+  stfFade=async on=>{
+    if(on) window.shopFades++;
+    await oldFade(on);
+    if(!on&&window.probeEdge) await new Promise(done=>{window.uncoverShop=done});
+  };
+  for(const type of ['keydown','pointerdown']) window.addEventListener(type,e=>{
+    if(!window.probeEdge||!e.isTrusted||(type==='keydown'&&e.key!=='e')) return;
+    window.edgeEvents.push({id:e.target.id, fading:p3ShopFading, repeat:!!e.repeat,
+      guarded:performance.now()<p3ShopActionAfter});
+  },true);"""
 QUIET_YARD = """(()=>{ const doors=P3A.doors.filter(d=>!d.future);
   for(const e of enemies) if(!e.removed&&doors.some(d=>dist(e.x,e.z,d.x,d.z)<150)) e.x+=900;
   p3bState().hq.beasts=1; })()"""
@@ -64,6 +75,8 @@ async def main():
             page = await ctx.new_page()
             page.on('pageerror', lambda err: errors.append(str(err)))
             page.set_default_timeout(180000)
+
+            await page.clock.install()
 
             async def ev(code):
                 return await page.evaluate('s=>window.__ev(s)', code)
@@ -115,68 +128,120 @@ async def main():
                 await wait(f'{READY}&&curInter?.label==={json.dumps(label)}')
                 await raw_action()
 
-            async def cross(label, target, stress=False):
+            async def cross(label, target):
                 await wait(f'{READY}&&curInter?.label==={json.dumps(label)}')
                 before = await ev('window.shopFades')
-                if stress and touch:
-                    box = await page.locator('#tbAct').bounding_box()
-                    x, y = box['x']+box['width']/2, box['y']+box['height']/2
-                    # 最初は実ボタンをタップ。暗転で非表示になる間も同じ画面位置を押す。
-                    await page.touchscreen.tap(x, y)
-                    for _ in range(2):
-                        await page.touchscreen.tap(x, y)
-                    await wait(target)
-                    await page.touchscreen.tap(x, y)
-                    await page.touchscreen.tap(x, y)
-                elif stress:
-                    await page.keyboard.down('e')
-                    await page.keyboard.down('e')  # repeat=true
-                    await wait(f'window.shopFades>{before}')
-                    # 遷移中に離して連打し、最後の押下を明転後も保持する。
-                    await page.keyboard.up('e')
-                    await page.keyboard.press('e')
-                    await page.keyboard.down('e')
-                    await wait(f"({target})&&{PLAYING}")
-                    await page.keyboard.down('e')
-                    await page.keyboard.up('e')
-                else:
-                    await raw_action()
-                await wait(f"({target})&&{PLAYING}")
-                await seconds(0.35)
-                check(await ev(f"window.shopFades==={before+1}&&({target})&&{PLAYING}&&!SZR.on&&!$('defenseChoice')"),
+                await raw_action()
+                await wait(f"({target})&&{READY}")
+                check(await ev(f"window.shopFades==={before+1}&&!SZR.on&&!$('defenseChoice')"),
                       f'{w}×{h} {label} が1回だけ効く')
+
+            async def boundary(label, target, next_label, next_mark=None):
+                await wait(f'{READY}&&curInter?.label==={json.dumps(label)}')
+                before = await ev('window.shopFades')
+                await ev('window.probeEdge=true;window.edgeEvents=[];window.uncoverShop=null')
+                if touch:
+                    box = await page.locator('#tbAct').bounding_box()
+                    xy = (box['x'] + box['width']/2, box['y'] + box['height']/2)
+                    await page.touchscreen.tap(*xy)
+                else:
+                    await page.keyboard.down('e')
+                # 本物の明転が済み、暗転面とロックを外す直前で同期する。
+                await wait(f"({target})&&typeof window.uncoverShop==='function'")
+                if next_mark:
+                    await at_mark(next_mark)
+                await wait("!$('touch').hidden" if touch else "S.mode==='playing'")
+                # 通信・描画の速さで220msの境界を飛び越さないよう、この入力列だけ時計を止める。
+                await page.clock.pause_at(await ev('new Date(Date.now()+1000).toISOString()'))
+                try:
+                    if touch:
+                        await page.touchscreen.tap(*xy)
+                    else:
+                        await page.keyboard.down('e')
+                        await page.keyboard.up('e')
+                        await page.keyboard.down('e')
+                    await ev('window.uncoverShop()')
+                    check(await ev(f"({PLAYING})&&!p3ShopFading&&(curInter=interactables())?.label==={json.dumps(next_label)}"),
+                          f'{label} の明転直後に次の「{next_label}」を操作できる位置')
+                    if touch:
+                        await page.touchscreen.tap(*xy)
+                        await page.touchscreen.tap(*xy)
+                    else:
+                        await page.keyboard.down('e')
+                        await page.keyboard.up('e')
+                        await page.keyboard.down('e')
+                        # 抑止が解けても、暗転直後から保持した物理キーは押し直しにならない。
+                        await page.clock.fast_forward(await ev('Math.ceil(p3ShopActionAfter-performance.now())+1'))
+                        await page.keyboard.down('e')
+                        check(await ev("p3ShopKeyHeld&&!keys.has('e')"), '押しっぱなしはキー解放まで保留')
+                        await page.keyboard.up('e')
+                    events = await ev('window.edgeEvents')
+                    pre = [e for e in events if e['fading']]
+                    post = [e for e in events if not e['fading'] and e['guarded']]
+                    hits = (any(e['id']=='stfFade' for e in pre) and
+                            sum(e['id']=='tbAct' for e in post)==2) if touch else (
+                            {e['repeat'] for e in pre}=={False, True} and
+                            {e['repeat'] for e in post}=={False, True})
+                    check(hits and await ev(f"({target})&&({PLAYING})&&window.shopFades==={before+1}"),
+                          f'{w}×{h} {label} の明転直前・直後の実入力で移動は1回')
+                finally:
+                    await ev('window.probeEdge=false')
+                    await page.clock.resume()
 
             def inside(level):
                 return f"P3A.inside&&P3A.inId==='shop'&&P3A.interior.level==={level}"
 
-            async def stairs(level, stress=False):
+            async def stairs(level):
                 await at_mark('stairs')
-                await cross(UP if level == 2 else DOWN, inside(level), stress)
+                await cross(UP if level == 2 else DOWN, inside(level))
                 check(await ev(f"""p3eShopFloorAt(P.x,P.z)==={level}&&szWalkable(P.x,P.z)&&
                   P3A.floors.every(f=>f.g.visible===(f.level==={level})&&f.cols.every(c=>c.active===f.g.visible))"""),
                       f'{level}階の到着後もその階だけに表示・当たり・歩行範囲がある')
 
-            async def enter(stress=False):
+            async def enter():
                 await at_door()
-                await cross(SHOP, inside(1), stress)
+                await cross(SHOP, inside(1))
 
-            async def leave(stress=False):
+            async def leave():
                 await at_mark('exit')
-                await cross(EXIT, '!P3A.inside', stress)
+                await cross(EXIT, '!P3A.inside')
                 check(await ev(f'!REG.inB&&REG.live.group.visible&&({FRONT})'), '店先に戻り、屋外の当たりが復帰')
 
+            async def raw_save():
+                snapshot = await ev(f"""(()=>{{const before={SZ_POS};saveGame();return {{
+                  before, after:{SZ_POS}, raw:localStorage.getItem(SAVE_KEY), chapter:prog.chapter2,
+                  p3:prog.p3, arms:prog.arms, inv, hp:SZ.down?0:Math.max(1,Math.round(SZ.hp)),
+                  state:[1,SZ.joined,SZ.order,SZ.region,SZ.down]
+                }}}})()""")
+                raw = snapshot['raw']
+                d = json.loads(raw)
+                chapter = d['chapter2']
+                check(type(chapter['currentChapter']) is int and chapter['currentChapter']==2 and
+                      chapter['currentRegion']=='kamishihi' and d['v']==1 and
+                      await ev("storageOK&&SAVE_KEY==='eiheiji_vs_beasts_v010'"),
+                      'localStorage の生の章番号は数値2、地域と版も一致')
+                check(set(d)==save_keys and chapter==snapshot['chapter'] and
+                      d['p3']==snapshot['p3'] and d['arms']==snapshot['arms'] and
+                      d['inv']==snapshot['inv'], '既存の保存項目・章進行・拠点・装備・素材が一致')
+                suzuki = d['suzuki']
+                check(set(suzuki)=={'v','joined','order','region','x','z','wx','wz','hp','down'} and
+                      all(type(suzuki[k]) in (float,int) for k in ('x','z','wx','wz','hp')) and
+                      [suzuki[k] for k in ('v','joined','order','region','down')]==
+                      snapshot['state'] and suzuki['hp']==snapshot['hp'], 'スズキの項目・型・指示を保持')
+                if suzuki['order']=='wait' or suzuki['down']:
+                    x,z = suzuki['x'],suzuki['z']
+                    check((x,z)==(suzuki['wx'],suzuki['wz']) and
+                          await ev(f"szFree({x},{z},SZ.r)&&szWalkable({x},{z})&&dist({x},{z},({DOOR}).x,({DOOR}).z)<6"),
+                          '待機・転倒時の生の座標と待機目標は同じ店先の空き点')
+                check(snapshot['after']==snapshot['before'], '保存してもプレイ中の位置と待機目標は変わらない')
+                return raw
+
             async def save_reload():
-                coords = await ev(SZ_POS)
-                await ev('saveGame()')
-                check(await ev(SZ_POS) == coords, '保存してもプレイ中の位置と待機目標は変わらない')
-                p = await ev(PROGRESS)
-                check(await ev("""(()=>{const d=readSave();return storageOK&&d.v===1&&SAVE_KEY==='eiheiji_vs_beasts_v010'&&
-                  d.chapter2.currentRegion==='kamishihi'&&chapter2State(d.chapter2,true).currentChapter===2&&
-                  !p3eShopFloorAt(d.suzuki.x,d.suzuki.z)&&Object.keys(d.p3.e3).sort().join()==='farm,map,s'})()"""),
-                      '既存の地域・版・調査項目で保存し、スズキは屋外で再開できる座標')
+                await raw_save()
+                progress = await ev(PROGRESS)
                 await boot()
-                check(await ev(f'!P3A.inside&&!REG.inB&&({FRONT})') and await ev(PROGRESS) == p,
-                      'つづきからは店先。地図・農家調査・拠点・装備と素材を保持')
+                check(await ev(f'!P3A.inside&&!REG.inB&&({ARRIVAL})') and await ev(PROGRESS)==progress,
+                      '主人公は上志比の屋外到着点で再開し、農家の地図・拠点・装備と素材を保持')
 
             await boot(new=True)
             await ev("(stfP().mutantMet=true,szJoin())")
@@ -228,9 +293,10 @@ async def main():
             check(await ev("!interactables()?.preferOverFollow"), '操作距離の外では店の案内なし')
             await ev("szPut(P.x+1,P.z,0);szOrder('wait')")
             check(await ev("interactables()?.act===szTalk"), '入口を離れれば通常の指示が出る')
+            save_keys = set(await ev("saveGame();Object.keys(JSON.parse(localStorage.getItem(SAVE_KEY)))"))
             await at_door(offset=1.8)
             await ev("szOrder('follow'); szPut(P.x+0.55,P.z,0)")
-            await cross(SHOP, inside(1), stress=True)
+            await cross(SHOP, inside(1))
             check(await ev("szHere()&&p3eShopFloorAt(SZ.x,SZ.z)===1"), '追従指示と競合した店先から二人で入店')
 
             async def geometry(level):
@@ -264,7 +330,7 @@ async def main():
             check(await ev("!interactables()?.preferOverFollow"), '段の横からは階移動できない')
             await at(11, 6.5)
             await ev("szPut(P.x+0.2,P.z+0.15,0)")
-            await cross(UP, inside(2), stress=True)
+            await cross(UP, inside(2))
             await geometry(2)
             if not touch:
                 await ev("P.facing=0;setCam(0);cam.inYaw=null")
@@ -281,12 +347,56 @@ async def main():
                   '再構築後も二人は2階。店主の住まいの部屋が残る')
 
             await stairs(1)
-            await leave(stress=True)
+            await leave()
             check(await ev("SZ.order==='follow'&&szHere()&&dist(P.x,P.z,SZ.x,SZ.z)<8"), '同行者も店先へ出る')
+            # 次の意図的な入力が、それぞれ次の遷移を一度だけ起こす。
+            await at_door()
+            await boundary(SHOP, inside(1), UP, 'stairs')
+            await boundary(UP, inside(2), DOWN, 'stairs')
+            await boundary(DOWN, inside(1), EXIT, 'exit')
+            await boundary(EXIT, '!P3A.inside', SHOP)
+            await cross(SHOP, inside(1))
+            await leave()
+
+            if touch:
+                await page.locator('#tbMap').tap()
+            else:
+                await page.keyboard.press('g')
+            await page.locator('#oldMapLegend').wait_for(state='visible')
+            trace = await ev(MAP_TEST['TRACE_MAP']+'(false)')
+            check({'よろず屋','集会所'}.issubset(trace['labels']) and trace['outlines']==2 and
+                  sum(c[3].startswith('rgba(164, 224, 146,') for c in trace['circles'])==12,
+                  '退出後の全体地図に建物の名前と輪郭2件、薬草の円12件')
+            await page.locator('#mapClose').click()
+
+            for id,label,room in [('house26','古い農家に入る','farm'),('hq','拠点本部に入る','hq'),
+                                  ('factory','整備工場跡に入る','factory')]:
+                await at_door(id, 1.8 if room=='farm' else 0)
+                if room=='farm':
+                    check(await ev("""(()=>{szPut(P.x+0.1,P.z,0);const offers=[];szInteractables(offers);
+                      return offers.some(a=>a.act===szTalk&&a.d<1.8)&&SZ.order==='follow'&&
+                        interactables()?.label==='古い農家に入る';})()"""),
+                          '退出後、農家の入口で近くの同行者より入室を優先')
+                await cross(label, f"P3A.inside&&P3A.inId==='{room}'")
+                if room=='farm':
+                    # 土間と囲炉裏の間の開口を振り返り、手前の上壁だけが消える構図。
+                    await at(7.0,18.1)
+                    await ev('cam.pitch.in=0;P.facing=Math.PI/2;setCam(P.facing)')
+                    for key,angle in [('x','< -0.10'),('z','> 0.12')]:
+                        await page.keyboard.down(key)
+                        await wait('cam.pitch.in'+angle)
+                        await page.keyboard.up(key)
+                        await wait("""P3A.interior.uppers.some(u=>u.x0===21006&&u.x1===21006&&
+                          u.z0<21138.1&&u.z1>21138.1&&!u.m.visible)&&
+                          P3A.interior.uppers.some(u=>u.x0===21011&&u.m.visible)""")
+                        check(await ev('cam.pitch.in'+angle), f'農家のカメラ上下（{key}）で手前の上壁が隠れ、奥の上壁は見える')
+                    await ev('cam.pitch.in=0')
+                await at_mark('exit')
+                await cross(EXIT, '!P3A.inside&&!REG.inB&&REG.live.group.visible')
             await enter()
             await save_reload()
             await wait("!SZ.place&&szHere()")
-            check(await ev("SZ.order==='follow'&&dist(P.x,P.z,SZ.x,SZ.z)<8"), '店内保存した追従者も店先で再開')
+            check(await ev("SZ.order==='follow'&&dist(P.x,P.z,SZ.x,SZ.z)<8"), '店内保存した追従者は屋外到着点の主人公に同行')
             await enter()
             await stairs(2)
             # 待機点の横で、一度は本物の指示メニューから「ここで待て」を選ぶ。
@@ -295,14 +405,14 @@ async def main():
             await act('スズキに指示する')
             await page.get_by_role('button', name='ここで待て', exact=True).click()
             stationary = await ev(SZ_POS)
-            await stairs(1, stress=True)
+            await stairs(1)
             await seconds(0.8)
             check(await ev(SZ_POS) == stationary and await ev("!szHere()&&!SZ.m.g.visible&&!SZR.on"),
                   '別階の待機者は非表示。位置と待機目標が押し戻されない')
             await stairs(2)
             check(await ev(SZ_POS) == stationary and await ev('szHere()'), '同じ待機位置で再会')
             await stairs(1)
-            await leave(stress=True)
+            await leave()
             check(await ev(f"SZ.order==='wait'&&SZ.x===SZ.wx&&SZ.z===SZ.wz&&({SZ_FRONT})"),
                   '別階で待たせて退出すると店先に戻り、待機目標も一致')
             outside = await ev(SZ_POS)
@@ -313,27 +423,36 @@ async def main():
             check(await ev(f"SZ.order==='wait'&&({SZ_FRONT})") and
                   all(abs(a-b)<0.03 for a,b in zip(outside, await ev(SZ_POS))), '店外の待機位置も読み戻せる')
 
-            await ev("szOrder('follow')")
-            await enter()
-            await at(4, 6.8)
-            await ev("szPut(P.x+1.1,P.z,0);szOrder('wait')")
-            await stairs(2)
-            await save_reload()
-            check(await ev(f"SZ.order==='wait'&&SZ.x===SZ.wx&&SZ.z===SZ.wz&&({SZ_FRONT})"), '店内1階の待機者は再開時に店先へ')
-            await ev("szOrder('follow')")
-            await enter()
-            await stairs(2)
-            await ev('szDown()')
-            down = await ev('[SZ.x,SZ.z]')
-            await stairs(1)
-            check(await ev('[SZ.x,SZ.z]') == down and await ev("SZ.down&&!szHere()&&!SZ.m.g.visible"), '転倒者は階を移らない')
-            await ev('saveGame()')
-            down_save = await ev('localStorage.getItem(SAVE_KEY)')
-            await leave()
-            check(await ev(f"SZ.down&&SZ.hp===0&&({SZ_FRONT})"), '退出時に倒れたまま店先に戻る')
-            await ev(f'localStorage.setItem(SAVE_KEY,{json.dumps(down_save)})')
-            await boot()
-            check(await ev(f"SZ.down&&SZ.hp===0&&({SZ_FRONT})&&({FRONT})"), '1階保存でも2階の転倒状態を保って店先で再開')
+            for level in (1,2):
+                await ev("szOrder('follow')")
+                await enter()
+                await at(4, 6.8)
+                await ev("szPut(P.x+1.1,P.z,0);szOrder('wait')")
+                if level==2:
+                    await stairs(2)
+                await save_reload()
+                check(await ev(f"SZ.order==='wait'&&SZ.x===SZ.wx&&SZ.z===SZ.wz&&({SZ_FRONT})"),
+                      f'{level}階保存から1階の待機者は店先へ')
+
+            # 2階で倒れた直後と、主人公だけが1階へ戻った後の両方から再開する。
+            for level in (2,1):
+                await ev("SZ.down=false;SZ.hp=SZ.maxHp;szOrder('follow')")
+                await enter()
+                await stairs(2)
+                await ev('szDown()')
+                if level==1:
+                    down = await ev('[SZ.x,SZ.z]')
+                    await stairs(1)
+                    check(await ev('[SZ.x,SZ.z]') == down and await ev("SZ.down&&!szHere()&&!SZ.m.g.visible"),
+                          '転倒者は階を移らない')
+                down_save = await raw_save()
+                if level==1:
+                    await leave()
+                    check(await ev(f"SZ.down&&SZ.hp===0&&({SZ_FRONT})"), '退出時に倒れたまま店先に戻る')
+                    await ev(f'localStorage.setItem(SAVE_KEY,{json.dumps(down_save)})')
+                await boot()
+                check(await ev(f"SZ.down&&SZ.hp===0&&({SZ_FRONT})&&({ARRIVAL})"),
+                      f'{level}階保存でも2階の転倒者は店先、主人公は屋外到着点に復帰')
 
             # 入口帯を離れて救助の長押し。iPhone は実際のタッチ開始・終了を送る。
             await ev(f"""(()=>{{const d={DOOR};P.x=SZ.x+Math.sin(d.facing)*1.4;P.z=SZ.z+Math.cos(d.facing)*1.4;}})()""")
@@ -350,6 +469,12 @@ async def main():
                 await wait('!SZ.down')
                 await page.keyboard.up('e')
             check(await ev('SZ.hp>0&&!SZR.on'), '店先で助け起こせる')
+            for shop in (False, True):
+                check(await ev(f"""(async()=>{{const mode=S.mode, fault=new Error('暗転中の試験');
+                  try{{await p3inTransition({json.dumps(shop)},()=>{{throw fault}});}}
+                  catch(e){{const fade=stfFadeEl();return e===fault&&S.mode===mode&&
+                    !P3A.busy&&!p3ShopFading&&fade.style.opacity==='0'&&!fade.classList.contains('shopTransition');}}
+                  return false;}})()"""), '移動の例外後に元のモード・暗転面・入力ロックが復帰')
             await ctx.close()
         check(not errors, f'ページエラー {errors}')
         await browser.close()
