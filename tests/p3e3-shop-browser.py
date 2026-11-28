@@ -10,7 +10,7 @@ import sys
 import time
 from urllib.parse import urlsplit
 
-from playwright.async_api import async_playwright
+from playwright.async_api import TimeoutError as PlaywrightTimeout, async_playwright
 
 # 農家試験と同じ本編・評価用フック・章進行で起動する。
 FARM = runpy.run_path(str(Path(__file__).with_name('p3e3-farm-browser.py')))
@@ -100,7 +100,8 @@ async def main():
             await r.abort()
 
     async with async_playwright() as pw:
-        browser = await pw.chromium.launch(args=['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
+        browser = await pw.chromium.launch(chromium_sandbox=True,
+                                          args=['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
         for touch in (False, True):
             w, h = (390, 844) if touch else (1280, 720)
             ctx = await browser.new_context(viewport={'width': w, 'height': h}, has_touch=touch, is_mobile=touch)
@@ -748,11 +749,43 @@ async def main():
             check(await ev("SZ.order==='follow'&&dist(P.x,P.z,SZ.x,SZ.z)<8"), '店内保存した追従者は屋外到着点の主人公に同行')
             await enter()
             await stairs(2)
-            # 待機点の横で、一度は本物の指示メニューから「ここで待て」を選ぶ。
-            await at(4, 6)
-            await ev("szPut(P.x+1.05,P.z,0)")
-            await act('スズキに指示する')
-            await page.get_by_role('button', name='ここで待て', exact=True).click()
+            # 連続で本物の指示メニューを開き、押下状態が次の操作に残らないことも確かめる。
+            menu = page.locator('#defenseChoice')
+            orders = [('戻る', 'follow'), ('ここで待て', 'wait'), ('ついて来い', 'follow'),
+                      ('ここで待て', 'wait'), ('ついて来い', 'follow'), ('ここで待て', 'wait')]
+            for attempt, (label, expected) in enumerate(orders, 1):
+                await wait(READY)
+                if attempt == 1:
+                    await at(4, 6)
+                check(await ev("""(()=>{const x=P.x+1.05,z=P.z;
+                  if(!szHere()||!szWalkable(x,z)||!szFree(x,z,SZ.r+0.08)) return false;
+                  if(SZ.order==='follow'){szPut(x,z,0); SZ.still=0;}
+                  return true;})()"""),
+                      f'2階の指示試験 {attempt}回目は歩ける同じ階で開始')
+                try:
+                    await page.wait_for_function('s=>window.__ev(s)', arg=f'{READY}&&curInter?.act===szTalk',
+                                                 timeout=10000)
+                    if touch:
+                        await page.locator('#tbAct').tap(timeout=10000)
+                    else:
+                        await page.keyboard.press('e')
+                    await menu.wait_for(state='visible', timeout=10000)
+                    check(await ev("S.mode==='menu'&&!held.act&&szHere()"),
+                          f'2階の指示試験 {attempt}回目は指示画面が開き、行動ボタンの押下状態は残らない')
+                    option = menu.get_by_role('button', name=label, exact=True)
+                    if touch:
+                        await option.tap(timeout=10000)
+                    else:
+                        await option.click(timeout=10000)
+                    await menu.wait_for(state='detached', timeout=10000)
+                except PlaywrightTimeout as err:
+                    state = await ev("""({mode:S.mode,prompt:curInter?.label,current:interactables()?.label,
+                      playerFloor:P3A.interior?.level,suzukiFloor:p3eShopFloorAt(SZ.x,SZ.z),
+                      distance:dist(P.x,P.z,SZ.x,SZ.z),order:SZ.order,still:SZ.still,actionHeld:held.act})""")
+                    raise AssertionError(f'2階の指示試験 {attempt}回目（touch={touch}）: {state}') from err
+                check(await ev(f"S.mode==='playing'&&SZ.order==='{expected}'&&"
+                               "(SZ.order!=='wait'||(SZ.x===SZ.wx&&SZ.z===SZ.wz))"),
+                      f'2階の指示試験 {attempt}回目は「{label}」を反映')
             stationary = await ev(SZ_POS)
             await stairs(1)
             await seconds(0.8)

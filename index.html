@@ -8891,7 +8891,7 @@ function chooseDefense(title,options,keep,ex){ // v0.86.1：opt.ic／opt.ics（�
   wrap.onpointercancel=()=>{ pressedBackdrop=false; };
   wrap.onclick=e=>{ if(pressedBackdrop&&e.target===wrap) close(); pressedBackdrop=false; };
   wrap.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}};
-  document.body.appendChild(wrap);keys.clear();S.mode='menu';wrap.focus();
+  document.body.appendChild(wrap);keys.clear();held.act=false;S.mode='menu';wrap.focus();
 }
 function interactables(){
   if(p3ShopFading||STF.busy||STF.cut) return null; // v0.77：作業F の場面の間は出さない
