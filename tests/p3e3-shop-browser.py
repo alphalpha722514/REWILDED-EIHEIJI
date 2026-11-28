@@ -545,6 +545,23 @@ async def main():
                     check(await ev(f"""P3A.interior.rooms.some(r=>r.name==={json.dumps(name)}&&
                       P.x>r.x0&&P.x<r.x1&&P.z>r.z0&&P.z<r.z1)"""), f'前進入力で{name}に入れる')
 
+            async def kitchen_camera():
+                before = await ev('[P.x-P3A.interior.def.o.x,P.z-P3A.interior.def.o.z,P.facing,cam.pitch.in]')
+                try:
+                    await at(10.6, 9.7)
+                    await ev('cam.pitch.in=0.06;P.facing=1.45;setCam(P.facing)')
+                    wall = "P3A.interior.uppers.find(u=>u.base&&u.x0===u.x1)"
+                    await wait(f'{wall}?.m.visible===false')
+                    check(await ev(f"""(()=>{{const u={wall}, o=P3A.interior.def.o;
+                      return u.base.visible===(camera.aspect>=1)&&!szFree(o.x+8,o.z+9.7,0.42);}})()"""),
+                          '台所の手前の間仕切りは縦画面で腰壁も隠れ、当たりを維持')
+                    await ev('P.facing=-1.45;setCam(P.facing)')
+                    await wait(f'{wall}.m.visible&&{wall}.base.visible')
+                    check(await ev(f'{wall}.base.visible'), '視点を反対へ回すと台所の腰壁が戻る')
+                finally:
+                    await at(*before[:2])
+                    await ev(f'P.facing={before[2]};cam.pitch.in={before[3]};setCam(P.facing)')
+
             async def daylight(level):
                 saved = await ev('[prog.f10.tod,lightMode]')
                 samples = []
@@ -678,6 +695,7 @@ async def main():
             await daylight(2)
             await performance_sample(2)
             await upper_floor()
+            await kitchen_camera()
             if not touch:
                 await ev("P.facing=0;setCam(0);cam.inYaw=null")
                 before_z = await ev('P.z')

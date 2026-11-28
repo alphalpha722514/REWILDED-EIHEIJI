@@ -12196,10 +12196,10 @@ function p3eShopFloor(level){
     walls:[
       [0,0,0,d,1,lower?[5.6,8]:null,lower,{doorColor:lower?0x806248:0x647476,windows}],
       [0,0,w,0,1],[w,0,w,d,1],[0,d,w,d,1],
-      [8,0,8,d,0,lower?[7.7,9.7]:[5.8,8.2],1,wood]
+      [8,0,8,d,0,lower?[7.7,9.7]:[5.8,8.2],1,lower?wood:{...wood,kitchenView:true}]
     ]};
   if(!lower) plan.floorPieces={landing:[[8,0,9.9,8.6],[12.1,0,w,8.6],[9.9,0,12.1,0.5],[9.9,4.9,12.1,8.6]]};
-  if(!lower) plan.walls.push([0,8.6,8,8.6,0,[3,5],1,paper],[8,11.6,w,11.6,0,[1.2,3.2],1,wood]);
+  if(!lower) plan.walls.push([0,8.6,8,8.6,0,[3,5],1,paper],[8,11.6,w,11.6,0,[1.2,3.2],1,{...wood,kitchenView:true}]);
   if(!lower) plan.fixtures=[
     {id:'kotatsu',room:'living',x:3.8,z:3.6,turn:0},
     {id:'tvStand',room:'living',x:4.1,z:0.64,turn:0},
@@ -13205,12 +13205,17 @@ function p3aInteriorBuild(){
 function p3inBuildFloor(id,DEF,level){ const g=new THREE.Group(); g.name='p3aInterior'; scene.add(g); const gb=new GB(); gb.jit=0.06; const X=DEF.o.x, Z=DEF.o.z, cols=[], rooms=[], uppers=[], doors=[];
   const PL=DEF.plan(), {inner:WALL=0xd9d3c4,outer:WALL2=0xb9b4a8,trim:TRIM=0x5d5448}=PL.colors||{}, {wh:WH=2.6,cut:CUT=1.15,t:T=0.25}=PL;
   // 壁：下の部分（腰まで）はまとめて描き、上の部分は壁ごとに分けて、カメラと主人公の間に来たら隠す（手前の壁で主人公が見えなくならないように）
-  const upper=(x0,z0,x1,z1,fn)=>{ const ub=new GB(); fn(ub); const m=new THREE.Mesh(ub.geo(),vcMat); g.add(m); uppers.push({m,x0:X+x0,z0:Z+z0,x1:X+x1,z1:Z+z1}); };
+  const upper=(x0,z0,x1,z1,fn)=>{ const ub=new GB(); fn(ub); const m=new THREE.Mesh(ub.geo(),vcMat); g.add(m);
+    const part={m,x0:X+x0,z0:Z+z0,x1:X+x1,z1:Z+z1}; uppers.push(part); return part; };
   const wall=(w)=>{ const [x0,z0,x1,z1,outer,gap,door,style={}]=w, col=style.color??(outer?WALL2:WALL), L=dist(x0,z0,x1,z1), a=Math.atan2(z1-z0,x1-x0), ca=Math.abs(Math.cos(a))>0.5;
-    const seg=(s0,s1)=>{ if(s1-s0<0.05) return; const mx=lerp(x0,x1,(s0+s1)/2/L), mz=lerp(z0,z1,(s0+s1)/2/L); gb.frame(X+mx,0,Z+mz,a); gb.box(0,CUT/2,0,s1-s0,CUT,T,cc(col)); gb.box(0,CUT+0.02,0,s1-s0,0.04,T+0.02,cc(TRIM));
+    const seg=(s0,s1)=>{ if(s1-s0<0.05) return; const mx=lerp(x0,x1,(s0+s1)/2/L), mz=lerp(z0,z1,(s0+s1)/2/L);
+      // 台所に面する壁だけ、腰壁を別に描いて当たりを残したまま隠せるようにする。
+      const cutBase=style.kitchenView&&(ca||s0>=gap[1]);
+      const lower=cutBase?new GB():gb; lower.jit=gb.jit;
+      lower.frame(X+mx,0,Z+mz,a); lower.box(0,CUT/2,0,s1-s0,CUT,T,cc(col)); lower.box(0,CUT+0.02,0,s1-s0,0.04,T+0.02,cc(TRIM));
       const posts=PL.posts?[-(s1-s0)/2+0.11,(s1-s0)/2-0.11]:[];
-      for(const px of posts) gb.box(px,CUT/2,0,0.22,CUT,T+0.02,cc(TRIM));
-      upper(lerp(x0,x1,s0/L),lerp(z0,z1,s0/L),lerp(x0,x1,s1/L),lerp(z0,z1,s1/L),ub=>{ ub.frame(X+mx,0,Z+mz,a); ub.box(0,(CUT+WH)/2,0,s1-s0,WH-CUT,T,cc(col)); for(const px of posts) ub.box(px,(CUT+WH)/2,0,0.22,WH-CUT,T+0.02,cc(TRIM)); ub.box(0,WH+0.04,0,s1-s0,0.08,T+0.04,cc(TRIM));
+      for(const px of posts) lower.box(px,CUT/2,0,0.22,CUT,T+0.02,cc(TRIM));
+      const part=upper(lerp(x0,x1,s0/L),lerp(z0,z1,s0/L),lerp(x0,x1,s1/L),lerp(z0,z1,s1/L),ub=>{ ub.frame(X+mx,0,Z+mz,a); ub.box(0,(CUT+WH)/2,0,s1-s0,WH-CUT,T,cc(col)); for(const px of posts) ub.box(px,(CUT+WH)/2,0,0.22,WH-CUT,T+0.02,cc(TRIM)); ub.box(0,WH+0.04,0,s1-s0,0.08,T+0.04,cc(TRIM));
         if(PL.ceilingEdge&&outer){
           // 天井は室内側の縁を残す。手前の上壁を隠すと窓・天井板も一緒に隠れる。
           const inward=(ca?z0===0:x0!==0)?1:-1;
@@ -13223,6 +13228,10 @@ function p3inBuildFloor(id,DEF,level){ const g=new THREE.Group(); g.name='p3aInt
           }
         }
       });
+      if(cutBase){
+        const geo=lower.geo(), base=new THREE.Mesh(geo,vcMat); base.receiveShadow=true;
+        base.add(new THREE.Mesh(inkGeo(geo,0.05),inkMat)); g.add(base); part.base=base;
+      }
       cols.push(addBox(X+mx,Z+mz,ca?s1-s0:T,ca?T:s1-s0,'wall',{h:WH,p3a:1})); };
     if(gap){ seg(0,gap[0]); seg(gap[1],L); const gm=(gap[0]+gap[1])/2/L, gx=lerp(x0,x1,gm), gz=lerp(z0,z1,gm), gw=gap[1]-gap[0];
       upper(lerp(x0,x1,gap[0]/L),lerp(z0,z1,gap[0]/L),lerp(x0,x1,gap[1]/L),lerp(z0,z1,gap[1]/L),ub=>{ ub.frame(X+gx,0,Z+gz,a); ub.box(0,WH-0.15,0,gw,0.3,T,cc(col)); }); // 戸口の上
@@ -13278,7 +13287,15 @@ function p3bRebuild(){
 function p3bInteriorTick(dt){ const I=P3A.interior; if(!I||!I.g.visible) return;
   if(I.ember) I.ember.opacity=0.45+Math.sin(P3A.t*1.6)*0.10;
   for(const d of I.doors){ const near=dist(P.x,P.z,d.x,d.z)<2.4||(typeof szHere==='function'&&szHere()&&dist(SZ.x,SZ.z,d.x,d.z)<2.2); d.o+=((near?1:0)-d.o)*Math.min(1,dt*8); const off=d.o*d.w*0.92; if(d.ax==='x') d.m.position.x=d.x+off; else d.m.position.z=d.z+off; }
-  const cx=camera.position.x, cz=camera.position.z; for(const u of I.uppers) u.m.visible=!p3bSegHit(cx,cz,P.x,P.z,u.x0,u.z0,u.x1,u.z1); }
+  const cx=camera.position.x, cz=camera.position.z;
+  const kitchen=I.id==='shop'&&I.level===2&&camera.aspect<1&&I.rooms.find(r=>r.id==='kitchen');
+  const portraitKitchen=kitchen&&P.x>kitchen.x0&&P.x<kitchen.x1&&P.z>kitchen.z0&&P.z<kitchen.z1;
+  for(const u of I.uppers){
+    const blocked=p3bSegHit(cx,cz,P.x,P.z,u.x0,u.z0,u.x1,u.z1);
+    u.m.visible=!blocked;
+    if(u.base) u.base.visible=!(portraitKitchen&&blocked);
+  }
+}
 function p3bSegHit(ax,az,bx,bz,cx,cz,dx,dz){ const d1=(bx-ax)*(cz-az)-(bz-az)*(cx-ax), d2=(bx-ax)*(dz-az)-(bz-az)*(dx-ax), d3=(dx-cx)*(az-cz)-(dz-cz)*(ax-cx), d4=(dx-cx)*(bz-cz)-(dz-cz)*(bx-cx); return d1*d2<0&&d3*d4<0; }
 // 店の暗転は物理入力の立ち上がりだけを使う。連打が明転にまたがった場合は最後の押下から少し待つ。
 let p3ShopFading=false, p3ShopKeyHeld=false, p3ShopActionAfter=0;
