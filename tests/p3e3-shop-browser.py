@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import runpy
 import sys
+import time
 from urllib.parse import urlsplit
 
 from playwright.async_api import async_playwright
@@ -34,6 +35,37 @@ COUNTER = """window.shopFades=0; const oldFade=stfFade;
     window.edgeEvents.push({id:e.target.id, fading:p3ShopFading, repeat:!!e.repeat,
       guarded:performance.now()<p3ShopActionAfter});
   },true);"""
+# 店内の出力につながった実ノードを数える。古い出力が残れば再入店時に2本になる。
+AUDIO_PROBE = """(()=>{
+  const buses=new Set(), voices=new Map(), links=new WeakMap();
+  const connect=AudioNode.prototype.connect, disconnect=AudioNode.prototype.disconnect;
+  AudioNode.prototype.connect=function(dest,...args){
+    const result=connect.call(this,dest,...args);
+    if(this===AU.shopRoom&&dest===AU.amb) buses.add(this);
+    links.set(this,dest);
+    return result;
+  };
+  AudioNode.prototype.disconnect=function(...args){
+    const result=disconnect.apply(this,args);
+    buses.delete(this); links.delete(this);
+    return result;
+  };
+  const start=OscillatorNode.prototype.start, stop=OscillatorNode.prototype.stop;
+  OscillatorNode.prototype.start=function(t){
+    let node=this;
+    for(let i=0;i<4&&node&&!buses.has(node);i++) node=links.get(node);
+    if(buses.has(node)){
+      voices.set(this,{bus:node,start:t});
+      this.addEventListener('ended',()=>voices.delete(this),{once:true});
+    }
+    return start.apply(this,arguments);
+  };
+  OscillatorNode.prototype.stop=function(t){
+    if(voices.has(this)) voices.get(this).end=t;
+    return stop.apply(this,arguments);
+  };
+  window.shopAudio={buses,voices,wind:AU.wind};
+})()"""
 QUIET_YARD = """(()=>{ const doors=P3A.doors.filter(d=>!d.future);
   for(const e of enemies) if(!e.removed&&doors.some(d=>dist(e.x,e.z,d.x,d.z)<150)) e.x+=900;
   p3bState().hq.beasts=1; })()"""
@@ -129,6 +161,17 @@ async def main():
                 await wait(f'{READY}&&curInter?.label==={json.dumps(label)}')
                 await raw_action()
 
+            async def audio_state(label, indoor):
+                count, same_wind, connected, sounding, same_room = await ev("""(()=>{
+                  const a=shopAudio, now=AC.currentTime;
+                  const sameRoom=!a.previous||!AU.shopRoom||a.previous===AU.shopRoom;
+                  a.previous=AU.shopRoom;
+                  return [a.buses.size,AU.wind===a.wind,[...a.buses].every(b=>b===AU.shopRoom),
+                    [...a.voices.values()].filter(v=>a.buses.has(v.bus)&&v.start<=now&&now<v.end).length,sameRoom];
+                })()""")
+                check(count == int(indoor) and same_wind and connected and same_room and sounding <= (2 if indoor else 0),
+                      f'{label} 後の店内出力 {count} 本、同時発音 {sounding} 音、風のループは同一')
+
             async def cross(label, target):
                 await wait(f'{READY}&&curInter?.label==={json.dumps(label)}')
                 before = await ev('window.shopFades')
@@ -136,6 +179,9 @@ async def main():
                 await wait(f"({target})&&{READY}")
                 check(await ev(f"window.shopFades==={before+1}&&!SZR.on&&!$('defenseChoice')"),
                       f'{w}×{h} {label} が1回だけ効く')
+
+                if await ev('!!window.shopAudio'):
+                    await audio_state(label, await ev("P3A.inside&&P3A.inId==='shop'"))
 
             async def boundary(label, target, next_label, next_mark=None):
                 await wait(f'{READY}&&curInter?.label==={json.dumps(label)}')
@@ -245,6 +291,8 @@ async def main():
                       '主人公は上志比の屋外到着点で再開し、農家の地図・拠点・装備と素材を保持')
 
             await boot(new=True)
+            await wait("AU.ok&&AC.state==='running'&&AU.wind")
+            await ev(AUDIO_PROBE)
             await ev("(stfP().mutantMet=true,szJoin())")
             await at_door()
             for have_map in (0, 1):
@@ -496,6 +544,74 @@ async def main():
                     check(await ev(f"""P3A.interior.rooms.some(r=>r.name==={json.dumps(name)}&&
                       P.x>r.x0&&P.x<r.x1&&P.z>r.z0&&P.z<r.z1)"""), f'前進入力で{name}に入れる')
 
+            async def daylight(level):
+                saved = await ev('[prog.f10.tod,lightMode]')
+                samples = []
+                try:
+                    for tod in ('6*P3B.hour', 'F10C.dusk+1', 'F10C.night+1'):
+                        samples.append(await ev(f"""(()=>{{
+                          prog.f10.tod={tod}; f10LightNow(); updateLighting(0);
+                          const f=P3A.interior, mat=f.g.getObjectByName(
+                            f.level===1?'shopWindowSun':'shopHomeSun').material;
+                          const glow=[];
+                          f.g.traverse(m=>{{if(m.isLight||(m.isMesh&&[].concat(m.material).some(
+                            a=>a!==inkMat&&(a.isMeshBasicMaterial||a.emissive?.getHex()>0||
+                              a.blending===THREE.AdditiveBlending)))) glow.push(m)}});
+                          return [mat.opacity,mat.color.r-mat.color.b,hemi.intensity,
+                            glow.length===f.mk.length&&glow.every(m=>f.mk.includes(m))];
+                        }})()"""))
+                    day, dusk, night = samples
+                    check(day[0] > dusk[0] > night[0] > 0 and dusk[1] > day[1],
+                          f'{level}階の窓光は昼・夕・夜で {day[0]:.3f}・{dusk[0]:.3f}・{night[0]:.3f}、夕方は暖色')
+                    check(day[2] > night[2] > 0.36 and all(row[3] for row in samples),
+                          f'{level}階の夜の半球光は {night[2]:.2f}、各時間帯で発光物は出口のみ')
+                    if level == 1:
+                        check(await ev("""(()=>{
+                          prog.f10.tod=6*P3B.hour;
+                          const now=AC.currentTime;
+                          function notes(bird){
+                            const old=new Set(shopAudio.voices.keys());
+                            AU.shopBird=bird; AU.shopNext=now; f31Sched();
+                            return [...shopAudio.voices].filter(([o])=>!old.has(o)).map(([,v])=>v);
+                          }
+                          const bird=notes(true), creak=notes(false);
+                          const count=shopAudio.voices.size; f31Sched();
+                          return count===shopAudio.voices.size&&bird.length>=2&&bird.length<=4&&creak.length===1&&
+                            bird.every((v,i)=>v.end>v.start&&(!i||v.start>=bird[i-1].end-0.06))&&
+                            creak[0].end-creak[0].start<0.5;
+                        })()"""), '昼の鳥は短い2〜4音、きしみは1音で終了予約される')
+                finally:
+                    await ev(f'[prog.f10.tod,lightMode]={json.dumps(saved)};snapLight();updateLighting(0)')
+
+            async def performance_sample(level):
+                detail = await ev('GFX.detail')
+                try:
+                    for mode, label in [('std', '標準'), ('lite', '軽量')]:
+                        await ev(f"applyDetail('{mode}')")
+                        await seconds(0.35)
+                        await ev("""window.shopSample={frames:0,tri:0,calls:0,after:f11AfterRender};
+                          f11AfterRender=()=>{
+                            const s=window.shopSample; s.after(); s.frames++;
+                            s.tri+=renderer.info.render.triangles; s.calls+=renderer.info.render.calls;
+                          };""")
+                        start = time.monotonic()
+                        try:
+                            await asyncio.sleep(3)
+                        finally:
+                            frames, tri, total_calls = await ev("""(()=>{
+                              const s=window.shopSample; f11AfterRender=s.after; delete window.shopSample;
+                              return [s.frames,s.tri,s.calls];
+                            })()""")
+                        elapsed = time.monotonic() - start
+                        if not frames:
+                            print(f'計測 {w}×{h} {level}階 {label}  描画0フレーム、平均算出不能', flush=True)
+                            continue
+                        triangles, calls, fps = tri/frames, total_calls/frames, frames/elapsed
+                        print(f'計測 {w}×{h} {level}階 {label}  平均 {triangles:.0f} 三角形、'
+                              f'{calls:.1f} calls、{fps:.1f} FPS（画面の無い環境での参考値）', flush=True)
+                finally:
+                    await ev(f"applyDetail('{detail}')")
+
             async def screenshots(level=1):
                 if shot_dir is None:
                     return
@@ -520,12 +636,22 @@ async def main():
                         await seconds(0.65)
                         check(await ev("p3bClock()[0]===12&&lightMode==='day'"), f'{name} を昼に撮影')
                         await page.screenshot(path=str(shot_dir / f'{name}-{w}x{h}.png'))
+                    name, x, z, yaw, pitch = next(s for s in spots if s[0] in ('sales', 'living-tea'))
+                    await at(x,z)
+                    await ev(f'P.facing={yaw};cam.pitch.in={pitch};setCam(P.facing)')
+                    for phase, tod in [('day', '6*P3B.hour'), ('dusk', 'F10C.dusk+1'), ('night', 'F10C.night+1')]:
+                        await ev(f'prog.f10.tod={tod};f10LightNow()')
+                        await seconds(0.65)
+                        check(await ev(f"lightMode==='{phase}'"), f'{name} を {phase} に撮影')
+                        await page.screenshot(path=str(shot_dir / f'{name}-{phase}-{w}x{h}.png'))
                 finally:
                     await at(*origin)
                     await ev(f"""[prog.f10.tod,lightMode,P.facing,cam.pitch.in]={json.dumps(previous)};
                       snapLight();setCam(P.facing);p3aSzFollow()""")
 
             await geometry(1)
+            await daylight(1)
+            await performance_sample(1)
             await ground_floor()
             await wall_notices()
             await screenshots()
@@ -548,6 +674,8 @@ async def main():
             await ev("szPut(P.x+0.2,P.z+0.15,0)")
             await cross(UP, inside(2))
             await geometry(2)
+            await daylight(2)
+            await performance_sample(2)
             await upper_floor()
             if not touch:
                 await ev("P.facing=0;setCam(0);cam.inYaw=null")
@@ -575,6 +703,7 @@ async def main():
             await boundary(UP, inside(2), DOWN, 'stairs')
             await boundary(DOWN, inside(1), EXIT, 'exit')
             await boundary(EXIT, '!P3A.inside', SHOP)
+            await audio_state(EXIT, False)
             await cross(SHOP, inside(1))
             await leave()
 
