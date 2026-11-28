@@ -8,8 +8,8 @@ import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parent.parent
-REF = 'fadbbfd4ea7bef8e32b0e086fdf7c16fc89dfa01'
-BLOB = '824feac598b742f203a534a972d074f7a417c224'
+REF = 'b8086b1013ae354446d57a6faa76822872be5d01'
+BLOB = '1e53254dd7f39b28f06e8dd2cafc48c4f6948c0d'
 KEYS = {
     'eiheiji_vs_beasts_v010': ('save', 1),
     'REWILDED_EIHEIJI_SETTINGS': ('sound', 1),

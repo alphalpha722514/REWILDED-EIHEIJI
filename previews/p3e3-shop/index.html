@@ -10137,6 +10137,17 @@ function camObstruct(ax,ay,az,bx,by,bz){
   }
   return best;
 }
+// 屋内のレンズが壁や家具に近い所だけ、足元のように高さの下限を設ける。
+function camIndoorMinY(x,z){
+  const margin=0.65;
+  let minY=0;
+  for(const box of gridQuery(x-margin,x+margin,z-margin,z+margin)){
+    if(!box.active||!box.p3a||box.k!=='b'||!box.h) continue;
+    const near=1-pointBoxDist(x,z,box)/margin;
+    minY=Math.max(minY,(box.h+0.15)*smooth01(near));
+  }
+  return minY;
+}
 // 庇の張り出しを含む屋根の箱。頭が庇の下にある場合も線分の交差を調べる。
 const CAM_ROOF_OVERHANG=2.5;
 function camRoofBlocked(list,ax,ay,az,bx,by,bz){
@@ -10267,15 +10278,9 @@ function updateCamera(dt){
   if(!cam.init){ cam.pos.copy(_cv); cam.look.copy(_lv); cam.init=true; cam.curDist=want; }
   if(cam.pos.distanceTo(_cv)>25){ cam.pos.copy(_cv); cam.look.copy(_lv); }
   cam.pos.lerp(_cv,1-Math.exp(-dt*11)); cam.look.lerp(_lv,1-Math.exp(-dt*12));
-  // 上下に回した屋内では、補間中に手前の壁へ入り込まないようにする。
-  if(playing&&P3A.inside&&cam.pitch.in){
-    const hit=camObstruct(P.x,py,P.z,cam.pos.x,cam.pos.y,cam.pos.z);
-    if(hit<1){
-      const t=Math.max(0,hit-0.06);
-      cam.pos.set(lerp(P.x,cam.pos.x,t),lerp(py,cam.pos.y,t),lerp(P.z,cam.pos.z,t));
-    }
-  }
-  cam.pos.y=Math.max(cam.pos.y,groundH(cam.pos.x,cam.pos.z)+0.4);
+  // 注視線で決める距離は上で補間済み。補間後はレンズ自身の貫通だけを高さで防ぐ。
+  const floorY=groundH(cam.pos.x,cam.pos.z)+0.4;
+  cam.pos.y=Math.max(cam.pos.y,P3A.inside?Math.max(floorY,camIndoorMinY(cam.pos.x,cam.pos.z)):floorY);
   const sh=Math.min(0.8,S.shake)*0.32; S.shake=Math.max(0,S.shake-dt*2.6);
   camera.position.set(cam.pos.x+(Math.random()-0.5)*sh,cam.pos.y+(Math.random()-0.5)*sh*0.7-(cam.footPulse48||0)*.012,cam.pos.z+(Math.random()-0.5)*sh);
   camera.lookAt(cam.look);

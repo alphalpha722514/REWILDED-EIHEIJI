@@ -1,6 +1,6 @@
 # E3-3a よろず屋のiPhone実機検収用試遊版
 
-本編 `fadbbfd4ea7bef8e32b0e086fdf7c16fc89dfa01` の `index.html`（blob `824feac598b742f203a534a972d074f7a417c224`）から生成します。ブラウザーとiPhoneでの起動・操作は未検証です。公開はユーザー承認後です。
+修正版は本編 `b8086b1013ae354446d57a6faa76822872be5d01` の `index.html`（blob `1e53254dd7f39b28f06e8dd2cafc48c4f6948c0d`）から生成します。初版はiPhone Safariで実機検収済みです。修正版の実ブラウザーでの起動・操作は未検証です。
 
 ## 開き方と操作
 
@@ -16,14 +16,14 @@ python3 tools/build-p3e3-shop-preview.py --out /tmp/shop-site/previews/p3e3-shop
 node tests/p3e3-shop-preview-build.cjs
 ```
 
-生成したHTMLのSHA-256は `cec24924144589310417db40f2950daa436b706c86d26e866889a5c154b89506` です。同じ配信ルートに `previews/p3e3-shop/index.html` と、既存の `assets/` の実行用GLB・料理画像、`data/kamishihi/kamishihi-map.js`、`data/models/mutant-monkey.js`、`vendor/three-r128/` を置きます。HTMLは古い農家試遊版と同じ階層で、素材の相対パスを使います。Three.js r128本体は既存のCDNから読み込みます。ローカルで確認するときも配信ルートからHTTPで配信してください。
+修正版HTMLのSHA-256は `0366e00a5471dc4748daeab0d38c074c5dd98b511f992374799444394b2a6d5f` です。同じ配信ルートに `previews/p3e3-shop/index.html` と、既存の `assets/` の実行用GLB・料理画像、`data/kamishihi/kamishihi-map.js`、`data/models/mutant-monkey.js`、`vendor/three-r128/` を置きます。HTMLは古い農家試遊版と同じ階層で、素材の相対パスを使います。Three.js r128本体は既存のCDNから読み込みます。ローカルで確認するときも配信ルートからHTTPで配信してください。
 
-現在の `p3e3-shop` には生成スクリプト、試遊版専用のJavaScript、Nodeテスト、文書を保存しました。生成HTMLと素材をまとめたZIPは作業環境にあります。承認後は `p3e3-shop` の検収済みスナップショットから公開専用のコミットを作り、生成HTMLだけを `previews/p3e3-shop/index.html` に追加します。そのコミットを `p3e3-shop-iphone-review-1` タグで固定して既存の農家試遊版と同じ配信方式を使い、SafariでHTMLと素材の読み込みを確認します。`main` の統合は別に承認を受けます。
+`p3e3-shop-iphone-review-1` は初版 `dd171e1`、`p3e3-shop-iphone-review-2` はカメラ修正版の配信用コミットです。両版は同じ試遊版専用の保存と設定を共有します。`main` の統合は別に承認を受けます。
 
-予定URL（タグは公開承認後に作成）
+カメラ修正版のURL
 
 ```text
-https://raw.githack.com/alphalpha722514/REWILDED-EIHEIJI/p3e3-shop-iphone-review-1/previews/p3e3-shop/index.html
+https://raw.githack.com/alphalpha722514/REWILDED-EIHEIJI/p3e3-shop-iphone-review-2/previews/p3e3-shop/index.html
 ```
 
 ## 保存の分離と検証状況
@@ -36,6 +36,7 @@ Nodeで、2回生成したHTMLのバイト一致、インラインJavaScriptの�
 
 ## iPhone Safariの検収チェックリスト
 
+- [ ] 修正版では先に、1階で前回揺れた位置と角度を試す。壁や棚の近くで視点をわずかに上下させ、左右に往復させても主人公の近くまで急に飛ばないかを確認する。
 - [ ] 端末名、iOSの版、縦・横の向きを記録する。店先から始め、地図を開いてよろず屋の印を確認し、「調べる」で入る。
 - [ ] 1階の売場・レジ・裏倉庫と2階の居間・寝室・台所・収納を一巡する。階段を各方向に繰り返し操作し、1回のタップにつき1回だけ暗転・移動することを確認する。
 - [ ] 2階で通常の「スズキに指示する」を開き、「戻る」「ここで待て」「ついて来い」を繰り返す。別階での待機、同じ位置での再会、退出時の店先での待機を確認する。失敗時は操作順、案内の表示、スズキの階を記録する。
