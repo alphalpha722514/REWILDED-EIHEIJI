@@ -775,12 +775,14 @@ async def main():
                 await wait(READY)
                 if attempt == 1:
                     await at(4, 6)
-                check(await ev("""(()=>{const x=P.x+1.05,z=P.z;
-                  if(!szHere()||!szWalkable(x,z)||!szFree(x,z,SZ.r+0.08)) return false;
-                  if(SZ.order==='follow'){szPut(x,z,0); SZ.still=0;}
-                  return true;})()"""),
-                      f'2階の指示試験 {attempt}回目は歩ける同じ階で開始')
+                # 入力待ちの間だけ同行AIを止める。フレームごとの案内と実際の入力は動かす。
+                was_held = await ev('(()=>{const was=F11.hold;F11.hold=true;return was;})()')
                 try:
+                    check(await ev("""(()=>{const x=P.x+1.05,z=P.z;
+                      if(!szHere()||!szWalkable(x,z)||!szFree(x,z,SZ.r+0.08)) return false;
+                      if(SZ.order==='follow') szPut(x,z,0);
+                      return true;})()"""),
+                          f'2階の指示試験 {attempt}回目は歩ける同じ階で開始')
                     await page.wait_for_function('s=>window.__ev(s)', arg=f'{READY}&&curInter?.act===szTalk',
                                                  timeout=10000)
                     if touch:
@@ -796,14 +798,16 @@ async def main():
                     else:
                         await option.click(timeout=10000)
                     await menu.wait_for(state='detached', timeout=10000)
+                    check(await ev(f"S.mode==='playing'&&SZ.order==='{expected}'&&"
+                                   "(SZ.order!=='wait'||(SZ.x===SZ.wx&&SZ.z===SZ.wz))"),
+                          f'2階の指示試験 {attempt}回目は「{label}」を反映')
                 except PlaywrightTimeout as err:
                     state = await ev("""({mode:S.mode,prompt:curInter?.label,current:interactables()?.label,
                       playerFloor:P3A.interior?.level,suzukiFloor:p3eShopFloorAt(SZ.x,SZ.z),
                       distance:dist(P.x,P.z,SZ.x,SZ.z),order:SZ.order,still:SZ.still,actionHeld:held.act})""")
                     raise AssertionError(f'2階の指示試験 {attempt}回目（touch={touch}）: {state}') from err
-                check(await ev(f"S.mode==='playing'&&SZ.order==='{expected}'&&"
-                               "(SZ.order!=='wait'||(SZ.x===SZ.wx&&SZ.z===SZ.wz))"),
-                      f'2階の指示試験 {attempt}回目は「{label}」を反映')
+                finally:
+                    await ev(f'F11.hold={json.dumps(was_held)}')
             stationary = await ev(SZ_POS)
             await stairs(1)
             await seconds(0.8)
